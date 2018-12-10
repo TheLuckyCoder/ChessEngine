@@ -23,7 +23,7 @@ public:
 	Piece *operator[](const Pos &pos);
 	const Piece *operator[](const Pos &pos) const;
 
-	float evaluate() const;
+	int evaluate() const;
 	std::unordered_map<Pos, Piece*> getAllPieces() const;
 	std::vector<Move> listAllMoves(const bool isWhite) const;
 };

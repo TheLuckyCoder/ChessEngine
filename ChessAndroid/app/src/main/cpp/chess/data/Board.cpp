@@ -36,12 +36,7 @@ Board::Board(const Board &board)
 
 Board::Board(Board &&board)
 {
-	for (short i = 0; i < 8; i++)
-		for (short j = 0; j < 8; j++)
-		{
-			data[i][j] = board.data[i][j];
-			board.data[i][j] = nullptr;
-		}
+    std::move(&board.data[0][0], &board.data[0][0] + 64, &data[0][0]);
 }
 
 Board::~Board()
@@ -94,9 +89,9 @@ const Piece *Board::operator[](const Pos &pos) const
 	return data[pos.x][pos.y];
 }
 
-float Board::evaluate() const
+int Board::evaluate() const
 {
-	float value = 0.0f;
+	int value = 0;
 
 	for (short i = 0; i < 8; i++)
 		for (short j = 0; j < 8; j++)
@@ -134,11 +129,12 @@ std::vector<Move> Board::listAllMoves(const bool isWhite) const
 		{
 			auto *board = new Board(*this);
 			GameState state = BoardManager::movePieceInternal(startPos, destPos, *board);
+
 			if (state == GameState::NONE)
 				boards.emplace_back(startPos, destPos, board);
-			else if (state == GameState::WINNER_WHITE)
+			else if (state == GameState::WINNER_WHITE && isWhite)
 				boards.emplace_back(startPos, destPos, board, MiniMax::VALUE_MAX);
-			else if (state == GameState::WINNER_BLACK)
+			else
 				boards.emplace_back(startPos, destPos, board, MiniMax::VALUE_MIN);
 		}
 	}

@@ -140,8 +140,6 @@ bool BoardManager::movePawn(Piece **selectedPiece, const Pos &destPos)
 
 PosPair BoardManager::moveKing(Piece *king, Pos selectedPos, const Pos &destPos, Board &board)
 {
-	PosPair result;
-
 	if (destPos.x == 6)
 	{
 		while (selectedPos.x < 7)
@@ -154,22 +152,18 @@ PosPair BoardManager::moveKing(Piece *king, Pos selectedPos, const Pos &destPos,
 				if (other)
 					break;
 			}
-			else if (other && king->hasSameColor(*other) && other->type == Piece::Type::ROOK)
+			else if (other && king->hasSameColor(*other) && other->type == Piece::Type::ROOK && !other->hasBeenMoved)
 			{
-				auto *rook = static_cast<RookPiece*>(other);
-				if (!rook->hasBeenMoved)
-				{
-					// Move the Rook
-					const short startX = 7;
-					const short destX = 5;
-					const short rookY = selectedPos.y;
+				// Move the Rook
+				const short startX = 7;
+				const short destX = 5;
+				const short y = selectedPos.y;
 
-					board.data[startX][rookY] = nullptr;
-					board.data[destX][rookY] = rook;
+				board.data[startX][y] = nullptr;
+				board.data[destX][y] = other;
 
-					rook->hasBeenMoved = true;
-					result = std::make_pair(Pos(startX, rookY), Pos(destX, rookY));
-				}
+				other->hasBeenMoved = true;
+                return std::make_pair(Pos(startX, y), Pos(destX, y));
 			}
 		}
 	}
@@ -185,25 +179,21 @@ PosPair BoardManager::moveKing(Piece *king, Pos selectedPos, const Pos &destPos,
 				if (other)
 					break;
 			}
-			else if (other && king->hasSameColor(*other) && other->type == Piece::Type::ROOK)
+			else if (other && king->hasSameColor(*other) && other->type == Piece::Type::ROOK && !other->hasBeenMoved)
 			{
-				auto *rook = static_cast<RookPiece*>(other);
-				if (!rook->hasBeenMoved)
-				{
-					// Move the Rook
-					const short startX = 0;
-					const short destX = 3;
-					const short rookY = selectedPos.y;
+				// Move the Rook
+				const short startX = 0;
+				const short destX = 3;
+				const short y = selectedPos.y;
 
-					board.data[startX][rookY] = nullptr;
-					board.data[destX][rookY] = rook;
+				board.data[startX][y] = nullptr;
+				board.data[destX][y] = other;
 
-					rook->hasBeenMoved = true;
-					result = std::make_pair(Pos(startX, rookY), Pos(destX, rookY));
-				}
+				other->hasBeenMoved = true;
+				return std::make_pair(Pos(startX, y), Pos(destX, y));
 			}
 		}
 	}
 
-	return result;
+	return std::make_pair(Pos(), Pos());
 }

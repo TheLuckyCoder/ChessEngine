@@ -11,5 +11,6 @@ data class Pos(
     constructor() : this(-1, -1)
     constructor(x: Int, y: Int) : this(x.toShort(), y.toShort())
 
-    fun isValid() = (x in 0..7 && y in 0..7)
+    val isValid
+        get() = (x in 0..7 && y in 0..7)
 }

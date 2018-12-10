@@ -11,7 +11,7 @@ public:
 	Pos start;
 	Pos dest;
 	std::shared_ptr<Board> board;
-	float value;
+	int value;
 
 	Move() = default;
 

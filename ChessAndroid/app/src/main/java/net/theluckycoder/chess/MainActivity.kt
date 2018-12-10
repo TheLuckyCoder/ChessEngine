@@ -86,7 +86,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun movePiece(view: CellView) {
-        if (!selectedPos.isValid()) return
+        if (!selectedPos.isValid) return
 
         Native.movePiece(selectedPos, view.pos)
         clearCells()
@@ -114,34 +114,34 @@ class MainActivity : Activity(), CustomView.ClickListener {
             val res = when (it.type) {
                 PieceType.PAWN -> {
                     isWhite = true
-                    R.drawable.pawn_white
+                    R.drawable.w_pawn
                 }
                 PieceType.KNIGHT -> {
                     isWhite = true
-                    R.drawable.knight_white
+                    R.drawable.w_knight
                 }
                 PieceType.BISHOP -> {
                     isWhite = true
-                    R.drawable.bishop_white
+                    R.drawable.w_bishop
                 }
                 PieceType.ROOK -> {
                     isWhite = true
-                    R.drawable.rook_white
+                    R.drawable.w_rook
                 }
                 PieceType.QUEEN -> {
                     isWhite = true
-                    R.drawable.queen_white
+                    R.drawable.w_queen
                 }
                 PieceType.KING -> {
                     isWhite = true
-                    R.drawable.king_white
+                    R.drawable.w_king
                 }
-                PieceType.PAWN_BLACK -> R.drawable.pawn_black
-                PieceType.KNIGHT_BLACK -> R.drawable.knight_black
-                PieceType.BISHOP_BLACK -> R.drawable.bishop_black
-                PieceType.ROOK_BLACK -> R.drawable.rook_black
-                PieceType.QUEEN_BLACK -> R.drawable.queen_black
-                PieceType.KING_BLACK -> R.drawable.king_black
+                PieceType.PAWN_BLACK -> R.drawable.b_pawn
+                PieceType.KNIGHT_BLACK -> R.drawable.b_knight
+                PieceType.BISHOP_BLACK -> R.drawable.b_bishop
+                PieceType.ROOK_BLACK -> R.drawable.b_rook
+                PieceType.QUEEN_BLACK -> R.drawable.b_queen
+                PieceType.KING_BLACK -> R.drawable.b_king
                 else -> throw IllegalArgumentException("PieceType ${it.type} is invalid!")
             }
 
@@ -191,21 +191,24 @@ class MainActivity : Activity(), CustomView.ClickListener {
             moves.forEach {
                 val startPos = Pos(it.startX, it.startY)
                 val destPos = Pos(it.destX, it.destY)
-                val pieceView = pieces.remove(startPos)!!
 
-                val xx = it.destX * viewSize
-                val yy = (7 - it.destY) * viewSize
+                if (startPos.isValid && destPos.isValid) {
+                    val pieceView = pieces.remove(startPos)!!
 
-                pieceView.animate()
-                    .x(xx.toFloat())
-                    .y(yy.toFloat())
-                    .start()
+                    val xx = it.destX * viewSize
+                    val yy = (7 - it.destY) * viewSize
 
-                pieces[destPos]?.let { destView ->
-                    frameLayout.removeView(destView)
+                    pieceView.animate()
+                        .x(xx.toFloat())
+                        .y(yy.toFloat())
+                        .start()
+
+                    pieces[destPos]?.let { destView ->
+                        frameLayout.removeView(destView)
+                    }
+
+                    pieces[destPos] = pieceView
                 }
-
-                pieces[destPos] = pieceView
             }
 
             if (shouldRedraw)
