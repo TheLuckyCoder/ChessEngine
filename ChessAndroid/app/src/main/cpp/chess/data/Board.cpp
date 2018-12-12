@@ -8,6 +8,11 @@
 #include "Move.h"
 #include "player/MiniMax.h"
 
+Board::Board()
+{
+	memset(data, 0, sizeof(Piece*) * 64);
+}
+
 Board::Board(const Board &board)
 {
 	auto makeCopy = [](Piece *piece) -> Piece* {
@@ -77,6 +82,21 @@ void Board::initDefaultBoard()
 
 	data[4][0] = new KingPiece(true);
 	data[4][7] = new KingPiece(false);
+}
+
+Board &Board::operator=(Board &&other)
+{
+	if (this != &other)
+	{
+		for (short i = 0; i < 8; i++)
+			for (short j = 0; j < 8; j++)
+				if (data[i][j])
+				{
+					delete data[i][j];
+					data[i][j] = other.data[i][j];;
+				}
+	}
+	return *this;
 }
 
 Piece *Board::operator[](const Pos &pos)

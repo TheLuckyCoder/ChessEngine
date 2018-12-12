@@ -1,7 +1,5 @@
 #pragma once
 
-#include <type_traits>
-
 #define external extern "C"
 
 short getShort(JNIEnv *env, jclass type, jobject obj, const char *name) {
@@ -10,10 +8,4 @@ short getShort(JNIEnv *env, jclass type, jobject obj, const char *name) {
 
 jclass cacheClass(JNIEnv *env, jclass cls) {
     return static_cast<jclass>(env->NewGlobalRef(cls));
-}
-
-template<typename E>
-constexpr auto to_underlying(E e) noexcept
-{
-    return static_cast<std::underlying_type_t<E>>(e);
 }

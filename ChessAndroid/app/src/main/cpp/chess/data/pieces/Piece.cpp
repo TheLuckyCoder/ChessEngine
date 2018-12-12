@@ -11,9 +11,9 @@ const std::vector<Pos> Piece::getPossibleMoves(Pos pos, const Board &board) cons
 	return moves;
 }
 
-float Piece::getPoints(const int x, const int y) const
+int Piece::getPoints(const int x, const int y) const
 {
-	float points = evaluatePiece(x, y);
+	const int points = evaluatePiece(x, y);
 	return isMaximising() ? points : -points;
 }
 

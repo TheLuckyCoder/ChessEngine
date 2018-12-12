@@ -18,7 +18,7 @@ private:
 private:
 	Player m_WhitePlayer = Player(true);
 	ComputerPlayer m_BlackPlayer{};
-	Board m_Board{};
+	Board m_Board;
 	PieceChangeListener m_Listener;
 
     static bool whitePlayersTurn;
@@ -26,7 +26,7 @@ private:
 public:
 	static bool isWhiteAtBottom;
 
-	static void initBoardManager(PieceChangeListener listener);
+	static void initBoardManager(PieceChangeListener listener, Board board = Board());
 	static Board &getBoard();
 	static bool isWorking();
 	

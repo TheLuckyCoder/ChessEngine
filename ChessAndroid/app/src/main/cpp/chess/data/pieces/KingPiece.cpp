@@ -195,7 +195,7 @@ void KingPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &b
 	}
 }
 
-float KingPiece::evaluatePiece(const int x, const int y) const
+int KingPiece::evaluatePiece(const int x, const int y) const
 {
 	return PieceEval::KING + (isMaximising() ? PieceEval::KING_WHITE[x][y] : PieceEval::KING_BLACK[x][y]);
 }

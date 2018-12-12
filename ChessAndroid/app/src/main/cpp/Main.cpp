@@ -4,12 +4,48 @@
 #include "external.h"
 
 #include "chess/BoardManager.h"
+#include "chess/SaveLoadJson.h"
+#include "chess/Utils.h"
 
 JavaVM *jvm;
 
 jobject mainActivityInstance;
 jclass mainActivityClass;
 jclass posPairClass;
+
+const BoardManager::PieceChangeListener listener = [](GameState state, bool shouldRedraw, const std::vector<PosPair> &moved) {
+	JNIEnv *env;
+	int getEnvStat = jvm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6);
+	if (getEnvStat == JNI_EDETACHED)
+	{
+		jvm->AttachCurrentThread(&env, NULL);
+		LOGI("ChessCpp", "Attached to Thread");
+	}
+
+	env->ExceptionClear();
+
+	jobjectArray result = env->NewObjectArray(static_cast<jsize>(moved.size()), posPairClass, NULL);
+	{
+		const static jmethodID constructorId = env->GetMethodID(posPairClass, "<init>", "(SSSS)V");
+
+		for (unsigned i = 0; i < moved.size(); ++i) {
+			auto &pair = moved[i];
+			jobject obj = env->NewObject(posPairClass, constructorId,
+										 pair.first.x, pair.first.y, pair.second.x, pair.second.y);
+
+			env->SetObjectArrayElement(result, i, obj);
+		}
+	}
+
+	const static jmethodID callbackId = env->GetMethodID(mainActivityClass, "callback", "(BZ[Lnet/theluckycoder/chess/PosPair;)V");
+	env->CallVoidMethod(mainActivityInstance, callbackId, static_cast<jbyte>(to_underlying(state)), shouldRedraw, result);
+
+	if (getEnvStat == JNI_EDETACHED)
+	{
+		jvm->DetachCurrentThread();
+		LOGI("ChessCpp", "Detached from Thread");
+	}
+};
 
 external JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void __unused *reserved)
 {
@@ -46,40 +82,6 @@ Java_net_theluckycoder_chess_MainActivity_initBoard(JNIEnv *pEnv, jobject instan
     pEnv->ExceptionClear();
     mainActivityInstance = pEnv->NewGlobalRef(instance);
     mainActivityClass = cacheClass(pEnv, pEnv->GetObjectClass(mainActivityInstance));
-
-    const BoardManager::PieceChangeListener listener = [](GameState state, bool shouldRedraw, const std::vector<PosPair> &moved) {
-        JNIEnv *env;
-        int getEnvStat = jvm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6);
-        if (getEnvStat == JNI_EDETACHED)
-        {
-            jvm->AttachCurrentThread(&env, NULL);
-            LOGI("ChessCpp", "Attached to Thread");
-        }
-
-        env->ExceptionClear();
-
-        jobjectArray result = env->NewObjectArray(static_cast<jsize>(moved.size()), posPairClass, NULL);
-        {
-            const static jmethodID constructorId = env->GetMethodID(posPairClass, "<init>", "(SSSS)V");
-
-            for (unsigned i = 0; i < moved.size(); ++i) {
-                auto &pair = moved[i];
-                jobject obj = env->NewObject(posPairClass, constructorId,
-                        pair.first.x, pair.first.y, pair.second.x, pair.second.y);
-
-                env->SetObjectArrayElement(result, i, obj);
-            }
-        }
-
-        const static jmethodID callbackId = env->GetMethodID(mainActivityClass, "callback", "(BZ[Lnet/theluckycoder/chess/PosPair;)V");
-        env->CallVoidMethod(mainActivityInstance, callbackId, static_cast<jbyte>(to_underlying(state)), shouldRedraw, result);
-
-        if (getEnvStat == JNI_EDETACHED)
-        {
-            jvm->DetachCurrentThread();
-            LOGI("ChessCpp", "Detached from Thread");
-        }
-    };
 
     BoardManager::initBoardManager(listener);
 }
@@ -159,4 +161,22 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv __unused *pEnv, __unused jc
     Pos selected(selectedX, selectedY);
     Pos dest(destX, destY);
     BoardManager::movePiece(selected, dest);
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_loadFromJson(JNIEnv __unused *pEnv, __unused jclass type, jstring json)
+{
+	const char *nativeString = pEnv->GetStringUTFChars(json, 0);
+
+	BoardManager::initBoardManager(listener, SaveLoadJson::load(nativeString));
+
+	delete nativeString;
+	pEnv->ReleaseStringUTFChars(json, nativeString);
+}
+
+external JNIEXPORT jstring JNICALL
+Java_net_theluckycoder_chess_Native_saveToJson(JNIEnv __unused *pEnv, __unused jclass type)
+{
+	const auto json = SaveLoadJson::save(BoardManager::getBoard());
+	return pEnv->NewStringUTF(json.c_str());
 }

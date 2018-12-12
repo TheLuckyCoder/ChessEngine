@@ -13,13 +13,14 @@ class Board
 public:
 	Piece *data[8][8] = { {nullptr} };
 
-	Board() = default;
+	Board();
 	Board(Board &&board);
 	Board(const Board &board);
 	~Board();
 
 	void initDefaultBoard();
 
+	Board &operator=(Board &&other);
 	Piece *operator[](const Pos &pos);
 	const Piece *operator[](const Pos &pos) const;
 

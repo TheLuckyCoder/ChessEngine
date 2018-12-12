@@ -39,7 +39,7 @@ private:
 		addPosIfValid(-2, -1);
 	}
 
-	float evaluatePiece(const int x, const int y) const override
+	int evaluatePiece(const int x, const int y) const override
 	{
 		return PieceEval::KNIGHT + (isMaximising() ? PieceEval::KNIGHT_WHITE[x][y] : PieceEval::KNIGHT_BLACK[x][y]);
 	}

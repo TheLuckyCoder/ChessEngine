@@ -55,7 +55,7 @@ void PawnPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &b
 	}
 }
 
-float PawnPiece::evaluatePiece(const int x, const int y) const
+int PawnPiece::evaluatePiece(const int x, const int y) const
 {
 	return PieceEval::PAWN + (isMaximising() ? PieceEval::PAWN_WHITE[x][y] : PieceEval::PAWN_BLACK[x][y]);
 }

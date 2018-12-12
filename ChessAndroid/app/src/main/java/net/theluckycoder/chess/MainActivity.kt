@@ -2,8 +2,14 @@ package net.theluckycoder.chess
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Point
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.EditText
 import android.widget.FrameLayout
 import net.theluckycoder.chess.views.CellView
 import net.theluckycoder.chess.views.CustomView
@@ -77,7 +83,20 @@ class MainActivity : Activity(), CustomView.ClickListener {
         }
     }
 
-//------------------------------------------------------------------------
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_load -> loadJson()
+            R.id.action_save -> saveJson()
+        }
+        return super.onMenuItemSelected(featureId, item)
+    }
+
+    //------------------------------------------------------------------------
 
     private fun clearCells() {
         cells.forEach {
@@ -217,6 +236,34 @@ class MainActivity : Activity(), CustomView.ClickListener {
             if (gameState != 0.toByte())
                 showGameOverDialog(gameState)
         }
+    }
+
+    private fun loadJson() {
+        val editText = EditText(this)
+
+        AlertDialog.Builder(this)
+            .setTitle("Load Json")
+            .setView(editText)
+            .setPositiveButton("Load") { _, _ ->
+                Native.loadFromJson(editText.toString())
+                updatePieces()
+            }
+            .show()
+    }
+
+    private fun saveJson() {
+        val json = Native.saveToJson()
+        AlertDialog.Builder(this)
+            .setTitle("Json")
+            .setMessage(json)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton("Copy") { _, _ ->
+                val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                val clip = ClipData.newPlainText("label", json)
+                clipboardManager.primaryClip = clip
+            }
+            .show()
     }
 
     private external fun initBoard()

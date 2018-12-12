@@ -18,4 +18,10 @@ object Native {
 
     @JvmStatic
     external fun movePiece(selectedX: Short, selectedY: Short, destX: Short, destY: Short): Boolean
+
+    @JvmStatic
+    external fun loadFromJson(json: String)
+
+    @JvmStatic
+    external fun saveToJson(): String
 }

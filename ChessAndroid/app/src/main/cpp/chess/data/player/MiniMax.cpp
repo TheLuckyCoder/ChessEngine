@@ -10,18 +10,18 @@ PosPair MiniMax::MaxMove(Board board, short depth)
 
 	const auto moves = board.listAllMoves(false);
 
-	for (const Move &it : moves) {
-		Move move = MinMove(it, --depth, VALUE_MIN, VALUE_MAX);
+	for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
+		Move move = MinMove(*it, --depth, VALUE_MIN, VALUE_MAX);
 
 		if (!isBestMoveInitialized)
 		{
 			isBestMoveInitialized = true;
-			bestMove = it;
+			bestMove = *it;
 			bestMovePoints = move.value;
 		}
 		else if (move.value > bestMovePoints)
 		{
-			bestMove = it;
+			bestMove = *it;
 			bestMovePoints = move.value;
 		}
 	}
@@ -37,18 +37,18 @@ PosPair MiniMax::MinMove(Board board, short depth)
 
 	const auto moves = board.listAllMoves(false);
 
-	for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
-		Move move = MaxMove(*it, --depth, VALUE_MIN, VALUE_MAX);
+	for (const Move &it : moves) {
+		Move move = MaxMove(it, --depth, VALUE_MIN, VALUE_MAX);
 
 		if (!isBestMoveInitialized)
 		{
 			isBestMoveInitialized = true;
-			bestMove = *it;
+			bestMove = it;
 			bestMovePoints = move.value;
 		}
 		else if (move.value < bestMovePoints)
 		{
-			bestMove = *it;
+			bestMove = it;
 			bestMovePoints = move.value;
 		}
 	}
@@ -64,23 +64,23 @@ Move MiniMax::MaxMove(const Move &parentMove, short depth, int alpha, int beta)
 
 	const auto moves = parentMove.board->listAllMoves(true);
 
-	for (const Move &it : moves) {
-		Move move = --depth > 0 ? MinMove(it, depth, alpha, beta) : it;
+	for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
+		Move move = --depth > 0 ? MinMove(*it, depth, alpha, beta) : *it;
 
 		if (!isBestMoveInitialized)
 		{
 			isBestMoveInitialized = true;
-			bestMove = it;
+			bestMove = *it;
 			bestMovePoints = move.value;
 		}
 		else if (move.value > bestMovePoints)
 		{
-			bestMove = it;
+			bestMove = *it;
 			bestMovePoints = move.value;
 			alpha = move.value;
 		}
 
-		if (beta <= alpha)
+		if (beta < alpha)
 			break;
 	}
 
@@ -95,23 +95,23 @@ Move MiniMax::MinMove(const Move &parentMove, short depth, int alpha, int beta)
 
 	const auto moves = parentMove.board->listAllMoves(false);
 
-	for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
-		Move move = --depth > 0 ? MaxMove(*it, depth, alpha, beta) : *it;
+	for (const Move &it : moves) {
+		Move move = --depth > 0 ? MaxMove(it, depth, alpha, beta) : it;
 
 		if (!isBestMoveInitialized)
 		{
 			isBestMoveInitialized = true;
-			bestMove = *it;
+			bestMove = it;
 			bestMovePoints = move.value;
 		}
 		else if (move.value < bestMovePoints)
 		{
-			bestMove = *it;
+			bestMove = it;
 			bestMovePoints = move.value;
 			beta = move.value;
 		}
 
-		if (beta <= alpha)
+		if (beta < alpha)
 			break;
 	}
 

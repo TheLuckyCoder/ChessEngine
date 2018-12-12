@@ -79,7 +79,7 @@ private:
 		}
 	}
 
-	float evaluatePiece(const int x, const int y) const override
+	int evaluatePiece(const int x, const int y) const override
 	{
 		return PieceEval::ROOK + (isMaximising() ? PieceEval::ROOK_WHITE[x][y] : PieceEval::ROOK_BLACK[x][y]);
 	}

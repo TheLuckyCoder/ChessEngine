@@ -9,8 +9,9 @@ std::thread *BoardManager::m_WorkerThread = nullptr;
 bool BoardManager::isWhiteAtBottom = true;
 bool BoardManager::whitePlayersTurn = true;
 
-void BoardManager::initBoardManager(PieceChangeListener listener)
+void BoardManager::initBoardManager(PieceChangeListener listener, Board board)
 {
+	m_Instance.m_Board = std::move(board);
 	m_Instance.m_Board.initDefaultBoard();
 
 	m_Instance.m_Listener = listener;
@@ -167,7 +168,7 @@ PosPair BoardManager::moveKing(Piece *king, Pos selectedPos, const Pos &destPos,
 			}
 		}
 	}
-	else
+	else if (destPos.x == 2)
 	{
 		while (selectedPos.x > 0)
 		{

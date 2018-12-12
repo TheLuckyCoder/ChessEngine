@@ -18,5 +18,5 @@ public:
 private:
 	std::unordered_set<Pos> getAllMovesPerColor(const Board &board, bool white) const;
 	void calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &board) const override;
-	float evaluatePiece(const int x, const int y) const override;
+	int evaluatePiece(const int x, const int y) const override;
 };

@@ -75,7 +75,7 @@ void BishopPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board 
 	}
 }
 
-float BishopPiece::evaluatePiece(const int x, const int y) const
+int BishopPiece::evaluatePiece(const int x, const int y) const
 {
 	return PieceEval::BISHOP + (isMaximising() ? PieceEval::BISHOP_WHITE[x][y] : PieceEval::BISHOP_BLACK[x][y]);
 }

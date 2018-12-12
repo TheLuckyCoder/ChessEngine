@@ -146,7 +146,7 @@ void QueenPiece::calculateMoves(Pos &pos, std::vector <Pos> &moves, const Board 
     }
 }
 
-float QueenPiece::evaluatePiece(const int x, const int y) const
+int QueenPiece::evaluatePiece(const int x, const int y) const
 {
     return PieceEval::QUEEN + (isMaximising() ? PieceEval::QUEEN_WHITE[x][y] : PieceEval::QUEEN_BLACK[x][y]);
 }
