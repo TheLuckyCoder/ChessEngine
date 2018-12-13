@@ -5,7 +5,7 @@
 
 std::pair<Pos, Pos> ComputerPlayer::getNextMove() const
 {
-	constexpr int depth = 13;
+	constexpr int depth = 5;
 	return BoardManager::isWhiteAtBottom ?
 		MiniMax::MinMove(BoardManager::getBoard(), depth) : MiniMax::MaxMove(BoardManager::getBoard(), depth);
 }

@@ -1,27 +1,33 @@
 #include "MiniMax.h"
 
 #include "../Move.h"
+#include "../../threads/ThreadPool.hpp"
 
 PosPair MiniMax::MaxMove(Board board, short depth)
 {
-	bool isBestMoveInitialized = false;
-	Move bestMove;
-    int bestMovePoints;
+	const auto moves = board.listAllMoves(true);
+	depth--;
 
-	const auto moves = board.listAllMoves(false);
+	std::vector<ThreadPool::TaskFuture<Move>> futures;
+	futures.reserve(moves.size());
 
-	for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
-		Move move = MinMove(*it, --depth, VALUE_MIN, VALUE_MAX);
+	for (const Move &move : moves)
+	{
+		futures.emplace_back(DefaultThreadPool::submitJob<Move>([](const Move &move, const short depth) {
+			return MaxMove(move, depth, VALUE_MIN, VALUE_MAX);
+		}, move, depth));
+	}
 
-		if (!isBestMoveInitialized)
+	Move bestMove = moves.back();
+	int bestMovePoints = futures.back().get().value;
+
+	for (std::size_t i = moves.size() - 2; i > 0; --i) {
+		const Move &it = moves[i];
+		Move move = depth > 0 ? MinMove(it, depth, VALUE_MIN, VALUE_MAX) : it;
+
+		if (move.value > bestMovePoints)
 		{
-			isBestMoveInitialized = true;
-			bestMove = *it;
-			bestMovePoints = move.value;
-		}
-		else if (move.value > bestMovePoints)
-		{
-			bestMove = *it;
+			bestMove = it;
 			bestMovePoints = move.value;
 		}
 	}
@@ -31,22 +37,28 @@ PosPair MiniMax::MaxMove(Board board, short depth)
 
 PosPair MiniMax::MinMove(Board board, short depth)
 {
-	bool isBestMoveInitialized = false;
-	Move bestMove;
-    int bestMovePoints;
-
 	const auto moves = board.listAllMoves(false);
+	depth--;
 
-	for (const Move &it : moves) {
-		Move move = MaxMove(it, --depth, VALUE_MIN, VALUE_MAX);
+	std::vector<ThreadPool::TaskFuture<Move>> futures;
+	futures.reserve(moves.size());
 
-		if (!isBestMoveInitialized)
-		{
-			isBestMoveInitialized = true;
-			bestMove = it;
-			bestMovePoints = move.value;
-		}
-		else if (move.value < bestMovePoints)
+	for (const Move &move : moves)
+	{
+		futures.emplace_back(DefaultThreadPool::submitJob<Move>([](const Move &move, const short depth) {
+			return MaxMove(move, depth, VALUE_MIN, VALUE_MAX);
+		}, move, depth));
+	}
+
+	Move bestMove = moves.front();
+	int bestMovePoints = futures.front().get().value;
+
+	for (std::size_t i = 1; i < moves.size(); ++i)
+	{
+		const Move &it = moves[i];
+		Move move = futures[i].get();
+
+		if (move.value < bestMovePoints)
 		{
 			bestMove = it;
 			bestMovePoints = move.value;
@@ -58,29 +70,23 @@ PosPair MiniMax::MinMove(Board board, short depth)
 
 Move MiniMax::MaxMove(const Move &parentMove, short depth, int alpha, int beta)
 {
-	bool isBestMoveInitialized = false;
-	Move bestMove;
-	int bestMovePoints;
-
 	const auto moves = parentMove.board->listAllMoves(true);
 
-	for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
-		Move move = --depth > 0 ? MinMove(*it, depth, alpha, beta) : *it;
+	Move bestMove = moves.back();
+	int bestMovePoints = (--depth > 0 ? MinMove(bestMove, depth, alpha, beta) : bestMove).value;
 
-		if (!isBestMoveInitialized)
+	for (std::size_t i = moves.size() - 2; i > 0; --i) {
+		const Move &it = moves[i];
+		Move move = depth > 0 ? MinMove(it, depth, alpha, beta) : it;
+
+		if (move.value > bestMovePoints)
 		{
-			isBestMoveInitialized = true;
-			bestMove = *it;
-			bestMovePoints = move.value;
-		}
-		else if (move.value > bestMovePoints)
-		{
-			bestMove = *it;
+			bestMove = it;
 			bestMovePoints = move.value;
 			alpha = move.value;
 		}
 
-		if (beta < alpha)
+		if (beta <= alpha)
 			break;
 	}
 
@@ -89,29 +95,23 @@ Move MiniMax::MaxMove(const Move &parentMove, short depth, int alpha, int beta)
 
 Move MiniMax::MinMove(const Move &parentMove, short depth, int alpha, int beta)
 {
-	bool isBestMoveInitialized = false;
-	Move bestMove;
-    int bestMovePoints;
-
 	const auto moves = parentMove.board->listAllMoves(false);
 
-	for (const Move &it : moves) {
-		Move move = --depth > 0 ? MaxMove(it, depth, alpha, beta) : it;
+	Move bestMove = moves.front();
+	int bestMovePoints = (--depth > 0 ? MaxMove(bestMove, depth, alpha, beta) : bestMove).value;
 
-		if (!isBestMoveInitialized)
-		{
-			isBestMoveInitialized = true;
-			bestMove = it;
-			bestMovePoints = move.value;
-		}
-		else if (move.value < bestMovePoints)
+	for (std::size_t i = 1; i < moves.size(); ++i) {
+		const Move &it = moves[i];
+		Move move = depth > 0 ? MaxMove(it, depth, alpha, beta) : it;
+
+		if (move.value < bestMovePoints)
 		{
 			bestMove = it;
 			bestMovePoints = move.value;
 			beta = move.value;
 		}
 
-		if (beta < alpha)
+		if (beta <= alpha)
 			break;
 	}
 

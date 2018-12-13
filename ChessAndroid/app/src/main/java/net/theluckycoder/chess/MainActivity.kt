@@ -76,10 +76,8 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
         if (view is PieceView) {
             selectPiece(view)
-        } else if (view is CellView) {
-            if (view.state == CellView.State.POSSIBLE) {
-                movePiece(view)
-            }
+        } else if (view is CellView && view.state == CellView.State.POSSIBLE) {
+            movePiece(view)
         }
     }
 

@@ -37,7 +37,7 @@ namespace std
 {
 
 	template <>
-	struct __unused hash<Pos>
+	struct hash<Pos>
 	{
 		std::size_t operator()(const Pos &pos) const
 		{
