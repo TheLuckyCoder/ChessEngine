@@ -3,83 +3,43 @@
 #include <algorithm>
 #include <iterator>
 
+#include "PieceEval.h"
 #include "Pieces.h"
 #include "../../BoardManager.h"
 
-std::vector<Pos> KingPiece::getInitialMoves(Pos pos) const
+std::vector<Pos> KingPiece::getInitialMoves(Pos pos)
 {
 	std::vector<Pos> moves;
 	moves.reserve(8);
 
-	Pos posCopy = pos;
-
 	// Vertical and Horizontal
-	if (posCopy.x > 0)
-	{
-		posCopy.x--;
-		moves.push_back(posCopy);
+	if (pos.x > 0)
+		moves.emplace_back(pos.x - 1, pos.y);
 
-		posCopy = pos;
-	}
+	if (pos.x < 7)
+		moves.emplace_back(pos.x + 1, pos.y);
 
-	if (posCopy.x < 7)
-	{
-		posCopy.x++;
-		moves.push_back(posCopy);
+	if (pos.y > 0)
+		moves.emplace_back(pos.x, pos.y - 1);
 
-		posCopy = pos;
-	}
-
-	if (posCopy.y > 0)
-	{
-		posCopy.y--;
-		moves.push_back(posCopy);
-
-		posCopy = pos;
-	}
-
-	if (posCopy.y < 7)
-	{
-		posCopy.y++;
-		moves.push_back(posCopy);
-
-		posCopy = pos;
-	}
+	if (pos.y < 7)
+		moves.emplace_back(pos.x, pos.y + 1);
 
 	// Diagonal
-	if (posCopy.x < 7 && posCopy.y > 0)
-	{
-		posCopy.x++;
-		posCopy.y--;
-		moves.push_back(posCopy);
+	if (pos.x < 7 && pos.y > 0)
+		moves.emplace_back(pos.x + 1, pos.y - 1);
 
-		posCopy = pos;
-	}
+	if (pos.x < 7 && pos.y < 7)
+		moves.emplace_back(pos.x + 1, pos.y + 1);
 
-	if (posCopy.x < 7 && posCopy.y < 7)
-	{
-		posCopy.x++;
-		posCopy.y++;
-		moves.push_back(posCopy);
+	if (pos.x > 0 && pos.y > 0)
+		moves.emplace_back(pos.x - 1, pos.y - 1);
 
-		posCopy = pos;
-	}
+	if (pos.x > 0 && pos.y > 0)
+		moves.emplace_back(pos.x - 1, pos.y - 1);
 
-	if (posCopy.x > 0 && posCopy.y > 0)
-	{
-		posCopy.x--;
-		posCopy.y--;
-		moves.push_back(posCopy);
-
-		posCopy = pos;
-	}
-
-	if (posCopy.x > 0 && posCopy.y < 7)
-	{
-		posCopy.x--;
-		posCopy.y++;
-		moves.push_back(posCopy);
-	}
+	if (pos.x > 0 && pos.y < 7)
+		moves.emplace_back(pos.x - 1, pos.y + 1);
 
 	return moves;
 }
@@ -124,9 +84,9 @@ void KingPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &b
 	auto initialMoves = getInitialMoves(pos);
 
 	{
-		auto iter = std::remove_if(initialMoves.begin(), initialMoves.end(),
-			[*this, &board](const Pos &pos) { return board[pos] && hasSameColor(*board[pos]); });
-		initialMoves.erase(iter, initialMoves.end());
+		const auto iterator = std::remove_if(initialMoves.begin(), initialMoves.end(),
+			[this, &board](const Pos &pos) { return board[pos] && hasSameColor(*board[pos]); });
+		initialMoves.erase(iterator, initialMoves.end());
 	}
 
 	if (initialMoves.empty()) return;
@@ -137,19 +97,16 @@ void KingPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &b
 
 	for (unsigned int i = 0; i < moves.size(); i++)
 	{
-		for (auto it = opponentsMoves.begin(); it != opponentsMoves.end(); it++)
+		if (opponentsMoves.find(moves[i]) != opponentsMoves.end())
 		{
-			if (moves[i] == *it)
-			{
-				moves[i] = std::move(moves[moves.size() - 1]);
-				moves.pop_back();
-				break;
-			}
+			moves[i] = moves.back();
+			moves.pop_back();
+			i--;
 		}
 	}
 
 	// Castling
-	if (!hasBeenMoved)
+	if (!hasBeenMoved && opponentsMoves.find(pos) == opponentsMoves.end())
 	{
 		Pos posCopy = pos;
 		while (posCopy.x < 7)
@@ -157,7 +114,7 @@ void KingPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &b
 			posCopy.x++;
 			auto *other = board[posCopy];
 
-			if (std::find(opponentsMoves.begin(), opponentsMoves.end(), posCopy) != opponentsMoves.end())
+			if (opponentsMoves.find(posCopy) != opponentsMoves.end())
 				break;
 
 			if (posCopy.x < 7)
@@ -178,7 +135,7 @@ void KingPiece::calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &b
 			posCopy.x--;
 			auto *other = board[posCopy];
 
-			if (std::find(opponentsMoves.begin(), opponentsMoves.end(), posCopy) != opponentsMoves.end())
+			if (opponentsMoves.find(posCopy) != opponentsMoves.end())
 				break;
 
 			if (posCopy.x > 0)

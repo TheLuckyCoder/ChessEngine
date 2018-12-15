@@ -13,13 +13,14 @@ public:
 	std::shared_ptr<Board> board;
 	int value;
 
-	Move() = default;
+	Move()
+		: value{} {}
 
-	Move(Pos start, Pos dest, Board *board)
-		: start(std::move(start)), dest(std::move(dest)), board(board), value(board->evaluate()) {}
+	Move(const Pos start, const Pos dest, Board *board)
+		: start(start), dest(dest), board(board), value(board->evaluate()) {}
 
-	Move(Pos start, Pos dest, Board *board, int value)
-			: start(std::move(start)), dest(std::move(dest)), board(board), value(value) {}
+	Move(const Pos start, const Pos dest, Board *board, const int value)
+		: start(start), dest(dest), board(board), value(value) {}
 
 	bool operator<(const Move &other) const
 	{

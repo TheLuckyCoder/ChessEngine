@@ -12,8 +12,8 @@ public:
 	constexpr static int VALUE_MAX = 100000000;
 	constexpr static int VALUE_MIN = -100000000;
 
-	static PosPair MaxMove(Board board, short depth);
-	static PosPair MinMove(Board board, short depth);
+	static PosPair MaxMove(const Board &board, short depth);
+	static PosPair MinMove(const Board &board, short depth);
 
 private:
 	static Move MaxMove(const Move &parentMove, short depth, int alpha, int beta);

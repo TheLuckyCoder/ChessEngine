@@ -24,10 +24,10 @@ private:
 	public:
 		IThreadTask() = default;
 		virtual ~IThreadTask() = default;
-		IThreadTask(const IThreadTask& rhs) = delete;
-		IThreadTask& operator=(const IThreadTask& rhs) = delete;
-		IThreadTask(IThreadTask&& other) = default;
-		IThreadTask& operator=(IThreadTask&& other) = default;
+		IThreadTask(const IThreadTask &rhs) = delete;
+		IThreadTask &operator=(const IThreadTask &rhs) = delete;
+		IThreadTask(IThreadTask &&other) = default;
+		IThreadTask &operator=(IThreadTask &&other) = default;
 
 		/**
 		 * Run the task.
@@ -39,16 +39,14 @@ private:
 	class ThreadTask : public IThreadTask
 	{
 	public:
-		ThreadTask(Func&& func)
-			:m_func{ std::move(func) }
-		{
-		}
+		ThreadTask(Func &&func)
+			:m_func{ std::move(func) } {}
 
 		~ThreadTask() override = default;
-		ThreadTask(const ThreadTask& rhs) = delete;
-		ThreadTask& operator=(const ThreadTask& rhs) = delete;
-		ThreadTask(ThreadTask&& other) = default;
-		ThreadTask& operator=(ThreadTask&& other) = default;
+		ThreadTask(const ThreadTask &rhs) = delete;
+		ThreadTask &operator=(const ThreadTask &rhs) = delete;
+		ThreadTask(ThreadTask &&other) = default;
+		ThreadTask &operator=(ThreadTask &&other) = default;
 
 		/**
 			* Run the task.
@@ -71,21 +69,17 @@ public:
 	class TaskFuture
 	{
 	public:
-		TaskFuture(std::future<T>&& future)
-			:m_future{ std::move(future) }
-		{
-		}
+		TaskFuture(std::future<T> &&future)
+			:m_future{ std::move(future) } {}
 
-		TaskFuture(const TaskFuture& rhs) = delete;
-		TaskFuture& operator=(const TaskFuture& rhs) = delete;
-		TaskFuture(TaskFuture&& other) = default;
-		TaskFuture& operator=(TaskFuture&& other) = default;
+		TaskFuture(const TaskFuture &rhs) = delete;
+		TaskFuture &operator=(const TaskFuture &rhs) = delete;
+		TaskFuture(TaskFuture &&other) = default;
+		TaskFuture &operator=(TaskFuture &&other) = default;
 		~TaskFuture()
 		{
 			if (m_future.valid())
-			{
 				m_future.get();
-			}
 		}
 
 		auto get()
@@ -103,12 +97,10 @@ public:
 	 * Constructor.
 	 */
 	ThreadPool()
-		:ThreadPool{ std::max(std::thread::hardware_concurrency(), 2u) }
+		: ThreadPool { std::max(std::thread::hardware_concurrency(), 2u) }
 	{
 		/*
-		 * Always create at least one thread.  If hardware_concurrency() returns 0,
-		 * subtracting one would turn it to UINT_MAX, so get the maximum of
-		 * hardware_concurrency() and 2 before subtracting 1.
+		 * Always create at least two threads.
 		 */
 	}
 
@@ -123,9 +115,7 @@ public:
 		try
 		{
 			for (std::uint32_t i = 0u; i < numThreads; ++i)
-			{
 				m_threads.emplace_back(&ThreadPool::worker, this);
-			}
 		}
 		catch (...)
 		{
@@ -137,12 +127,12 @@ public:
 	/**
 	 * Non-copyable.
 	 */
-	ThreadPool(const ThreadPool& rhs) = delete;
+	ThreadPool(const ThreadPool &rhs) = delete;
 
 	/**
 	 * Non-assignable.
 	 */
-	ThreadPool& operator=(const ThreadPool& rhs) = delete;
+	ThreadPool& operator=(const ThreadPool &rhs) = delete;
 
 	/**
 	 * Destructor.
@@ -156,7 +146,7 @@ public:
 	 * Submit a job to be run by the thread pool.
 	 */
 	template <typename ResultType, typename Func, typename... Args>
-	TaskFuture<ResultType> submit(Func&& func, Args&&... args)
+	TaskFuture<ResultType> submit(Func &&func, Args &&...args)
 	{
 		auto boundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 		//using ResultType = std::invoke_result_t<decltype(boundTask)()>;
@@ -179,9 +169,7 @@ private:
 		{
 			std::unique_ptr<IThreadTask> pTask{ nullptr };
 			if (m_workQueue.waitPop(pTask))
-			{
 				pTask->execute();
-			}
 		}
 	}
 
@@ -195,9 +183,7 @@ private:
 		for (auto& thread : m_threads)
 		{
 			if (thread.joinable())
-			{
 				thread.join();
-			}
 		}
 	}
 

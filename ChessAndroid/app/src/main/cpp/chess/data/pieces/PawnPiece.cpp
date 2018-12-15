@@ -1,5 +1,7 @@
 #include "PawnPiece.h"
 
+#include "PieceEval.h"
+
 void PawnPiece::getInitialMoves(Pos pos, std::vector<Pos> &moves, const Board &board) const
 {
 	isWhite ? pos.y++ : pos.y--;

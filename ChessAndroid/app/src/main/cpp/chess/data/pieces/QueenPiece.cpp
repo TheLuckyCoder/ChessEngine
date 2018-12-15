@@ -1,5 +1,7 @@
 #include "QueenPiece.h"
 
+#include "PieceEval.h"
+
 void QueenPiece::calculateMoves(Pos &pos, std::vector <Pos> &moves, const Board &board) const
 {
     Pos posCopy = pos;

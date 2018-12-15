@@ -9,16 +9,19 @@ std::thread *BoardManager::m_WorkerThread = nullptr;
 bool BoardManager::isWhiteAtBottom = true;
 bool BoardManager::whitePlayersTurn = true;
 
-void BoardManager::initBoardManager(PieceChangeListener listener, Board board)
+void BoardManager::initBoardManager(const PieceChangeListener &listener)
 {
-	m_Instance.m_Board = std::move(board);
 	m_Instance.m_Board.initDefaultBoard();
-
 	m_Instance.m_Listener = listener;
 
 	//srand((unsigned int)time(nullptr));
-	//whitePlayersTurn = isWhiteAtBottom = rand() % 2 == 0; // TODO: Make MiniMax support both sides
+	//whitePlayersTurn = isWhiteAtBottom = rand() % 2 == 0; // TODO: Support both sides again
 	//moveComputerPlayer();
+}
+
+void BoardManager::loadJsonGame(Board &&board)
+{
+	m_Instance.m_Board = std::move(board);
 }
 
 Board &BoardManager::getBoard()
@@ -28,7 +31,7 @@ Board &BoardManager::getBoard()
 
 bool BoardManager::isWorking()
 {
-	return m_Instance.m_WorkerThread != nullptr;
+	return m_WorkerThread != nullptr;
 }
 
 GameState BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board)
@@ -92,8 +95,8 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos)
 	if (m_WorkerThread)
 	{
 		m_WorkerThread->detach();
-		delete m_Instance.m_WorkerThread;
-		m_Instance.m_WorkerThread = nullptr;
+		delete m_WorkerThread;
+		m_WorkerThread = nullptr;
 	}
 
 	if (state == GameState::NONE)
@@ -122,15 +125,13 @@ void BoardManager::moveComputerPlayer()
 
 bool BoardManager::movePawn(Piece **selectedPiece, const Pos &destPos)
 {
-	auto *pawn = static_cast<PawnPiece*>(*selectedPiece);
+	auto *pawn = dynamic_cast<PawnPiece*>(*selectedPiece);
 	if (pawn->hasBeenMoved)
 	{
 		if (destPos.y == 0 || destPos.y == 7)
 		{
-			const bool isWhite = pawn->isWhite;
+			auto *queen = new QueenPiece(pawn->isWhite);
 			delete pawn;
-
-			auto *queen = new QueenPiece(isWhite);
 			(*selectedPiece) = queen;
 			return true;
 		}

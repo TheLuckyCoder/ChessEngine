@@ -1,7 +1,6 @@
 #include "Board.h"
 
 #include <algorithm>
-#include <iterator>
 
 #include "../BoardManager.h"
 #include "pieces/Pieces.h"
@@ -15,7 +14,7 @@ Board::Board()
 
 Board::Board(const Board &board)
 {
-	auto makeCopy = [](Piece *piece) -> Piece* {
+	const auto makeCopy = [](Piece *piece) -> Piece* {
 		switch (piece->type)
 		{
 		case Piece::Type::PAWN:
@@ -31,6 +30,7 @@ Board::Board(const Board &board)
 		case Piece::Type::KING:
 			return new KingPiece(piece);
 		}
+		return nullptr;
 	};
 
 	for (short i = 0; i < 8; i++)
@@ -39,9 +39,10 @@ Board::Board(const Board &board)
 				data[i][j] = makeCopy(board.data[i][j]);
 }
 
-Board::Board(Board &&board)
+Board::Board(Board &&board) noexcept
 {
     std::move(&board.data[0][0], &board.data[0][0] + 64, &data[0][0]);
+	memset(board.data, 0, sizeof(Piece*) * 64);
 }
 
 Board::~Board()
@@ -54,7 +55,13 @@ Board::~Board()
 
 void Board::initDefaultBoard()
 {
-	memset(data, 0, sizeof(Piece*) * 64);
+	for (short i = 0; i < 8; i++)
+		for (short j = 0; j < 8; j++)
+			if (data[i][j])
+			{
+				delete data[i][j];
+				data[i][j] = nullptr;
+			}
 
 	for (short i = 0; i < 8; i++)
 		data[i][1] = new PawnPiece(true);
@@ -84,17 +91,23 @@ void Board::initDefaultBoard()
 	data[4][7] = new KingPiece(false);
 }
 
-Board &Board::operator=(Board &&other)
+Board &Board::operator=(Board &&other) noexcept
 {
 	if (this != &other)
 	{
 		for (short i = 0; i < 8; i++)
 			for (short j = 0; j < 8; j++)
+			{
 				if (data[i][j])
 				{
 					delete data[i][j];
-					data[i][j] = other.data[i][j];;
+					data[i][j] = nullptr;
 				}
+				
+				data[i][j] = other.data[i][j];;
+			}
+
+		memset(other.data, 0, sizeof(Piece*) * 64);
 	}
 	return *this;
 }
@@ -148,7 +161,7 @@ std::vector<Move> Board::listAllMoves(const bool isWhite) const
 		for (auto &destPos : moves)
 		{
 			auto *board = new Board(*this);
-			GameState state = BoardManager::movePieceInternal(startPos, destPos, *board);
+			const GameState state = BoardManager::movePieceInternal(startPos, destPos, *board);
 
 			if (state == GameState::NONE)
 				boards.emplace_back(startPos, destPos, board);

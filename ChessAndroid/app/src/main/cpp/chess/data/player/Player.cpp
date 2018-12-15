@@ -1,9 +1,8 @@
 #include "Player.h"
 
-#include <math.h>
 #include "../pieces/Piece.h"
 
-Player::Player(bool isWhite)
+Player::Player(const bool isWhite)
 	: isWhite(isWhite)
 {
 }
@@ -14,7 +13,7 @@ bool Player::hasOnlyTheKing(const Board &board) const
 
 	for (short i = 0; i < 8; i++)
 		for (short j = 0; j < 8; j++)
-			if (Piece *piece = board.data[i][j]; piece && piece->isWhite == isWhite)
+			if (const auto piece = board.data[i][j]; piece && piece->isWhite == isWhite)
 				piecesCount++;
 
 	return piecesCount == 0;

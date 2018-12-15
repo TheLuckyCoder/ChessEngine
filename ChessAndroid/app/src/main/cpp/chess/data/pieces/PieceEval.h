@@ -8,7 +8,7 @@ namespace PieceEval {
 
 	constexpr static void swapArrays(std::array<int, 8> &arr1, std::array<int, 8> &arr2)
 	{
-		auto copy = arr1;
+		const auto copy = arr1;
 		arr1 = arr2;
 		arr2 = copy;
 	}

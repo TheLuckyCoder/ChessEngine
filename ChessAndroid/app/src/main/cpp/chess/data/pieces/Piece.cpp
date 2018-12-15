@@ -2,7 +2,7 @@
 
 #include "../../BoardManager.h"
 
-const std::vector<Pos> Piece::getPossibleMoves(Pos pos, const Board &board) const
+std::vector<Pos> Piece::getPossibleMoves(Pos pos, const Board &board) const
 {
 	std::vector<Pos> moves;
 

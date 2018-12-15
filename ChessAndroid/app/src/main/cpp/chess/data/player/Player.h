@@ -7,8 +7,8 @@ class Player
 public:
 	const bool isWhite;
 
-	Player(bool isWhite);
+	explicit Player(bool isWhite);
 
 	bool hasOnlyTheKing(const Board &board) const;
-	static std::unordered_map<Pos, Piece*> getAllOwnedPieces(const bool isWhite, const Board &board);
+	static std::unordered_map<Pos, Piece*> getAllOwnedPieces(bool isWhite, const Board &board);
 };

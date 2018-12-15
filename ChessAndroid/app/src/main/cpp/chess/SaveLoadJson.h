@@ -18,24 +18,22 @@ public:
 
 private:
 	template<typename T>
-	static T getValue(const std::string_view &str, std::string_view find)
+	static T getValue(const std::string_view &str, std::string_view key)
 	{
-		auto start = str.find(find) + find.length() + 2;
+		auto start = str.find(key) + key.length() + 2;
 
-		auto end = str.find(',', start);
-		auto valueString = str.substr(start, end);
+		auto end = str.find_first_of(",}", start) - start;
+		std::string_view valueString = str.substr(start, end);
 
 		if constexpr (std::is_same_v<T, std::string>)
-			return valueString;
+			return std::string(valueString);
 		else if (std::is_same_v<T, bool>)
 			return valueString == "true";
-		else if (std::is_same_v<T, char> || std::is_same_v<T, unsigned char>)
-			return valueString.front();
 		else
 		{
 			T value;
 			std::stringstream ss;
-			ss << valueString;
+			ss << std::string(valueString);
 			ss >> value;
 			return value;
 		}

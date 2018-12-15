@@ -3,21 +3,27 @@
 #include "data/Board.h"
 #include "data/pieces/Pieces.h"
 
+#include <iostream>
+
 Board SaveLoadJson::load(std::string_view str)
 {
-	Board board{};
+	Board board;
 
 	unsigned long end;
-	do {
+	while (true)
+	{
 		auto start = str.find('{');
 		end = str.find('}', start);
 
-		loadPiece(board, str.substr(start + 1, end));
+		if (start == str.npos || end == str.npos)
+			break;
 
-		str.remove_suffix(end + 1); // + 2 ?
-	} while (end != str.npos);
+		loadPiece(board, str.substr(start + 1, end - start));
 
-	return board;
+		str.remove_prefix(end);
+	}
+
+	return std::move(board);
 }
 
 std::string SaveLoadJson::save(const Board &board)
@@ -42,7 +48,9 @@ std::string SaveLoadJson::save(const Board &board)
 void SaveLoadJson::loadPiece(Board &board, std::string_view str)
 {
 	bool isWhite = getValue<bool>(str, "white");
-	Piece::Type type = static_cast<Piece::Type>(getValue<unsigned char>(str, "type"));
+	auto c = getValue<int>(str, "type");
+	Piece::Type type = static_cast<Piece::Type>(c);
+
 
 	Piece *piece = [type, isWhite]() -> Piece* {
 		switch (type)
@@ -59,6 +67,8 @@ void SaveLoadJson::loadPiece(Board &board, std::string_view str)
 				return new QueenPiece(isWhite);
 			case Piece::Type::KING:
 				return new KingPiece(isWhite);
+			default:
+				return nullptr;
 		}
 	}();
 

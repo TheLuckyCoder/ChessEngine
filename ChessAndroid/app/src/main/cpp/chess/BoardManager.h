@@ -5,7 +5,6 @@
 
 #include "GameState.h"
 #include "data/Pos.h"
-#include "data/pieces/Pieces.h"
 #include "data/player/ComputerPlayer.h"
 
 class BoardManager
@@ -15,10 +14,10 @@ public:
 private:
 	static BoardManager &m_Instance;
 	static std::thread *m_WorkerThread;
-private:
+
 	Player m_WhitePlayer = Player(true);
 	ComputerPlayer m_BlackPlayer{};
-	Board m_Board;
+	Board m_Board{};
 	PieceChangeListener m_Listener;
 
     static bool whitePlayersTurn;
@@ -26,7 +25,8 @@ private:
 public:
 	static bool isWhiteAtBottom;
 
-	static void initBoardManager(PieceChangeListener listener, Board board = Board());
+	static void initBoardManager(const PieceChangeListener& listener);
+	static void loadJsonGame(Board &&board);
 	static Board &getBoard();
 	static bool isWorking();
 	

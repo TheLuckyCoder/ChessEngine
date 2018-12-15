@@ -168,9 +168,8 @@ Java_net_theluckycoder_chess_Native_loadFromJson(JNIEnv __unused *pEnv, __unused
 {
 	const char *nativeString = pEnv->GetStringUTFChars(json, 0);
 
-	BoardManager::initBoardManager(listener, SaveLoadJson::load(nativeString));
+	BoardManager::loadJsonGame(SaveLoadJson::load(nativeString));
 
-	delete nativeString;
 	pEnv->ReleaseStringUTFChars(json, nativeString);
 }
 

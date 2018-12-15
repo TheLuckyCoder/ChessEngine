@@ -5,7 +5,7 @@
 class QueenPiece : public Piece
 {
 public:
-	explicit QueenPiece(bool isWhite)
+	explicit QueenPiece(const bool isWhite)
 		: Piece(Type::QUEEN, isWhite) {}
 
 	explicit QueenPiece(const Piece *piece)
@@ -13,5 +13,5 @@ public:
 
 private:
 	void calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &board) const override;
-	int evaluatePiece(const int x, const int y) const override;
+	int evaluatePiece(int x, int y) const override;
 };
