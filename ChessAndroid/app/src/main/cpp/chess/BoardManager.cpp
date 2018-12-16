@@ -2,9 +2,10 @@
 
 //#include <ctime>
 
-#include "data/pieces/Pieces.h"
+#include "data/pieces/Piece.h"
+#include "data/minimax/MiniMax.h"
 
-BoardManager& BoardManager::m_Instance = *(new BoardManager);
+BoardManager& BoardManager::m_Instance = *new BoardManager;
 std::thread *BoardManager::m_WorkerThread = nullptr;
 bool BoardManager::isWhiteAtBottom = true;
 bool BoardManager::whitePlayersTurn = true;
@@ -37,26 +38,22 @@ bool BoardManager::isWorking()
 GameState BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board)
 {
 	GameState state = GameState::NONE;
-	Piece *destPiece = board[destPos];
+	auto &destPiece = board[destPos];
 
-	if (destPiece)
-	{
-		if (destPiece->type == Piece::Type::KING)
-			state = destPiece->isWhite ? GameState::WINNER_BLACK : GameState::WINNER_WHITE;
-		delete destPiece;
-	}
+	if (destPiece && destPiece.type == Piece::Type::KING)
+		state = destPiece.isWhite ? GameState::WINNER_BLACK : GameState::WINNER_WHITE;
 
-	Piece *selectedPiece = board[selectedPos];
+	auto &selectedPiece = board[selectedPos];
 
-	if (selectedPiece->type == Piece::Type::PAWN)
-		movePawn(std::addressof(selectedPiece), destPos);
-	else if (selectedPiece->type == Piece::Type::KING)
+	if (selectedPiece.type == Piece::Type::PAWN)
+		movePawn(selectedPiece, destPos);
+	else if (selectedPiece.type == Piece::Type::KING)
 		moveKing(selectedPiece, selectedPos, destPos, board);
 
-	selectedPiece->hasBeenMoved = true;
+	selectedPiece.hasBeenMoved = true;
 
-	board.data[destPos.x][destPos.y] = selectedPiece;
-	board.data[selectedPos.x][selectedPos.y] = nullptr;
+	board[destPos] = selectedPiece;
+	board[selectedPos] = Piece();
 
 	return state;
 }
@@ -68,29 +65,25 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos)
 	std::vector<PosPair> piecesMoved;
 	piecesMoved.emplace_back(selectedPos, destPos);
 
-	Board &board = m_Instance.m_Board;
-	GameState state = GameState::NONE;
-	Piece *destPiece = board[destPos];
+	auto &board = m_Instance.m_Board;
+	auto state = GameState::NONE;
+	auto &destPiece = board[destPos];
 
-	if (destPiece)
-	{
-		if (destPiece->type == Piece::Type::KING)
-			state = destPiece->isWhite ? GameState::WINNER_BLACK : GameState::WINNER_WHITE;
-		delete destPiece;
-	}
+	if (destPiece && destPiece.type == Piece::Type::KING)
+		state = destPiece.isWhite ? GameState::WINNER_BLACK : GameState::WINNER_WHITE;
 
-	Piece *selectedPiece = board[selectedPos];
+	auto &selectedPiece = board[selectedPos];
 	bool shouldRedraw = false;
 
-	if (selectedPiece->type == Piece::Type::PAWN)
-		shouldRedraw = movePawn(std::addressof(selectedPiece), destPos);
-	else if (selectedPiece->type == Piece::Type::KING && !selectedPiece->hasBeenMoved)
+	if (selectedPiece.type == Piece::Type::PAWN)
+		shouldRedraw = movePawn(selectedPiece, destPos);
+	else if (selectedPiece.type == Piece::Type::KING && !selectedPiece.hasBeenMoved)
 		piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, board));
 
-	selectedPiece->hasBeenMoved = true;
+	selectedPiece.hasBeenMoved = true;
 
-	board.data[destPos.x][destPos.y] = selectedPiece;
-	board.data[selectedPos.x][selectedPos.y] = nullptr;
+	board[destPos] = selectedPiece;
+	board[selectedPos] = Piece();
 
 	if (m_WorkerThread)
 	{
@@ -101,7 +94,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos)
 
 	if (state == GameState::NONE)
 	{
-		if (m_Instance.m_WhitePlayer.hasOnlyTheKing(board) && m_Instance.m_BlackPlayer.hasOnlyTheKing(board))
+		if (Player::hasOnlyTheKing(true, board) && Player::hasOnlyTheKing(false, board))
 			state = GameState::DRAW;
 		else {
 			whitePlayersTurn = !whitePlayersTurn;
@@ -115,24 +108,22 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos)
 
 void BoardManager::moveComputerPlayer()
 {
-	if (whitePlayersTurn) return;
+	if (whitePlayersTurn == isWhiteAtBottom) return;
 
-	const auto pair = m_Instance.m_BlackPlayer.getNextMove();
+	constexpr int depth = 5;
+	const auto pair = isWhiteAtBottom ?	MiniMax::MinMove(getBoard(), depth) : MiniMax::MaxMove(getBoard(), depth);
 	movePiece(pair.first, pair.second);
 
 	whitePlayersTurn = true;
 }
 
-bool BoardManager::movePawn(Piece **selectedPiece, const Pos &destPos)
+bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)
 {
-	auto *pawn = dynamic_cast<PawnPiece*>(*selectedPiece);
-	if (pawn->hasBeenMoved)
+	if (selectedPiece.hasBeenMoved)
 	{
 		if (destPos.y == 0 || destPos.y == 7)
 		{
-			auto *queen = new QueenPiece(pawn->isWhite);
-			delete pawn;
-			(*selectedPiece) = queen;
+			selectedPiece = Piece(Piece::Type::QUEEN, selectedPiece.isWhite);
 			return true;
 		}
 	}
@@ -140,31 +131,31 @@ bool BoardManager::movePawn(Piece **selectedPiece, const Pos &destPos)
 	return false;
 }
 
-PosPair BoardManager::moveKing(Piece *king, Pos selectedPos, const Pos &destPos, Board &board)
+PosPair BoardManager::moveKing(Piece &king, Pos selectedPos, const Pos &destPos, Board &board)
 {
 	if (destPos.x == 6)
 	{
 		while (selectedPos.x < 7)
 		{
 			selectedPos.x++;
-			auto *other = board[selectedPos];
+			auto &other = board[selectedPos];
 
 			if (selectedPos.x < 7)
 			{
 				if (other)
 					break;
 			}
-			else if (other && king->hasSameColor(*other) && other->type == Piece::Type::ROOK && !other->hasBeenMoved)
+			else if (other.type == Piece::Type::ROOK && king.hasSameColor(other) && !other.hasBeenMoved)
 			{
 				// Move the Rook
 				const short startX = 7;
 				const short destX = 5;
 				const short y = selectedPos.y;
 
-				board.data[startX][y] = nullptr;
+				other.hasBeenMoved = true;
 				board.data[destX][y] = other;
+				board.data[startX][y] = Piece();
 
-				other->hasBeenMoved = true;
                 return std::make_pair(Pos(startX, y), Pos(destX, y));
 			}
 		}
@@ -174,24 +165,24 @@ PosPair BoardManager::moveKing(Piece *king, Pos selectedPos, const Pos &destPos,
 		while (selectedPos.x > 0)
 		{
 			selectedPos.x--;
-			auto *other = board[selectedPos];
+			auto &other = board[selectedPos];
 
 			if (selectedPos.x > 0)
 			{
 				if (other)
 					break;
 			}
-			else if (other && king->hasSameColor(*other) && other->type == Piece::Type::ROOK && !other->hasBeenMoved)
+			else if (other.type == Piece::Type::ROOK && king.hasSameColor(other) && !other.hasBeenMoved)
 			{
 				// Move the Rook
 				const short startX = 0;
 				const short destX = 3;
 				const short y = selectedPos.y;
 
-				board.data[startX][y] = nullptr;
+				other.hasBeenMoved = true;
 				board.data[destX][y] = other;
+				board.data[startX][y] = Piece();
 
-				other->hasBeenMoved = true;
 				return std::make_pair(Pos(startX, y), Pos(destX, y));
 			}
 		}

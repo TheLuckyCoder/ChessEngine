@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef THREADPOOL_HPP
-#define THREADPOOL_HPP
-
 #include "ThreadSafeQueue.hpp"
 
 #include <algorithm>
@@ -39,8 +36,8 @@ private:
 	class ThreadTask : public IThreadTask
 	{
 	public:
-		ThreadTask(Func &&func)
-			:m_func{ std::move(func) } {}
+		explicit ThreadTask(Func &&func)
+			: m_func{ std::move(func) } {}
 
 		~ThreadTask() override = default;
 		ThreadTask(const ThreadTask &rhs) = delete;
@@ -49,8 +46,8 @@ private:
 		ThreadTask &operator=(ThreadTask &&other) = default;
 
 		/**
-			* Run the task.
-			*/
+		 * Run the task.
+		 */
 		void execute() override
 		{
 			m_func();
@@ -69,7 +66,7 @@ public:
 	class TaskFuture
 	{
 	public:
-		TaskFuture(std::future<T> &&future)
+		explicit TaskFuture(std::future<T> &&future)
 			:m_future{ std::move(future) } {}
 
 		TaskFuture(const TaskFuture &rhs) = delete;
@@ -97,7 +94,7 @@ public:
 	 * Constructor.
 	 */
 	ThreadPool()
-		: ThreadPool { std::max(std::thread::hardware_concurrency(), 2u) }
+		: ThreadPool { std::max(std::thread::hardware_concurrency() - 1, 2u) }
 	{
 		/*
 		 * Always create at least two threads.
@@ -108,13 +105,11 @@ public:
 	 * Constructor.
 	 */
 	explicit ThreadPool(const std::uint32_t numThreads)
-		:m_done{ false },
-		m_workQueue{},
-		m_threads{}
+		:m_done{ false }
 	{
 		try
 		{
-			for (std::uint32_t i = 0u; i < numThreads; ++i)
+			for (auto i = 0u; i < numThreads; ++i)
 				m_threads.emplace_back(&ThreadPool::worker, this);
 		}
 		catch (...)
@@ -149,7 +144,6 @@ public:
 	TaskFuture<ResultType> submit(Func &&func, Args &&...args)
 	{
 		auto boundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-		//using ResultType = std::invoke_result_t<decltype(boundTask)()>;
 		using PackagedTask = std::packaged_task<ResultType()>;
 		using TaskType = ThreadTask<PackagedTask>;
 
@@ -181,10 +175,8 @@ private:
 		m_done = true;
 		m_workQueue.invalidate();
 		for (auto& thread : m_threads)
-		{
 			if (thread.joinable())
 				thread.join();
-		}
 	}
 
 private:
@@ -214,5 +206,3 @@ namespace DefaultThreadPool
 		return getThreadPool().submit<ResultType>(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 }
-
-#endif

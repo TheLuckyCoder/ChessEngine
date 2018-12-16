@@ -11,7 +11,7 @@ public:
 	Pos()
 		: x(-1), y(-1) {}
 
-	Pos(short x, short y)
+	Pos(const short x, const short y)
 		: x(x), y(y) {}
 
 	bool isValid() const;

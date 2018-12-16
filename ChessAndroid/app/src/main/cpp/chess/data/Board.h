@@ -1,30 +1,32 @@
 #pragma once
 
+#include <array>
 #include <unordered_map>
 #include <vector>
 
-class Pos;
+#include "pieces/Piece.h"
+
 class Move;
-class Piece;
 
 // Class that keeps a 2D Array
-class Board
+class Board final
 {
 public:
-	Piece *data[8][8] = { {nullptr} };
+	std::array<std::array<Piece, 8>, 8> data;
 
-	Board();
+	Board() = default;
 	Board(Board &&board) noexcept;
 	Board(const Board &board);
-	~Board();
+	~Board() = default;
 
 	void initDefaultBoard();
 
 	Board &operator=(Board &&other) noexcept;
-	Piece *operator[](const Pos &pos);
-	const Piece *operator[](const Pos &pos) const;
+	Board &operator=(const Board &other);
+	Piece &operator[](const Pos &pos);
+	const Piece &operator[](const Pos &pos) const;
 
 	int evaluate() const;
-	std::unordered_map<Pos, Piece*> getAllPieces() const;
+	std::unordered_map<Pos, Piece> getAllPieces() const;
 	std::vector<Move> listAllMoves(bool isWhite) const;
 };

@@ -2,17 +2,15 @@
 
 #include <string>
 #include <sstream>
-#include <type_traits>
 
 class Board;
 class Piece;
 class Pos;
 
 class SaveLoadJson final {
-private:
+public:
 	SaveLoadJson() = delete;
 
-public:
 	static Board load(std::string_view str);
 	static std::string save(const Board &board);
 
@@ -20,10 +18,10 @@ private:
 	template<typename T>
 	static T getValue(const std::string_view &str, std::string_view key)
 	{
-		auto start = str.find(key) + key.length() + 2;
+		const auto start = str.find(key) + key.length() + 2;
 
-		auto end = str.find_first_of(",}", start) - start;
-		std::string_view valueString = str.substr(start, end);
+		const auto end = str.find_first_of(",}", start) - start;
+		const auto valueString = str.substr(start, end);
 
 		if constexpr (std::is_same_v<T, std::string>)
 			return std::string(valueString);
@@ -40,5 +38,5 @@ private:
 	}
 
 	static void loadPiece(Board &board, std::string_view str);
-	static void savePiece(std::ostringstream &stream, const Pos &pos, const Piece *piece);
+	static void savePiece(std::ostringstream &stream, const Pos &pos, const Piece &piece);
 };

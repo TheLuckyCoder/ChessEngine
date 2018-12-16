@@ -1,7 +1,7 @@
 #include "SaveLoadJson.h"
 
 #include "data/Board.h"
-#include "data/pieces/Pieces.h"
+#include "data/pieces/Piece.h"
 
 #include <iostream>
 
@@ -9,13 +9,12 @@ Board SaveLoadJson::load(std::string_view str)
 {
 	Board board;
 
-	unsigned long end;
 	while (true)
 	{
-		auto start = str.find('{');
-		end = str.find('}', start);
+		const auto start = str.find('{');
+		const auto end = str.find('}', start);
 
-		if (start == str.npos || end == str.npos)
+		if (start == std::string_view::npos || end == std::string_view::npos)
 			break;
 
 		loadPiece(board, str.substr(start + 1, end - start));
@@ -23,7 +22,7 @@ Board SaveLoadJson::load(std::string_view str)
 		str.remove_prefix(end);
 	}
 
-	return std::move(board);
+	return board;
 }
 
 std::string SaveLoadJson::save(const Board &board)
@@ -38,51 +37,31 @@ std::string SaveLoadJson::save(const Board &board)
 	for (const auto &pair : pieces)
 		savePiece(stream, pair.first, pair.second);
 
-	std::string str = stream.str();
+	auto str = stream.str();
 
 	str[str.size() - 1] = ']'; // Replace the last ',' with a ']'
 
 	return str;
 }
 
-void SaveLoadJson::loadPiece(Board &board, std::string_view str)
+void SaveLoadJson::loadPiece(Board &board, const std::string_view str)
 {
-	bool isWhite = getValue<bool>(str, "white");
-	auto c = getValue<int>(str, "type");
-	Piece::Type type = static_cast<Piece::Type>(c);
+	const auto isWhite = getValue<bool>(str, "white");
+	const auto type = static_cast<Piece::Type>(getValue<int>(str, "type"));
 
+	Piece piece(type, isWhite);
+	piece.hasBeenMoved = getValue<bool>(str, "moved");
 
-	Piece *piece = [type, isWhite]() -> Piece* {
-		switch (type)
-		{
-			case Piece::Type::PAWN:
-				return new PawnPiece(isWhite);
-			case Piece::Type::KNIGHT:
-				return new KnightPiece(isWhite);
-			case Piece::Type::BISHOP:
-				return new BishopPiece(isWhite);
-			case Piece::Type::ROOK:
-				return new RookPiece(isWhite);
-			case Piece::Type::QUEEN:
-				return new QueenPiece(isWhite);
-			case Piece::Type::KING:
-				return new KingPiece(isWhite);
-			default:
-				return nullptr;
-		}
-	}();
-
-	piece->hasBeenMoved = getValue<bool>(str, "moved");
 	board.data[getValue<short>(str, "x")][getValue<short>(str, "y")] = piece;
 }
 
-void SaveLoadJson::savePiece(std::ostringstream &stream, const Pos &pos, const Piece *piece)
+void SaveLoadJson::savePiece(std::ostringstream &stream, const Pos &pos, const Piece &piece)
 {
 	stream << '{'
 		   << "\"x\":" << pos.x << ','
 		   << "\"y\":" << pos.y << ','
-		   << "\"type\":" << static_cast<int>(piece->type) << ','
-		   << "\"white\":" << piece->isWhite << ','
-		   << "\"moved\":" << piece->hasBeenMoved
+		   << "\"type\":" << static_cast<int>(piece.type) << ','
+		   << "\"white\":" << piece.isWhite << ','
+		   << "\"moved\":" << piece.hasBeenMoved
 		   << "},";
 }

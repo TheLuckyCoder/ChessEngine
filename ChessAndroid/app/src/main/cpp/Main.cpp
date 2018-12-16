@@ -113,8 +113,8 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jclass __unused type
     jsize i = 0;
     for (const auto &it: pieces) {
         const Pos &pos = it.first;
-        jbyte pieceType = static_cast<jbyte>(to_underlying(it.second->type));
-        if (!it.second->isWhite)
+        jbyte pieceType = static_cast<jbyte>(to_underlying(it.second.type));
+        if (!it.second.isWhite)
             pieceType += 6;
 
         jobject obj = pEnv->NewObject(pieceClass, constructorId, pos.x, pos.y, pieceType);
@@ -136,14 +136,14 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jclass __unus
 
     Pos pos = Pos(getShort(pEnv, cls, dest, "x"), getShort(pEnv, cls, dest, "y"));
 
-    Piece *piece = BoardManager::getBoard()[pos];
+    Piece &piece = BoardManager::getBoard()[pos];
     if (!piece)
     {
-        LOGE("ChessCpp", "The Selected Piece is null");
+        LOGE("ChessCpp", "The Selected Piece is empty");
         return nullptr;
     }
 
-    auto possibleMoves = piece->getPossibleMoves(pos, BoardManager::getBoard());
+    auto possibleMoves = piece.getPossibleMoves(pos, BoardManager::getBoard());
     auto *result = pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), cls, NULL);
 
     for (unsigned i = 0; i < possibleMoves.size(); ++i) {

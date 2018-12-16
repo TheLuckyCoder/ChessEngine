@@ -1,13 +1,17 @@
 #pragma once
 
-#include "../Board.h"
+#include <vector>
+
 #include "../Pos.h"
+
+class Board;
 
 class Piece
 {
 public:
 	enum class Type : unsigned char
 	{
+		NONE,
 		PAWN,
 		KNIGHT,
 		BISHOP,
@@ -16,27 +20,29 @@ public:
 		KING
 	};
 
-	const Type type;
-	const bool isWhite;
+	Type type;
+	bool isWhite;
 	bool hasBeenMoved;
 
-	explicit Piece(const Type type, const bool isWhite)
+	Piece()
+		: type(Type::NONE), isWhite(false), hasBeenMoved(false) {}
+	Piece(const Type type, const bool isWhite)
 		: type(type), isWhite(isWhite), hasBeenMoved(false) {}
-
-	explicit Piece(const Piece *piece)
-		: type(piece->type), isWhite(piece->isWhite), hasBeenMoved(piece->hasBeenMoved) {}
-
-	virtual ~Piece() = default;
+	Piece(Piece&&) = default;
+	Piece(const Piece&) = default;
+	~Piece() = default;
 
 	std::vector<Pos> getPossibleMoves(Pos pos, const Board &board) const;
 	int getPoints(int x, int y) const;
 	bool hasSameColor(const Piece &other) const;
 
-	bool operator==(const Piece &other) const;
-	bool operator!=(const Piece &other) const;
-protected:
-	bool isMaximising() const;
+	Piece &operator=(const Piece &other);
+	Piece &operator=(Piece &&other) = default;
 
-	virtual void calculateMoves(Pos &pos, std::vector<Pos> &moves, const Board &board) const = 0;
-	virtual int evaluatePiece(int x, int y) const = 0;
+	operator bool() const { return type != Type::NONE; }
+
+private:
+	bool isMaximizing() const;
+
+	int evaluatePiece(int x, int y) const;
 };

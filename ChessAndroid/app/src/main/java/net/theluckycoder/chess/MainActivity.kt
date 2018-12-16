@@ -90,6 +90,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
         when (item.itemId) {
             R.id.action_load -> loadJson()
             R.id.action_save -> saveJson()
+            R.id.action_reload -> updatePieces()
         }
         return super.onMenuItemSelected(featureId, item)
     }

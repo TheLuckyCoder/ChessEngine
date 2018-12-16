@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef THREADSAFEQUEUE_HPP
-#define THREADSAFEQUEUE_HPP
-
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -123,5 +120,3 @@ private:
 	std::queue<T> m_queue;
 	std::condition_variable m_condition;
 };
-
-#endif

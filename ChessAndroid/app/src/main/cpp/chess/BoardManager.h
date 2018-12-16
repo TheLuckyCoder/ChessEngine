@@ -5,7 +5,7 @@
 
 #include "GameState.h"
 #include "data/Pos.h"
-#include "data/player/ComputerPlayer.h"
+#include "data/Player.h"
 
 class BoardManager
 {
@@ -15,8 +15,6 @@ private:
 	static BoardManager &m_Instance;
 	static std::thread *m_WorkerThread;
 
-	Player m_WhitePlayer = Player(true);
-	ComputerPlayer m_BlackPlayer{};
 	Board m_Board{};
 	PieceChangeListener m_Listener;
 
@@ -35,6 +33,6 @@ public:
 
 private:
 	static void moveComputerPlayer();
-	static bool movePawn(Piece **selectedPiece, const Pos &destPos);
-	static PosPair moveKing(Piece *king, Pos selectedPos, const Pos &destPos, Board &board);
+	static bool movePawn(Piece &selectedPiece, const Pos &destPos);
+	static PosPair moveKing(Piece &king, Pos selectedPos, const Pos &destPos, Board &board);
 };
