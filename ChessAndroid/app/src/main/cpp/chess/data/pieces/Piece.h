@@ -22,12 +22,14 @@ public:
 
 	Type type;
 	bool isWhite;
-	bool hasBeenMoved;
+	bool hasBeenMoved = false;
 
 	Piece()
-		: type(Type::NONE), isWhite(false), hasBeenMoved(false) {}
+		: type(Type::NONE), isWhite(false) {}
 	Piece(const Type type, const bool isWhite)
-		: type(type), isWhite(isWhite), hasBeenMoved(false) {}
+		: type(type), isWhite(isWhite) {}
+	Piece(const Type type, const bool isWhite, const bool hasBeenMoved)
+		: type(type), isWhite(isWhite), hasBeenMoved(hasBeenMoved) {}
 	Piece(Piece&&) = default;
 	Piece(const Piece&) = default;
 	~Piece() = default;

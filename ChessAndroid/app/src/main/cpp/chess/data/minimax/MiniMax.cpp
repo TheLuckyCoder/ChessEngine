@@ -16,7 +16,7 @@ namespace MiniMax
 		futures.reserve(moves.size());
 
 		for (const Move &move : moves)
-			futures.emplace_back(DefaultThreadPool::submitJob<int>([&alpha](const Board &board, const short depth) {
+			futures.emplace_back(DefaultThreadPool::submitJob<int>([alpha](const Board &board, const short depth) {
 				return MaxMove(board, depth, alpha, VALUE_MAX);
 			}, move.board, depth));
 
@@ -24,12 +24,15 @@ namespace MiniMax
 		int bestMovePoints = futures.back().get();
 
 		for (auto i = moves.size() - 2; i > 0; --i) {
-			const auto value = futures[i].get();
+			const auto moveValue = futures[i].get();
 
-			if (value > bestMovePoints)
+			if (moveValue > bestMovePoints)
 			{
 				bestMove = std::move(moves[i]);
-				bestMovePoints = alpha = value;
+				bestMovePoints = moveValue;
+
+				if (bestMovePoints > alpha)
+					alpha = bestMovePoints;
 			}
 		}
 
@@ -46,7 +49,7 @@ namespace MiniMax
 		futures.reserve(moves.size());
 
 		for (const Move &move : moves)
-			futures.emplace_back(DefaultThreadPool::submitJob<int>([&beta](const Board &board, const short depth) {
+			futures.emplace_back(DefaultThreadPool::submitJob<int>([beta](const Board &board, const short depth) {
 				return MaxMove(board, depth, VALUE_MIN, beta);
 			}, move.board, depth));
 
@@ -55,12 +58,15 @@ namespace MiniMax
 
 		for (std::size_t i = 1; i < moves.size(); ++i)
 		{
-			const auto value = futures[i].get();
+			const auto moveValue = futures[i].get();
 
-			if (value < bestMovePoints)
+			if (moveValue < bestMovePoints)
 			{
 				bestMove = std::move(moves[i]);
-				bestMovePoints = beta = value;
+				bestMovePoints = moveValue;
+
+				if (bestMovePoints < beta)
+					beta = bestMovePoints;
 			}
 		}
 
@@ -75,10 +81,15 @@ namespace MiniMax
 
 		for (auto i = moves.size() - 2; i > 0; --i) {
 			const Move &it = moves[i];
-			const int value = depth > 0 ? MinMove(it.board, depth, alpha, beta) : it.value;
+			const int moveValue = depth > 0 ? MinMove(it.board, depth, alpha, beta) : it.value;
 
-			if (value > bestMovePoints)
-				bestMovePoints = alpha = value;
+			if (moveValue > bestMovePoints)
+			{
+				bestMovePoints = moveValue;
+
+				if (bestMovePoints > alpha)
+					alpha = bestMovePoints;
+			}
 
 			if (beta <= alpha)
 				break;
@@ -95,10 +106,15 @@ namespace MiniMax
 
 		for (std::size_t i = 1; i < moves.size(); ++i) {
 			const Move &it = moves[i];
-			const int value = depth > 0 ? MaxMove(it.board, depth, alpha, beta) : it.value;
+			const int moveValue = depth > 0 ? MaxMove(it.board, depth, alpha, beta) : it.value;
 
-			if (value < bestMovePoints)
-				bestMovePoints = beta = value;
+			if (moveValue < bestMovePoints)
+			{
+				bestMovePoints = moveValue;
+
+				if (bestMovePoints < beta)
+					beta = bestMovePoints;
+			}
 
 			if (beta <= alpha)
 				break;

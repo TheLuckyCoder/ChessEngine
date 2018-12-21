@@ -32,16 +32,16 @@ public:
 
 using PosPair = std::pair<Pos, Pos>;
 
-// Needed for std::unordered_map
 namespace std
 {
 
+	// Needed for std::unordered_map and std::unordered_set
 	template <>
 	struct hash<Pos>
 	{
 		std::size_t operator()(const Pos &pos) const
 		{
-			return (std::hash<short>()(pos.x) << 1) ^ (std::hash<short>()(pos.y));
+			return (std::hash<short>()(pos.x) << 2) ^ (std::hash<short>()(pos.y));
 		}
 	};
 

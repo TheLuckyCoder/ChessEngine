@@ -11,14 +11,8 @@ public:
 	Board board;
 	int value;
 
-	Move()
-		: value{} {}
-
-	Move(const Pos start, const Pos dest, Board &&board)
-		: start(start), dest(dest), board(board), value(board.evaluate()) {}
-
 	Move(const Pos start, const Pos dest, Board &&board, const int value)
-		: start(start), dest(dest), board(board), value(value) {}
+		: start(start), dest(dest), board(std::move(board)), value(value) {}
 
 	bool operator<(const Move &other) const
 	{

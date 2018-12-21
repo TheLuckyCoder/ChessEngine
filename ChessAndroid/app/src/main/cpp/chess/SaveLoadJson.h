@@ -11,7 +11,7 @@ class SaveLoadJson final {
 public:
 	SaveLoadJson() = delete;
 
-	static Board load(std::string_view str);
+	static Board load(std::string str);
 	static std::string save(const Board &board);
 
 private:
@@ -37,6 +37,6 @@ private:
 		}
 	}
 
-	static void loadPiece(Board &board, std::string_view str);
+	static void parsePiece(Board &board, std::string_view str);
 	static void savePiece(std::ostringstream &stream, const Pos &pos, const Piece &piece);
 };

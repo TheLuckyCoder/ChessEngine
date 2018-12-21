@@ -13,6 +13,7 @@ class Board final
 {
 public:
 	std::array<std::array<Piece, 8>, 8> data;
+	std::uint64_t hash{};
 
 	Board() = default;
 	Board(Board &&board) noexcept;

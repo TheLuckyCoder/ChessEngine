@@ -2,7 +2,8 @@
 
 #include <array>
 
-namespace PieceEval {
+namespace PieceEval
+{
 
 	using EvalArray = std::array<std::array<int, 8>, 8>;
 
@@ -105,4 +106,5 @@ namespace PieceEval {
 	constexpr EvalArray ROOK_BLACK = reverseArray(ROOK_WHITE);
 	constexpr EvalArray QUEEN_BLACK = reverseArray(QUEEN_WHITE);
 	constexpr EvalArray KING_BLACK = reverseArray(KING_WHITE);
+
 }

@@ -4,9 +4,11 @@
 
 #include "data/pieces/Piece.h"
 #include "data/minimax/MiniMax.h"
+#include "data/minimax/Hash.h"
 
 BoardManager& BoardManager::m_Instance = *new BoardManager;
 std::thread *BoardManager::m_WorkerThread = nullptr;
+CacheTable BoardManager::cache = CacheTable();
 bool BoardManager::isWhiteAtBottom = true;
 bool BoardManager::whitePlayersTurn = true;
 
@@ -15,14 +17,20 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 	m_Instance.m_Board.initDefaultBoard();
 	m_Instance.m_Listener = listener;
 
-	//srand((unsigned int)time(nullptr));
+	//srand(static_cast<unsigned int>(time(nullptr)));
 	//whitePlayersTurn = isWhiteAtBottom = rand() % 2 == 0; // TODO: Support both sides again
 	//moveComputerPlayer();
 }
 
 void BoardManager::loadJsonGame(Board &&board)
 {
-	m_Instance.m_Board = std::move(board);
+	auto &m_Board = getBoard();
+	m_Board = std::move(board);
+
+	if (m_Board.hash == 0)
+		m_Board.hash = Hash::compute(m_Board);
+
+	cache.clearAll();
 }
 
 Board &BoardManager::getBoard()
@@ -37,7 +45,7 @@ bool BoardManager::isWorking()
 
 GameState BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board)
 {
-	GameState state = GameState::NONE;
+	auto state = GameState::NONE;
 	auto &destPiece = board[destPos];
 
 	if (destPiece && destPiece.type == Piece::Type::KING)
@@ -62,8 +70,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos)
 {
 	if (!selectedPos.isValid() || !destPos.isValid()) return;
 
-	std::vector<PosPair> piecesMoved;
-	piecesMoved.emplace_back(selectedPos, destPos);
+	std::vector<PosPair> piecesMoved { {selectedPos, destPos} };
 
 	auto &board = m_Instance.m_Board;
 	auto state = GameState::NONE;
@@ -110,7 +117,7 @@ void BoardManager::moveComputerPlayer()
 {
 	if (whitePlayersTurn == isWhiteAtBottom) return;
 
-	constexpr int depth = 5;
+	constexpr int depth = 4;
 	const auto pair = isWhiteAtBottom ?	MiniMax::MinMove(getBoard(), depth) : MiniMax::MaxMove(getBoard(), depth);
 	movePiece(pair.first, pair.second);
 

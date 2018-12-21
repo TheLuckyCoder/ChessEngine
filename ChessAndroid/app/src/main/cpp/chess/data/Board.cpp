@@ -6,18 +6,18 @@
 #include "pieces/Piece.h"
 #include "Move.h"
 #include "minimax/MiniMax.h"
+#include "minimax/Hash.h"
 
 Board::Board(Board &&board) noexcept
 {
 	std::move(&board.data[0][0], &board.data[0][0] + 64, &data[0][0]);
+	hash = board.hash;
 }
 
 Board::Board(const Board &board)
 {
-	for (short i = 0; i < 8; i++)
-		for (short j = 0; j < 8; j++)
-			if (board.data[i][j])
-				data[i][j] = board.data[i][j];
+	std::copy(&board.data[0][0], &board.data[0][0] + 64, &data[0][0]);
+	hash = board.hash;
 }
 
 void Board::initDefaultBoard()
@@ -53,19 +53,27 @@ void Board::initDefaultBoard()
 
 	data[4][0] = Piece(Piece::Type::KING, true);
 	data[4][7] = Piece(Piece::Type::KING, false);
+
+	hash = Hash::compute(*this);
 }
 
 Board &Board::operator=(Board &&other) noexcept
 {
 	if (this != &other)
+	{
 		std::move(&other.data[0][0], &other.data[0][0] + 64, &data[0][0]);
+		hash = other.hash;
+	}
 	return *this;
 }
 
 Board &Board::operator=(const Board &other)
 {
 	if (this != &other)
+	{
 		std::copy(&other.data[0][0], &other.data[0][0] + 64, &data[0][0]);
+		hash = other.hash;
+	}
 	return *this;
 }
 
@@ -117,11 +125,22 @@ std::vector<Move> Board::listAllMoves(const bool isWhite) const
 
 		for (auto &destPos : moves)
 		{
+			auto &cache = BoardManager::cache;
+
 			Board board(*this);
 			const GameState state = BoardManager::movePieceInternal(startPos, destPos, board);
 
+			board.hash = Hash::compute(board.hash, startPos, destPos, board[startPos], board[destPos]);
+
+			int evaluation;
+			if (const auto result = cache.get(board.hash, evaluation); result)
+			{
+				boards.emplace_back(startPos, destPos, std::move(board), evaluation);
+				continue;
+			}
+
 			if (state == GameState::NONE)
-				boards.emplace_back(startPos, destPos, std::move(board));
+				boards.emplace_back(startPos, destPos, std::move(board), board.evaluate());
 			else if (state == GameState::WINNER_WHITE && isWhite) // TODO
 				boards.emplace_back(startPos, destPos, std::move(board), MiniMax::VALUE_MAX);
 			else

@@ -60,7 +60,7 @@ namespace MoveGen
 	void generateKnightMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
 	{
 		const auto addPosIfValid = [&](const short x, const short y) {
-			Pos startPos = Pos(pos.x + x, pos.y + y);
+			Pos startPos(pos.x + x, pos.y + y);
 
 			if (startPos.isValid())
 			{
@@ -126,7 +126,7 @@ namespace MoveGen
 			posCopy.x--;
 			posCopy.y--;
 
-			const Piece &other = board[posCopy];
+			auto &other = board[posCopy];
 
 			if (other)
 			{
