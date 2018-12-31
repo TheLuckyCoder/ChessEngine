@@ -11,31 +11,27 @@ class Piece
 public:
 	enum class Type : unsigned char
 	{
-		NONE,
-		PAWN,
-		KNIGHT,
-		BISHOP,
-		ROOK,
-		QUEEN,
-		KING
+		NONE = 0,
+		PAWN = 1,
+		KNIGHT = 2,
+		BISHOP = 3,
+		ROOK = 4,
+		QUEEN = 5,
+		KING = 6
 	};
 
 	Type type;
 	bool isWhite;
-	bool hasBeenMoved = false;
+	bool hasBeenMoved;
 
-	Piece()
-		: type(Type::NONE), isWhite(false) {}
-	Piece(const Type type, const bool isWhite)
-		: type(type), isWhite(isWhite) {}
-	Piece(const Type type, const bool isWhite, const bool hasBeenMoved)
-		: type(type), isWhite(isWhite), hasBeenMoved(hasBeenMoved) {}
+	Piece();
+	Piece(Type type, bool isWhite, bool hasBeenMoved = false);
 	Piece(Piece&&) = default;
 	Piece(const Piece&) = default;
 	~Piece() = default;
 
 	std::vector<Pos> getPossibleMoves(Pos pos, const Board &board) const;
-	int getPoints(int x, int y) const;
+	int getPoints(const Board &board, const Pos &pos) const;
 	bool hasSameColor(const Piece &other) const;
 
 	Piece &operator=(const Piece &other);
@@ -45,6 +41,4 @@ public:
 
 private:
 	bool isMaximizing() const;
-
-	int evaluatePiece(int x, int y) const;
 };

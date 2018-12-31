@@ -8,31 +8,27 @@ namespace MiniMax
 
 	PosPair MaxMove(const Board &board, short depth)
 	{
-		auto moves = board.listAllMoves(true);
+		auto moves = board.listValidMoves(true);
 		depth--;
-		int alpha = VALUE_MIN;
 
 		std::vector<ThreadPool::TaskFuture<int>> futures;
 		futures.reserve(moves.size());
 
-		for (const Move &move : moves)
-			futures.emplace_back(DefaultThreadPool::submitJob<int>([alpha](const Board &board, const short depth) {
-				return MaxMove(board, depth, alpha, VALUE_MAX);
+		for (const auto &move : moves)
+			futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const short depth) {
+				return MaxMove(board, depth, VALUE_MIN, VALUE_MAX);
 			}, move.board, depth));
 
-		Move bestMove = std::move(moves.back());
-		int bestMovePoints = futures.back().get();
+		Move bestMove = moves.front();
+		int bestMovePoints = VALUE_MIN;
 
-		for (auto i = moves.size() - 2; i > 0; --i) {
+		for (auto i = moves.size() - 1; i > 0; --i) {
 			const auto moveValue = futures[i].get();
 
 			if (moveValue > bestMovePoints)
 			{
 				bestMove = std::move(moves[i]);
 				bestMovePoints = moveValue;
-
-				if (bestMovePoints > alpha)
-					alpha = bestMovePoints;
 			}
 		}
 
@@ -41,22 +37,21 @@ namespace MiniMax
 
 	PosPair MinMove(const Board &board, short depth)
 	{
-		auto moves = board.listAllMoves(false);
+		auto moves = board.listValidMoves(false);
 		depth--;
-		int beta = VALUE_MAX;
 
 		std::vector<ThreadPool::TaskFuture<int>> futures;
 		futures.reserve(moves.size());
 
-		for (const Move &move : moves)
-			futures.emplace_back(DefaultThreadPool::submitJob<int>([beta](const Board &board, const short depth) {
-				return MaxMove(board, depth, VALUE_MIN, beta);
+		for (const auto &move : moves)
+			futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const short depth) {
+				return MaxMove(board, depth, VALUE_MIN, VALUE_MAX);
 			}, move.board, depth));
 
-		Move bestMove = std::move(moves.front());
-		int bestMovePoints = futures.front().get();
+		Move bestMove = moves.front();
+		int bestMovePoints = VALUE_MAX;
 
-		for (std::size_t i = 1; i < moves.size(); ++i)
+		for (std::size_t i = 0; i < moves.size(); ++i)
 		{
 			const auto moveValue = futures[i].get();
 
@@ -64,9 +59,6 @@ namespace MiniMax
 			{
 				bestMove = std::move(moves[i]);
 				bestMovePoints = moveValue;
-
-				if (bestMovePoints < beta)
-					beta = bestMovePoints;
 			}
 		}
 
@@ -75,13 +67,14 @@ namespace MiniMax
 
 	int MaxMove(const Board &board, short depth, int alpha, const int beta)
 	{
-		const auto moves = board.listAllMoves(true);
+		const auto moves = board.listValidMoves(true);
+		depth--;
 
-		int bestMovePoints = --depth > 0 ? MinMove(moves.back().board, depth, alpha, beta) : moves.back().value;
+		int bestMovePoints = VALUE_MIN;
 
-		for (auto i = moves.size() - 2; i > 0; --i) {
-			const Move &it = moves[i];
-			const int moveValue = depth > 0 ? MinMove(it.board, depth, alpha, beta) : it.value;
+		for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
+			const auto &move = *it;
+			const int moveValue = depth > 0 ? MinMove(move.board, depth, alpha, beta) : move.value;
 
 			if (moveValue > bestMovePoints)
 			{
@@ -100,13 +93,13 @@ namespace MiniMax
 
 	int MinMove(const Board &board, short depth, const int alpha, int beta)
 	{
-		const auto moves = board.listAllMoves(false);
+		const auto moves = board.listValidMoves(false);
+		depth--;
 
-		int bestMovePoints = --depth > 0 ? MaxMove(moves.front().board, depth, alpha, beta) : moves.front().value;
+		int bestMovePoints = VALUE_MAX;
 
-		for (std::size_t i = 1; i < moves.size(); ++i) {
-			const Move &it = moves[i];
-			const int moveValue = depth > 0 ? MaxMove(it.board, depth, alpha, beta) : it.value;
+		for (const auto &move : moves) {
+			const int moveValue = depth > 0 ? MaxMove(move.board, depth, alpha, beta) : move.value;
 
 			if (moveValue < bestMovePoints)
 			{

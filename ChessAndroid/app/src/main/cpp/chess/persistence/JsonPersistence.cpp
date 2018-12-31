@@ -1,12 +1,12 @@
-#include "SaveLoadJson.h"
+#include "JsonPersistence.h"
 
 #include <cctype>
 
-#include "data/Board.h"
-#include "data/pieces/Piece.h"
-#include "data/minimax/Hash.h"
+#include "../data/Board.h"
+#include "../data/pieces/Piece.h"
+#include "../data/minimax/Hash.h"
 
-Board SaveLoadJson::load(std::string str)
+Board JsonPersistence::load(std::string str)
 {
 	str.erase(std::remove_if(str.begin(), str.end(),
 		[](const char c) { return std::isspace(c); }), str.end());
@@ -31,10 +31,9 @@ Board SaveLoadJson::load(std::string str)
 	return board;
 }
 
-std::string SaveLoadJson::save(const Board &board)
+std::string JsonPersistence::save(const Board &board)
 {
 	std::ostringstream stream;
-	std::boolalpha(stream);
 
 	stream << '[';
 
@@ -50,22 +49,27 @@ std::string SaveLoadJson::save(const Board &board)
 	return str;
 }
 
-void SaveLoadJson::parsePiece(Board &board, const std::string_view str)
+void JsonPersistence::parsePiece(Board &board, const std::string_view str)
 {
-	const auto isWhite = getValue<bool>(str, "white");
+	const auto isWhite = getValue<bool>(str, "white", false);
 	const auto type = static_cast<Piece::Type>(getValue<int>(str, "type"));
-	const auto moved = getValue<bool>(str, "moved");
+	const auto moved = getValue<bool>(str, "moved", false);
 
 	board.data[getValue<short>(str, "x")][getValue<short>(str, "y")] = Piece(type, isWhite, moved);
 }
 
-void SaveLoadJson::savePiece(std::ostringstream &stream, const Pos &pos, const Piece &piece)
+void JsonPersistence::savePiece(std::ostringstream &stream, const Pos &pos, const Piece &piece)
 {
 	stream << '{'
-		   << "\"x\":" << pos.x << ','
-		   << "\"y\":" << pos.y << ','
-		   << "\"type\":" << static_cast<int>(piece.type) << ','
-		   << "\"white\":" << piece.isWhite << ','
-		   << "\"moved\":" << piece.hasBeenMoved
-		   << "},";
+		<< "\"x\":" << pos.x << ','
+		<< "\"y\":" << pos.y << ','
+		<< "\"type\":" << static_cast<int>(piece.type) << ',';
+
+	if (piece.isWhite)
+		stream << "\"white\":true,";
+
+	if (piece.hasBeenMoved)
+		stream << "\"moved\":true,";
+
+	stream << "},";
 }

@@ -7,9 +7,9 @@ class Board;
 class Piece;
 class Pos;
 
-class SaveLoadJson final {
+class JsonPersistence final {
 public:
-	SaveLoadJson() = delete;
+	JsonPersistence() = delete;
 
 	static Board load(std::string str);
 	static std::string save(const Board &board);
@@ -19,6 +19,31 @@ private:
 	static T getValue(const std::string_view &str, std::string_view key)
 	{
 		const auto start = str.find(key) + key.length() + 2;
+
+		const auto end = str.find_first_of(",}", start) - start;
+		const auto valueString = str.substr(start, end);
+
+		if constexpr (std::is_same_v<T, std::string>)
+			return std::string(valueString);
+		else if (std::is_same_v<T, bool>)
+			return valueString == "true";
+		else
+		{
+			T value;
+			std::stringstream ss;
+			ss << std::string(valueString);
+			ss >> value;
+			return value;
+		}
+	}
+
+	template<typename T>
+	static T getValue(const std::string_view &str, std::string_view key, T defaultValue)
+	{
+		const auto start = str.find(key) + key.length() + 2;
+
+		if (start == std::string_view::npos)
+			return defaultValue;
 
 		const auto end = str.find_first_of(",}", start) - start;
 		const auto valueString = str.substr(start, end);

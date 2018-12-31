@@ -20,14 +20,14 @@ public:
 	Board(const Board &board);
 	~Board() = default;
 
-	void initDefaultBoard();
-
 	Board &operator=(Board &&other) noexcept;
 	Board &operator=(const Board &other);
 	Piece &operator[](const Pos &pos);
 	const Piece &operator[](const Pos &pos) const;
 
+	void initDefaultBoard();
 	int evaluate() const;
 	std::unordered_map<Pos, Piece> getAllPieces() const;
-	std::vector<Move> listAllMoves(bool isWhite) const;
+	std::vector<Move> listMoves(bool isWhite) const;
+	std::vector<Move> listValidMoves(bool isWhite) const;
 };

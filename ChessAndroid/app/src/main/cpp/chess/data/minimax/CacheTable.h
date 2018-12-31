@@ -43,6 +43,8 @@ public:
 
 };
 
+#define CACHE_DISABLED
+
 class CacheTable
 {
 private:
@@ -53,7 +55,12 @@ private:
 	HashNode<Key, Val> **table;
 	mutable std::shared_mutex mutex_;
 
-	constexpr static size_t TABLE_SIZE = 40000000;
+	constexpr static size_t TABLE_SIZE =
+#ifdef CACHE_DISABLED
+	1;
+#else
+	40000000;
+#endif
 
 public:
 	CacheTable()
@@ -94,10 +101,11 @@ public:
 
 	void put(const Key &key, Val value)
 	{
+		const size_t hash = key % TABLE_SIZE;
 		std::unique_lock lock(mutex_);
 
 		HashNode<Key, Val> *prev = nullptr;
-		auto *entry = table[key];
+		auto *entry = table[hash];
 
 		while (entry && entry->getKey() != key)
 		{
@@ -106,17 +114,14 @@ public:
 		}
 
 		if (entry)
-		{
-			// just update the value
-			entry->setValue(std::forward<Val>(value));
-		}
+			entry->setValue(std::forward<Val>(value)); // update the value
 		else
 		{
 			entry = new HashNode<Key, Val>(key, std::forward<Val>(value));
 			if (prev)
 				prev->setNext(entry);
 			else
-				table[key] = entry; // insert as first bucket
+				table[hash] = entry; // insert as first bucket
 		}
 	}
 

@@ -4,7 +4,17 @@
 #include "PieceEval.h"
 #include "MoveGen.h"
 
-std::vector<Pos> Piece::getPossibleMoves(Pos pos, const Board &board) const
+Piece::Piece()
+	: type(Type::NONE), isWhite(false), hasBeenMoved(false)
+{
+}
+
+Piece::Piece(const Type type, const bool isWhite, const bool hasBeenMoved)
+	: type(type), isWhite(isWhite), hasBeenMoved(hasBeenMoved)
+{
+}
+
+std::vector<Pos> Piece::getPossibleMoves(const Pos pos, const Board &board) const
 {
 	std::vector<Pos> moves;
 
@@ -35,10 +45,30 @@ std::vector<Pos> Piece::getPossibleMoves(Pos pos, const Board &board) const
 	return moves;
 }
 
-int Piece::getPoints(const int x, const int y) const
+int Piece::getPoints(const Board &board, const Pos &pos) const
 {
-	const int points = evaluatePiece(x, y);
-	return isMaximizing() ? points : -points;
+	const bool max = isMaximizing();
+	const int points = [&]() {
+		switch (type)
+		{
+		case Type::PAWN:
+			return PieceEval::evaluatePawn(max, pos, board);
+		case Type::KNIGHT:
+			return PieceEval::evaluateKnight(max, pos, board);
+		case Type::BISHOP:
+			return PieceEval::evaluateBishop(max, pos, board);
+		case Type::ROOK:
+			return PieceEval::evaluateRook(max, pos, board);
+		case Type::QUEEN:
+			return PieceEval::evaluateQueen(max, pos);
+		case Type::KING:
+			return PieceEval::evaluateKing(max, pos, board);
+		default:
+			return 0;
+		}
+	}();
+
+	return max ? points : -points;
 }
 
 bool Piece::hasSameColor(const Piece &other) const
@@ -49,28 +79,6 @@ bool Piece::hasSameColor(const Piece &other) const
 bool Piece::isMaximizing() const
 {
 	return isWhite == BoardManager::isWhiteAtBottom;
-}
-
-int Piece::evaluatePiece(const int x, const int y) const
-{
-	switch (type)
-	{
-	case Type::NONE:
-		return 0;
-	case Type::PAWN:
-		return PieceEval::PAWN + (isMaximizing() ? PieceEval::PAWN_WHITE[y][x] : PieceEval::PAWN_BLACK[y][x]);
-	case Type::KNIGHT:
-		return PieceEval::KNIGHT + (isMaximizing() ? PieceEval::KNIGHT_WHITE[y][x] : PieceEval::KNIGHT_BLACK[y][x]);
-	case Type::BISHOP:
-		return PieceEval::BISHOP + (isMaximizing() ? PieceEval::BISHOP_WHITE[y][x] : PieceEval::BISHOP_BLACK[y][x]);
-	case Type::ROOK:
-		return PieceEval::ROOK + (isMaximizing() ? PieceEval::ROOK_WHITE[y][x] : PieceEval::ROOK_BLACK[y][x]);
-	case Type::QUEEN:
-		return PieceEval::QUEEN + (isMaximizing() ? PieceEval::QUEEN_WHITE[y][x] : PieceEval::QUEEN_BLACK[y][x]);
-	case Type::KING:
-		return PieceEval::KING + (isMaximizing() ? PieceEval::KING_WHITE[y][x] : PieceEval::KING_BLACK[y][x]);
-	}
-	return 0;
 }
 
 Piece &Piece::operator=(const Piece &other)

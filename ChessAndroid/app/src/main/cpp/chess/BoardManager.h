@@ -10,26 +10,29 @@
 
 class BoardManager
 {
+	friend Board;
 public:
 	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const std::vector<PosPair> &moved)>;
-	friend std::vector<Move> Board::listAllMoves(bool isWhite) const;
-private:
-	static BoardManager &m_Instance;
-	static std::thread *m_WorkerThread;
-	static CacheTable cache;
-    static bool whitePlayersTurn;
 
-	Board m_Board{};
-	PieceChangeListener m_Listener;
+private:
+	static std::thread *m_WorkerThread;
+	static PieceChangeListener m_Listener;
+	static Board m_Board;
+	static CacheTable cache;
+	static std::vector<PosPair> movesHistory;
 
 public:
 	static bool isWhiteAtBottom;
 
 	static void initBoardManager(const PieceChangeListener& listener);
-	static void loadJsonGame(Board &&board);
-	static Board &getBoard();
-	static bool isWorking();
-	static void movePiece(const Pos &selectedPos, const Pos &destPos);
+	static void loadGame(Board &&board);
+	static void loadGame(const std::vector<PosPair> &moves);
+
+	static Board &getBoard() { return m_Board; };
+	static const auto &getMovesHistory() { return movesHistory; };
+	static bool isWorking() { return m_WorkerThread != nullptr; };
+	static std::vector<Pos> getPossibleMoves(const Pos &selectedPos);
+	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
 
 private:
 	static void moveComputerPlayer();

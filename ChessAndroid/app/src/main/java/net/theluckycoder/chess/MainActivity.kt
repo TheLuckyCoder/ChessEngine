@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import net.theluckycoder.chess.views.CellView
 import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
+import kotlin.concurrent.thread
 
 class MainActivity : Activity(), CustomView.ClickListener {
 
@@ -88,9 +89,11 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
     override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_load -> loadJson()
-            R.id.action_save -> saveJson()
             R.id.action_reload -> updatePieces()
+            R.id.action_load_json -> loadJson()
+            R.id.action_load_moves -> loadMoves()
+            R.id.action_save_json -> saveJson()
+            R.id.action_save_moves -> saveMoves()
         }
         return super.onMenuItemSelected(featureId, item)
     }
@@ -237,6 +240,8 @@ class MainActivity : Activity(), CustomView.ClickListener {
         }
     }
 
+    // Saving/Loading
+
     private fun loadJson() {
         val editText = EditText(this)
 
@@ -244,7 +249,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
             .setTitle("Load Json")
             .setView(editText)
             .setPositiveButton("Load") { _, _ ->
-                Native.loadFromJson(editText.toString())
+                Native.loadFromJson(editText.text?.toString().orEmpty())
                 updatePieces()
             }
             .show()
@@ -255,11 +260,41 @@ class MainActivity : Activity(), CustomView.ClickListener {
         AlertDialog.Builder(this)
             .setTitle("Json")
             .setMessage(json)
-            .setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(android.R.string.cancel, null)
             .setNeutralButton("Copy") { _, _ ->
                 val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
                 val clip = ClipData.newPlainText("label", json)
+                clipboardManager.primaryClip = clip
+            }
+            .show()
+    }
+
+    private fun loadMoves() {
+        val editText = EditText(this)
+
+        AlertDialog.Builder(this)
+            .setTitle("Load Moves")
+            .setView(editText)
+            .setPositiveButton("Load") { _, _ ->
+                thread {
+                    Native.loadMoves(editText.text?.toString().orEmpty())
+                }
+            }
+            .show()
+    }
+
+    private fun saveMoves() {
+        val moves = Native.saveMoves()
+
+        AlertDialog.Builder(this)
+            .setTitle("Moves")
+            .setMessage(moves)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton("Copy") { _, _ ->
+                val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                val clip = ClipData.newPlainText("label", moves)
                 clipboardManager.primaryClip = clip
             }
             .show()

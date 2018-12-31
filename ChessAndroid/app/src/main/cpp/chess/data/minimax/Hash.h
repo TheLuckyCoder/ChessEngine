@@ -24,8 +24,9 @@ namespace Hash
 
 	constexpr int indexOf(const Piece &piece)
 	{
-		const int type = static_cast<int>(piece.type) - 1;
-		return piece.isWhite ? type : type + 6;
+		auto type = static_cast<int>(piece.type) - 1;
+		if (piece.isWhite) type += 6;
+		return type;
 	}
 
 	constexpr std::uint64_t compute(const Board &board)

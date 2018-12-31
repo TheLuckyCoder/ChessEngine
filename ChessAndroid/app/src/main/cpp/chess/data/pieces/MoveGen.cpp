@@ -22,7 +22,7 @@ namespace MoveGen
 			moves.push_back(pos);
 	}
 
-	void generatePawnMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
+	void generatePawnMoves(const Piece &piece, Pos pos, std::vector<Pos> &moves, const Board &board)
 	{
 		piece.isWhite ? pos.y++ : pos.y--;
 		if (!board[pos])
@@ -57,7 +57,7 @@ namespace MoveGen
 		}
 	}
 
-	void generateKnightMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
+	void generateKnightMoves(const Piece &piece, const Pos &pos, std::vector<Pos> &moves, const Board &board)
 	{
 		const auto addPosIfValid = [&](const short x, const short y) {
 			Pos startPos(pos.x + x, pos.y + y);
@@ -84,7 +84,7 @@ namespace MoveGen
 		addPosIfValid(-2, -1);
 	}
 
-	void generateBishopMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
+	void generateBishopMoves(const Piece &piece, const Pos &pos, std::vector<Pos> &moves, const Board &board)
 	{
 		Pos posCopy = pos;
 		while (posCopy.x < 7 && posCopy.y > 0)
@@ -155,7 +155,7 @@ namespace MoveGen
 		}
 	}
 
-	void generateRookMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
+	void generateRookMoves(const Piece &piece, const Pos &pos, std::vector<Pos> &moves, const Board &board)
 	{
 		Pos posCopy = pos;
 		while (posCopy.x > 0)
@@ -222,7 +222,7 @@ namespace MoveGen
 		}
 	}
 
-	void generateQueenMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
+	void generateQueenMoves(const Piece &piece, const Pos &pos, std::vector<Pos> &moves, const Board &board)
 	{
 		Pos posCopy = pos;
 
@@ -360,10 +360,10 @@ namespace MoveGen
 		}
 	}
 
-	std::unordered_set<Pos> getAllMovesPerColor(const Board &board, const bool white)
+	std::unordered_set<Pos> getAllMovesPerColor(const bool white, const Board &board)
 	{
 		std::unordered_set<Pos> allMoves;
-		allMoves.reserve(32);
+		allMoves.reserve(64);
 
 		for (short i = 0; i < 8; i++)
 			for (short j = 0; j < 8; j++)
@@ -433,7 +433,7 @@ namespace MoveGen
 		return moves;
 	}
 
-	void generateKingMoves(const Piece &piece, Pos &pos, std::vector<Pos> &moves, const Board &board)
+	void generateKingMoves(const Piece &piece, const Pos &pos, std::vector<Pos> &moves, const Board &board)
 	{
 		auto initialMoves = generateKingInitialMoves(pos);
 
@@ -446,12 +446,12 @@ namespace MoveGen
 		if (initialMoves.empty()) return;
 		std::move(initialMoves.begin(), initialMoves.end(), std::back_inserter(moves));
 
-		// Remove the possible moves of the opponent's pieces
-		std::unordered_set<Pos> opponentsMoves = getAllMovesPerColor(board, !piece.isWhite);
+		// Remove the possible moves of the opponent's kings
+		auto opponentsMoves = generateKingInitialMoves(Player::getKingPos(!piece.isWhite, board));
 
 		for (unsigned int i = 0; i < moves.size(); i++)
 		{
-			if (opponentsMoves.find(moves[i]) != opponentsMoves.end())
+			if (std::find(opponentsMoves.begin(), opponentsMoves.end(), moves[i]) != opponentsMoves.end())
 			{
 				moves[i] = moves.back();
 				moves.pop_back();
@@ -460,7 +460,7 @@ namespace MoveGen
 		}
 
 		// Castling
-		if (!piece.hasBeenMoved && opponentsMoves.find(pos) == opponentsMoves.end())
+		if (!piece.hasBeenMoved && std::find(opponentsMoves.begin(), opponentsMoves.end(), pos) == opponentsMoves.end())
 		{
 			Pos posCopy = pos;
 			while (posCopy.x < 7)
@@ -468,7 +468,7 @@ namespace MoveGen
 				posCopy.x++;
 				auto &other = board[posCopy];
 
-				if (opponentsMoves.find(posCopy) != opponentsMoves.end())
+				if (std::find(opponentsMoves.begin(), opponentsMoves.end(), posCopy) != opponentsMoves.end())
 					break;
 
 				if (posCopy.x < 7)
@@ -486,7 +486,7 @@ namespace MoveGen
 				posCopy.x--;
 				const auto &other = board[posCopy];
 
-				if (opponentsMoves.find(posCopy) != opponentsMoves.end())
+				if (std::find(opponentsMoves.begin(), opponentsMoves.end(), posCopy) != opponentsMoves.end())
 					break;
 
 				if (posCopy.x > 0)

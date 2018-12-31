@@ -2,13 +2,14 @@
 
 std::uint64_t Hash::compute(std::uint64_t previousHash, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece)
 {
-	const int selectedIndex = indexOf(selectedPiece);
+	// TODO: Fix Hashing
+	/*const int selectedIndex = indexOf(selectedPiece);
 
 	previousHash ^= hashArray[selectedPos.x][selectedPos.y][selectedIndex];
 	previousHash ^= hashArray[destPos.x][destPos.y][selectedIndex];
 
 	if (destPiece)
-		previousHash ^= hashArray[destPos.x][destPos.y][indexOf(destPiece)];
+		previousHash ^= hashArray[destPos.x][destPos.y][indexOf(destPiece)];*/
 
 	return previousHash;
 }

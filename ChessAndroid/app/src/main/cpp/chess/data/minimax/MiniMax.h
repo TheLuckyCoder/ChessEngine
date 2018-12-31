@@ -4,6 +4,7 @@
 
 #include "../Pos.h"
 #include "../Board.h"
+
 class Move;
 
 namespace MiniMax

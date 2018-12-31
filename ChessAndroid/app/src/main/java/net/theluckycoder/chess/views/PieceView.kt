@@ -15,11 +15,12 @@ class PieceView(
     private val listener: ClickListener
 ) : CustomView(context) {
 
-    private val drawable: Bitmap
+    private val bitmap: Bitmap
 
     init {
-        val bitmap = BitmapFactory.decodeResource(context.resources, res)
-        drawable = Bitmap.createScaledBitmap(bitmap, MainActivity.viewSize, MainActivity.viewSize, false)
+        val decodedBitmap = BitmapFactory.decodeResource(context.resources, res)
+        bitmap = Bitmap.createScaledBitmap(decodedBitmap, MainActivity.viewSize, MainActivity.viewSize, true)
+        decodedBitmap.recycle()
 
         if (isWhite) {
             setOnClickListener {
@@ -29,6 +30,6 @@ class PieceView(
     }
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawBitmap(drawable, 0f, 0f, null)
+        canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }

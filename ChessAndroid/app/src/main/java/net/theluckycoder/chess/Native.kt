@@ -24,4 +24,10 @@ object Native {
 
     @JvmStatic
     external fun saveToJson(): String
+
+    @JvmStatic
+    external fun loadMoves(moves: String)
+
+    @JvmStatic
+    external fun saveMoves(): String
 }
