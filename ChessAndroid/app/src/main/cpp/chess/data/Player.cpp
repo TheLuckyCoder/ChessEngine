@@ -3,6 +3,7 @@
 #include "pieces/Piece.h"
 #include "Move.h"
 #include "pieces/MoveGen.h"
+#include "../BoardManager.h"
 
 namespace Player
 {
@@ -11,8 +12,8 @@ namespace Player
 	{
 		Pos kingPos;
 
-		for (short i = 0; i < 8; i++)
-			for (short j = 0; j < 8; j++)
+		for (byte i = 0; i < 8; i++)
+			for (byte j = 0; j < 8; j++)
 				if (const auto &piece = board.data[i][j]; piece.type == Piece::Type::KING && piece.isWhite == isWhite)
 					kingPos = Pos(i, j);
 
@@ -23,9 +24,9 @@ namespace Player
 	{
 		short piecesCount = 0;
 
-		for (short i = 0; i < 8; i++)
-			for (short j = 0; j < 8; j++)
-				if (const auto &piece = board.data[i][j]; piece && piece.isWhite == isWhite)
+		for (byte i = 0; i < 8; i++)
+			for (byte j = 0; j < 8; j++)
+				if (const auto &piece = board.data[i][j]; piece && piece.type != Piece::Type::KING && piece.isWhite == isWhite)
 					piecesCount++;
 
 		return piecesCount == 0;
@@ -33,12 +34,56 @@ namespace Player
 
 	bool hasNoMoves(const bool isWhite, const Board &board)
 	{
-		return board.listMoves(isWhite).empty();
+		for (byte i = 0; i < 8; i++)
+			for (byte j = 0; j < 8; j++)
+			{
+				const Pos startPos(i, j);
+				const auto &piece = board[startPos];
+
+				if (piece && piece.isWhite == isWhite)
+				{
+					const auto possibleMoves = piece.getPossibleMoves(startPos, board);
+
+					for (auto &destPos : possibleMoves)
+					{
+						Board newBoard = board;
+						const auto state = BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
+
+						if ((isWhite && state == GameState::WHITE_IN_CHESS) ||
+							(!isWhite && state == GameState::BLACK_IN_CHESS))
+							continue;
+
+						return false;
+					}
+				}
+			}
+
+		return true;
 	}
 
 	bool hasNoValidMoves(const bool isWhite, const Board &board)
 	{
-		return board.listValidMoves(isWhite).empty();
+		const auto pieces = getAllOwnedPieces(isWhite, board);
+
+		for (const auto &pair : pieces)
+		{
+			const auto &startPos = pair.first;
+			const auto possibleMoves = pair.second.getPossibleMoves(startPos, board);
+
+			for (const auto &destPos : possibleMoves)
+			{
+				Board newBoard = board;
+				const auto state = BoardManager::movePieceInternal(startPos, destPos, newBoard);
+
+				if ((isWhite && state == GameState::WHITE_IN_CHESS) ||
+					(!isWhite && state == GameState::BLACK_IN_CHESS))
+					continue;
+
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	bool isInChess(const bool isWhite, const Board &board)
@@ -54,8 +99,8 @@ namespace Player
 		std::unordered_map<Pos, Piece> map;
 		map.reserve(16);
 
-		for (short i = 0; i < 8; i++)
-			for (short j = 0; j < 8; j++)
+		for (byte i = 0; i < 8; i++)
+			for (byte j = 0; j < 8; j++)
 				if (const auto piece = board.data[i][j]; piece && piece.isWhite == isWhite)
 					map[Pos(i, j)] = piece;
 

@@ -125,7 +125,7 @@ public:
 		}
 	}
 
-	void clearAll()
+	void clear()
 	{
 		for (size_t i = 0; i < TABLE_SIZE; ++i) {
 			auto *entry = table[i];

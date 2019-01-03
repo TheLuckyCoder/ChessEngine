@@ -9,12 +9,13 @@ import android.graphics.Point
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.EditText
-import android.widget.FrameLayout
+import android.view.View
+import android.widget.*
 import net.theluckycoder.chess.views.CellView
 import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
 import kotlin.concurrent.thread
+
 
 class MainActivity : Activity(), CustomView.ClickListener {
 
@@ -27,22 +28,19 @@ class MainActivity : Activity(), CustomView.ClickListener {
     }
 
     private lateinit var frameLayout: FrameLayout
+    private lateinit var pbLoading: ProgressBar
+    private lateinit var tvBoards: TextView
+    private lateinit var tvState: TextView
     private val cells = HashMap<Pos, CellView>(64)
     private val pieces = HashMap<Pos, PieceView>(32)
-    private val isWhiteAtBottom = Native.isWhiteAtBottom()
+    private val isPlayerWhite = Native.isPlayerWhite()
     private var selectedPos = Pos()
+    private var canMove = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        initBoard()
-
-        frameLayout = FrameLayout(this)
-        addContentView(
-            frameLayout, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        )
+        initBoard(false)
+        setContentView(R.layout.activity_main)
 
         val display = windowManager.defaultDisplay
         val point = Point()
@@ -50,10 +48,16 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
         viewSize = point.x / 8
 
+        frameLayout = findViewById(R.id.layout_board)
+        frameLayout.layoutParams = LinearLayout.LayoutParams(point.x, point.x)
+        pbLoading = findViewById(R.id.pb_loading)
+        tvBoards = findViewById(R.id.tv_boards)
+        tvState = findViewById(R.id.tv_state)
+
         for (i in 0..7) {
             for (j in 0..7) {
                 val pos = Pos(i, 7 - j)
-                val isWhite = ((pos.x + pos.y) % 2 == 1) == isWhiteAtBottom
+                val isWhite = ((pos.x + pos.y) % 2 == 1) == isPlayerWhite
 
                 val xx = pos.x * viewSize
                 val yy = (7 - pos.y) * viewSize
@@ -89,11 +93,25 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
     override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_reload -> updatePieces()
+            R.id.action_redraw -> updatePieces()
             R.id.action_load_json -> loadJson()
             R.id.action_load_moves -> loadMoves()
             R.id.action_save_json -> saveJson()
             R.id.action_save_moves -> saveMoves()
+            R.id.action_restart -> {
+                thread {
+                    while (Native.isWorking()) {
+                        Thread.sleep(200)
+                    }
+                    Thread.sleep(200)
+                    runOnUiThread {
+                        initBoard(true)
+                        updatePieces()
+                        tvBoards.text = null
+                        tvState.text = null
+                    }
+                }
+            }
         }
         return super.onMenuItemSelected(featureId, item)
     }
@@ -107,11 +125,13 @@ class MainActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun movePiece(view: CellView) {
-        if (!selectedPos.isValid) return
+        if (!selectedPos.isValid || !canMove) return
 
         Native.movePiece(selectedPos, view.pos)
         clearCells()
         selectedPos = Pos()
+
+        pbLoading.visibility = View.VISIBLE
     }
 
     private fun selectPiece(view: PieceView) {
@@ -189,25 +209,32 @@ class MainActivity : Activity(), CustomView.ClickListener {
         }
     }
 
-    private fun showGameOverDialog(state: Byte) {
-        val message = when (state) {
-            1.toByte() -> "White has won!"
-            2.toByte() -> "Black has won!"
+    private fun updateState(state: Int) {
+        val evaluatedBoards = Native.getNumberOfEvaluatedBoards()
+        tvBoards.text = if (evaluatedBoards == 0) null else "Boards Evaluated: $evaluatedBoards"
+        tvState.text = when (state) {
+            0 -> null
+            1 -> "White has won!"
+            2 -> "Black has won!"
+            3 -> "White is in Chess!"
+            4 -> "Black is in Chess!"
             else -> "Draw"
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Game Over!")
-            .setMessage(message)
-            .setCancelable(false)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                finish()
-            }
-            .show()
+        pbLoading.visibility = if (Native.isWorking()) View.VISIBLE else View.INVISIBLE
+
+        if (state == 1 || state == 2) {
+            canMove = false
+
+            AlertDialog.Builder(this)
+                .setTitle("Game Over!")
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
     }
 
     @Suppress("unused")
-    private fun callback(gameState: Byte, shouldRedraw: Boolean, moves: Array<PosPair>) {
+    private fun callback(gameState: Int, shouldRedraw: Boolean, moves: Array<PosPair>) {
         runOnUiThread {
             moves.forEach {
                 val startPos = Pos(it.startX, it.startY)
@@ -235,8 +262,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
             if (shouldRedraw)
                 updatePieces()
 
-            if (gameState != 0.toByte())
-                showGameOverDialog(gameState)
+            updateState(gameState)
         }
     }
 
@@ -257,6 +283,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
     private fun saveJson() {
         val json = Native.saveToJson()
+
         AlertDialog.Builder(this)
             .setTitle("Json")
             .setMessage(json)
@@ -277,9 +304,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
             .setTitle("Load Moves")
             .setView(editText)
             .setPositiveButton("Load") { _, _ ->
-                thread {
-                    Native.loadMoves(editText.text?.toString().orEmpty())
-                }
+                Native.loadMoves(editText.text?.toString().orEmpty())
             }
             .show()
     }
@@ -300,5 +325,5 @@ class MainActivity : Activity(), CustomView.ClickListener {
             .show()
     }
 
-    private external fun initBoard()
+    private external fun initBoard(restartGame: Boolean)
 }

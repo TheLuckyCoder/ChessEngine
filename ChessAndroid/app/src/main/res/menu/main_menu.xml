@@ -6,19 +6,19 @@
         tools:ignore="HardcodedText">
         <menu>
             <item
-                android:id="@+id/action_reload"
-                android:title="Refresh Board"/>
+                android:id="@+id/action_redraw"
+                android:title="Redraw Board"/>
         </menu>
     </item>
 
-    <item android:title="Load(not working)">
+    <item android:title="Load">
         <menu>
             <item
                 android:id="@+id/action_load_json"
                 android:title="JSON"/>
             <item
                 android:id="@+id/action_load_moves"
-                android:title="Moves" />
+                android:title="Moves(not working)" />
         </menu>
     </item>
 
@@ -32,4 +32,8 @@
                 android:title="Moves" />
         </menu>
     </item>
+
+    <item
+        android:id="@+id/action_restart"
+        android:title="Restart" />
 </menu>

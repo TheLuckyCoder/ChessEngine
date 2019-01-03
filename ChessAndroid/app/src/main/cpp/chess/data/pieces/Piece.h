@@ -3,12 +3,15 @@
 #include <vector>
 
 #include "../Pos.h"
+#include "../../StackVector.h"
 
 class Board;
 
 class Piece
 {
 public:
+	using MovesReturnType = StackVector<Pos, 27>;
+
 	enum class Type : unsigned char
 	{
 		NONE = 0,
@@ -30,15 +33,11 @@ public:
 	Piece(const Piece&) = default;
 	~Piece() = default;
 
-	std::vector<Pos> getPossibleMoves(Pos pos, const Board &board) const;
-	int getPoints(const Board &board, const Pos &pos) const;
+	MovesReturnType getPossibleMoves(Pos pos, const Board &board) const;
 	bool hasSameColor(const Piece &other) const;
 
 	Piece &operator=(const Piece &other);
 	Piece &operator=(Piece &&other) = default;
 
 	operator bool() const { return type != Type::NONE; }
-
-private:
-	bool isMaximizing() const;
 };

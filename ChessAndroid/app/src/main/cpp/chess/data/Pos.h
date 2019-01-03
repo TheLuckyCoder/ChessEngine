@@ -2,16 +2,18 @@
 
 #include <utility>
 
+using byte = unsigned char;
+
 class Pos
 {
 public:
-	short x;
-	short y;
+	byte x;
+	byte y;
 
 	Pos()
-		: x(-1), y(-1) {}
+		: x(8), y(8) {}
 
-	Pos(const short x, const short y)
+	Pos(const byte x, const byte y)
 		: x(x), y(y) {}
 
 	bool isValid() const;
@@ -41,7 +43,7 @@ namespace std
 	{
 		std::size_t operator()(const Pos &pos) const
 		{
-			return (std::hash<short>()(pos.x) << 2) ^ (std::hash<short>()(pos.y));
+			return (std::hash<unsigned char>()(pos.x) << 2) ^ (std::hash<unsigned char>()(pos.y));
 		}
 	};
 

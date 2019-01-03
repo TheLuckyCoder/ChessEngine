@@ -6,18 +6,17 @@
 namespace MiniMax
 {
 
-	PosPair MaxMove(const Board &board, short depth)
+	PosPair MaxMove(const Board &board)
 	{
 		auto moves = board.listValidMoves(true);
-		depth--;
 
 		std::vector<ThreadPool::TaskFuture<int>> futures;
 		futures.reserve(moves.size());
 
 		for (const auto &move : moves)
-			futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const short depth) {
-				return MaxMove(board, depth, VALUE_MIN, VALUE_MAX);
-			}, move.board, depth));
+			futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board) {
+				return MaxMove(board, DEPTH - 1, VALUE_MIN, VALUE_MAX);
+			}, move.board));
 
 		Move bestMove = moves.front();
 		int bestMovePoints = VALUE_MIN;
@@ -35,18 +34,17 @@ namespace MiniMax
 		return std::pair(bestMove.start, bestMove.dest);
 	}
 
-	PosPair MinMove(const Board &board, short depth)
+	PosPair MinMove(const Board &board)
 	{
 		auto moves = board.listValidMoves(false);
-		depth--;
 
 		std::vector<ThreadPool::TaskFuture<int>> futures;
 		futures.reserve(moves.size());
 
 		for (const auto &move : moves)
-			futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const short depth) {
-				return MaxMove(board, depth, VALUE_MIN, VALUE_MAX);
-			}, move.board, depth));
+			futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board) {
+				return MaxMove(board, DEPTH - 1, VALUE_MIN, VALUE_MAX);
+			}, move.board));
 
 		Move bestMove = moves.front();
 		int bestMovePoints = VALUE_MAX;
@@ -84,7 +82,7 @@ namespace MiniMax
 					alpha = bestMovePoints;
 			}
 
-			if (beta <= alpha)
+			if (beta < alpha)
 				break;
 		}
 
@@ -109,7 +107,7 @@ namespace MiniMax
 					beta = bestMovePoints;
 			}
 
-			if (beta <= alpha)
+			if (beta < alpha)
 				break;
 		}
 

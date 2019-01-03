@@ -14,20 +14,20 @@ class Board final
 public:
 	std::array<std::array<Piece, 8>, 8> data;
 	std::uint64_t hash{};
+	bool whiteCastled = false;
+	bool blackCastled = false;
 
 	Board() = default;
-	Board(Board &&board) noexcept;
+	Board(Board&&) = default;
 	Board(const Board &board);
 	~Board() = default;
 
-	Board &operator=(Board &&other) noexcept;
+	Board &operator=(Board&&) = default;
 	Board &operator=(const Board &other);
 	Piece &operator[](const Pos &pos);
 	const Piece &operator[](const Pos &pos) const;
 
 	void initDefaultBoard();
-	int evaluate() const;
 	std::unordered_map<Pos, Piece> getAllPieces() const;
-	std::vector<Move> listMoves(bool isWhite) const;
 	std::vector<Move> listValidMoves(bool isWhite) const;
 };

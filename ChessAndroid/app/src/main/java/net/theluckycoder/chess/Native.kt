@@ -2,7 +2,10 @@ package net.theluckycoder.chess
 
 object Native {
     @JvmStatic
-    external fun isWhiteAtBottom(): Boolean
+    external fun isPlayerWhite(): Boolean
+
+    @JvmStatic
+    external fun getNumberOfEvaluatedBoards(): Int
 
     @JvmStatic
     external fun isWorking(): Boolean

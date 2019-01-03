@@ -1,4 +1,4 @@
-#include "PieceEval.h"
+#include "Evaluation.h"
 
 #include <array>
 
@@ -11,6 +11,9 @@ constexpr int BISHOP = 300;
 constexpr int ROOK = 500;
 constexpr int QUEEN = 900;
 constexpr int KING = 9000;
+
+constexpr int PAWN_CAN_PROMOTE = 750;
+constexpr int KING_IS_CASTLED = 40;
 
 using EvalArray = std::array<std::array<short, 8>, 8>;
 
@@ -100,32 +103,85 @@ constexpr EvalArray KING_WHITE =
 	{ 20,  30,  10,   0,   0,  10,  30,  20}
 } };
 
+constexpr EvalArray KING_WHITE_ENDING =
+{ {
+	{-30, -25, -20, -20, -20, -20, -25, -30},
+	{-25, -15, -10, -10, -10, -10, -15, -25},
+	{-20, -10,   5,   5,   5,   5,   0, -20},
+	{-20, -10,   5,  15,  15,   5,   0, -20},
+	{-20, -10,   5,  15,  15,   5,   0, -20},
+	{-20, -10,   5,   5,   5,   5,   0, -20},
+	{-25, -15, -10, -10, -10, -10, -15,  25},
+	{-30, -25, -20, -20, -20, -20, -25, -30}
+} };
+
 constexpr EvalArray PAWN_BLACK = reverseArray(PAWN_WHITE);
 constexpr EvalArray KNIGHT_BLACK = reverseArray(KNIGHT_WHITE);
 constexpr EvalArray BISHOP_BLACK = reverseArray(BISHOP_WHITE);
 constexpr EvalArray ROOK_BLACK = reverseArray(ROOK_WHITE);
 constexpr EvalArray QUEEN_BLACK = reverseArray(QUEEN_WHITE);
 constexpr EvalArray KING_BLACK = reverseArray(KING_WHITE);
+constexpr EvalArray KING_BLACK_ENDING = reverseArray(KING_WHITE_ENDING);
 
-int PieceEval::evaluatePawn(const bool isMaximizing, const Pos &pos, const Board &board)
+int Evaluation::evaluate(const Board &board)
 {
-	int points = PAWN + (isMaximizing ? PAWN_WHITE[pos.y][pos.x] : PAWN_BLACK[pos.y][pos.x]);
+	int value = 0, count = 0;
 
-	const auto &piece = board[pos];
+	const auto phase = determineGamePhase(board);
+
+	for (byte i = 0; i < 8; i++)
+		for (byte j = 0; j < 8; j++)
+			if (const auto &piece = board.data[i][j]; piece)
+			{
+				value += evaluatePiece(piece, Pos(i, j), board, phase);
+				if (piece.isWhite) count++; else count--;
+			}
+
+	value += count * 40;
+
+	return value;
+}
+
+int Evaluation::evaluatePiece(const Piece &piece, const Pos &pos, const Board &board, GamePhase phase)
+{
+	const int points = [&]() {
+		switch (piece.type)
+		{
+		case Piece::Type::PAWN:
+			return evaluatePawn(piece, pos, board);
+		case Piece::Type::KNIGHT:
+			return evaluateKnight(piece, pos, board);
+		case Piece::Type::BISHOP:
+			return evaluateBishop(piece, pos, board);
+		case Piece::Type::ROOK:
+			return evaluateRook(piece, pos, board);
+		case Piece::Type::QUEEN:
+			return evaluateQueen(piece, pos);
+		case Piece::Type::KING:
+			return evaluateKing(piece, pos, board, phase);
+		default:
+			return 0;
+		}
+	}();
+
+	return piece.isWhite ? points : -points;
+}
+
+int Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board)
+{
+	int value = PAWN + (piece.isWhite ? PAWN_WHITE[pos.y][pos.x] : PAWN_BLACK[pos.y][pos.x]);
 
 	bool isolated = true;
 
-	if (const auto &other = board.data[pos.x][pos.y + 1];
-		piece.hasSameColor(other) && other.type == Piece::Type::PAWN)
+	if (const auto &pieceAbove = board.data[pos.x][pos.y + 1];
+		piece.hasSameColor(pieceAbove) && pieceAbove.type == Piece::Type::PAWN)
 	{
-		points -= 5;
+		value -= 5;
 		isolated = false;
-	}
-
-	if (const auto &other = board.data[pos.x][pos.y - 1];
-		piece.hasSameColor(other) && other.type == Piece::Type::PAWN)
+	} else if (const auto &pieceBelow = board.data[pos.x][pos.y - 1];
+		piece.hasSameColor(pieceBelow) && pieceBelow.type == Piece::Type::PAWN)
 	{
-		points -= 5;
+		value -= 5;
 		isolated = false;
 	}
 
@@ -151,53 +207,64 @@ int PieceEval::evaluatePawn(const bool isMaximizing, const Pos &pos, const Board
 	}
 
 	if (isolated)
-		points -= 2;
+		value -= 2;
 
-	return points;
+	return value;
 }
 
-int PieceEval::evaluateKnight(const bool isMaximizing, const Pos &pos, const Board &board)
+int Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board)
 {
-	std::vector<Pos> moves;
-	moves.reserve(8);
-	MoveGen::generateKnightMoves(board[pos], pos, moves, board);
+	auto moves = MoveGen::generateKnightMoves(board[pos], pos, board);
 
 	return KNIGHT +
-		(isMaximizing ? KNIGHT_WHITE[pos.y][pos.x] : KNIGHT_BLACK[pos.y][pos.x]) +
+		(piece.isWhite ? KNIGHT_WHITE[pos.y][pos.x] : KNIGHT_BLACK[pos.y][pos.x]) +
 		static_cast<int>(moves.size() / 2);
 }
 
-int PieceEval::evaluateBishop(const bool isMaximizing, const Pos &pos, const Board &board)
+int Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board)
 {
-	std::vector<Pos> moves;
-	MoveGen::generateBishopMoves(board[pos], pos, moves, board);
+	auto moves = MoveGen::generateBishopMoves(board[pos], pos, board);
 
 	return BISHOP +
-		(isMaximizing ? BISHOP_WHITE[pos.y][pos.x] : BISHOP_BLACK[pos.y][pos.x]) +
+		(piece.isWhite ? BISHOP_WHITE[pos.y][pos.x] : BISHOP_BLACK[pos.y][pos.x]) +
 		static_cast<int>(moves.size() / 2);
 }
 
-int PieceEval::evaluateRook(const bool isMaximizing, const Pos &pos, const Board &board)
+int Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board)
 {
-	std::vector<Pos> moves;
-	MoveGen::generateRookMoves(board[pos], pos, moves, board);
+	auto moves = MoveGen::generateRookMoves(board[pos], pos, board);
 
 	return ROOK +
-		(isMaximizing ? ROOK_WHITE[pos.y][pos.x] : ROOK_BLACK[pos.y][pos.x]) +
-		static_cast<int>(moves.size() / 2);
+		(piece.isWhite ? ROOK_WHITE[pos.y][pos.x] : ROOK_BLACK[pos.y][pos.x]) +
+		static_cast<int>(moves.size() / 3);
 }
 
-int PieceEval::evaluateQueen(const bool isMaximizing, const Pos &pos)
+int Evaluation::evaluateQueen(const Piece &piece, const Pos &pos)
 {
-	return QUEEN + (isMaximizing ? QUEEN_WHITE[pos.y][pos.x] : QUEEN_BLACK[pos.y][pos.x]);
+	return QUEEN + (piece.isWhite ? QUEEN_WHITE[pos.y][pos.x] : QUEEN_BLACK[pos.y][pos.x]);
 }
 
-int PieceEval::evaluateKing(const bool isMaximizing, const Pos &pos, const Board &board)
+int Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board, const GamePhase phase)
 {
-	int points = KING + (isMaximizing ? KING_WHITE[pos.y][pos.x] : KING_BLACK[pos.y][pos.x]);
+	int value = KING;
 
-	if (!board[pos].hasBeenMoved)
-		points += 2;
+	if (phase == GamePhase::ENDING)
+		value += piece.isWhite ? KING_WHITE_ENDING[pos.y][pos.x] : KING_BLACK_ENDING[pos.y][pos.x];
+	else
+	{
+		value += piece.isWhite ? KING_WHITE[pos.y][pos.x] : KING_BLACK[pos.y][pos.x];
+		if ((piece.isWhite && board.whiteCastled) ||
+			(!piece.isWhite && board.blackCastled))
+			value += KING_IS_CASTLED;
 
-	return points;
+		if (!board[pos].hasBeenMoved)
+			value += 8;
+	}
+
+	return value;
+}
+
+GamePhase Evaluation::determineGamePhase(const Board &board)
+{
+	return GamePhase::MIDDLE; // TODO
 }
