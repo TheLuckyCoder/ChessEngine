@@ -1,6 +1,11 @@
 #pragma once
 
-#include "Board.h"
+#include <unordered_map>
+
+#include "../data/Pos.h"
+
+class Piece;
+class Board;
 
 namespace Player
 {

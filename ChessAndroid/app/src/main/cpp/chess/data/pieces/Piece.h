@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "../Pos.h"
 #include "../../StackVector.h"
 
@@ -25,7 +23,7 @@ public:
 
 	Type type;
 	bool isWhite;
-	bool hasBeenMoved;
+	bool moved;
 
 	Piece();
 	Piece(Type type, bool isWhite, bool hasBeenMoved = false);
@@ -33,10 +31,11 @@ public:
 	Piece(const Piece&) = default;
 	~Piece() = default;
 
-	MovesReturnType getPossibleMoves(Pos pos, const Board &board) const;
+	MovesReturnType getPossibleMoves(const Pos &pos, const Board &board) const;
+	MovesReturnType getValidMoves(const Pos &pos, const Board &board) const;
 	bool hasSameColor(const Piece &other) const;
 
-	Piece &operator=(const Piece &other);
+	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
 	operator bool() const { return type != Type::NONE; }

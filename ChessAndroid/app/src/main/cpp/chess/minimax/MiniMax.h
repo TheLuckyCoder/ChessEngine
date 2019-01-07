@@ -1,14 +1,15 @@
 #pragma once
 
-#include "../Pos.h"
-#include "../Board.h"
+#include "../data/Pos.h"
+
+class Board;
 
 namespace MiniMax
 {
-
-	constexpr int VALUE_MAX = 100000000;
-	constexpr int VALUE_MIN = -100000000;
-	constexpr short DEPTH = 5;
+	constexpr int VALUE_MAX = 2000000000;
+	constexpr int VALUE_MIN = -2000000000;
+	constexpr int VALUE_WINNER_WHITE = 32767;
+	constexpr int VALUE_WINNER_BLACK = -32767;
 
 	PosPair MaxMove(const Board &board);
 	PosPair MinMove(const Board &board);

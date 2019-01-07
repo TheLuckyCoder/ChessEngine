@@ -5,7 +5,6 @@
 
 template <typename K, typename V>
 class HashNode {
-private:
 	// key-value pair
 	K key;
 	V value;
@@ -45,46 +44,32 @@ public:
 
 #define CACHE_DISABLED
 
-class CacheTable
+template<typename Val>
+class HashTable
 {
-private:
 	using Key = std::uint64_t;
-	using Val = int;
 
 	// hash table
 	HashNode<Key, Val> **table;
 	mutable std::shared_mutex mutex_;
-
-	constexpr static size_t TABLE_SIZE =
-#ifdef CACHE_DISABLED
-	1;
-#else
-	40000000;
-#endif
+	std::size_t tableSize;
 
 public:
-	CacheTable()
+	explicit HashTable(const std::size_t tableSize)
+		: tableSize(tableSize)
 	{
-		table = new HashNode<Key, Val> *[TABLE_SIZE]();
+		table = new HashNode<Key, Val> *[tableSize]();
 	}
 
-	~CacheTable()
+	~HashTable()
 	{
-		for (size_t i = 0; i < TABLE_SIZE; ++i) {
-			auto *entry = table[i];
-			while (entry) {
-				auto *prev = entry;
-				entry = entry->getNext();
-				delete prev;
-			}
-		}
-
+		clear();
 		delete[] table;
 	}
 
 	bool get(const Key &key, Val &value) const
 	{
-		const size_t hash = key % TABLE_SIZE;
+		const size_t hash = key % tableSize;
 		std::shared_lock lock(mutex_);
 
 		auto *entry = table[hash];
@@ -101,7 +86,7 @@ public:
 
 	void put(const Key &key, Val value)
 	{
-		const size_t hash = key % TABLE_SIZE;
+		const size_t hash = key % tableSize;
 		std::unique_lock lock(mutex_);
 
 		HashNode<Key, Val> *prev = nullptr;
@@ -127,7 +112,7 @@ public:
 
 	void clear()
 	{
-		for (size_t i = 0; i < TABLE_SIZE; ++i) {
+		for (size_t i = 0; i < tableSize; ++i) {
 			auto *entry = table[i];
 			while (entry) {
 				auto *prev = entry;

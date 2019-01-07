@@ -2,257 +2,266 @@
 
 #include <utility>
 #include <stdexcept>
+#include <iterator>
+#include <initializer_list>
 
 template<class T, std::size_t N>
 class StackVector
 {
-#define CPP17_CONSTEXPR
-#if __cplusplus == 201703L || _MSC_VER >= 1300
-#define CPP17
-#undef CPP17_CONSTEXPR
-#define CPP17_CONSTEXPR constexpr
+#if __cplusplus >= 201402L
+#define CPP14_CONSTEXPR constexpr
+#else
+#define CPP14_CONSTEXPR
 #endif
 public:
-	typedef std::size_t size_type;
-	typedef T* pointer;
-	typedef const T* const_pointer;
-	typedef T& reference;
-	typedef const T& const_reference;
-	typedef T value_type;
+	using size_type = std::size_t;
+	using value_type = T;
+	using pointer = value_type*;
+	using const_pointer = const value_type*;
+	using reference = value_type&;
+	using const_reference = const value_type&;
 
 	class iterator
 	{
 	public:
 		using iterator_category = std::forward_iterator_tag;
 		using value_type = T;
-		using difference_type = int;
-		using pointer = T * ;
-		using reference = T & ;
+		using difference_type = std::ptrdiff_t;
+		using pointer = value_type*;
+		using reference = value_type&;
 
-		iterator() : ptr(nullptr) {};
-		explicit iterator(const_pointer item) : ptr(const_cast<pointer>(item)) {}
-		iterator(const iterator &iter) : ptr(iter.ptr) {}
-
-		iterator &operator=(const iterator&) = default;
+		CPP14_CONSTEXPR iterator() noexcept : _ptr(nullptr) {}
+		CPP14_CONSTEXPR explicit iterator(const_pointer item) noexcept : _ptr(const_cast<pointer>(item)) {}
+		CPP14_CONSTEXPR iterator(const iterator &iter) noexcept : _ptr(iter._ptr) {}
 		~iterator() = default;
 
-		constexpr iterator operator+(size_type add) const
-		{
-			return iterator(ptr + add);
-		}
-		constexpr iterator operator-(size_type sub) const
-		{
-			return iterator(ptr - sub);
-		}
+		iterator &operator=(const iterator&) = default;
 
-		constexpr bool operator==(const iterator &iter) const
+		CPP14_CONSTEXPR void operator+=(const size_type n) noexcept { _ptr += n; }
+		CPP14_CONSTEXPR void operator+=(const iterator &other) noexcept { _ptr += other._ptr; }
+		CPP14_CONSTEXPR iterator operator+(const size_type n) const noexcept
 		{
-			return ptr == iter.ptr;
-		}
-		constexpr bool operator!=(const iterator &iter) const noexcept
-		{
-			return ptr != iter.ptr;
-		}
-		constexpr bool operator<(const iterator &iter) const noexcept
-		{
-			return ptr < iter.ptr;
-		}
-		constexpr bool operator<=(const iterator &iter) const noexcept
-		{
-			return ptr <= iter.ptr;
-		}
-		constexpr bool operator>(const iterator &iter) const noexcept
-		{
-			return ptr > iter.ptr;
-		}
-		constexpr bool operator>=(const iterator &iter) const noexcept
-		{
-			return ptr >= iter.ptr;
-		}
-
-		iterator &operator++() noexcept
-		{
-			++ptr;
-			return *this;
-		}
-		iterator operator++(int) noexcept
-		{
-			iterator temp = *this;
-			++ptr;
+			iterator temp(*this);
+			temp += n;
 			return temp;
 		}
-		iterator &operator--() noexcept
+		CPP14_CONSTEXPR difference_type operator+(const iterator &other) const noexcept
 		{
-			--ptr;
-			return *this;
+			return _ptr + other._ptr;
 		}
-		iterator operator--(int) noexcept
+
+		CPP14_CONSTEXPR void operator-=(const size_type n) { _ptr -= n; }
+		CPP14_CONSTEXPR void operator-=(const iterator &other) { _ptr -= other._ptr; }
+		CPP14_CONSTEXPR iterator operator-(const size_type n) const noexcept
 		{
-			iterator temp = *this;
-			--ptr;
+			iterator temp(*this);
+			temp._ptr -= n;
 			return temp;
 		}
-		reference operator*() const
+		CPP14_CONSTEXPR difference_type operator-(const iterator &other) const noexcept
 		{
-			return *ptr;
+			return _ptr - other._ptr;
 		}
-		pointer operator->() const
+
+		constexpr bool operator==(const iterator &iter) const noexcept { return _ptr == iter._ptr; }
+		constexpr bool operator!=(const iterator &iter) const noexcept { return _ptr != iter._ptr; }
+		constexpr bool operator<(const iterator &iter) const noexcept { return _ptr < iter._ptr; }
+		constexpr bool operator<=(const iterator &iter) const noexcept { return _ptr <= iter._ptr; }
+		constexpr bool operator>(const iterator &iter) const noexcept { return _ptr > iter._ptr; }
+		constexpr bool operator>=(const iterator &iter) const noexcept { return _ptr >= iter._ptr; }
+
+		CPP14_CONSTEXPR iterator &operator++() noexcept
 		{
-			return ptr;
+			++_ptr;
+			return *this;
 		}
+		CPP14_CONSTEXPR iterator operator++(int) noexcept
+		{
+			iterator temp = *this;
+			++_ptr;
+			return temp;
+		}
+		CPP14_CONSTEXPR iterator &operator--() noexcept
+		{
+			--_ptr;
+			return *this;
+		}
+		CPP14_CONSTEXPR iterator operator--(int) noexcept
+		{
+			iterator temp = *this;
+			--_ptr;
+			return temp;
+		}
+
+		CPP14_CONSTEXPR reference operator[](const difference_type n) noexcept { return *(_ptr + n); }
+		constexpr reference operator*() const noexcept { return *_ptr; }
+		constexpr pointer operator->() const noexcept { return _ptr; }
 
 	private:
-		pointer ptr;
+		pointer _ptr;
 	};
 
 	using const_iterator = iterator;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<iterator>;
 
-	StackVector() noexcept : m_Size(0) {}
-	explicit StackVector(size_type size) : m_Size(size)
-	{
-		if (m_Size > N) throwLengthException();
+	CPP14_CONSTEXPR StackVector() noexcept
+		: _size(0) {}
 
+	CPP14_CONSTEXPR explicit StackVector(const size_type size) noexcept
+		: _size(_size = size > N ? N : size) {}
+
+	CPP14_CONSTEXPR StackVector(std::initializer_list<T> list) noexcept
+		: _size(_size = list.size() > N ? N : list.size())
+	{
+		std::copy(list.begin(), list.begin() + _size, begin());
+	}
+
+	CPP14_CONSTEXPR StackVector &operator=(std::initializer_list<T> list) noexcept
+	{
+		_size = list.size() > N ? N : list.size();
+
+		std::copy(list.begin(), list.begin() + _size, begin());
+
+		return *this;
+	}
+
+	template<size_type otherN>
+	CPP14_CONSTEXPR StackVector &operator=(const StackVector<T, otherN> &other) noexcept
+	{
+		_size = other.size() > N ? N : other.size();
+
+		std::copy(other.begin(), other.begin() + _size, begin());
+
+		return *this;
 	}
 
 	// Element Access
-	T &at(size_type pos)
+	CPP14_CONSTEXPR reference at(size_type pos) noexcept(false)
 	{
-		if (pos >= m_Size) throwLengthException();
-		return m_Array[pos];
+		if (pos >= _size) throwLengthException();
+		return _array[pos];
 	}
-	const T &at(size_type pos) const
+	CPP14_CONSTEXPR const_reference at(size_type pos) const noexcept(false)
 	{
-		if (pos >= m_Size) throwLengthException();
-		return m_Array[pos];
-	}
-
-	T &operator[](size_type pos)
-	{
-		if (pos >= m_Size) throwLengthException();
-		return m_Array[pos];
-	}
-	const T &operator[](size_type pos) const
-	{
-		if (pos >= m_Size) throwLengthException();
-		return m_Array[pos];
+		if (pos >= _size) throwLengthException();
+		return _array[pos];
 	}
 
-	reference front() { return m_Array[0]; }
-	constexpr const_reference front() const noexcept { return m_Array[0]; }
+	CPP14_CONSTEXPR reference operator[](size_type pos) noexcept(false)
+	{
+		if (pos >= _size) throwLengthException();
+		return _array[pos];
+	}
+	CPP14_CONSTEXPR const_reference operator[](size_type pos) const noexcept(false)
+	{
+		if (pos >= _size) throwLengthException();
+		return _array[pos];
+	}
 
-	reference back() { return m_Array[m_Size - 1]; }
-	constexpr const_reference back() const noexcept { return m_Array[m_Size - 1]; }
+	CPP14_CONSTEXPR reference front() noexcept { return _array[0]; }
+	constexpr const_reference front() const noexcept { return _array[0]; }
 
-	pointer data() noexcept { return m_Array; }
-	const_pointer data() const noexcept { return m_Array; }
+	CPP14_CONSTEXPR reference back() noexcept { return _array[_size - 1]; }
+	constexpr const_reference back() const noexcept { return _array[_size - 1]; }
+
+	CPP14_CONSTEXPR pointer data() noexcept { return _array; }
+	constexpr const_pointer data() const noexcept { return _array; }
 
 	// Iterators
-	iterator begin() noexcept { return iterator(m_Array); }
-	const_iterator begin() const noexcept { return const_iterator(m_Array); }
+	CPP14_CONSTEXPR iterator begin() noexcept { return iterator(_array); }
+	constexpr const_iterator begin() const noexcept { return const_iterator(_array); }
 
-	iterator end() noexcept { return iterator(m_Array + m_Size); }
-	const_iterator end() const noexcept { return const_iterator(m_Array + m_Size); }
+	CPP14_CONSTEXPR iterator end() noexcept { return iterator(_array + _size); }
+	constexpr const_iterator end() const noexcept { return const_iterator(_array + _size); }
 
-	reverse_iterator rbegin() noexcept { return reverse_iterator(m_Array + m_Size - 1); }
-	const_reverse_iterator rbegin() const noexcept { return const_iterator(m_Array + m_Size - 1); }
+	CPP14_CONSTEXPR reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+	constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
 
-	reverse_iterator rend() noexcept { return reverse_iterator(m_Array - 1); }
-	const_reverse_iterator rend() const noexcept { return const_reverse_iterator(m_Array - 1); }
+	CPP14_CONSTEXPR reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+	constexpr const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
 
 	// Capacity
-	constexpr bool empty() const noexcept { return m_Size == 0; }
-	constexpr size_type size() const noexcept { return m_Size; }
-	constexpr size_type capacity() const noexcept { return N; }
+	constexpr bool empty() const noexcept { return _size == 0; }
+	constexpr size_type size() const noexcept { return _size; }
+	static constexpr size_type capacity() noexcept { return N; }
 
 	// Modifiers
-	void clear()
+	CPP14_CONSTEXPR void clear() noexcept
 	{
-		m_Size = 0;
+		_size = 0;
 	}
-
-	//insert
 
 	template<class... Args >
-	reference emplace(size_type pos, Args&&... args)
+	CPP14_CONSTEXPR reference emplace(size_type pos, Args&&... args) noexcept(false)
 	{
-		if (++m_Size > N) throwLengthException();
-		std::move(m_Array + pos, m_Array + m_Size - 1, m_Array + pos + 1);
-		return m_Array[pos] = T(std::forward<T>(args)...);
+		if (++_size > N) throwLengthException();
+		std::move(_array + pos, _array + _size - 1, _array + pos + 1);
+		return _array[pos] = T(std::forward<T>(args)...);
 	}
 
-	iterator erase(iterator pos)
+	CPP14_CONSTEXPR iterator erase(iterator pos) noexcept
 	{
 		std::move(pos + 1, end(), pos);
-		--m_Size;
+		--_size;
 
 		return pos;
 	}
 
-	iterator erase(iterator first, iterator last)
+	CPP14_CONSTEXPR iterator erase(iterator first, iterator last) noexcept
 	{
 		std::move(last, end(), first);
-		int elements = 0;
+		size_type elements = 0;
 		while (first != last)
 		{
-			++first;
+			--last;
 			++elements;
 		}
-		m_Size -= elements;
+		_size -= elements;
 
 		return last;
 	}
 
-	void push_back(T &&value)
+	CPP14_CONSTEXPR void push_back(T &&value) noexcept(false)
 	{
-		if (++m_Size > N) throwLengthException();
-		m_Array[m_Size - 1] = std::move(value);
+		if (++_size > N) throwLengthException();
+		_array[_size - 1] = std::move(value);
 	}
 
-	void push_back(const T &value)
+	CPP14_CONSTEXPR void push_back(const T &value) noexcept(false)
 	{
-		if (++m_Size > N) throwLengthException();
-		m_Array[m_Size - 1] = value;
+		if (++_size > N) throwLengthException();
+		_array[_size - 1] = value;
 	}
 
 	template<class... Args >
-	reference emplace_back(Args&&... args)
+	CPP14_CONSTEXPR reference emplace_back(Args&&... args) noexcept(false)
 	{
-		if (++m_Size > N) throwLengthException();
-		m_Array[m_Size - 1] = T(std::forward<Args>(args)...);
+		if (++_size > N) throwLengthException();
+		_array[_size - 1] = T(std::forward<Args>(args)...);
 		return back();
 	}
 
-	void pop_front()
+	CPP14_CONSTEXPR void pop_front() noexcept
 	{
-		erase(begin());
+		if (_size > 0) erase(begin());
 	}
 
-	void pop_back()
+	CPP14_CONSTEXPR void pop_back() noexcept
 	{
-		if (m_Size > 0) --m_Size;
+		if (_size > 0) --_size;
 	}
-
-#ifdef CPP17
-	template<size_type otherN>
-	StackVector &operator=(const StackVector<T, otherN> &other)
-	{
-		if constexpr (otherN > N) throwLengthException();
-
-		std::copy(other.begin(), other.end(), begin());
-		m_Size = other.size();
-
-		return *this;
-	}
-#endif
 
 private:
-	value_type m_Array[N];
-	size_type m_Size;
-
-	CPP17_CONSTEXPR static void throwLengthException()
+	union
 	{
-		throw std::out_of_range("Size of the Vector can not be larger than the max allocated size");
+		bool _hidden[N * sizeof(T)];
+		value_type _array[N];
+	};
+	size_type _size;
+
+	static CPP14_CONSTEXPR void throwLengthException() noexcept
+	{
+		//throw std::out_of_range("Size of the Vector can not be larger than the max allocated size");
 	}
 };

@@ -32,9 +32,7 @@ std::string MovesPersistence::save(const std::vector<PosPair> &movesHistory)
 	for (const auto &pair : movesHistory)
 		savePosPair(stream, pair);
 
-	auto str = stream.str();
-	str.pop_back();
-	return str;
+	return stream.str();
 }
 
 Pos MovesPersistence::getPos(const std::string_view str)
@@ -42,19 +40,22 @@ Pos MovesPersistence::getPos(const std::string_view str)
 	const auto x = static_cast<short>(str[0]);
 	const auto y = static_cast<short>(str[2]);
 
-	return Pos(x, y);
+	return Pos(static_cast<byte>(x), static_cast<byte>(y));
 }
 
 void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_view str)
 {
 	const auto selectedEnd = str.find(';');
-	const auto destEnd = str.find('\n', selectedEnd + 1);
+	auto destEnd = str.find('\n', selectedEnd + 1);
+
+	if (destEnd == std::string_view::npos)
+		destEnd = str.size() - 1;
 
 	moves.emplace_back(getPos(str.substr(0, selectedEnd)), getPos(str.substr(selectedEnd + 1, destEnd)));
 }
 
 void MovesPersistence::savePosPair(std::ostringstream &stream, const PosPair &pair)
 {
-	stream << pair.first.x << ',' << pair.first.y << ';'
-		<< pair.second.x << ',' << pair.second.y << '\n';
+	stream << static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
+		<< static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y) << '\n';
 }

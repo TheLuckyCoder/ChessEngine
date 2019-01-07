@@ -3,7 +3,7 @@
 #include <array>
 
 #include "Random.h"
-#include "../Board.h"
+#include "../data/Board.h"
 
 namespace Hash
 {
@@ -22,9 +22,9 @@ namespace Hash
 
 	constexpr auto hashArray = getRandomHashArray();
 
-	constexpr int indexOf(const Piece &piece)
+	constexpr byte indexOf(const Piece &piece)
 	{
-		auto type = static_cast<int>(piece.type) - 1;
+		auto type = static_cast<byte>(piece.type) - 1;
 		if (piece.isWhite) type += 6;
 		return type;
 	}
@@ -33,10 +33,10 @@ namespace Hash
 	{
 		std::uint64_t hash = 0;
 
-		for (short i = 0; i < 8; i++)
-			for (short j = 0; j < 8; j++)
-				if (board.data[i][j])
-					hash ^= hashArray[i][j][indexOf(board.data[i][j])];
+		for (short x = 0; x < 8; x++)
+			for (short y = 0; y < 8; y++)
+				if (board.data[x][y])
+					hash ^= hashArray[x][y][indexOf(board.data[x][y])];
 
 		return hash;
 	}

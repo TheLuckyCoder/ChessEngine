@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <unordered_set>
 
 #include "Piece.h"
@@ -21,8 +22,9 @@ namespace MoveGen
 
 	PosVector<27> generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board);
 
-	std::unordered_set<Pos> getAllMovesPerColor(bool white, const Board &board);
+	std::unordered_set<Pos> getAllAttacksPerColor(bool white, const Board &board);
+	std::unordered_map<Pos, short> getAllMovesPerColor(bool white, const Board &board);
 
-	static PosVector<8> generateKingInitialMoves(Pos pos);
+	PosVector<8> generateKingInitialMoves(Pos pos);
 	PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 }

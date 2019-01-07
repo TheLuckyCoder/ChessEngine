@@ -4,7 +4,7 @@
 
 #include "../data/Board.h"
 #include "../data/pieces/Piece.h"
-#include "../data/minimax/Hash.h"
+#include "../minimax/Hash.h"
 
 Board JsonPersistence::load(std::string str)
 {
@@ -12,7 +12,7 @@ Board JsonPersistence::load(std::string str)
 		[](const char c) { return std::isspace(c); }), str.end());
 	Board board;
 
-	int prefix{};
+	unsigned long prefix = 0;
 	while (true)
 	{
 		const auto start = str.find('{', prefix);
@@ -68,7 +68,7 @@ void JsonPersistence::savePiece(std::ostringstream &stream, const Pos &pos, cons
 	if (piece.isWhite)
 		stream << "\"white\":true,";
 
-	if (piece.hasBeenMoved)
+	if (piece.moved)
 		stream << "\"moved\":true,";
 
 	stream << "},";

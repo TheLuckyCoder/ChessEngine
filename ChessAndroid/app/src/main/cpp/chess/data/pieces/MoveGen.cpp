@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <iterator>
-#include <unordered_set>
 
+#include "../Board.h"
 #include "../../BoardManager.h"
 
 namespace MoveGen
@@ -35,7 +35,7 @@ namespace MoveGen
 		{
 			moves.push_back(pos);
 
-			if (!piece.hasBeenMoved) {
+			if (!piece.moved) {
 				Pos posCopy = pos;
 
 				piece.isWhite ? posCopy.y++ : posCopy.y--;
@@ -383,32 +383,54 @@ namespace MoveGen
 		return moves;
 	}
 
-	std::unordered_set<Pos> getAllMovesPerColor(const bool white, const Board &board)
+	std::unordered_set<Pos> getAllAttacksPerColor(const bool white, const Board &board)
 	{
-		std::unordered_set<Pos> allMoves;
-		allMoves.reserve(64);
+		std::unordered_set<Pos> attacks;
+		attacks.reserve(64);
 
-		for (byte i = 0; i < 8; i++)
-			for (byte j = 0; j < 8; j++)
+		for (byte x = 0; x < 8; x++)
+			for (byte y = 0; y < 8; y++)
 			{
-				auto &piece = board.data[i][j];
+				const Pos pos(x, y);
+				const auto &piece = board[pos];
 				if (piece && piece.isWhite == white)
 				{
 					if (piece.type == Piece::Type::PAWN)
 					{
-						auto moves = generatePawnAttacks(piece, Pos(i, j));
-						std::move(moves.begin(), moves.end(), std::inserter(allMoves, allMoves.end()));
+						auto moves = generatePawnAttacks(piece, pos);
+						std::move(moves.begin(), moves.end(), std::inserter(attacks, attacks.end()));
 					}
 					else if (piece.type == Piece::Type::KING)
 					{
-						auto moves = generateKingInitialMoves(Pos(i, j));
-						std::move(moves.begin(), moves.end(), std::inserter(allMoves, allMoves.end()));
+						auto moves = generateKingInitialMoves(pos);
+						std::move(moves.begin(), moves.end(), std::inserter(attacks, attacks.end()));
 					}
 					else
 					{
-						auto moves = piece.getPossibleMoves(Pos(i, j), board);
-						std::move(moves.begin(), moves.end(), std::inserter(allMoves, allMoves.end()));
+						auto moves = piece.getPossibleMoves(pos, board);
+						std::move(moves.begin(), moves.end(), std::inserter(attacks, attacks.end()));
 					}
+				}
+			}
+
+		return attacks;
+	}
+
+	std::unordered_map<Pos, short> getAllMovesPerColor(const bool white, const Board &board)
+	{
+		std::unordered_map<Pos, short> allMoves;
+		allMoves.reserve(64);
+
+		for (byte x = 0; x < 8; x++)
+			for (byte y = 0; y < 8; y++)
+			{
+				const Pos pos(x, y);
+				const auto &piece = board[pos];
+				if (piece && piece.isWhite == white)
+				{
+					const auto moves = piece.getPossibleMoves(pos, board);
+					for (const auto &move : moves)
+						allMoves[move]++;
 				}
 			}
 
@@ -460,7 +482,7 @@ namespace MoveGen
 
 		if (moves.empty()) return moves;
 
-		const auto opponentsMoves = getAllMovesPerColor(!piece.isWhite, board);
+		const auto opponentsMoves = getAllAttacksPerColor(!piece.isWhite, board);
 
 		for (unsigned int i = 0; i < moves.size(); i++)
 		{
@@ -473,7 +495,7 @@ namespace MoveGen
 		}
 
 		// Castling
-		if (!piece.hasBeenMoved && std::find(opponentsMoves.begin(), opponentsMoves.end(), pos) == opponentsMoves.end())
+		if (!piece.moved && std::find(opponentsMoves.begin(), opponentsMoves.end(), pos) == opponentsMoves.end())
 		{
 			Pos posCopy = pos;
 			while (posCopy.x < 7)
@@ -489,7 +511,7 @@ namespace MoveGen
 					if (other)
 						break;
 				}
-				else if (other && piece.hasSameColor(other) && other.type == Piece::Type::ROOK && !other.hasBeenMoved)
+				else if (other && piece.hasSameColor(other) && other.type == Piece::Type::ROOK && !other.moved)
 					moves.emplace_back(6, posCopy.y);
 			}
 
@@ -508,7 +530,7 @@ namespace MoveGen
 					if (other)
 						break;
 				}
-				else if (other && piece.hasSameColor(other) && other.type == Piece::Type::ROOK && !other.hasBeenMoved)
+				else if (other && piece.hasSameColor(other) && other.type == Piece::Type::ROOK && !other.moved)
 					moves.emplace_back(2, posCopy.y);
 			}
 		}

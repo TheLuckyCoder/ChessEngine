@@ -103,12 +103,10 @@ class MainActivity : Activity(), CustomView.ClickListener {
                     while (Native.isWorking()) {
                         Thread.sleep(200)
                     }
-                    Thread.sleep(200)
                     runOnUiThread {
                         initBoard(true)
                         updatePieces()
-                        tvBoards.text = null
-                        tvState.text = null
+                        updateState(0)
                     }
                 }
             }
@@ -210,8 +208,13 @@ class MainActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun updateState(state: Int) {
+        val value = Native.getCurrentBoardEvaluation()
+        tvBoards.text = "Current Board is evaluated at: $value"
+
         val evaluatedBoards = Native.getNumberOfEvaluatedBoards()
-        tvBoards.text = if (evaluatedBoards == 0) null else "Boards Evaluated: $evaluatedBoards"
+        if (evaluatedBoards > 0)
+            tvBoards.append("\nBoards Evaluated: $evaluatedBoards")
+
         tvState.text = when (state) {
             0 -> null
             1 -> "White has won!"

@@ -8,6 +8,9 @@ object Native {
     external fun getNumberOfEvaluatedBoards(): Int
 
     @JvmStatic
+    external fun getCurrentBoardEvaluation(): Int
+
+    @JvmStatic
     external fun isWorking(): Boolean
 
     @JvmStatic

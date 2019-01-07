@@ -4,6 +4,7 @@
 #include "external.h"
 
 #include "chess/BoardManager.h"
+#include "chess/data/Board.h"
 #include "chess/persistence/JsonPersistence.h"
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/Utils.h"
@@ -121,6 +122,12 @@ external JNIEXPORT jint JNICALL
 Java_net_theluckycoder_chess_Native_getNumberOfEvaluatedBoards(JNIEnv __unused *pEnv, jclass __unused type)
 {
 	return static_cast<jint>(BoardManager::boardsEvaluated);
+}
+
+external JNIEXPORT jint JNICALL
+Java_net_theluckycoder_chess_Native_getCurrentBoardEvaluation(JNIEnv __unused *pEnv, jclass __unused type)
+{
+	return static_cast<jint>(Evaluation::evaluate(BoardManager::getBoard()));
 }
 
 external JNIEXPORT _jobjectArray* JNICALL

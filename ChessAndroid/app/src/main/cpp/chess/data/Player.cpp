@@ -1,7 +1,7 @@
 #include "Player.h"
 
+#include "Board.h"
 #include "pieces/Piece.h"
-#include "Move.h"
 #include "pieces/MoveGen.h"
 #include "../BoardManager.h"
 
@@ -39,22 +39,21 @@ namespace Player
 			{
 				const Pos startPos(i, j);
 				const auto &piece = board[startPos];
+				const auto possibleMoves = piece.getPossibleMoves(startPos, board);
 
-				if (piece && piece.isWhite == isWhite)
+				for (const auto &destPos : possibleMoves)
 				{
-					const auto possibleMoves = piece.getPossibleMoves(startPos, board);
+					if (board[destPos].type == Piece::Type::KING)
+						continue;
 
-					for (auto &destPos : possibleMoves)
-					{
-						Board newBoard = board;
-						const auto state = BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
+					Board newBoard = board;
+					BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
 
-						if ((isWhite && state == GameState::WHITE_IN_CHESS) ||
-							(!isWhite && state == GameState::BLACK_IN_CHESS))
-							continue;
+					if ((isWhite && isInChess(true, newBoard)) ||
+						(!isWhite && isInChess(false, newBoard)))
+						continue;
 
-						return false;
-					}
+					return false;
 				}
 			}
 
@@ -72,11 +71,14 @@ namespace Player
 
 			for (const auto &destPos : possibleMoves)
 			{
-				Board newBoard = board;
-				const auto state = BoardManager::movePieceInternal(startPos, destPos, newBoard);
+				if (board[destPos].type == Piece::Type::KING)
+					continue;
 
-				if ((isWhite && state == GameState::WHITE_IN_CHESS) ||
-					(!isWhite && state == GameState::BLACK_IN_CHESS))
+				Board newBoard = board;
+				BoardManager::movePieceInternal(startPos, destPos, newBoard);
+
+				if ((isWhite && board.state == GameState::WHITE_IN_CHESS) ||
+					(!isWhite && board.state == GameState::BLACK_IN_CHESS))
 					continue;
 
 				return false;
@@ -88,7 +90,7 @@ namespace Player
 
 	bool isInChess(const bool isWhite, const Board &board)
 	{
-		const auto moves = MoveGen::getAllMovesPerColor(!isWhite, board);
+		const auto moves = MoveGen::getAllAttacksPerColor(!isWhite, board);
 		const auto iterator = moves.find(getKingPos(isWhite, board));
 
 		return iterator != moves.end();

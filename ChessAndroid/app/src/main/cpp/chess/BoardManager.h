@@ -1,13 +1,15 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <thread>
-#include <atomic>
+#include <vector>
 
-#include "GameState.h"
-#include "data/Pos.h"
+#include "StackVector.h"
+#include "data/Game.h"
 #include "data/Player.h"
-#include "data/minimax/CacheTable.h"
+#include "data/pieces/Piece.h"
+#include "minimax/HashTable.h"
 
 class BoardManager
 {
@@ -18,12 +20,12 @@ private:
 	static std::thread *m_WorkerThread;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
-	static CacheTable cache;
+	static HashTable<int> evaluationsCache;
 	static std::vector<PosPair> movesHistory;
 
 public:
 	static bool isPlayerWhite;
-	static std::atomic_uint32_t boardsEvaluated;
+	static std::atomic_size_t boardsEvaluated;
 
 	static void initBoardManager(const PieceChangeListener& listener);
 	static void loadGame(const Board &board);
@@ -34,7 +36,7 @@ public:
 	static bool isWorking() { return m_WorkerThread != nullptr; };
 	static Piece::MovesReturnType getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
-	static GameState movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);
+	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);
 
 private:
 	static void moveComputerPlayer();

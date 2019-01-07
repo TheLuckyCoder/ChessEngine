@@ -94,7 +94,7 @@ public:
 	 * Constructor.
 	 */
 	ThreadPool()
-		: ThreadPool { std::max(std::thread::hardware_concurrency() - 1, 2u) }
+		: ThreadPool { std::max(std::thread::hardware_concurrency() - 1u, 2u) }
 	{
 		/*
 		 * Always create at least two threads.
@@ -105,7 +105,7 @@ public:
 	 * Constructor.
 	 */
 	explicit ThreadPool(const std::uint32_t numThreads)
-		:m_done{ false }
+		: m_done{ false }
 	{
 		try
 		{
@@ -174,7 +174,7 @@ private:
 	{
 		m_done = true;
 		m_workQueue.invalidate();
-		for (auto& thread : m_threads)
+		for (auto &thread : m_threads)
 			if (thread.joinable())
 				thread.join();
 	}
@@ -201,7 +201,7 @@ namespace DefaultThreadPool
 	 * Submit a job to the default thread pool.
 	 */
 	template <typename ResultType, typename Func, typename... Args>
-	inline ThreadPool::TaskFuture<ResultType> submitJob(Func&& func, Args&&... args)
+	ThreadPool::TaskFuture<ResultType> submitJob(Func&& func, Args&&... args)
 	{
 		return getThreadPool().submit<ResultType>(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
