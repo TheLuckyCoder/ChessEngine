@@ -11,7 +11,7 @@ namespace Player
 {
 
 	Pos getKingPos(bool isWhite, const Board &board);
-	bool hasOnlyTheKing(bool isWhite, const Board &board);
+	bool onlyKingsLeft(const Board &board);
 	bool hasNoMoves(bool isWhite, const Board &board);
 	bool hasNoValidMoves(bool isWhite, const Board &board);
 	bool isInChess(bool isWhite, const Board &board);

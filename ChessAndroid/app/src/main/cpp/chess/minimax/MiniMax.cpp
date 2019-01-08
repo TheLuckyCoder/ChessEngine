@@ -80,13 +80,16 @@ namespace MiniMax
 		const auto moves = board.listValidMoves<Board>(true);
 		depth--;
 
+		if (depth == 0 && !moves.empty())
+			return moves.back().value;
+
 		int bestMovePoints = VALUE_MIN;
 
 		for (auto it = moves.rbegin(); it != moves.rend(); ++it) {
 			const auto &move = *it;
 			if (move.value == VALUE_WINNER_WHITE)
 				return VALUE_WINNER_WHITE;
-			const int moveValue = depth > 0 ? MinMove(move, depth, alpha, beta) : move.value;
+			const int moveValue = MinMove(move, depth, alpha, beta);
 
 			if (moveValue > bestMovePoints)
 			{
@@ -108,12 +111,15 @@ namespace MiniMax
 		const auto moves = board.listValidMoves<Board>(false);
 		depth--;
 
+		if (depth == 0 && !moves.empty())
+			return moves.front().value;
+
 		int bestMovePoints = VALUE_MAX;
 
 		for (const auto &move : moves) {
 			if (move.value == VALUE_WINNER_BLACK)
 				return VALUE_WINNER_BLACK;
-			const int moveValue = depth > 0 ? MaxMove(move, depth, alpha, beta) : move.value;
+			const int moveValue = MaxMove(move, depth, alpha, beta);
 
 			if (moveValue < bestMovePoints)
 			{

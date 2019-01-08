@@ -65,11 +65,6 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	piecesMoved.emplace_back(selectedPos, destPos);
 
 	auto state = GameState::NONE;
-	auto &destPiece = m_Board[destPos];
-
-	if (destPiece && destPiece.type == Piece::Type::KING)
-		state = destPiece.isWhite ? GameState::WINNER_BLACK : GameState::WINNER_WHITE;
-
 	auto &selectedPiece = m_Board[selectedPos];
 	bool shouldRedraw = false;
 
@@ -89,12 +84,12 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 	selectedPiece.moved = true;
 
-	destPiece = selectedPiece;
+	m_Board[destPos] = selectedPiece;
 	m_Board[selectedPos] = Piece();
 
 	if (state == GameState::NONE)
 	{
-		if (Player::hasOnlyTheKing(true, m_Board) && Player::hasOnlyTheKing(false, m_Board))
+		if (Player::onlyKingsLeft(m_Board))
 			state = GameState::DRAW;
 		else if (Player::hasNoValidMoves(true, m_Board))
 		{
@@ -107,11 +102,9 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	}
 
 	movesHistory.emplace_back(selectedPos, destPos);
-	if (!(state == GameState::WINNER_WHITE || state == GameState::WINNER_BLACK) && movesHistory.size() == 50)
-		state = GameState::DRAW;
 	m_Listener(state, shouldRedraw, piecesMoved);
 
-	if (movedByPlayer && state == GameState::NONE)
+	if (movedByPlayer && (state == GameState::NONE || state == GameState::WHITE_IN_CHESS || state == GameState::BLACK_IN_CHESS))
 		m_WorkerThread = new std::thread(moveComputerPlayer);
 }
 

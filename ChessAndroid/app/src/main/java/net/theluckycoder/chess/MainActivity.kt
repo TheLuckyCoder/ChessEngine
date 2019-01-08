@@ -216,17 +216,17 @@ class MainActivity : Activity(), CustomView.ClickListener {
             tvBoards.append("\nBoards Evaluated: $evaluatedBoards")
 
         tvState.text = when (state) {
-            0 -> null
             1 -> "White has won!"
             2 -> "Black has won!"
-            3 -> "White is in Chess!"
-            4 -> "Black is in Chess!"
-            else -> "Draw"
+            3 -> "Draw"
+            4 -> "White is in Chess!"
+            5 -> "Black is in Chess!"
+            else -> null
         }
 
         pbLoading.visibility = if (Native.isWorking()) View.VISIBLE else View.INVISIBLE
 
-        if (state == 1 || state == 2) {
+        if (state == 1 || state == 2 || state == 4) {
             canMove = false
 
             AlertDialog.Builder(this)

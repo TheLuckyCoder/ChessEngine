@@ -30,9 +30,12 @@ public:
 		using pointer = value_type*;
 		using reference = value_type&;
 
-		CPP14_CONSTEXPR iterator() noexcept : _ptr(nullptr) {}
-		CPP14_CONSTEXPR explicit iterator(const_pointer item) noexcept : _ptr(const_cast<pointer>(item)) {}
-		CPP14_CONSTEXPR iterator(const iterator &iter) noexcept : _ptr(iter._ptr) {}
+		CPP14_CONSTEXPR iterator() noexcept
+			: _ptr(nullptr) {}
+		CPP14_CONSTEXPR explicit iterator(const_pointer item) noexcept
+			: _ptr(const_cast<pointer>(item)) {}
+		CPP14_CONSTEXPR iterator(const iterator &iter) noexcept
+			: _ptr(iter._ptr) {}
 		~iterator() = default;
 
 		iterator &operator=(const iterator&) = default;
@@ -45,13 +48,10 @@ public:
 			temp += n;
 			return temp;
 		}
-		CPP14_CONSTEXPR difference_type operator+(const iterator &other) const noexcept
-		{
-			return _ptr + other._ptr;
-		}
+		CPP14_CONSTEXPR difference_type operator+(const iterator &other) const noexcept { return _ptr + other._ptr; }
 
-		CPP14_CONSTEXPR void operator-=(const size_type n) { _ptr -= n; }
-		CPP14_CONSTEXPR void operator-=(const iterator &other) { _ptr -= other._ptr; }
+		CPP14_CONSTEXPR void operator-=(const size_type n) noexcept { _ptr -= n; }
+		CPP14_CONSTEXPR void operator-=(const iterator &other) noexcept { _ptr -= other._ptr; }
 		CPP14_CONSTEXPR iterator operator-(const size_type n) const noexcept
 		{
 			iterator temp(*this);
@@ -260,7 +260,7 @@ private:
 	};
 	size_type _size;
 
-	static CPP14_CONSTEXPR void throwLengthException() noexcept
+	static CPP14_CONSTEXPR void throwLengthException() noexcept(false)
 	{
 		//throw std::out_of_range("Size of the Vector can not be larger than the max allocated size");
 	}

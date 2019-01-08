@@ -10,26 +10,22 @@ namespace Player
 
 	Pos getKingPos(const bool isWhite, const Board &board)
 	{
-		Pos kingPos;
+		for (byte x = 0; x < 8; x++)
+			for (byte y = 0; y < 8; y++)
+				if (const auto &piece = board.data[x][y]; piece.type == Piece::Type::KING && piece.isWhite == isWhite)
+					return Pos(x, y);
 
-		for (byte i = 0; i < 8; i++)
-			for (byte j = 0; j < 8; j++)
-				if (const auto &piece = board.data[i][j]; piece.type == Piece::Type::KING && piece.isWhite == isWhite)
-					kingPos = Pos(i, j);
-
-		return kingPos;
+		return Pos();
 	}
 
-	bool hasOnlyTheKing(const bool isWhite, const Board &board)
+	bool onlyKingsLeft(const Board &board)
 	{
-		short piecesCount = 0;
+		for (byte x = 0; x < 8; x++)
+			for (byte y = 0; y < 8; y++)
+				if (board.data[x][y].type != Piece::Type::KING)
+					return false;
 
-		for (byte i = 0; i < 8; i++)
-			for (byte j = 0; j < 8; j++)
-				if (const auto &piece = board.data[i][j]; piece && piece.type != Piece::Type::KING && piece.isWhite == isWhite)
-					piecesCount++;
-
-		return piecesCount == 0;
+		return true;
 	}
 
 	bool hasNoMoves(const bool isWhite, const Board &board)
@@ -77,8 +73,10 @@ namespace Player
 				Board newBoard = board;
 				BoardManager::movePieceInternal(startPos, destPos, newBoard);
 
-				if ((isWhite && board.state == GameState::WHITE_IN_CHESS) ||
-					(!isWhite && board.state == GameState::BLACK_IN_CHESS))
+				const auto state = newBoard.state;
+
+				if ((isWhite && (state == GameState::WHITE_IN_CHESS || state == GameState::WINNER_BLACK)) ||
+					(!isWhite && (state == GameState::BLACK_IN_CHESS || state == GameState::WINNER_WHITE)))
 					continue;
 
 				return false;
