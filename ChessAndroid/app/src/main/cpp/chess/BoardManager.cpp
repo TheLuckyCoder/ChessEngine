@@ -1,17 +1,17 @@
 #include "BoardManager.h"
 
 //#include <ctime>
+#include <chrono>
 
+#include "DebugFile.h"
 #include "data/Board.h"
 #include "minimax/MiniMax.h"
 #include "minimax/Hash.h"
 
-std::thread *BoardManager::m_WorkerThread = nullptr;
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
-HashTable<int> BoardManager::evaluationsCache(1);
+HashTable<Cache> BoardManager::cacheTable(40000000);
 std::vector<PosPair> BoardManager::movesHistory;
-bool BoardManager::isPlayerWhite = true;
 std::atomic_size_t BoardManager::boardsEvaluated = 0;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener)
@@ -103,18 +103,29 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	{
 		if (Player::onlyKingsLeft(m_Board))
 			state = GameState::DRAW;
+
+		const bool whiteInChess = Player::isInChess(true, m_Board);
+		if (whiteInChess)
+			m_Board.state = GameState::WHITE_IN_CHESS;
+
 		else if (Player::hasNoValidMoves(true, m_Board))
 		{
-			state = Player::isInChess(true, m_Board) ? GameState::WINNER_BLACK : GameState::DRAW;
+			state = whiteInChess ? GameState::WINNER_BLACK : GameState::DRAW;
 		}
-		else if (Player::hasNoValidMoves(false, m_Board))
+		else
 		{
-			state = Player::isInChess(false, m_Board) ? GameState::WINNER_WHITE : GameState::DRAW;
+			const bool blackInChess = Player::isInChess(false, m_Board);
+			if (blackInChess)
+				m_Board.state = GameState::BLACK_IN_CHESS;
+			if (Player::hasNoValidMoves(false, m_Board))
+				m_Board.state = blackInChess ? GameState::WINNER_WHITE : GameState::DRAW;
 		}
 	}
 
 	movesHistory.emplace_back(selectedPos, destPos);
 	m_Listener(state, shouldRedraw, piecesMoved);
+
+	m_Board.hash = Hash::compute(m_Board);
 
 	if (movedByPlayer && (state == GameState::NONE || state == GameState::WHITE_IN_CHESS || state == GameState::BLACK_IN_CHESS))
 		m_WorkerThread = new std::thread(moveComputerPlayer);
@@ -122,16 +133,17 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool checkValid)
 {
-	board.state = GameState::NONE;
 	auto &selectedPiece = board[selectedPos];
 	auto &destPiece = board[destPos];
+	bool recalculateHash = false;
 
 	if (selectedPiece.type == Piece::Type::PAWN)
-		movePawn(selectedPiece, destPos);
-	else if (selectedPiece.type == Piece::Type::KING)
+		recalculateHash = movePawn(selectedPiece, destPos);
+	else if (selectedPiece.type == Piece::Type::KING && !selectedPiece.moved)
 	{
 		if (moveKing(selectedPiece, selectedPos, destPos, board).first.isValid())
 		{
+			recalculateHash = true;
 			if (selectedPiece.isWhite)
 				board.whiteCastled = true;
 			else
@@ -139,13 +151,38 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		}
 	}
 
-	selectedPiece.moved = true;
+	if (!recalculateHash)
+	{
+		// Remove Selected Piece
+		board.hash ^= Hash::getHash(selectedPos, selectedPiece);
+
+		if (destPiece) // Remove Dest Piece
+			board.hash ^= Hash::getHash(destPos, destPiece);
+
+		// Add Selected Piece to Destination
+		selectedPiece.moved = true;
+		board.hash ^= Hash::getHash(destPos, selectedPiece);
+	} else
+		selectedPiece.moved = true;
 
 	destPiece = selectedPiece;
 	board[selectedPos] = Piece();
 
 	if (checkValid)
 	{
+		Cache cache;
+		if (recalculateHash)
+			board.hash = Hash::compute(board);
+
+		if (cacheTable.get(board.hash, cache))
+		{
+			board.state = cache.state;
+			board.value = cache.value;
+			return;
+		}
+
+		board.state = GameState::NONE;
+
 		const bool whiteInChess = Player::isInChess(true, board);
 		if (whiteInChess)
 			board.state = GameState::WHITE_IN_CHESS;
@@ -160,12 +197,39 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			if (Player::hasNoMoves(false, board))
 				board.state = blackInChess ? GameState::WINNER_WHITE : GameState::DRAW;
 		}
+
+		switch (board.state)
+		{
+		case GameState::NONE:
+		case GameState::WHITE_IN_CHESS:
+		case GameState::BLACK_IN_CHESS:
+			board.value = Evaluation::evaluate(board);
+			break;
+		case GameState::WINNER_WHITE:
+			board.value = MiniMax::VALUE_WINNER_WHITE;
+			break;
+		case GameState::WINNER_BLACK:
+			board.value = MiniMax::VALUE_WINNER_BLACK;
+			break;
+		default:
+			board.value = 0;
+			break;
+		}
+
+		cache.state = board.state;
+		cache.value = board.value;
+		cacheTable.put(board.hash, cache);
 	}
 }
 
 void BoardManager::moveComputerPlayer()
 {
 	boardsEvaluated = 0;
+#ifdef CR_PLATFORM_WINDOWS
+	const auto startTime = std::chrono::high_resolution_clock::now();
+	allocations = 0;
+	allocatedMemory = 0;
+#endif
 
 	const auto pair = isPlayerWhite ? MiniMax::MinMove(getBoard()) : MiniMax::MaxMove(getBoard());
 	movePiece(pair.first, pair.second, false);
@@ -175,6 +239,14 @@ void BoardManager::moveComputerPlayer()
 		m_WorkerThread->detach();
 		delete m_WorkerThread;
 		m_WorkerThread = nullptr;
+
+#ifdef CR_PLATFORM_WINDOWS
+		const auto endTime = std::chrono::high_resolution_clock::now();
+		writeTime("Board Evaluated: ", static_cast<size_t>(boardsEvaluated),
+			"\tTime Needed: ", std::chrono::duration<double, std::milli>(endTime - startTime).count(),
+			"\tAllocations: ", static_cast<size_t>(allocations),
+			"\tAllocated Memory: ", static_cast<size_t>(allocatedMemory));
+#endif
 	}
 }
 
@@ -184,7 +256,7 @@ bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)
 	{
 		if (destPos.y == 0 || destPos.y == 7)
 		{
-			selectedPiece = Piece(Piece::Type::QUEEN, selectedPiece.isWhite);
+			selectedPiece.type = Piece::Type::QUEEN;
 			return true;
 		}
 	}

@@ -2,38 +2,33 @@
 
 #include <mutex>
 #include <shared_mutex>
+#include <vector>
 
 template <typename K, typename V>
-class HashNode {
+class HashNode
+{
 	// key-value pair
 	K key;
 	V value;
-	// next bucket with the same key
+	// next bucket with the same hash
 	HashNode *next;
 
 public:
 	HashNode(K key, V value) :
 		key(std::move(key)), value(std::move(value)), next(nullptr) {}
 
-	K getKey() const
-	{
-		return key;
-	}
+	K &getKey() { return key; }
+	const K &getKey() const { return key; }
 
-	V getValue() const
-	{
-		return value;
-	}
+	V &getValue() { return value; }
+	const V &getValue() const { return value; }
 
-	void setValue(V value)
+	void setValue(V &&value)
 	{
 		HashNode::value = std::move(value);
 	}
 
-	HashNode *getNext() const
-	{
-		return next;
-	}
+	HashNode *getNext() const { return next; }
 
 	void setNext(HashNode *next)
 	{
@@ -42,37 +37,35 @@ public:
 
 };
 
-#define CACHE_DISABLED
-
 template<typename Val>
 class HashTable
 {
 	using Key = std::uint64_t;
 
-	// hash table
-	HashNode<Key, Val> **table;
-	mutable std::shared_mutex mutex_;
-	std::size_t tableSize;
+	mutable std::shared_mutex _mutex;
+
+	HashNode<Key, Val> **_pointerTable;
+	std::size_t _tableSize;
+	std::vector<HashNode<Key, Val>> _values;
 
 public:
 	explicit HashTable(const std::size_t tableSize)
-		: tableSize(tableSize)
+		: _tableSize(tableSize / 3)
 	{
-		table = new HashNode<Key, Val> *[tableSize]();
+		_pointerTable = new HashNode<Key, Val> *[_tableSize]();
+		_values.reserve(_tableSize * 2);
 	}
 
 	~HashTable()
 	{
-		clear();
-		delete[] table;
+		delete[] _pointerTable;
 	}
 
 	bool get(const Key &key, Val &value) const
 	{
-		const size_t hash = key % tableSize;
-		std::shared_lock lock(mutex_);
+		std::shared_lock lock(_mutex);
 
-		auto *entry = table[hash];
+		auto *entry = _pointerTable[key % _tableSize];
 
 		while (entry) {
 			if (entry->getKey() == key) {
@@ -86,11 +79,11 @@ public:
 
 	void put(const Key &key, Val value)
 	{
-		const size_t hash = key % tableSize;
-		std::unique_lock lock(mutex_);
+		const size_t hash = key % _tableSize;
+		std::unique_lock lock(_mutex);
 
 		HashNode<Key, Val> *prev = nullptr;
-		auto *entry = table[hash];
+		auto *entry = _pointerTable[hash];
 
 		while (entry && entry->getKey() != key)
 		{
@@ -102,47 +95,17 @@ public:
 			entry->setValue(std::forward<Val>(value)); // update the value
 		else
 		{
-			entry = new HashNode<Key, Val>(key, std::forward<Val>(value));
+			entry = &_values.emplace_back(key, std::forward<Val>(value));
 			if (prev)
 				prev->setNext(entry);
 			else
-				table[hash] = entry; // insert as first bucket
+				_pointerTable[hash] = entry; // insert as first bucket
 		}
 	}
 
 	void clear()
 	{
-		for (size_t i = 0; i < tableSize; ++i) {
-			auto *entry = table[i];
-			while (entry) {
-				auto *prev = entry;
-				entry = entry->getNext();
-				delete prev;
-			}
-		}
+		memset(_pointerTable, nullptr, _tableSize);
+		_values.clear();
 	}
-
-/*private:
-	void remove(const Key &key)
-	{
-		std::unique_lock lock(mutex_);
-
-		HashNode<Key, Val> *prev = nullptr;
-		auto *entry = table[key];
-
-		while (entry && entry->getKey() != key) {
-			prev = entry;
-			entry = entry->getNext();
-		}
-
-		if (!entry) return; // key not found
-
-		if (prev)
-			prev->setNext(entry->getNext()); // remove first bucket of the list
-		else
-			table[key] = entry->getNext();
-
-		delete entry;
-	}*/
-
 };

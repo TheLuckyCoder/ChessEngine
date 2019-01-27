@@ -2,44 +2,22 @@
 
 #include <array>
 
-#include "Random.h"
-#include "../data/Board.h"
+#include "../data/pieces/Piece.h"
 
-namespace Hash
+class Hash final
 {
-	static constexpr auto getRandomHashArray()
-	{
-		std::array<std::array<std::array<std::uint64_t, 12>, 8>, 8> arr{};
-		PCG pcg;
+	using HashArray = std::array<std::array<std::array<std::array<std::uint64_t, 2>, 12>, 8>, 8>;
+	const static HashArray array;
 
-		for (auto &i : arr)
-			for (auto &j : i)
-				for (auto &k : j)
-					k = pcg();
+public:
+	Hash() = delete;
 
-		return arr;
-	}
+private:
+	static HashArray getRandomHashArray();
+	static byte indexOf(const Piece &piece);
 
-	constexpr auto hashArray = getRandomHashArray();
+public:
+	static std::uint64_t getHash(const Pos &pos, const Piece &piece);
 
-	constexpr byte indexOf(const Piece &piece)
-	{
-		auto type = static_cast<byte>(piece.type) - 1;
-		if (piece.isWhite) type += 6;
-		return type;
-	}
-
-	constexpr std::uint64_t compute(const Board &board)
-	{
-		std::uint64_t hash = 0;
-
-		for (short x = 0; x < 8; x++)
-			for (short y = 0; y < 8; y++)
-				if (board.data[x][y])
-					hash ^= hashArray[x][y][indexOf(board.data[x][y])];
-
-		return hash;
-	}
-
-	std::uint64_t compute(std::uint64_t previousHash, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece);
-}
+	static std::uint64_t compute(const Board &board);
+};

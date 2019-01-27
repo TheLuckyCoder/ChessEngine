@@ -6,10 +6,8 @@
 #include "Player.h"
 #include "pieces/Evaluation.h"
 #include "pieces/Piece.h"
-#include "../minimax/MiniMax.h"
 #include "../BoardManager.h"
 
-// Class that keeps a 2D Array
 class Board final
 {
 public:
@@ -17,8 +15,8 @@ public:
 	std::uint64_t hash = 0;
 	bool whiteCastled = false;
 	bool blackCastled = false;
-	int value;
 	GameState state = GameState::NONE;
+	int value = 0;
 
 	Board() = default;
 	Board(Board&&) = default;
@@ -35,10 +33,11 @@ public:
 	std::unordered_map<Pos, Piece> getAllPieces() const;
 
 	template<class T> // Move or Board
-	StackVector<T, 90> listValidMoves(bool isWhite) const;
+	StackVector<T, 150> listValidMoves(bool isWhite) const;
+	StackVector<Board, 90> listValidMovesQ(bool isWhite) const;
 };
 
-class Move
+class Move final
 {
 public:
 	Pos start;
@@ -54,16 +53,24 @@ public:
 	}
 };
 
+class Cache final
+{
+public:
+	GameState state;
+	int value;
+};
+
 template<class T>
-StackVector<T, 90> Board::listValidMoves(const bool isWhite) const
+StackVector<T, 150> Board::listValidMoves(const bool isWhite) const
 {
 	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
-	StackVector<T, 90> moves;
+	StackVector<T, 150> moves;
 
 	for (const auto &pair : pieces)
 	{
-		const auto &startPos = pair.first;
-		const auto possibleMoves = pair.second.getPossibleMoves(startPos, *this);
+		const auto &selectedPos = pair.first;
+		const auto &selectedPiece = pair.second;
+		const auto possibleMoves = selectedPiece.getPossibleMoves(selectedPos, *this);
 
 		for (const auto &destPos : possibleMoves)
 		{
@@ -71,36 +78,16 @@ StackVector<T, 90> Board::listValidMoves(const bool isWhite) const
 				continue;
 
 			Board board = *this;
-			BoardManager::movePieceInternal(startPos, destPos, board);
+			BoardManager::movePieceInternal(selectedPos, destPos, board);
 
 			if ((isWhite && board.state == GameState::WHITE_IN_CHESS) ||
 				(!isWhite && board.state == GameState::BLACK_IN_CHESS))
 				continue;
 
-			switch (board.state)
-			{
-			case GameState::NONE:
-			case GameState::WHITE_IN_CHESS:
-			case GameState::BLACK_IN_CHESS:
-				board.value = Evaluation::evaluate(board);
-				break;
-			case GameState::DRAW:
-				board.value = 0;
-				break;
-			case GameState::WINNER_WHITE:
-				board.value = MiniMax::VALUE_WINNER_WHITE;
-				break;
-			case GameState::WINNER_BLACK:
-				board.value = MiniMax::VALUE_WINNER_BLACK;
-				break;
-			}
-
 			if constexpr (std::is_same_v<T, Move>)
-				moves.emplace_back(startPos, destPos, std::move(board));
+				moves.emplace_back(selectedPos, destPos, std::move(board));
 			else if constexpr (std::is_same_v<T, Board>)
 				moves.push_back(std::move(board));
-
-			++BoardManager::boardsEvaluated;
 		}
 	}
 

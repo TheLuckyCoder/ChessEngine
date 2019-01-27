@@ -5,21 +5,22 @@
 
 Board::Board(const Board &board)
 {
-	std::copy(board.data.begin(), board.data.end(), data.begin());
+	std::memcpy(&data, &board.data, sizeof(data));
 	hash = board.hash;
 	whiteCastled = board.whiteCastled;
 	blackCastled = board.blackCastled;
+	state = board.state;
 }
 
 Board &Board::operator=(const Board &other)
 {
 	if (this != &other)
 	{
-		std::copy(other.data.begin(), other.data.end(), data.begin());
+		std::memcpy(&data, &other.data, sizeof(data));
 		hash = other.hash;
 		whiteCastled = other.whiteCastled;
 		blackCastled = other.blackCastled;
-		state = GameState::NONE;
+		state = other.state;
 	}
 	return *this;
 }
@@ -72,6 +73,9 @@ void Board::initDefaultBoard()
 	data[4][7] = Piece(Piece::Type::KING, false);
 
 	hash = Hash::compute(*this);
+	whiteCastled = false;
+	blackCastled = false;
+	state = GameState::NONE;
 }
 
 std::unordered_map<Pos, Piece> Board::getAllPieces() const
@@ -85,4 +89,35 @@ std::unordered_map<Pos, Piece> Board::getAllPieces() const
 				map[Pos(x, y)] = data[x][y];
 
 	return map;
+}
+
+StackVector<Board, 90> Board::listValidMovesQ(const bool isWhite) const
+{
+	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
+	StackVector<Board, 90> moves;
+
+	for (const auto &pair : pieces)
+	{
+		const auto &startPos = pair.first;
+		const auto possibleMoves = pair.second.getPossibleMoves(startPos, *this);
+
+		for (const auto &destPos : possibleMoves)
+		{
+			if (const auto &piece = (*this)[destPos]; !piece && piece.type == Piece::Type::KING)
+				continue;
+
+			Board board = *this;
+			BoardManager::movePieceInternal(startPos, destPos, board);
+
+			if ((isWhite && board.state == GameState::WHITE_IN_CHESS) ||
+				(!isWhite && board.state == GameState::BLACK_IN_CHESS))
+				continue;
+
+			moves.push_back(std::move(board));
+		}
+	}
+
+	std::sort(moves.begin(), moves.end());
+
+	return moves;
 }

@@ -4,7 +4,8 @@
 #include <unordered_set>
 
 #include "Piece.h"
-#include "../../StackVector.h"
+#include "../../memory/StackVector.h"
+#include "../../memory/Containers.h"
 
 namespace MoveGen
 {
