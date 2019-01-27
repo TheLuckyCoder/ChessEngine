@@ -12,7 +12,8 @@ namespace Player
 	{
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
-				if (const auto &piece = board.data[x][y]; piece.type == Piece::Type::KING && piece.isWhite == isWhite)
+				if (const auto &piece = board.data[x][y];
+					piece.type == Piece::Type::KING && piece.isWhite == isWhite)
 					return Pos(x, y);
 
 		return Pos();
@@ -22,7 +23,8 @@ namespace Player
 	{
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
-				if (board.data[x][y].type != Piece::Type::KING)
+				if (const auto &piece = board.data[x][y];
+					piece && piece.type != Piece::Type::KING)
 					return false;
 
 		return true;
@@ -30,10 +32,10 @@ namespace Player
 
 	bool hasNoMoves(const bool isWhite, const Board &board)
 	{
-		for (byte i = 0; i < 8; i++)
-			for (byte j = 0; j < 8; j++)
+		for (byte x = 0; x < 8; x++)
+			for (byte y = 0; y < 8; y++)
 			{
-				const Pos startPos(i, j);
+				const Pos startPos(x, y);
 				const auto &piece = board[startPos];
 				const auto possibleMoves = piece.getPossibleMoves(startPos, board);
 
@@ -89,22 +91,19 @@ namespace Player
 	bool isInChess(const bool isWhite, const Board &board)
 	{
 		const auto moves = MoveGen::getAllAttacksPerColor(!isWhite, board);
-		const auto iterator = moves.find(getKingPos(isWhite, board));
-
-		return iterator != moves.end();
+		return moves.find(getKingPos(isWhite, board)) != moves.end();
 	}
 
-	std::unordered_map<Pos, Piece> getAllOwnedPieces(const bool isWhite, const Board &board)
+	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(const bool isWhite, const Board &board)
 	{
-		std::unordered_map<Pos, Piece> map;
-		map.reserve(16);
+		StackVector<std::pair<Pos, Piece>, 16> pieces;
 
-		for (byte i = 0; i < 8; i++)
-			for (byte j = 0; j < 8; j++)
-				if (const auto piece = board.data[i][j]; piece && piece.isWhite == isWhite)
-					map[Pos(i, j)] = piece;
+		for (byte x = 0; x < 8; x++)
+			for (byte y = 0; y < 8; y++)
+				if (const auto &piece = board.data[x][y]; piece && piece.isWhite == isWhite)
+					pieces.emplace_back(Pos(x, y), piece);
 
-		return map;
+		return pieces;
 	}
 
 }

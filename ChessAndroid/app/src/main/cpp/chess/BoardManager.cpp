@@ -18,8 +18,10 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 {
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
-	movesHistory.reserve(50);
+	movesHistory.reserve(100);
+
 	boardsEvaluated = 0;
+	movesHistory.clear();
 
 	// TODO: Support both sides again
 	//srand(static_cast<unsigned int>(time(nullptr)));
@@ -36,7 +38,7 @@ void BoardManager::loadGame(const Board &board)
 	if (m_Board.hash == 0)
 		m_Board.hash = Hash::compute(m_Board);
 
-	evaluationsCache.clear();
+	boardsEvaluated = 0;
 	movesHistory.clear();
 }
 
@@ -45,7 +47,7 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves)
 	m_Board.initDefaultBoard();
 	m_Board.hash = Hash::compute(m_Board);
 
-	evaluationsCache.clear();
+
 	m_Listener(GameState::NONE, true, {});
 
 	for (const auto &move : moves)
@@ -54,7 +56,17 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves)
 
 Piece::MovesReturnType BoardManager::getPossibleMoves(const Pos &selectedPos)
 {
-	return m_Board[selectedPos].getValidMoves(selectedPos, m_Board);
+	const auto &piece = m_Board[selectedPos];
+	auto moves = piece.getPossibleMoves(selectedPos, m_Board);
+
+	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
+		Board newBoard = m_Board;
+		movePieceInternal(selectedPos, destPos, newBoard, false);
+		return Player::isInChess(piece.isWhite, newBoard);
+	});
+	moves.erase(iterator, moves.end());
+
+	return moves;
 }
 
 void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const bool movedByPlayer)
@@ -180,60 +192,40 @@ bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)
 	return false;
 }
 
-PosPair BoardManager::moveKing(Piece &king, Pos selectedPos, const Pos &destPos, Board &board)
+PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &destPos, Board &board)
 {
 	if (destPos.x == 6)
 	{
-		while (selectedPos.x < 7)
+		const auto y = selectedPos.y;
+		const byte startX = 7;
+
+		auto &rook = board.data[startX][y];
+		if (rook.type == Piece::Type::ROOK && king.hasSameColor(rook) && !rook.moved)
 		{
-			selectedPos.x++;
-			auto &other = board[selectedPos];
+			rook.moved = true;
 
-			if (selectedPos.x < 7)
-			{
-				if (other)
-					break;
-			}
-			else if (other.type == Piece::Type::ROOK && king.hasSameColor(other) && !other.moved)
-			{
-				// Move the Rook
-				const byte startX = 7;
-				const byte destX = 5;
-				const byte y = selectedPos.y;
+			const byte destX = 5;
+			board.data[destX][y] = rook;
+			board.data[startX][y] = Piece();
 
-				other.moved = true;
-				board.data[destX][y] = other;
-				board.data[startX][y] = Piece();
-
-				return std::make_pair(Pos(startX, y), Pos(destX, y));
-			}
+			return std::make_pair(Pos(startX, y), Pos(destX, y));
 		}
 	}
 	else if (destPos.x == 2)
 	{
-		while (selectedPos.x > 0)
+		const byte startX = 0;
+		const auto y = selectedPos.y;
+
+		auto &rook = board.data[startX][y];
+		if (rook.type == Piece::Type::ROOK && king.hasSameColor(rook) && !rook.moved)
 		{
-			selectedPos.x--;
-			auto &other = board[selectedPos];
+			rook.moved = true;
 
-			if (selectedPos.x > 0)
-			{
-				if (other)
-					break;
-			}
-			else if (other.type == Piece::Type::ROOK && king.hasSameColor(other) && !other.moved)
-			{
-				// Move the Rook
-				const byte startX = 0;
-				const byte destX = 3;
-				const byte y = selectedPos.y;
+			const byte destX = 5;
+			board.data[destX][y] = rook;
+			board.data[startX][y] = Piece();
 
-				other.moved = true;
-				board.data[destX][y] = other;
-				board.data[startX][y] = Piece();
-
-				return std::make_pair(Pos(startX, y), Pos(destX, y));
-			}
+			return std::make_pair(Pos(startX, y), Pos(destX, y));
 		}
 	}
 

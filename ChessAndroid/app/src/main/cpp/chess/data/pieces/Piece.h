@@ -1,11 +1,11 @@
 #pragma once
 
 #include "../Pos.h"
-#include "../../StackVector.h"
+#include "../../memory/StackVector.h"
 
 class Board;
 
-class Piece
+class Piece final
 {
 public:
 	using MovesReturnType = StackVector<Pos, 27>;
@@ -32,7 +32,6 @@ public:
 	~Piece() = default;
 
 	MovesReturnType getPossibleMoves(const Pos &pos, const Board &board) const;
-	MovesReturnType getValidMoves(const Pos &pos, const Board &board) const;
 	bool hasSameColor(const Piece &other) const;
 
 	Piece &operator=(const Piece &other) = default;

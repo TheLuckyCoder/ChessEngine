@@ -5,6 +5,7 @@
 
 #include "../Board.h"
 #include "../../BoardManager.h"
+#include "../../memory/Containers.h"
 
 namespace MoveGen
 {
@@ -74,7 +75,7 @@ namespace MoveGen
 
 			if (startPos.isValid())
 			{
-				auto &other = board[startPos];
+				const auto &other = board[startPos];
 
 				if (!other || !piece.hasSameColor(other))
 					moves.push_back(startPos);
@@ -106,9 +107,7 @@ namespace MoveGen
 			posCopy.x++;
 			posCopy.y--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -123,9 +122,7 @@ namespace MoveGen
 			posCopy.x++;
 			posCopy.y++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -140,9 +137,7 @@ namespace MoveGen
 			posCopy.x--;
 			posCopy.y--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -157,9 +152,7 @@ namespace MoveGen
 			posCopy.x--;
 			posCopy.y++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -180,9 +173,7 @@ namespace MoveGen
 		{
 			posCopy.x--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -196,9 +187,7 @@ namespace MoveGen
 		{
 			posCopy.x++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -212,9 +201,7 @@ namespace MoveGen
 		{
 			posCopy.y--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -228,9 +215,7 @@ namespace MoveGen
 		{
 			posCopy.y++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -252,9 +237,7 @@ namespace MoveGen
 		{
 			posCopy.x--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -268,9 +251,7 @@ namespace MoveGen
 		{
 			posCopy.x++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -284,9 +265,7 @@ namespace MoveGen
 		{
 			posCopy.y--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -300,9 +279,7 @@ namespace MoveGen
 		{
 			posCopy.y++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -318,9 +295,7 @@ namespace MoveGen
 			posCopy.x++;
 			posCopy.y--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -335,9 +310,7 @@ namespace MoveGen
 			posCopy.x++;
 			posCopy.y++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -352,9 +325,7 @@ namespace MoveGen
 			posCopy.x--;
 			posCopy.y--;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -369,9 +340,7 @@ namespace MoveGen
 			posCopy.x--;
 			posCopy.y++;
 
-			auto &other = board[posCopy];
-
-			if (other)
+			if (const auto &other = board[posCopy]; other)
 			{
 				if (!piece.hasSameColor(other))
 					moves.push_back(posCopy);
@@ -385,8 +354,7 @@ namespace MoveGen
 
 	std::unordered_set<Pos> getAllAttacksPerColor(const bool white, const Board &board)
 	{
-		std::unordered_set<Pos> attacks;
-		attacks.reserve(64);
+		std::unordered_set<Pos> attacks(64);
 
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
@@ -418,19 +386,34 @@ namespace MoveGen
 
 	std::unordered_map<Pos, short> getAllMovesPerColor(const bool white, const Board &board)
 	{
-		std::unordered_map<Pos, short> allMoves;
-		allMoves.reserve(64);
+		std::unordered_map<Pos, short> allMoves(64);
 
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
 			{
 				const Pos pos(x, y);
 				const auto &piece = board[pos];
+
 				if (piece && piece.isWhite == white)
 				{
-					const auto moves = piece.getPossibleMoves(pos, board);
-					for (const auto &move : moves)
-						allMoves[move]++;
+					if (piece.type == Piece::Type::PAWN)
+					{
+						const auto moves = generatePawnAttacks(piece, pos);
+						for (const auto &move : moves)
+							allMoves[move]++;
+					}
+					else if (piece.type == Piece::Type::KING)
+					{
+						const auto moves = generateKingInitialMoves(pos);
+						for (const auto &move : moves)
+							allMoves[move]++;
+					}
+					else
+					{
+						const auto moves = piece.getPossibleMoves(pos, board);
+						for (const auto &move : moves)
+							allMoves[move]++;
+					}
 				}
 			}
 
@@ -486,7 +469,7 @@ namespace MoveGen
 
 		for (unsigned int i = 0; i < moves.size(); i++)
 		{
-			if (std::find(opponentsMoves.begin(), opponentsMoves.end(), moves[i]) != opponentsMoves.end())
+			if (opponentsMoves.find(moves[i]) != opponentsMoves.end())
 			{
 				moves[i] = moves.back();
 				moves.pop_back();
@@ -495,44 +478,22 @@ namespace MoveGen
 		}
 
 		// Castling
-		if (!piece.moved && std::find(opponentsMoves.begin(), opponentsMoves.end(), pos) == opponentsMoves.end())
+		if (!piece.moved && opponentsMoves.find(pos) == opponentsMoves.end())
 		{
-			Pos posCopy = pos;
-			while (posCopy.x < 7)
-			{
-				posCopy.x++;
-				auto &other = board[posCopy];
+			const auto y = pos.y;
+			const auto isEmptyAndChessFree = [&, y] (const byte x) {
+				return !board.data[x][y] && opponentsMoves.find(Pos(x, y)) == opponentsMoves.end();
+			};
 
-				if (std::find(opponentsMoves.begin(), opponentsMoves.end(), posCopy) != opponentsMoves.end())
-					break;
+			if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
+				if (const auto &other = board.data[7][y];
+					other.type == Piece::Type::ROOK && piece.hasSameColor(other) && !other.moved)
+					moves.emplace_back(6, pos.y);
 
-				if (posCopy.x < 7)
-				{
-					if (other)
-						break;
-				}
-				else if (other && piece.hasSameColor(other) && other.type == Piece::Type::ROOK && !other.moved)
-					moves.emplace_back(6, posCopy.y);
-			}
-
-			posCopy = pos;
-			while (posCopy.x > 0)
-			{
-				posCopy.x--;
-				const auto &other = board[posCopy];
-
-				if ((posCopy.x == 2 || posCopy.x == 3) &&
-					std::find(opponentsMoves.begin(), opponentsMoves.end(), posCopy) != opponentsMoves.end())
-					break;
-
-				if (posCopy.x > 0)
-				{
-					if (other)
-						break;
-				}
-				else if (other && piece.hasSameColor(other) && other.type == Piece::Type::ROOK && !other.moved)
-					moves.emplace_back(2, posCopy.y);
-			}
+			if (isEmptyAndChessFree(3) && isEmptyAndChessFree(2) && !board.data[1][y])
+				if (const auto &other = board.data[0][y];
+					other.type == Piece::Type::ROOK && piece.hasSameColor(other) && !other.moved)
+					moves.emplace_back(2, pos.y);
 		}
 
 		return moves;

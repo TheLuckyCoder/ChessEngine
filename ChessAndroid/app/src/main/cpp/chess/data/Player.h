@@ -1,7 +1,6 @@
 #pragma once
 
-#include <unordered_map>
-
+#include "../memory/StackVector.h"
 #include "../data/Pos.h"
 
 class Piece;
@@ -15,6 +14,6 @@ namespace Player
 	bool hasNoMoves(bool isWhite, const Board &board);
 	bool hasNoValidMoves(bool isWhite, const Board &board);
 	bool isInChess(bool isWhite, const Board &board);
-	std::unordered_map<Pos, Piece> getAllOwnedPieces(bool isWhite, const Board &board);
+	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(bool isWhite, const Board &board);
 
 }

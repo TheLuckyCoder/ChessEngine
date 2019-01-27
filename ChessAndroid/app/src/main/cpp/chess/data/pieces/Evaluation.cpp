@@ -4,14 +4,13 @@
 #include "../Board.h"
 #include "../Game.h"
 
-constexpr int PAWN = 100;
-constexpr int KNIGHT = 300;
-constexpr int BISHOP = 325;
-constexpr int ROOK = 500;
-constexpr int QUEEN = 975;
-constexpr int KING = 32767;
-
 using EvalArray = std::array<std::array<short, 8>, 8>;
+
+constexpr Score PAWN(136, 208);
+constexpr Score KNIGHT(782, 865);
+constexpr Score BISHOP(830, 918);
+constexpr Score ROOK(1289, 1378);
+constexpr Score QUEEN(2529, 2687);
 
 constexpr EvalArray reverseCopy(const EvalArray &source)
 {
@@ -30,14 +29,14 @@ constexpr EvalArray reverseCopy(const EvalArray &source)
 
 constexpr EvalArray PAWN_WHITE
 { {
-	{ 0,   0,   0,   0,   0,   0,   0,  0},
-	{50,  50,  50,  50,  50,  50,  50, 50},
-	{10,  10,  20,  30,  30,  20,  10, 10},
-	{ 5,   5,  10,  30,  30,  10,   5,  5},
-	{ 0,   0,   0,  25,  25,   0,   0,  0},
-	{ 5,  -5, -10,   0,   0, -10,  -5,  5},
-	{ 5,  10,  10, -20, -20,  10,  10,  5},
-	{ 0,   0,   0,   0,   0,   0,   0,  0}
+	{ 0,  0,   0,   0,   0,   0,   0,  0},
+	{50, 50,  50,  50,  50,  50,  50, 50},
+	{10, 10,  20,  30,  30,  20,  10, 10},
+	{ 5,  5,  10,  35,  35,  10,   5,  5},
+	{ 0,  0,   0,  25,  25,   0,   0,  0},
+	{ 5, -5, -10,   0,   0, -10,  -5,  5},
+	{ 5, 10,  10, -20, -20,  10,  10,  5},
+	{ 0,  0,   0,   0,   0,   0,   0,  0}
 } };
 
 constexpr EvalArray KNIGHT_WHITE
@@ -120,107 +119,152 @@ constexpr EvalArray QUEEN_BLACK = reverseCopy(QUEEN_WHITE);
 constexpr EvalArray KING_BLACK = reverseCopy(KING_WHITE);
 constexpr EvalArray KING_BLACK_ENDING = reverseCopy(KING_WHITE_ENDING);
 
+#define S Score
+
+constexpr S PAWN_DOUBLED(11, 56);
+constexpr S PAWN_ISOLATED(5, 15);
+
+constexpr Score KNIGHT_MOBILITY[] =
+{
+	S(-62,-81), S(-53,-56), S(-12,-30), S(-4,-14), S(3,  8), S(13, 15),
+	S(22, 23), S(28, 27), S(33, 33)
+};
+constexpr Score BISHOP_MOBILITY[] =
+{
+	S(-48,-59), S(-20,-23), S(16, -3), S(26, 13), S(38, 24), S(51, 42),
+	S(55, 54), S(63, 57), S(63, 65), S(68, 73), S(81, 78), S(81, 86),
+	S(91, 88), S(98, 97)
+};
+constexpr Score ROOK_MOBILITY[] =
+{
+	S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S(-5, 69), S(-2, 82),
+	S(9,112), S(16,118), S(30,132), S(29,142), S(32,155), S(38,165),
+	S(46,166), S(48,169), S(58,171)
+};
+constexpr Score QUEEN_MOBILITY[] =
+{
+	S(-39,-36), S(-21,-15), S(3,  8), S(3, 18), S(14, 34), S(22, 54),
+	S(28, 61), S(41, 73), S(43, 79), S(48, 92), S(56, 94), S(60,104),
+	S(60,113), S(66,120), S(67,123), S(70,126), S(71,133), S(73,136),
+	S(79,140), S(88,143), S(88,148), S(99,166), S(102,170), S(102,175),
+	S(106,184), S(109,191), S(113,206), S(116,212)
+};
+#undef S
+
 int Evaluation::evaluate(const Board &board)
 {
-	int value = 0;
-	byte remainingPieces = 0;
-	std::pair<byte, byte> bishopCount;
+	++BoardManager::boardsEvaluated;
+
+	Score score;
+	int npm = 0;
+
+	std::pair<short, short> bishopCount;
 
 	auto whiteMoves = MoveGen::getAllMovesPerColor(true, board);
 	auto blackMoves = MoveGen::getAllMovesPerColor(false, board);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			if (board.data[x][y])
+			if (const auto &piece = board.data[x][y]; piece && piece.type != Piece::Type::KING)
 			{
-				remainingPieces++;
-				const Pos pos(x, y);
-				const auto &piece = board[pos];
-
 				{
+					const Pos pos(x, y);
 					const auto defendedValue = piece.isWhite ? whiteMoves[pos] : blackMoves[pos];
 					const auto attackedValue = piece.isWhite ? blackMoves[pos] : whiteMoves[pos];
 
 					if (defendedValue < attackedValue)
-						value -= (attackedValue - defendedValue) * 10;
+						score -= (attackedValue - defendedValue) * 10;
 				}
-				
-				if (piece.type == Piece::Type::BISHOP)
-				{
-					if (piece.isWhite) bishopCount.first++; else bishopCount.second++;
-				}
+
+				npm += [&]() -> short {
+					switch (piece.type)
+					{
+					case Piece::Type::PAWN:
+						return PAWN.mg;
+					case Piece::Type::KNIGHT:
+						return KNIGHT.mg;
+					case Piece::Type::BISHOP:
+					{
+						if (piece.isWhite) bishopCount.first++; else bishopCount.second++;
+						return BISHOP.mg;
+					}
+					case Piece::Type::ROOK:
+						return ROOK.mg;
+					case Piece::Type::QUEEN:
+						return QUEEN.mg;
+					default:
+						return 0;
+					}
+				}();
 			}
 
-	const auto phase = remainingPieces < 10 ? GamePhase::ENDING : GamePhase::MIDDLE;
-	short count = 0;
+	// 2 Bishops receive a bonus
+	if (bishopCount.first >= 2)
+		score += 10;
+	if (bishopCount.second >= 2)
+		score -= 10;
+
+	const static auto midgameLimit = 15258, endgameLimit = 3915;
+	npm = std::max(endgameLimit, std::min(npm, midgameLimit));
+	const auto phase = static_cast<GamePhase>(((npm - endgameLimit) * 128) / (midgameLimit - endgameLimit));
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
 			if (const auto &piece = board.data[x][y]; piece)
 			{
-				const Pos pos(x, y);
-				int points;
-				switch (piece.type)
-				{
-				case Piece::Type::PAWN:
-					points = evaluatePawn(piece, pos, board);
-					break;
-				case Piece::Type::KNIGHT:
-					points = evaluateKnight(piece, pos, board, phase);
-					break;
-				case Piece::Type::BISHOP:
-					points = evaluateBishop(piece, pos, board, phase, bishopCount);
-					break;
-				case Piece::Type::ROOK:
-					points = evaluateRook(piece, pos, board, phase);
-					break;
-				case Piece::Type::QUEEN:
-					points = evaluateQueen(piece, pos, phase);
-					break;
-				case Piece::Type::KING:
-					if (piece.isWhite)
-						points = evaluateKing(piece, pos, board, blackMoves, phase);
-					else
-						points = evaluateKing(piece, pos, board, whiteMoves, phase);
-					break;
-				default:
-					points = 0;
-					break;
-				}
+				const Score points = [&] {
+					auto &opponentsAttacks = piece.isWhite ? blackMoves : whiteMoves;
+					const Pos pos(x, y);
+					switch (piece.type)
+					{
+					case Piece::Type::PAWN:
+						return evaluatePawn(piece, pos, board, opponentsAttacks);
+					case Piece::Type::KNIGHT:
+						return evaluateKnight(piece, pos, board);
+					case Piece::Type::BISHOP:
+						return evaluateBishop(piece, pos, board);
+					case Piece::Type::ROOK:
+						return evaluateRook(piece, pos, board);
+					case Piece::Type::QUEEN:
+						return evaluateQueen(piece, pos, board);
+					case Piece::Type::KING:
+						return evaluateKing(piece, pos, board, opponentsAttacks);
+					default:
+						return Score();
+					}
+				}();
 
 				if (piece.isWhite)
-				{
-					value += points;
-					count++;
-				}
+					score += points;
 				else
-				{
-					value -= points;
-					count--;
-				}
+					score -= points;
 			}
 
-	value += count * 40;
+	if (board.whiteCastled)
+		score.mg += 20;
+	if (board.blackCastled)
+		score.mg -= 20;
 
 	if (board.state == GameState::BLACK_IN_CHESS)
 	{
-		value += 60;
-		if (phase == GamePhase::ENDING)
-			value += 10;
+		score.mg += 35;
+		score.eg += 45;
 	}
 	else if (board.state == GameState::WHITE_IN_CHESS)
 	{
-		value -= 60;
-		if (phase == GamePhase::ENDING)
-			value -= 10;
+		score.mg -= 35;
+		score.eg -= 45;
 	}
 
-	return value;
+	if (phase == GamePhase::MIDDLE)
+		return score.mg;
+	return score.eg;
 }
 
-int Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board)
+inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, std::unordered_map<Pos, short> &opponentsAttacks)
 {
-	int value = PAWN + (piece.isWhite ? PAWN_WHITE[pos.y][pos.x] : PAWN_BLACK[pos.y][pos.x]);
+	Score value = PAWN;
+	value.mg += piece.isWhite ? PAWN_WHITE[pos.y][pos.x] : PAWN_BLACK[pos.y][pos.x];
 
 	// Rook Pawns are worth 15% less because they can only attack one way
 	if (pos.x == 0 || pos.x == 7)
@@ -231,22 +275,22 @@ int Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &bo
 	if (const auto &pieceAbove = board.data[pos.x][pos.y + 1];
 		piece.hasSameColor(pieceAbove) && pieceAbove.type == Piece::Type::PAWN)
 	{
-		value -= 16;
+		value -= PAWN_DOUBLED;
 		isolated = false;
 	} else if (const auto &pieceBelow = board.data[pos.x][pos.y - 1];
 		piece.hasSameColor(pieceBelow) && pieceBelow.type == Piece::Type::PAWN)
 	{
-		value -= 16;
+		value -= PAWN_DOUBLED;
 		isolated = false;
 	}
 
-	const std::array<Pos, 6> nearby {
-		pos + Pos(0, 1),
-		pos + Pos(1, 1),
-		pos + Pos(1, -1),
-		pos + Pos(-1, -1),
-		pos + Pos(0, -1),
-		pos + Pos(-1, 1),
+	const Pos nearby[6] {
+		Pos(pos, 0, 1),
+		Pos(pos, 1, 1),
+		Pos(pos, 1, -1),
+		Pos(pos, -1, -1),
+		Pos(pos, 0, -1),
+		Pos(pos, -1, 1)
 	};
 
 	if (isolated)
@@ -262,96 +306,84 @@ int Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &bo
 	}
 
 	if (isolated)
-		value -= 12;
+		value -= PAWN_ISOLATED;
 
-	value += MoveGen::generatePawnMoves(piece, pos, board).size();
-
-	if ((piece.isWhite && pos.y == 6) ||
-		(!piece.isWhite && pos.y == 1))
+	if (((piece.isWhite && pos.y == 6) || (!piece.isWhite && pos.y == 1)) && opponentsAttacks[pos] == 0)
 		value += 100;
 
 	return value;
 }
 
-int Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board, const GamePhase phase)
+inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board)
 {
-	int value = KNIGHT + (piece.isWhite ? KNIGHT_WHITE[pos.y][pos.x] : KNIGHT_BLACK[pos.y][pos.x]);
+	Score value = KNIGHT;
+	value.mg += piece.isWhite ? KNIGHT_WHITE[pos.y][pos.x] : KNIGHT_BLACK[pos.y][pos.x];
 
-	value += MoveGen::generateKnightMoves(piece, pos, board).size();
-
-	// In the end game remove a few points for Knights since they are worth less
-	if (phase == GamePhase::ENDING)
-		value -= 10;
+	value += KNIGHT_MOBILITY[MoveGen::generateKnightMoves(piece, pos, board).size()];
 
 	return value;
 }
 
-int Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board, const GamePhase phase, std::pair<byte, byte> bishopCount)
+inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board)
 {
-	int value = BISHOP + (piece.isWhite ? BISHOP_WHITE[pos.y][pos.x] : BISHOP_BLACK[pos.y][pos.x]);
+	Score value = BISHOP;
 
-	value += MoveGen::generateBishopMoves(piece, pos, board).size();
+	value.mg += piece.isWhite ? BISHOP_WHITE[pos.y][pos.x] : BISHOP_BLACK[pos.y][pos.x];
 
-	// 2 Bishops receive a bonus
-	if ((piece.isWhite && bishopCount.first >= 2) ||
-		(!piece.isWhite && bishopCount.second >= 2))
-		value += 10;
-
-	// In the end game Bishops are worth more
-	if (phase == GamePhase::ENDING)
-		value += 10;
+	value += BISHOP_MOBILITY[MoveGen::generateBishopMoves(piece, pos, board).size()];
 
 	return value;
 }
 
-int Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board, const GamePhase phase)
+inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board)
 {
-	int value = ROOK + (piece.isWhite ? ROOK_WHITE[pos.y][pos.x] : ROOK_BLACK[pos.y][pos.x]);
+	Score value = ROOK;
 
-	value += MoveGen::generateRookMoves(piece, pos, board).size();
+	value.mg += piece.isWhite ? ROOK_WHITE[pos.y][pos.x] : ROOK_BLACK[pos.y][pos.x];
 
-	if (piece.moved && phase != GamePhase::ENDING)
+	value += ROOK_MOBILITY[MoveGen::generateRookMoves(piece, pos, board).size()];
+
+	if (piece.moved)
 		if ((piece.isWhite && !board.whiteCastled) ||
 			(!piece.isWhite && !board.blackCastled))
-			value -= 10;
+			value.mg -= 10;
 
 	return value;
 }
 
-int Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const GamePhase phase)
+inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board)
 {
-	int value = QUEEN + (piece.isWhite ? QUEEN_WHITE[pos.y][pos.x] : QUEEN_BLACK[pos.y][pos.x]);
+	Score value = QUEEN;
+	value.mg += piece.isWhite ? QUEEN_WHITE[pos.y][pos.x] : QUEEN_BLACK[pos.y][pos.x];
 
-	if (piece.moved && phase != GamePhase::ENDING)
-		value -= 15;
+	value += QUEEN_MOBILITY[MoveGen::generateQueenMoves(piece, pos, board).size()];
+
+	if (piece.moved)
+		value.mg -= 18;
 
 	return value;
 }
 
-int Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board, const std::unordered_map<Pos, short> &opponentsMoves, const GamePhase phase)
+inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board, const std::unordered_map<Pos, short> &opponentsAttacks)
 {
-	int value = KING;
+	Score value(piece.isWhite ? KING_WHITE[pos.y][pos.x] : KING_BLACK[pos.y][pos.x],
+		piece.isWhite ? KING_WHITE_ENDING[pos.y][pos.x] : KING_BLACK_ENDING[pos.y][pos.x]);
 
-	if (phase == GamePhase::ENDING)
-		value += piece.isWhite ? KING_WHITE_ENDING[pos.y][pos.x] : KING_BLACK_ENDING[pos.y][pos.x];
-	else
+	if (piece.moved)
 	{
-		value += piece.isWhite ? KING_WHITE[pos.y][pos.x] : KING_BLACK[pos.y][pos.x];
-		
-		if (piece.moved)
-			if ((piece.isWhite && !board.whiteCastled) ||
-				(!piece.isWhite && !board.blackCastled))
-				value -= 30;
+		if ((piece.isWhite && !board.whiteCastled) ||
+			(!piece.isWhite && !board.blackCastled))
+			value.mg -= 20;
 	}
 
-	auto moves = MoveGen::generateKingInitialMoves(pos);
+	/*auto moves = MoveGen::generateKingInitialMoves(pos);
 	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
-		return opponentsMoves.find(destPos) == opponentsMoves.end();
+		return opponentsAttacks.find(destPos) != opponentsAttacks.end() || (board[destPos] && board[destPos].isWhite == piece.isWhite);
 	});
 	moves.erase(iterator, moves.end());
 
 	if (moves.size() < 2)
-		value -= 5;
+		value -= 5;*/
 
 	return value;
 }

@@ -16,6 +16,9 @@ public:
 	Pos(const byte x, const byte y)
 		: x(x), y(y) {}
 
+	Pos(const Pos pos, const byte x, const byte y)
+		: x(pos.x + x), y(pos.y + y) {}
+
 	bool isValid() const;
 
 	friend Pos operator+(Pos left, const Pos &right);
@@ -41,7 +44,7 @@ namespace std
 	template <>
 	struct hash<Pos>
 	{
-		std::size_t operator()(const Pos &pos) const
+		std::size_t operator()(const Pos &pos) const noexcept
 		{
 			return (std::hash<unsigned char>()(pos.x) << 2) ^ (std::hash<unsigned char>()(pos.y));
 		}

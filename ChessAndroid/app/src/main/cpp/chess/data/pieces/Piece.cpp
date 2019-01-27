@@ -1,7 +1,5 @@
 #include "Piece.h"
 
-#include <algorithm>
-
 #include "MoveGen.h"
 #include "../Board.h"
 #include "../../BoardManager.h"
@@ -41,22 +39,6 @@ Piece::MovesReturnType Piece::getPossibleMoves(const Pos &pos, const Board &boar
 	}
 
 	return result;
-}
-
-Piece::MovesReturnType Piece::getValidMoves(const Pos &pos, const Board &board) const
-{
-	auto moves = getPossibleMoves(pos, board);
-	if (type == Type::KING)
-		return moves;
-
-	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
-		Board newBoard = board;
-		BoardManager::movePieceInternal(pos, destPos, newBoard, false);
-		return Player::isInChess(isWhite, newBoard);
-	});
-	moves.erase(iterator, moves.end());
-
-	return moves;
 }
 
 bool Piece::hasSameColor(const Piece &other) const
