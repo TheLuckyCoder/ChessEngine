@@ -6,13 +6,13 @@
 std::vector<PosPair> MovesPersistence::load(std::string str)
 {
 	str.erase(std::remove_if(str.begin(), str.end(),
-		[](const char c) { return std::isblank(c); }), str.end());
+		[](const char c) { return std::isspace(c); }), str.end());
 	std::vector<PosPair> moves;
 
-	unsigned long prefix{};
+	size_t prefix = 0;
 	while (true)
 	{
-		const auto end = str.find('\n', prefix);
+		const auto end = str.find(')', prefix);
 
 		if (end == std::string_view::npos)
 			break;
@@ -46,7 +46,7 @@ Pos MovesPersistence::getPos(const std::string_view str)
 void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_view str)
 {
 	const auto selectedEnd = str.find(';');
-	auto destEnd = str.find('\n', selectedEnd + 1);
+	auto destEnd = str.find(')', selectedEnd + 1);
 
 	if (destEnd == std::string_view::npos)
 		destEnd = str.size() - 1;
@@ -56,6 +56,7 @@ void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_vie
 
 void MovesPersistence::savePosPair(std::ostringstream &stream, const PosPair &pair)
 {
-	stream << static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
-		<< static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y) << '\n';
+	stream << '('
+		<< static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
+		<< static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y) << ')';
 }

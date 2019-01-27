@@ -32,7 +32,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
     private lateinit var tvBoards: TextView
     private lateinit var tvState: TextView
     private val cells = HashMap<Pos, CellView>(64)
-    private val pieces = HashMap<Pos, PieceView>(32)
+    val pieces = HashMap<Pos, PieceView>(32)
     private val isPlayerWhite = Native.isPlayerWhite()
     private var selectedPos = Pos()
     private var canMove = true
@@ -107,6 +107,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
                         initBoard(true)
                         updatePieces()
                         updateState(0)
+                        canMove = true
                     }
                 }
             }
@@ -193,7 +194,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
                 y = yy.toFloat()
             }
 
-            this.pieces[Pos(it.x, it.y)] = pieceView
+            pieces[Pos(it.x, it.y)] = pieceView
             frameLayout.addView(pieceView)
         }
     }
@@ -208,12 +209,12 @@ class MainActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun updateState(state: Int) {
-        val value = Native.getCurrentBoardEvaluation()
-        tvBoards.text = "Current Board is evaluated at: $value"
-
+        val boardValue = Native.getCurrentBoardEvaluation()
         val evaluatedBoards = Native.getNumberOfEvaluatedBoards()
-        if (evaluatedBoards > 0)
-            tvBoards.append("\nBoards Evaluated: $evaluatedBoards")
+        tvBoards.text = getString(R.string.board_state, boardValue, evaluatedBoards)
+
+        if (evaluatedBoards.toString().contains("69", true))
+            tvBoards.append("\tNice.")
 
         tvState.text = when (state) {
             1 -> "White has won!"
@@ -226,7 +227,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
         pbLoading.visibility = if (Native.isWorking()) View.VISIBLE else View.INVISIBLE
 
-        if (state == 1 || state == 2 || state == 4) {
+        if (state in 1..3) {
             canMove = false
 
             AlertDialog.Builder(this)

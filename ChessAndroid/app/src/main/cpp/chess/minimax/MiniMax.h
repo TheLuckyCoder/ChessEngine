@@ -14,7 +14,7 @@ namespace MiniMax
 	PosPair MaxMove(const Board &board);
 	PosPair MinMove(const Board &board);
 
-	static int MaxMove(const Board &board, short depth, int alpha, int beta);
-	static int MinMove(const Board &board, short depth, int alpha, int beta);
+	static int MaxMove(const Board &board, short depth, int alpha, int beta, bool extended);
+	static int MinMove(const Board &board, short depth, int alpha, int beta, bool extended);
 
 }

@@ -1,19 +1,19 @@
 package net.theluckycoder.chess.views
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import net.theluckycoder.chess.MainActivity
 import net.theluckycoder.chess.Pos
 
 @SuppressLint("ViewConstructor")
 class CellView(
-    context: Context,
+    private val activity: MainActivity,
     isWhiteBackground: Boolean,
     val pos: Pos,
     private val listener: CustomView.ClickListener
-) : CustomView(context) {
+) : CustomView(activity) {
 
     init {
         setOnClickListener {
@@ -28,7 +28,7 @@ class CellView(
     }
 
     private val backgroundColor = Color.parseColor(if (isWhiteBackground) "#eeeed2" else "#769656")
-    private val statePaint = Paint().apply {
+    private val possibleStatePaint = Paint().apply {
         color = Color.parseColor("#4caf50")
     }
 
@@ -41,10 +41,15 @@ class CellView(
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(backgroundColor)
+
         if (state == State.SELECTED) {
-            canvas.drawColor(1727987712)
+            canvas.drawColor(Color.parseColor("#ef4fc3f7"))
         } else if (state == State.POSSIBLE) {
-            canvas.drawCircle(width / 2f, height / 2f, 21f, statePaint)
+            if (activity.pieces[pos] == null) {
+                canvas.drawCircle(width / 2f, height / 2f, 21f, possibleStatePaint)
+            } else {
+                canvas.drawPaint(possibleStatePaint)
+            }
         }
     }
 }
