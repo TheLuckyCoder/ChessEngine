@@ -14,14 +14,11 @@ Board::Board(const Board &board)
 
 Board &Board::operator=(const Board &other)
 {
-	if (this != &other)
-	{
-		std::memcpy(&data, &other.data, sizeof(data));
-		hash = other.hash;
-		whiteCastled = other.whiteCastled;
-		blackCastled = other.blackCastled;
-		state = other.state;
-	}
+	std::memcpy(&data, &other.data, sizeof(data));
+	hash = other.hash;
+	whiteCastled = other.whiteCastled;
+	blackCastled = other.blackCastled;
+	state = other.state;
 	return *this;
 }
 
@@ -78,17 +75,16 @@ void Board::initDefaultBoard()
 	state = GameState::NONE;
 }
 
-std::unordered_map<Pos, Piece> Board::getAllPieces() const
+StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const
 {
-	std::unordered_map<Pos, Piece> map;
-	map.reserve(32);
+	StackVector<std::pair<Pos, Piece>, 32> pieces;
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
 			if (data[x][y])
-				map[Pos(x, y)] = data[x][y];
+				pieces.emplace_back(Pos(x, y), data[x][y]);
 
-	return map;
+	return pieces;
 }
 
 StackVector<Board, 90> Board::listValidMovesQ(const bool isWhite) const

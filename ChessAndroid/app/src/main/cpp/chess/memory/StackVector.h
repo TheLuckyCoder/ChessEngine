@@ -139,6 +139,21 @@ public:
 		return *this;
 	}
 
+	template<size_type otherN>
+	CPP14_CONSTEXPR StackVector &operator+=(StackVector<T, otherN> &&other) noexcept
+	{
+		size_t otherSize = other.size() > N ? N : other.size();
+
+		if (_size + otherSize > N)
+			otherSize = N - (_size + otherSize);
+
+		std::move(other.begin(), other.begin() + otherSize, begin() + _size);
+
+		_size += otherSize;
+
+		return *this;
+	}
+
 	StackVector &operator=(const StackVector&) = default;
 	StackVector &operator=(StackVector&&) noexcept = default;
 

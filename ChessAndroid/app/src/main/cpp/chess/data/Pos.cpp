@@ -1,10 +1,5 @@
 #include "Pos.h"
 
-bool Pos::isValid() const
-{
-	return x < 8 && y < 8;
-}
-
 Pos operator+(Pos  left, const Pos &right)
 {
 	return left += right;
@@ -35,7 +30,7 @@ bool Pos::operator!=(const Pos &other) const
 	return !(*this == other);
 }
 
-Pos &Pos::operator+=(const Pos &other)
+constexpr Pos &Pos::operator+=(const Pos &other)
 {
 	x += other.x;
 	y += other.y;
@@ -43,7 +38,7 @@ Pos &Pos::operator+=(const Pos &other)
 	return *this;
 }
 
-Pos &Pos::operator-=(const Pos &other)
+constexpr Pos &Pos::operator-=(const Pos &other)
 {
 	x -= other.x;
 	y -= other.y;
@@ -51,7 +46,7 @@ Pos &Pos::operator-=(const Pos &other)
 	return *this;
 }
 
-Pos &Pos::operator*=(const Pos &other)
+constexpr Pos &Pos::operator*=(const Pos &other)
 {
 	x *= other.x;
 	y *= other.y;
@@ -59,7 +54,7 @@ Pos &Pos::operator*=(const Pos &other)
 	return *this;
 }
 
-Pos &Pos::operator/=(const Pos &other)
+constexpr Pos &Pos::operator/=(const Pos &other)
 {
 	x /= other.x;
 	y /= other.y;

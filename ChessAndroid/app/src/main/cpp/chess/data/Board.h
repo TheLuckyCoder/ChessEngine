@@ -30,7 +30,7 @@ public:
 	bool operator<(const Board &other) const;
 
 	void initDefaultBoard();
-	std::unordered_map<Pos, Piece> getAllPieces() const;
+	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const;
 
 	template<class T> // Move or Board
 	StackVector<T, 150> listValidMoves(bool isWhite) const;

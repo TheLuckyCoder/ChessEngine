@@ -10,7 +10,7 @@ enum class GameState : unsigned char
 	BLACK_IN_CHESS
 };
 
-enum class GamePhase
+enum class Phase
 {
 	ENDING,
 	MIDDLE = 128

@@ -108,7 +108,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 		if (whiteInChess)
 			m_Board.state = GameState::WHITE_IN_CHESS;
 
-		else if (Player::hasNoValidMoves(true, m_Board))
+		if (Player::hasNoValidMoves(true, m_Board))
 		{
 			state = whiteInChess ? GameState::WINNER_BLACK : GameState::DRAW;
 		}

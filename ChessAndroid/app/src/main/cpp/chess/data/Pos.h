@@ -10,16 +10,19 @@ public:
 	byte x;
 	byte y;
 
-	Pos()
+	constexpr Pos()
 		: x(8), y(8) {}
 
-	Pos(const byte x, const byte y)
+	constexpr Pos(const byte x, const byte y)
 		: x(x), y(y) {}
 
-	Pos(const Pos pos, const byte x, const byte y)
+	constexpr Pos(const Pos pos, const byte x, const byte y)
 		: x(pos.x + x), y(pos.y + y) {}
 
-	bool isValid() const;
+	constexpr bool isValid() const
+	{
+		return x < 8 && y < 8;
+	}
 
 	friend Pos operator+(Pos left, const Pos &right);
 	friend Pos operator-(Pos left, const Pos &right);
@@ -29,10 +32,10 @@ public:
 	bool operator==(const Pos &other) const;
 	bool operator!=(const Pos &other) const;
 
-	Pos& operator+=(const Pos &other);
-	Pos& operator-=(const Pos &other);
-	Pos& operator*=(const Pos &other);
-	Pos& operator/=(const Pos &other);
+	constexpr Pos& operator+=(const Pos &other);
+	constexpr Pos& operator-=(const Pos &other);
+	constexpr Pos& operator*=(const Pos &other);
+	constexpr Pos& operator/=(const Pos &other);
 };
 
 using PosPair = std::pair<Pos, Pos>;

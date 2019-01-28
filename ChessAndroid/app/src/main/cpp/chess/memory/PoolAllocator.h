@@ -11,11 +11,19 @@ public:
 	using pointer = T*;
 	using const_pointer = const T*;
 
-	PoolAllocator() noexcept : std::allocator<T>() {}
-	PoolAllocator(const PoolAllocator &a) noexcept : std::allocator<T>(a) {}
+	SmallPool *pool = getLocalThreadPool().create();
+
+	PoolAllocator() noexcept
+		: std::allocator<T>() {}
+	PoolAllocator(const PoolAllocator &other) noexcept
+		: std::allocator<T>(other) {}
 	template <class U>
-	PoolAllocator(const PoolAllocator<U> &a) noexcept : std::allocator<T>(a) {}
-	~PoolAllocator() = default;
+	PoolAllocator(const PoolAllocator<U> &other) noexcept
+		: std::allocator<T>(other) {}
+	~PoolAllocator()
+	{
+		getLocalThreadPool().destroy(pool);
+	}
 
 	template<typename U>
 	struct rebind
@@ -25,12 +33,26 @@ public:
 
 	pointer allocate(const size_type n, const void *hint = nullptr)
 	{
-		//return std::allocator<T>::allocate(n, hint);
-		return MemoryPool::getMemPoolPerThread().allocate<T>(n);
+		return static_cast<pointer>(pool->allocate(getSizeOfN(n)));
 	}
 
-	void deallocate(pointer p, size_type n)
+	void deallocate(const pointer p, const size_type n)
 	{
-		return MemoryPool::getMemPoolPerThread().free(p, n);
+		return pool->free(p, getSizeOfN(n));
+	}
+
+private:
+
+	constexpr static size_t getSizeOfN(const size_type n)
+	{
+		constexpr size_t maxPossible = static_cast<size_t>(-1) / sizeof(T);
+		size_t result = n * sizeof(T);
+		if (maxPossible < n)
+		{	// multiply overflow, try allocating all of memory and assume the
+			// allocation function will throw bad_alloc
+			result = static_cast<size_t>(-1);
+		}
+
+		return result;
 	}
 };

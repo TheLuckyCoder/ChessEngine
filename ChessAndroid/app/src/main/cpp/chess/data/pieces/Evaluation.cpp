@@ -206,7 +206,7 @@ int Evaluation::evaluate(const Board &board)
 
 	const static auto midgameLimit = 15258, endgameLimit = 3915;
 	npm = std::max(endgameLimit, std::min(npm, midgameLimit));
-	const auto phase = static_cast<GamePhase>(((npm - endgameLimit) * 128) / (midgameLimit - endgameLimit));
+	const auto phase = static_cast<Phase>(((npm - endgameLimit) * 128) / (midgameLimit - endgameLimit));
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -256,7 +256,7 @@ int Evaluation::evaluate(const Board &board)
 		score.eg -= 45;
 	}
 
-	if (phase == GamePhase::MIDDLE)
+	if (phase == Phase::MIDDLE)
 		return score.mg;
 	return score.eg;
 }
