@@ -1,0 +1,411 @@
+#pragma once
+
+#include "MoveGen.h"
+
+#include <algorithm>
+
+#include "../Board.h"
+
+template<GenType T>
+PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Board &board)
+{
+	PosVector<4> moves;
+
+	piece.isWhite ? pos.y++ : pos.y--;
+	if constexpr (T == ALL)
+	{
+		if (!board[pos])
+		{
+			moves.push_back(pos);
+
+			if (!piece.moved) {
+				Pos posCopy = pos;
+
+				piece.isWhite ? posCopy.y++ : posCopy.y--;
+				if (!board[posCopy])
+					moves.push_back(posCopy);
+			}
+		}
+	}
+
+	const auto handleCapture = [&piece, &moves](const Piece &other, const Pos &pos) {
+		if constexpr (T == ALL || T == CAPTURES)
+		{
+			if (other && !piece.hasSameColor(other))
+				moves.push_back(pos);
+		}
+		else if (T == ATTACKS_DEFENSES)
+		{
+			if (other)
+				moves.push_back(pos);
+		}
+	};
+
+	piece.isWhite ? pos.x-- : pos.x++;
+	if (pos.isValid())
+		handleCapture(board[pos], pos);
+
+	pos.x += piece.isWhite ? 2 : -2;
+	if (pos.isValid())
+		handleCapture(board[pos], pos);
+
+	return moves;
+}
+
+template<GenType T>
+PosVector<8> MoveGen<T>::generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board)
+{
+	PosVector<8> moves;
+
+	const auto addPosIfValid = [&](const byte x, const byte y) {
+		Pos newPos(pos, x, y);
+
+		if (newPos.isValid())
+		{
+			const auto &other = board[newPos];
+
+			if constexpr (T == ALL)
+			{
+				if (!other || !piece.hasSameColor(other))
+					moves.push_back(newPos);
+			}
+			else if (T == CAPTURES)
+			{
+				if (other && !piece.hasSameColor(other))
+					moves.push_back(newPos);
+			}
+			else if (T == ATTACKS_DEFENSES)
+			{
+				if (other)
+					moves.push_back(newPos);
+			}
+		}
+	};
+
+	addPosIfValid(-1, 2);
+	addPosIfValid(1, 2);
+
+	addPosIfValid(-1, -2);
+	addPosIfValid(1, -2);
+
+	addPosIfValid(2, 1);
+	addPosIfValid(2, -1);
+
+	addPosIfValid(-2, 1);
+	addPosIfValid(-2, -1);
+
+	return moves;
+}
+
+template<GenType T>
+PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board)
+{
+	PosVector<13> moves;
+	Pos posCopy = pos;
+
+	while (posCopy.x < 7 && posCopy.y > 0)
+	{
+		posCopy.x++;
+		posCopy.y--;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	posCopy = pos;
+	while (posCopy.x < 7 && posCopy.y < 7)
+	{
+		posCopy.x++;
+		posCopy.y++;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	posCopy = pos;
+	while (posCopy.x > 0 && posCopy.y > 0)
+	{
+		posCopy.x--;
+		posCopy.y--;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	posCopy = pos;
+	while (posCopy.x > 0 && posCopy.y < 7)
+	{
+		posCopy.x--;
+		posCopy.y++;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	return moves;
+}
+
+template<GenType T>
+PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, const Board &board)
+{
+	PosVector<14> moves;
+	Pos posCopy = pos;
+
+	while (posCopy.x > 0)
+	{
+		posCopy.x--;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	posCopy = pos;
+	while (posCopy.x < 7)
+	{
+		posCopy.x++;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	posCopy = pos;
+	while (posCopy.y > 0)
+	{
+		posCopy.y--;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	posCopy = pos;
+	while (posCopy.y < 7)
+	{
+		posCopy.y++;
+
+		if (const auto &other = board[posCopy]; other)
+		{
+			if (!piece.hasSameColor(other))
+				moves.push_back(posCopy);
+			break;
+		}
+		moves.push_back(posCopy);
+	}
+
+	return moves;
+}
+
+template<GenType T>
+PosVector<27> MoveGen<T>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
+{
+	PosVector<27> moves;
+	moves += generateRookMoves(piece, pos, board);
+	moves += generateBishopMoves(piece, pos, board);
+	return moves;
+}
+
+template<GenType T>
+PosVector<8> MoveGen<T>::generateKingInitialMoves(Pos pos)
+{
+	PosVector<8> moves;
+
+	// Vertical and Horizontal
+	if (pos.x > 0)
+		moves.emplace_back(pos.x - 1, pos.y);
+
+	if (pos.x < 7)
+		moves.emplace_back(pos.x + 1, pos.y);
+
+	if (pos.y > 0)
+		moves.emplace_back(pos.x, pos.y - 1);
+
+	if (pos.y < 7)
+		moves.emplace_back(pos.x, pos.y + 1);
+
+	// Diagonal
+	if (pos.x < 7 && pos.y > 0)
+		moves.emplace_back(pos.x + 1, pos.y - 1);
+
+	if (pos.x < 7 && pos.y < 7)
+		moves.emplace_back(pos.x + 1, pos.y + 1);
+
+	if (pos.x > 0 && pos.y > 0)
+		moves.emplace_back(pos.x - 1, pos.y - 1);
+
+	if (pos.x > 0 && pos.y < 7)
+		moves.emplace_back(pos.x - 1, pos.y + 1);
+
+	return moves;
+}
+
+template<GenType T>
+PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, const Board &board)
+{
+	auto moves = generateKingInitialMoves(pos);
+
+	{
+		const auto iterator = std::remove_if(moves.begin(), moves.end(),
+			[&piece, &board](const Pos &pos) { return board[pos] && piece.hasSameColor(board[pos]); });
+		moves.erase(iterator, moves.end());
+	}
+
+	if (moves.empty()) return moves;
+
+	const auto opponentsMoves = getAttacksPerColor(!piece.isWhite, board);
+
+	for (unsigned int i = 0; i < moves.size(); i++)
+	{
+		if (opponentsMoves.exists(moves[i]))
+		{
+			moves[i] = moves.back();
+			moves.pop_back();
+			i--;
+		}
+	}
+
+	// Castling
+	if (!piece.moved && !opponentsMoves.exists(pos))
+	{
+		const auto y = pos.y;
+		const auto isEmptyAndChessFree = [&, y](const byte x) {
+			return !board.data[x][y] && !opponentsMoves.exists(Pos(x, y));
+		};
+
+		if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
+			if (const auto &other = board.data[7][y];
+				other.type == Piece::Type::ROOK && piece.hasSameColor(other) && !other.moved)
+				moves.emplace_back(6, pos.y);
+
+		if (isEmptyAndChessFree(3) && isEmptyAndChessFree(2) && !board.data[1][y])
+			if (const auto &other = board.data[0][y];
+				other.type == Piece::Type::ROOK && piece.hasSameColor(other) && !other.moved)
+				moves.emplace_back(2, pos.y);
+	}
+
+	return moves;
+}
+
+template<GenType T>
+HashSet<Pos> MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
+{
+	constexpr auto elements = (T == ALL ? 64u : 32u);
+	HashSet<Pos> attacks(elements);
+
+	for (byte x = 0; x < 8; x++)
+		for (byte y = 0; y < 8; y++)
+		{
+			const Pos pos(x, y);
+			const auto &piece = board[pos];
+			if (piece && piece.isWhite == white)
+			{
+				Piece::MovesReturnType moves;
+				switch (piece.type)
+				{
+				case Piece::Type::PAWN:
+					moves = generatePawnMoves(piece, pos, board);
+					break;
+				case Piece::Type::KNIGHT:
+					moves = generateKnightMoves(piece, pos, board);
+					break;
+				case Piece::Type::BISHOP:
+					moves = generateBishopMoves(piece, pos, board);
+					break;
+				case Piece::Type::ROOK:
+					moves = generateRookMoves(piece, pos, board);
+					break;
+				case Piece::Type::QUEEN:
+					moves = generateQueenMoves(piece, pos, board);
+					break;
+				case Piece::Type::KING:
+					moves = generateKingInitialMoves(pos);
+					break;
+				case Piece::Type::NONE:
+					break;
+				}
+
+				for (const auto &move : moves)
+					attacks.insert(move);
+			}
+		}
+
+	return attacks;
+}
+
+template<GenType T>
+std::unordered_map<Pos, short> MoveGen<T>::getMovesPerColorMap(const bool white, const Board &board)
+{
+	std::unordered_map<Pos, short> allMoves(48);
+
+	for (byte x = 0; x < 8; x++)
+		for (byte y = 0; y < 8; y++)
+		{
+			const Pos pos(x, y);
+			const auto &piece = board[pos];
+
+			if (piece && piece.isWhite == white)
+			{
+				Piece::MovesReturnType moves;
+				switch (piece.type)
+				{
+				case Piece::Type::PAWN:
+					moves = generatePawnMoves(piece, pos, board);
+					break;
+				case Piece::Type::KNIGHT:
+					moves = generateKnightMoves(piece, pos, board);
+					break;
+				case Piece::Type::BISHOP:
+					moves = generateBishopMoves(piece, pos, board);
+					break;
+				case Piece::Type::ROOK:
+					moves = generateRookMoves(piece, pos, board);
+					break;
+				case Piece::Type::QUEEN:
+					moves = generateQueenMoves(piece, pos, board);
+					break;
+				case Piece::Type::KING:
+					moves = generateKingInitialMoves(pos);
+					break;
+				case Piece::Type::NONE:
+					break;
+				}
+				for (const auto &move : moves)
+					allMoves[move]++;
+			}
+		}
+
+	return allMoves;
+}

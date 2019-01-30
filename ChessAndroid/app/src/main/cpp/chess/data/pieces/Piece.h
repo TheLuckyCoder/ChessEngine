@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Pos.h"
-#include "../../memory/StackVector.h"
+#include "../../containers/StackVector.h"
 
 class Board;
 

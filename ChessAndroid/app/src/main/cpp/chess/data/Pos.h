@@ -49,7 +49,7 @@ namespace std
 	{
 		std::size_t operator()(const Pos &pos) const noexcept
 		{
-			return (std::hash<unsigned char>()(pos.x) << 2) ^ (std::hash<unsigned char>()(pos.y));
+			return pos.x * 1000 + pos.y;
 		}
 	};
 

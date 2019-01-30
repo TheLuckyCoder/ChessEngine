@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../memory/StackVector.h"
+#include "../containers/StackVector.h"
 #include "../data/Pos.h"
 
 class Piece;

@@ -19,22 +19,22 @@ Piece::MovesReturnType Piece::getPossibleMoves(const Pos &pos, const Board &boar
 	case Type::NONE:
 		break;
 	case Type::PAWN:
-		result = MoveGen::generatePawnMoves(*this, pos, board);
+		result = MoveGen<ALL>::generatePawnMoves(*this, pos, board);
 		break;
 	case Type::KNIGHT:
-		result = MoveGen::generateKnightMoves(*this, pos, board);
+		result = MoveGen<ALL>::generateKnightMoves(*this, pos, board);
 		break;
 	case Type::BISHOP:
-		result = MoveGen::generateBishopMoves(*this, pos, board);
+		result = MoveGen<ALL>::generateBishopMoves(*this, pos, board);
 		break;
 	case Type::ROOK:
-		result = MoveGen::generateRookMoves(*this, pos, board);
+		result = MoveGen<ALL>::generateRookMoves(*this, pos, board);
 		break;
 	case Type::QUEEN:
-		result = MoveGen::generateQueenMoves(*this, pos, board);
+		result = MoveGen<ALL>::generateQueenMoves(*this, pos, board);
 		break;
 	case Type::KING:
-		result = MoveGen::generateKingMoves(*this, pos, board);
+		result = MoveGen<ALL>::generateKingMoves(*this, pos, board);
 		break;
 	}
 

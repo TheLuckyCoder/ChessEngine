@@ -5,11 +5,11 @@
 #include <thread>
 #include <vector>
 
-#include "memory/StackVector.h"
+#include "containers/StackVector.h"
+#include "containers/HashTable.h"
 #include "data/Game.h"
 #include "data/Player.h"
 #include "data/pieces/Piece.h"
-#include "minimax/HashTable.h"
 
 class Cache;
 

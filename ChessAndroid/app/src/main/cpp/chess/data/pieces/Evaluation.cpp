@@ -160,8 +160,8 @@ int Evaluation::evaluate(const Board &board)
 
 	std::pair<short, short> bishopCount;
 
-	auto whiteMoves = MoveGen::getAllMovesPerColor(true, board);
-	auto blackMoves = MoveGen::getAllMovesPerColor(false, board);
+	auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getMovesPerColorMap(true, board);
+	auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getMovesPerColorMap(false, board);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -319,7 +319,7 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, cons
 	Score value = KNIGHT;
 	value.mg += piece.isWhite ? KNIGHT_WHITE[pos.y][pos.x] : KNIGHT_BLACK[pos.y][pos.x];
 
-	value += KNIGHT_MOBILITY[MoveGen::generateKnightMoves(piece, pos, board).size()];
+	value += KNIGHT_MOBILITY[MoveGen<ALL>::generateKnightMoves(piece, pos, board).size()];
 
 	return value;
 }
@@ -330,7 +330,7 @@ inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, cons
 
 	value.mg += piece.isWhite ? BISHOP_WHITE[pos.y][pos.x] : BISHOP_BLACK[pos.y][pos.x];
 
-	value += BISHOP_MOBILITY[MoveGen::generateBishopMoves(piece, pos, board).size()];
+	value += BISHOP_MOBILITY[MoveGen<ALL>::generateBishopMoves(piece, pos, board).size()];
 
 	return value;
 }
@@ -341,7 +341,7 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 
 	value.mg += piece.isWhite ? ROOK_WHITE[pos.y][pos.x] : ROOK_BLACK[pos.y][pos.x];
 
-	value += ROOK_MOBILITY[MoveGen::generateRookMoves(piece, pos, board).size()];
+	value += ROOK_MOBILITY[MoveGen<ALL>::generateRookMoves(piece, pos, board).size()];
 
 	if (piece.moved)
 		if ((piece.isWhite && !board.whiteCastled) ||
@@ -356,7 +356,7 @@ inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const
 	Score value = QUEEN;
 	value.mg += piece.isWhite ? QUEEN_WHITE[pos.y][pos.x] : QUEEN_BLACK[pos.y][pos.x];
 
-	value += QUEEN_MOBILITY[MoveGen::generateQueenMoves(piece, pos, board).size()];
+	value += QUEEN_MOBILITY[MoveGen<ALL>::generateQueenMoves(piece, pos, board).size()];
 
 	if (piece.moved)
 		value.mg -= 18;

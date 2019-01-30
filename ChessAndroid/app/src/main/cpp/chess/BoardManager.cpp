@@ -218,7 +218,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 		cache.state = board.state;
 		cache.value = board.value;
-		cacheTable.put(board.hash, cache);
+		cacheTable.insert(board.hash, cache);
 	}
 }
 
