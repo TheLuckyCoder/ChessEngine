@@ -161,11 +161,11 @@ public:
 	}
 };
 
-using SmallPool = MemoryPool<void, 2097152>;
-using ThreadPool = MemoryPool<SmallPool, 20971520>;
+using SmallMemPool = MemoryPool<void, 2097152>;
+using ThreadMemPool = MemoryPool<SmallMemPool, 20971520>;
 
-inline ThreadPool &getLocalThreadPool()
+inline ThreadMemPool &getLocalThreadPool()
 {
-	static thread_local ThreadPool pool;
+	static thread_local ThreadMemPool pool;
 	return pool;
 }

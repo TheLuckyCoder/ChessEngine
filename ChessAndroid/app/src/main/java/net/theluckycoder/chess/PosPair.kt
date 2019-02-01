@@ -2,11 +2,11 @@ package net.theluckycoder.chess
 
 data class PosPair(
     @JvmField
-    val startX: Short,
+    val startX: Byte,
     @JvmField
-    val startY: Short,
+    val startY: Byte,
     @JvmField
-    val destX: Short,
+    val destX: Byte,
     @JvmField
-    val destY: Short
+    val destY: Byte
 )

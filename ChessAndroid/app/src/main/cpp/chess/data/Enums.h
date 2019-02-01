@@ -1,0 +1,17 @@
+#pragma once
+
+enum class State : unsigned char
+{
+	NONE,
+	WINNER_WHITE,
+	WINNER_BLACK,
+	DRAW,
+	WHITE_IN_CHESS,
+	BLACK_IN_CHESS
+};
+
+enum class Phase
+{
+	ENDING,
+	MIDDLE = 128
+};

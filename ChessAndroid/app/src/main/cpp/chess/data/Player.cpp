@@ -77,8 +77,8 @@ namespace Player
 
 				const auto state = newBoard.state;
 
-				if ((isWhite && (state == GameState::WHITE_IN_CHESS || state == GameState::WINNER_BLACK)) ||
-					(!isWhite && (state == GameState::BLACK_IN_CHESS || state == GameState::WINNER_WHITE)))
+				if ((isWhite && (state == State::WHITE_IN_CHESS || state == State::WINNER_BLACK)) ||
+					(!isWhite && (state == State::BLACK_IN_CHESS || state == State::WINNER_WHITE)))
 					continue;
 
 				return false;
@@ -91,7 +91,7 @@ namespace Player
 	bool isInChess(const bool isWhite, const Board &board)
 	{
 		const auto moves = MoveGen<CAPTURES>::getAttacksPerColor(!isWhite, board);
-		return moves.exists(getKingPos(isWhite, board));
+		return exists(moves, getKingPos(isWhite, board));
 	}
 
 	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(const bool isWhite, const Board &board)

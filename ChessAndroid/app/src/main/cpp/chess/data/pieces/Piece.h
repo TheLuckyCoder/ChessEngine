@@ -25,17 +25,27 @@ public:
 	bool isWhite;
 	bool moved;
 
-	Piece();
-	Piece(Type type, bool isWhite, bool hasBeenMoved = false);
+	constexpr Piece() noexcept
+		: type(Type::NONE), isWhite(false), moved(false) {}
+	constexpr Piece(const Type type, const bool isWhite, const bool hasBeenMoved = false) noexcept
+		: type(type), isWhite(isWhite), moved(hasBeenMoved) {}
 	Piece(Piece&&) = default;
 	Piece(const Piece&) = default;
 	~Piece() = default;
 
-	MovesReturnType getPossibleMoves(const Pos &pos, const Board &board) const;
-	bool hasSameColor(const Piece &other) const;
-
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
-	operator bool() const { return type != Type::NONE; }
+	MovesReturnType getPossibleMoves(const Pos &pos, const Board &board) const noexcept;
+	MovesReturnType getPossibleCaptures(const Pos &pos, const Board &board) const noexcept;
+
+	constexpr bool hasSameColor(const Piece &other) const noexcept
+	{
+		return isWhite == other.isWhite;
+	}
+
+	constexpr operator bool() const noexcept
+	{
+		return type != Type::NONE;
+	}
 };

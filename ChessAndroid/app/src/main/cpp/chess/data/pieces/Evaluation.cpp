@@ -2,7 +2,7 @@
 
 #include "MoveGen.h"
 #include "../Board.h"
-#include "../Game.h"
+#include "../Enums.h"
 
 using EvalArray = std::array<std::array<short, 8>, 8>;
 
@@ -228,7 +228,7 @@ int Evaluation::evaluate(const Board &board)
 					case Piece::Type::QUEEN:
 						return evaluateQueen(piece, pos, board);
 					case Piece::Type::KING:
-						return evaluateKing(piece, pos, board, opponentsAttacks);
+						return evaluateKing(piece, pos, board);
 					default:
 						return Score();
 					}
@@ -245,12 +245,12 @@ int Evaluation::evaluate(const Board &board)
 	if (board.blackCastled)
 		score.mg -= 20;
 
-	if (board.state == GameState::BLACK_IN_CHESS)
+	if (board.state == State::BLACK_IN_CHESS)
 	{
 		score.mg += 35;
 		score.eg += 45;
 	}
-	else if (board.state == GameState::WHITE_IN_CHESS)
+	else if (board.state == State::WHITE_IN_CHESS)
 	{
 		score.mg -= 35;
 		score.eg -= 45;
@@ -261,7 +261,7 @@ int Evaluation::evaluate(const Board &board)
 	return score.eg;
 }
 
-inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, std::unordered_map<Pos, short> &opponentsAttacks)
+inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, PosMap &opponentsAttacks)
 {
 	Score value = PAWN;
 	value.mg += piece.isWhite ? PAWN_WHITE[pos.y][pos.x] : PAWN_BLACK[pos.y][pos.x];
@@ -364,7 +364,7 @@ inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const
 	return value;
 }
 
-inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board, const std::unordered_map<Pos, short> &opponentsAttacks)
+inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board)
 {
 	Score value(piece.isWhite ? KING_WHITE[pos.y][pos.x] : KING_BLACK[pos.y][pos.x],
 		piece.isWhite ? KING_WHITE_ENDING[pos.y][pos.x] : KING_BLACK_ENDING[pos.y][pos.x]);

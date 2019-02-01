@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "../data/Pos.h"
 #include "../data/pieces/Piece.h"
 
 class Hash final
@@ -18,6 +19,5 @@ private:
 
 public:
 	static std::uint64_t getHash(const Pos &pos, const Piece &piece);
-
 	static std::uint64_t compute(const Board &board);
 };

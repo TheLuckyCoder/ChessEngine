@@ -1,13 +1,6 @@
 #pragma once
 
-#include <unordered_map>
-
-#include "Piece.h"
-#include "../../containers/StackVector.h"
-#include "../../containers/HashSet.h"
-
-template<std::size_t N>
-using PosVector = StackVector<Pos, N>;
+#include "../../containers/Containers.h"
 
 enum GenType : unsigned char
 {
@@ -35,8 +28,8 @@ public:
 	static PosVector<8> generateKingInitialMoves(Pos pos);
 	static PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 
-	static HashSet<Pos> getAttacksPerColor(bool white, const Board &board);
-	static std::unordered_map<Pos, short> getMovesPerColorMap(bool white, const Board &board);
+	static PosSet getAttacksPerColor(bool white, const Board &board);
+	static PosMap getMovesPerColorMap(bool white, const Board &board);
 };
 
 #include "MoveGen.inl"

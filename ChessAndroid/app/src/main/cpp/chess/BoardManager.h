@@ -7,7 +7,7 @@
 
 #include "containers/StackVector.h"
 #include "containers/HashTable.h"
-#include "data/Game.h"
+#include "data/Enums.h"
 #include "data/Player.h"
 #include "data/pieces/Piece.h"
 
@@ -16,7 +16,7 @@ class Cache;
 class BoardManager final
 {
 public:
-	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const StackVector<PosPair, 2> &moved)>;
+	using PieceChangeListener = std::function<void(State state, bool shouldRedraw, const StackVector<PosPair, 2> &moved)>;
 
 private:
 	inline static std::thread *m_WorkerThread = nullptr;

@@ -3,7 +3,7 @@
 #include "pieces/Piece.h"
 #include "../minimax/Hash.h"
 
-Board::Board(const Board &board)
+Board::Board(const Board &board) noexcept
 {
 	std::memcpy(&data, &board.data, sizeof(data));
 	hash = board.hash;
@@ -12,7 +12,7 @@ Board::Board(const Board &board)
 	state = board.state;
 }
 
-Board &Board::operator=(const Board &other)
+Board &Board::operator=(const Board &other) noexcept
 {
 	std::memcpy(&data, &other.data, sizeof(data));
 	hash = other.hash;
@@ -22,22 +22,27 @@ Board &Board::operator=(const Board &other)
 	return *this;
 }
 
-Piece &Board::operator[](const Pos &pos)
+Piece &Board::operator[](const Pos &pos) noexcept
 {
 	return data[pos.x][pos.y];
 }
 
-const Piece &Board::operator[](const Pos &pos) const
+const Piece &Board::operator[](const Pos &pos) const noexcept
 {
 	return data[pos.x][pos.y];
 }
 
-bool Board::operator<(const Board& other) const
+bool Board::operator<(const Board& other) const noexcept
 {
 	return value < other.value;
 }
 
-void Board::initDefaultBoard()
+bool Board::operator>(const Board& other) const noexcept
+{
+	return value > other.value;
+}
+
+void Board::initDefaultBoard() noexcept
 {
 	for (short x = 0; x < 8; x++)
 		data[x].fill(Piece());
@@ -72,10 +77,10 @@ void Board::initDefaultBoard()
 	hash = Hash::compute(*this);
 	whiteCastled = false;
 	blackCastled = false;
-	state = GameState::NONE;
+	state = State::NONE;
 }
 
-StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const
+StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
 {
 	StackVector<std::pair<Pos, Piece>, 32> pieces;
 
@@ -87,15 +92,15 @@ StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const
 	return pieces;
 }
 
-StackVector<Board, 90> Board::listValidMovesQ(const bool isWhite) const
+StackVector<Board, 50> Board::listValidMovesQ(const bool isWhite) const noexcept
 {
 	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
-	StackVector<Board, 90> moves;
+	StackVector<Board, 50> moves;
 
 	for (const auto &pair : pieces)
 	{
 		const auto &startPos = pair.first;
-		const auto possibleMoves = pair.second.getPossibleMoves(startPos, *this);
+		const auto possibleMoves = pair.second.getPossibleCaptures(startPos, *this);
 
 		for (const auto &destPos : possibleMoves)
 		{
@@ -105,15 +110,18 @@ StackVector<Board, 90> Board::listValidMovesQ(const bool isWhite) const
 			Board board = *this;
 			BoardManager::movePieceInternal(startPos, destPos, board);
 
-			if ((isWhite && board.state == GameState::WHITE_IN_CHESS) ||
-				(!isWhite && board.state == GameState::BLACK_IN_CHESS))
+			if ((isWhite && board.state == State::WHITE_IN_CHESS) ||
+				(!isWhite && board.state == State::BLACK_IN_CHESS))
 				continue;
 
 			moves.push_back(std::move(board));
 		}
 	}
 
-	std::sort(moves.begin(), moves.end());
+	if (isWhite)
+		std::sort(moves.begin(), moves.end(), std::greater<>());
+	else
+		std::sort(moves.begin(), moves.end());
 
 	return moves;
 }

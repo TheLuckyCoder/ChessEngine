@@ -10,7 +10,7 @@ Hash::HashArray Hash::getRandomHashArray()
 {
 	std::random_device rd;
 	std::mt19937_64 mt(rd());
-	std::uniform_int_distribution<std::uint64_t> dist(0, -1);
+	std::uniform_int_distribution<std::uint64_t> dist(0, UINT64_MAX);
 
 	HashArray arr;
 
@@ -30,7 +30,7 @@ byte Hash::indexOf(const Piece& piece)
 	return type;
 }
 
-std::uint64_t Hash::getHash(const Pos & pos, const Piece & piece)
+std::uint64_t Hash::getHash(const Pos &pos, const Piece &piece)
 {
 	return array[pos.x][pos.y][indexOf(piece)][piece.moved];
 }

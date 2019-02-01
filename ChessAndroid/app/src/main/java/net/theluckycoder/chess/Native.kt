@@ -23,7 +23,7 @@ object Native {
     fun movePiece(selected: Pos, dest: Pos): Boolean = movePiece(selected.x, selected.y, dest.x, dest.y)
 
     @JvmStatic
-    external fun movePiece(selectedX: Short, selectedY: Short, destX: Short, destY: Short): Boolean
+    external fun movePiece(selectedX: Byte, selectedY: Byte, destX: Byte, destY: Byte): Boolean
 
     @JvmStatic
     external fun loadFromJson(json: String)

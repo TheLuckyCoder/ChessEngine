@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <unordered_map>
 
 #include "Player.h"
 #include "pieces/Evaluation.h"
@@ -15,26 +14,29 @@ public:
 	std::uint64_t hash = 0;
 	bool whiteCastled = false;
 	bool blackCastled = false;
-	GameState state = GameState::NONE;
+	State state = State::NONE;
 	int value = 0;
 
 	Board() = default;
 	Board(Board&&) = default;
-	Board(const Board &board);
+	Board(const Board &board) noexcept;
 	~Board() = default;
 
 	Board &operator=(Board&&) = default;
-	Board &operator=(const Board &other);
-	Piece &operator[](const Pos &pos);
-	const Piece &operator[](const Pos &pos) const;
-	bool operator<(const Board &other) const;
+	Board &operator=(const Board &other) noexcept;
 
-	void initDefaultBoard();
-	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const;
+	Piece &operator[](const Pos &pos) noexcept;
+	const Piece &operator[](const Pos &pos) const noexcept;
+
+	bool operator<(const Board &other) const noexcept;
+	bool operator>(const Board &other) const noexcept;
+
+	void initDefaultBoard() noexcept;
+	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const noexcept;
 
 	template<class T> // Move or Board
-	StackVector<T, 150> listValidMoves(bool isWhite) const;
-	StackVector<Board, 90> listValidMovesQ(bool isWhite) const;
+	StackVector<T, 150> listValidMoves(bool isWhite) const noexcept;
+	StackVector<Board, 50> listValidMovesQ(bool isWhite) const noexcept;
 };
 
 class Move final
@@ -56,12 +58,12 @@ public:
 class Cache final
 {
 public:
-	GameState state;
+	State state;
 	int value;
 };
 
 template<class T>
-StackVector<T, 150> Board::listValidMoves(const bool isWhite) const
+StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 {
 	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
 	StackVector<T, 150> moves;
@@ -80,8 +82,8 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const
 			Board board = *this;
 			BoardManager::movePieceInternal(selectedPos, destPos, board);
 
-			if ((isWhite && board.state == GameState::WHITE_IN_CHESS) ||
-				(!isWhite && board.state == GameState::BLACK_IN_CHESS))
+			if ((isWhite && board.state == State::WHITE_IN_CHESS) ||
+				(!isWhite && board.state == State::BLACK_IN_CHESS))
 				continue;
 
 			if constexpr (std::is_same_v<T, Move>)

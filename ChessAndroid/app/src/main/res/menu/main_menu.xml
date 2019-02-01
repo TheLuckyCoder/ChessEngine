@@ -8,6 +8,9 @@
             <item
                 android:id="@+id/action_redraw"
                 android:title="Redraw Board"/>
+            <item
+                android:id="@+id/action_memory"
+                android:title="Show Memory Usage"/>
         </menu>
     </item>
 

@@ -7,6 +7,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Point
 import android.os.Bundle
+import android.os.Debug
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -15,7 +16,6 @@ import net.theluckycoder.chess.views.CellView
 import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
 import kotlin.concurrent.thread
-
 
 class MainActivity : Activity(), CustomView.ClickListener {
 
@@ -94,6 +94,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
     override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_redraw -> updatePieces()
+            R.id.action_memory -> updateMemoryUsage()
             R.id.action_load_json -> loadJson()
             R.id.action_load_moves -> loadMoves()
             R.id.action_save_json -> saveJson()
@@ -149,46 +150,21 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
         val newPieces = Native.getPieces()
 
+        val pieceResources = arrayOf(
+            0, R.drawable.w_pawn, R.drawable.w_knight, R.drawable.w_bishop,
+            R.drawable.w_rook, R.drawable.w_queen, R.drawable.w_king,
+            R.drawable.b_pawn, R.drawable.b_knight, R.drawable.b_bishop,
+            R.drawable.b_rook, R.drawable.b_queen, R.drawable.b_king
+        )
+
         newPieces.forEach {
-            var isWhite = false
-            val res = when (it.type) {
-                PieceType.PAWN -> {
-                    isWhite = true
-                    R.drawable.w_pawn
-                }
-                PieceType.KNIGHT -> {
-                    isWhite = true
-                    R.drawable.w_knight
-                }
-                PieceType.BISHOP -> {
-                    isWhite = true
-                    R.drawable.w_bishop
-                }
-                PieceType.ROOK -> {
-                    isWhite = true
-                    R.drawable.w_rook
-                }
-                PieceType.QUEEN -> {
-                    isWhite = true
-                    R.drawable.w_queen
-                }
-                PieceType.KING -> {
-                    isWhite = true
-                    R.drawable.w_king
-                }
-                PieceType.PAWN_BLACK -> R.drawable.b_pawn
-                PieceType.KNIGHT_BLACK -> R.drawable.b_knight
-                PieceType.BISHOP_BLACK -> R.drawable.b_bishop
-                PieceType.ROOK_BLACK -> R.drawable.b_rook
-                PieceType.QUEEN_BLACK -> R.drawable.b_queen
-                PieceType.KING_BLACK -> R.drawable.b_king
-                else -> throw IllegalArgumentException("PieceType ${it.type} is invalid!")
-            }
+            val isWhite = it.type in 1..6
+            val resource = pieceResources[it.type.toInt()]
 
             val xx = it.x * viewSize
             val yy = (7 - it.y) * viewSize
 
-            val pieceView = PieceView(this, isWhite, res, this).apply {
+            val pieceView = PieceView(this, isWhite, resource, this).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xx.toFloat()
                 y = yy.toFloat()
@@ -213,9 +189,6 @@ class MainActivity : Activity(), CustomView.ClickListener {
         val evaluatedBoards = Native.getNumberOfEvaluatedBoards()
         tvBoards.text = getString(R.string.board_state, boardValue, evaluatedBoards)
 
-        if (evaluatedBoards.toString().contains("69", true))
-            tvBoards.append("\tNice.")
-
         tvState.text = when (state) {
             1 -> "White has won!"
             2 -> "Black has won!"
@@ -235,6 +208,13 @@ class MainActivity : Activity(), CustomView.ClickListener {
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         }
+    }
+
+    private fun updateMemoryUsage() {
+        val heapUsed = Debug.getNativeHeapAllocatedSize() / 1048576
+        val heapSize = Debug.getNativeHeapSize() / 1048576
+        val text = getString(R.string.memory_usage, heapUsed, heapSize)
+        tvState.append(text)
     }
 
     @Suppress("unused")

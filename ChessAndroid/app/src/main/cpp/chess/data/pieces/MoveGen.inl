@@ -103,18 +103,46 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 	PosVector<13> moves;
 	Pos posCopy = pos;
 
+	const auto handleCase = [&](const Pos &newPos) {
+		const auto &other = board[newPos];
+
+		if constexpr (T == ALL)
+		{
+			if (other)
+			{
+				if (!piece.hasSameColor(other))
+					moves.push_back(newPos);
+				return true;
+			}
+			moves.push_back(newPos);
+		}
+		else if (T == CAPTURES)
+		{
+			if (other && !piece.hasSameColor(other))
+			{
+				moves.push_back(newPos);
+				return true;
+			}
+		}
+		else if (T == ATTACKS_DEFENSES)
+		{
+			if (other)
+			{
+				moves.push_back(newPos);
+				return true;
+			}
+		}
+
+		return false;
+	};
+
 	while (posCopy.x < 7 && posCopy.y > 0)
 	{
 		posCopy.x++;
 		posCopy.y--;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	posCopy = pos;
@@ -123,13 +151,8 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		posCopy.x++;
 		posCopy.y++;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	posCopy = pos;
@@ -138,13 +161,8 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		posCopy.x--;
 		posCopy.y--;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	posCopy = pos;
@@ -153,13 +171,8 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		posCopy.x--;
 		posCopy.y++;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	return moves;
@@ -171,17 +184,45 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 	PosVector<14> moves;
 	Pos posCopy = pos;
 
+	const auto handleCase = [&](const Pos &newPos) -> bool {
+		const auto &other = board[newPos];
+
+		if constexpr (T == ALL)
+		{
+			if (other)
+			{
+				if (!piece.hasSameColor(other))
+					moves.push_back(newPos);
+				return true;
+			}
+			moves.push_back(newPos);
+		}
+		else if (T == CAPTURES)
+		{
+			if (other && !piece.hasSameColor(other))
+			{
+				moves.push_back(newPos);
+				return true;
+			}
+		}
+		else if (T == ATTACKS_DEFENSES)
+		{
+			if (other)
+			{
+				moves.push_back(newPos);
+				return true;
+			}
+		}
+
+		return false;
+	};
+
 	while (posCopy.x > 0)
 	{
 		posCopy.x--;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	posCopy = pos;
@@ -189,13 +230,8 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 	{
 		posCopy.x++;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	posCopy = pos;
@@ -203,13 +239,8 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 	{
 		posCopy.y--;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	posCopy = pos;
@@ -217,13 +248,8 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 	{
 		posCopy.y++;
 
-		if (const auto &other = board[posCopy]; other)
-		{
-			if (!piece.hasSameColor(other))
-				moves.push_back(posCopy);
+		if (handleCase(posCopy))
 			break;
-		}
-		moves.push_back(posCopy);
 	}
 
 	return moves;
@@ -285,11 +311,11 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 
 	if (moves.empty()) return moves;
 
-	const auto opponentsMoves = getAttacksPerColor(!piece.isWhite, board);
+	const auto opponentsMoves = MoveGen<ALL>::getAttacksPerColor(!piece.isWhite, board);
 
 	for (unsigned int i = 0; i < moves.size(); i++)
 	{
-		if (opponentsMoves.exists(moves[i]))
+		if (exists(opponentsMoves, moves[i]))
 		{
 			moves[i] = moves.back();
 			moves.pop_back();
@@ -298,11 +324,11 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	}
 
 	// Castling
-	if (!piece.moved && !opponentsMoves.exists(pos))
+	if (!piece.moved && !exists(opponentsMoves, pos))
 	{
 		const auto y = pos.y;
 		const auto isEmptyAndChessFree = [&, y](const byte x) {
-			return !board.data[x][y] && !opponentsMoves.exists(Pos(x, y));
+			return !board.data[x][y] && !exists(opponentsMoves, Pos(x, y));
 		};
 
 		if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
@@ -320,10 +346,9 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 }
 
 template<GenType T>
-HashSet<Pos> MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
+PosSet MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
 {
-	constexpr auto elements = (T == ALL ? 64u : 32u);
-	HashSet<Pos> attacks(elements);
+	PosSet attacks(T == ALL ? 64u : 32u);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -366,9 +391,9 @@ HashSet<Pos> MoveGen<T>::getAttacksPerColor(const bool white, const Board &board
 }
 
 template<GenType T>
-std::unordered_map<Pos, short> MoveGen<T>::getMovesPerColorMap(const bool white, const Board &board)
+PosMap MoveGen<T>::getMovesPerColorMap(const bool white, const Board &board)
 {
-	std::unordered_map<Pos, short> allMoves(48);
+	PosMap allMoves(48);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
