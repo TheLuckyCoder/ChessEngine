@@ -20,14 +20,12 @@ constexpr EvalArray reverseCopy(const EvalArray &source)
 	auto destFirst = dest.begin();
 
 	while (first != last)
-	{
 		*(destFirst++) = *(--last);
-	}
 
 	return dest;
 }
 
-constexpr EvalArray PAWN_WHITE
+constexpr EvalArray BOARD_PAWN_WHITE
 { {
 	{ 0,  0,   0,   0,   0,   0,   0,  0},
 	{50, 50,  50,  50,  50,  50,  50, 50},
@@ -39,7 +37,7 @@ constexpr EvalArray PAWN_WHITE
 	{ 0,  0,   0,   0,   0,   0,   0,  0}
 } };
 
-constexpr EvalArray KNIGHT_WHITE
+constexpr EvalArray BOARD_KNIGHT_WHITE
 { {
 	{-50, -40, -30, -30, -30, -30, -40, -50},
 	{-40, -20,   0,   0,   0,   0, -20, -40},
@@ -51,7 +49,7 @@ constexpr EvalArray KNIGHT_WHITE
 	{-50, -40, -30, -30, -30, -30, -40, -50}
 } };
 
-constexpr EvalArray BISHOP_WHITE
+constexpr EvalArray BOARD_BISHOP_WHITE
 { {
 	{-20, -10, -10, -10, -10, -10, -10, -20},
 	{-10,   0,   0,   0,   0,   0,   0, -10},
@@ -63,7 +61,7 @@ constexpr EvalArray BISHOP_WHITE
 	{-20, -10, -10, -10, -10, -10, -10, -20}
 } };
 
-constexpr EvalArray ROOK_WHITE
+constexpr EvalArray BOARD_ROOK_WHITE
 { {
 	{ 0,  0,  0,  0,  0,  0,  0,  0},
 	{ 5, 10, 10, 10, 10, 10, 10,  5},
@@ -75,7 +73,7 @@ constexpr EvalArray ROOK_WHITE
 	{ 0,  0,  0,  5,  5,  0,  0,  0}
 } };
 
-constexpr EvalArray QUEEN_WHITE
+constexpr EvalArray BOARD_QUEEN_WHITE
 { {
 	{-20, -10, -10, -5, -5, -10, -10, -20},
 	{-10,   0,   0,  0,  0,   0,   0, -10},
@@ -87,7 +85,7 @@ constexpr EvalArray QUEEN_WHITE
 	{-20, -10, -10, -5, -5, -10, -10, -20}
 } };
 
-constexpr EvalArray KING_WHITE =
+constexpr EvalArray BOARD_KING_WHITE =
 { {
 	{-30, -40, -40, -50, -50, -40, -40, -30},
 	{-30, -40, -40, -50, -50, -40, -40, -30},
@@ -99,7 +97,7 @@ constexpr EvalArray KING_WHITE =
 	{ 20,  30,  10,   0,   0,  10,  30,  20}
 } };
 
-constexpr EvalArray KING_WHITE_ENDING =
+constexpr EvalArray BOARD_KING_WHITE_ENDING =
 { {
 	{-50, -40, -30, -20, -20, -30, -40, -50},
 	{-30, -20, -10,   0,   0, -10, -20, -30},
@@ -111,13 +109,13 @@ constexpr EvalArray KING_WHITE_ENDING =
 	{-50, -30, -30, -30, -30, -30, -30, -50}
 } };
 
-constexpr EvalArray PAWN_BLACK = reverseCopy(PAWN_WHITE);
-constexpr EvalArray KNIGHT_BLACK = reverseCopy(KNIGHT_WHITE);
-constexpr EvalArray BISHOP_BLACK = reverseCopy(BISHOP_WHITE);
-constexpr EvalArray ROOK_BLACK = reverseCopy(ROOK_WHITE);
-constexpr EvalArray QUEEN_BLACK = reverseCopy(QUEEN_WHITE);
-constexpr EvalArray KING_BLACK = reverseCopy(KING_WHITE);
-constexpr EvalArray KING_BLACK_ENDING = reverseCopy(KING_WHITE_ENDING);
+constexpr EvalArray BOARD_PAWN_BLACK = reverseCopy(BOARD_PAWN_WHITE);
+constexpr EvalArray BOARD_KNIGHT_BLACK = reverseCopy(BOARD_KNIGHT_WHITE);
+constexpr EvalArray BOARD_BISHOP_BLACK = reverseCopy(BOARD_BISHOP_WHITE);
+constexpr EvalArray BOARD_ROOK_BLACK = reverseCopy(BOARD_ROOK_WHITE);
+constexpr EvalArray BOARD_QUEEN_BLACK = reverseCopy(BOARD_QUEEN_WHITE);
+constexpr EvalArray BOARD_KING_BLACK = reverseCopy(BOARD_KING_WHITE);
+constexpr EvalArray BOARD_KING_BLACK_ENDING = reverseCopy(BOARD_KING_WHITE_ENDING);
 
 #define S Score
 
@@ -149,6 +147,7 @@ constexpr Score QUEEN_MOBILITY[] =
 	S(79,140), S(88,143), S(88,148), S(99,166), S(102,170), S(102,175),
 	S(106,184), S(109,191), S(113,206), S(116,212)
 };
+
 #undef S
 
 int Evaluation::evaluate(const Board &board)
@@ -179,8 +178,6 @@ int Evaluation::evaluate(const Board &board)
 				npm += [&]() -> short {
 					switch (piece.type)
 					{
-					case Piece::Type::PAWN:
-						return PAWN.mg;
 					case Piece::Type::KNIGHT:
 						return KNIGHT.mg;
 					case Piece::Type::BISHOP:
@@ -204,7 +201,7 @@ int Evaluation::evaluate(const Board &board)
 	if (bishopCount.second >= 2)
 		score -= 10;
 
-	const static auto midgameLimit = 15258, endgameLimit = 3915;
+	const static int midgameLimit = 15258, endgameLimit = 3915;
 	npm = std::max(endgameLimit, std::min(npm, midgameLimit));
 	const auto phase = static_cast<Phase>(((npm - endgameLimit) * 128) / (midgameLimit - endgameLimit));
 
@@ -247,13 +244,13 @@ int Evaluation::evaluate(const Board &board)
 
 	if (board.state == State::BLACK_IN_CHESS)
 	{
-		score.mg += 35;
-		score.eg += 45;
+		score.mg += 30;
+		score.eg += 40;
 	}
 	else if (board.state == State::WHITE_IN_CHESS)
 	{
-		score.mg -= 35;
-		score.eg -= 45;
+		score.mg -= 30;
+		score.eg -= 40;
 	}
 
 	if (phase == Phase::MIDDLE)
@@ -264,7 +261,7 @@ int Evaluation::evaluate(const Board &board)
 inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, PosMap &opponentsAttacks)
 {
 	Score value = PAWN;
-	value.mg += piece.isWhite ? PAWN_WHITE[pos.y][pos.x] : PAWN_BLACK[pos.y][pos.x];
+	value.mg += piece.isWhite ? BOARD_PAWN_WHITE[pos.y][pos.x] : BOARD_PAWN_BLACK[pos.y][pos.x];
 
 	// Rook Pawns are worth 15% less because they can only attack one way
 	if (pos.x == 0 || pos.x == 7)
@@ -317,7 +314,7 @@ inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const 
 inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board)
 {
 	Score value = KNIGHT;
-	value.mg += piece.isWhite ? KNIGHT_WHITE[pos.y][pos.x] : KNIGHT_BLACK[pos.y][pos.x];
+	value.mg += piece.isWhite ? BOARD_KNIGHT_WHITE[pos.y][pos.x] : BOARD_KNIGHT_BLACK[pos.y][pos.x];
 
 	value += KNIGHT_MOBILITY[MoveGen<ALL>::generateKnightMoves(piece, pos, board).size()];
 
@@ -328,7 +325,7 @@ inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, cons
 {
 	Score value = BISHOP;
 
-	value.mg += piece.isWhite ? BISHOP_WHITE[pos.y][pos.x] : BISHOP_BLACK[pos.y][pos.x];
+	value.mg += piece.isWhite ? BOARD_BISHOP_WHITE[pos.y][pos.x] : BOARD_BISHOP_BLACK[pos.y][pos.x];
 
 	value += BISHOP_MOBILITY[MoveGen<ALL>::generateBishopMoves(piece, pos, board).size()];
 
@@ -339,7 +336,7 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 {
 	Score value = ROOK;
 
-	value.mg += piece.isWhite ? ROOK_WHITE[pos.y][pos.x] : ROOK_BLACK[pos.y][pos.x];
+	value.mg += piece.isWhite ? BOARD_ROOK_WHITE[pos.y][pos.x] : BOARD_ROOK_BLACK[pos.y][pos.x];
 
 	value += ROOK_MOBILITY[MoveGen<ALL>::generateRookMoves(piece, pos, board).size()];
 
@@ -354,20 +351,20 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board)
 {
 	Score value = QUEEN;
-	value.mg += piece.isWhite ? QUEEN_WHITE[pos.y][pos.x] : QUEEN_BLACK[pos.y][pos.x];
+	value.mg += piece.isWhite ? BOARD_QUEEN_WHITE[pos.y][pos.x] : BOARD_QUEEN_BLACK[pos.y][pos.x];
 
 	value += QUEEN_MOBILITY[MoveGen<ALL>::generateQueenMoves(piece, pos, board).size()];
 
 	if (piece.moved)
-		value.mg -= 18;
+		value.mg -= 20;
 
 	return value;
 }
 
 inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board)
 {
-	Score value(piece.isWhite ? KING_WHITE[pos.y][pos.x] : KING_BLACK[pos.y][pos.x],
-		piece.isWhite ? KING_WHITE_ENDING[pos.y][pos.x] : KING_BLACK_ENDING[pos.y][pos.x]);
+	Score value(piece.isWhite ? BOARD_KING_WHITE[pos.y][pos.x] : BOARD_KING_BLACK[pos.y][pos.x],
+		piece.isWhite ? BOARD_KING_WHITE_ENDING[pos.y][pos.x] : BOARD_KING_BLACK_ENDING[pos.y][pos.x]);
 
 	if (piece.moved)
 	{
@@ -375,15 +372,6 @@ inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const 
 			(!piece.isWhite && !board.blackCastled))
 			value.mg -= 20;
 	}
-
-	/*auto moves = MoveGen::generateKingInitialMoves(pos);
-	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
-		return opponentsAttacks.find(destPos) != opponentsAttacks.end() || (board[destPos] && board[destPos].isWhite == piece.isWhite);
-	});
-	moves.erase(iterator, moves.end());
-
-	if (moves.size() < 2)
-		value -= 5;*/
 
 	return value;
 }

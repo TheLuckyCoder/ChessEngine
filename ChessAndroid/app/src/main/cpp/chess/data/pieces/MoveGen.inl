@@ -118,9 +118,10 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		}
 		else if (T == CAPTURES)
 		{
-			if (other && !piece.hasSameColor(other))
+			if (other)
 			{
-				moves.push_back(newPos);
+				if (!piece.hasSameColor(other))
+					moves.push_back(newPos);
 				return true;
 			}
 		}
@@ -199,9 +200,10 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 		}
 		else if (T == CAPTURES)
 		{
-			if (other && !piece.hasSameColor(other))
+			if (other)
 			{
-				moves.push_back(newPos);
+				if (!piece.hasSameColor(other))
+					moves.push_back(newPos);
 				return true;
 			}
 		}

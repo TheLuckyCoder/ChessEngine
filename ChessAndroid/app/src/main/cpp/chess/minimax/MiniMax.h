@@ -17,4 +17,5 @@ namespace MiniMax
 	static int maxMove(const Board &board, short depth, int alpha, int beta, bool extended);
 	static int minMove(const Board &board, short depth, int alpha, int beta, bool extended);
 
+	static int quiescence(const Board &board, short depth, int alpha, int beta, bool isMaxPlayer);
 }

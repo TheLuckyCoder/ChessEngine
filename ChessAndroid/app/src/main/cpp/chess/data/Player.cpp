@@ -30,7 +30,7 @@ namespace Player
 		return true;
 	}
 
-	bool hasNoMoves(const bool isWhite, const Board &board)
+	bool hasNoValidMoves(const bool isWhite, const Board &board)
 	{
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
@@ -54,36 +54,6 @@ namespace Player
 					return false;
 				}
 			}
-
-		return true;
-	}
-
-	bool hasNoValidMoves(const bool isWhite, const Board &board)
-	{
-		const auto pieces = getAllOwnedPieces(isWhite, board);
-
-		for (const auto &pair : pieces)
-		{
-			const auto &startPos = pair.first;
-			const auto possibleMoves = pair.second.getPossibleMoves(startPos, board);
-
-			for (const auto &destPos : possibleMoves)
-			{
-				if (board[destPos].type == Piece::Type::KING)
-					continue;
-
-				Board newBoard = board;
-				BoardManager::movePieceInternal(startPos, destPos, newBoard);
-
-				const auto state = newBoard.state;
-
-				if ((isWhite && (state == State::WHITE_IN_CHESS || state == State::WINNER_BLACK)) ||
-					(!isWhite && (state == State::BLACK_IN_CHESS || state == State::WINNER_WHITE)))
-					continue;
-
-				return false;
-			}
-		}
 
 		return true;
 	}

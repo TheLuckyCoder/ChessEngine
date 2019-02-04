@@ -44,35 +44,37 @@ bool Board::operator>(const Board& other) const noexcept
 
 void Board::initDefaultBoard() noexcept
 {
-	for (short x = 0; x < 8; x++)
+	using Type = Piece::Type;
+
+	for (byte x = 0; x < 8; x++)
 		data[x].fill(Piece());
 
-	for (short x = 0; x < 8; x++)
-		data[x][1] = Piece(Piece::Type::PAWN, true);
+	for (byte x = 0; x < 8; x++)
+		data[x][1] = Piece(Type::PAWN, true);
 
-	for (short x = 0; x < 8; x++)
-		data[x][6] = Piece(Piece::Type::PAWN, false);
+	for (byte x = 0; x < 8; x++)
+		data[x][6] = Piece(Type::PAWN, false);
 
-	data[1][0] = Piece(Piece::Type::KNIGHT, true);
-	data[6][0] = Piece(Piece::Type::KNIGHT, true);
-	data[1][7] = Piece(Piece::Type::KNIGHT, false);
-	data[6][7] = Piece(Piece::Type::KNIGHT, false);
+	data[1][0] = Piece(Type::KNIGHT, true);
+	data[6][0] = Piece(Type::KNIGHT, true);
+	data[1][7] = Piece(Type::KNIGHT, false);
+	data[6][7] = Piece(Type::KNIGHT, false);
 
-	data[2][0] = Piece(Piece::Type::BISHOP, true);
-	data[5][0] = Piece(Piece::Type::BISHOP, true);
-	data[2][7] = Piece(Piece::Type::BISHOP, false);
-	data[5][7] = Piece(Piece::Type::BISHOP, false);
+	data[2][0] = Piece(Type::BISHOP, true);
+	data[5][0] = Piece(Type::BISHOP, true);
+	data[2][7] = Piece(Type::BISHOP, false);
+	data[5][7] = Piece(Type::BISHOP, false);
 
-	data[0][0] = Piece(Piece::Type::ROOK, true);
-	data[7][0] = Piece(Piece::Type::ROOK, true);
-	data[0][7] = Piece(Piece::Type::ROOK, false);
-	data[7][7] = Piece(Piece::Type::ROOK, false);
+	data[0][0] = Piece(Type::ROOK, true);
+	data[7][0] = Piece(Type::ROOK, true);
+	data[0][7] = Piece(Type::ROOK, false);
+	data[7][7] = Piece(Type::ROOK, false);
 
-	data[3][0] = Piece(Piece::Type::QUEEN, true);
-	data[3][7] = Piece(Piece::Type::QUEEN, false);
+	data[3][0] = Piece(Type::QUEEN, true);
+	data[3][7] = Piece(Type::QUEEN, false);
 
-	data[4][0] = Piece(Piece::Type::KING, true);
-	data[4][7] = Piece(Piece::Type::KING, false);
+	data[4][0] = Piece(Type::KING, true);
+	data[4][7] = Piece(Type::KING, false);
 
 	hash = Hash::compute(*this);
 	whiteCastled = false;
@@ -104,7 +106,7 @@ StackVector<Board, 50> Board::listValidMovesQ(const bool isWhite) const noexcept
 
 		for (const auto &destPos : possibleMoves)
 		{
-			if (const auto &piece = (*this)[destPos]; !piece && piece.type == Piece::Type::KING)
+			if (const auto &piece = (*this)[destPos]; !piece || piece.type == Piece::Type::KING)
 				continue;
 
 			Board board = *this;

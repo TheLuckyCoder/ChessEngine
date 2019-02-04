@@ -27,10 +27,11 @@ namespace MiniMax
 		Move bestMove = std::move(moves.back());
 		int bestMovePoints = moves.back().board.value;
 
-		for (auto i = moves.size() - 2; i > 0; --i) {
+		for (auto i = 1u; i < moves.size(); ++i)
+		{
 			const auto moveValue = futures[i].get();
 
-			if (moveValue > bestMovePoints)
+			if (moveValue < bestMovePoints)
 			{
 				bestMove = std::move(moves[i]);
 				bestMovePoints = moveValue;
@@ -88,14 +89,19 @@ namespace MiniMax
 				extended = true;
 			}
 			else if (!moves.empty())
-				return moves.back().value;
+				return moves.front().value;
+				//return quiescence(moves.front(), 1, alpha, beta, false);
+			else
+			{
+				if (board.state == State::WHITE_IN_CHESS)
+					return VALUE_WINNER_BLACK;
+			}
 		}
 
 		int bestMovePoints = VALUE_MIN;
 
-		for (auto it = moves.rbegin(); it != moves.rend(); ++it)
+		for (const auto &move : moves)
 		{
-			const auto &move = *it;
 			if (move.value == VALUE_WINNER_WHITE)
 				return VALUE_WINNER_WHITE;
 			const int moveValue = minMove(move, depth, alpha, beta, extended);
@@ -108,7 +114,7 @@ namespace MiniMax
 					alpha = bestMovePoints;
 			}
 
-			if (beta < alpha)
+			if (beta <= alpha)
 				break;
 		}
 
@@ -129,6 +135,12 @@ namespace MiniMax
 			}
 			else if (!moves.empty())
 				return moves.front().value;
+				//return quiescence(moves.front(), 1, alpha, beta, true);
+			else
+			{
+				if (board.state == State::WHITE_IN_CHESS)
+					return VALUE_WINNER_WHITE;
+			}
 		}
 
 		int bestMovePoints = VALUE_MAX;
@@ -147,7 +159,46 @@ namespace MiniMax
 					beta = bestMovePoints;
 			}
 
-			if (beta < alpha)
+			if (beta <= alpha)
+				break;
+		}
+
+		return bestMovePoints;
+	}
+
+	int quiescence(const Board &board, short depth, int alpha, int beta, const bool isMaxPlayer)
+	{
+		const auto moves = board.listValidMovesQ(isMaxPlayer);
+		depth--;
+
+		if (depth == 0)
+		{
+			if (!moves.empty())
+				return moves.front().value;
+		}
+
+		int bestMovePoints = isMaxPlayer ? VALUE_MIN : VALUE_MAX;
+
+		for (const auto &move : moves)
+		{
+			if (move.value == VALUE_WINNER_BLACK)
+				return VALUE_WINNER_BLACK;
+			const int moveValue = quiescence(move, depth, alpha, beta, !isMaxPlayer);
+
+			if (isMaxPlayer && moveValue > bestMovePoints)
+			{
+				bestMovePoints = moveValue;
+				if (bestMovePoints > alpha)
+					alpha = bestMovePoints;
+			}
+			else if (!isMaxPlayer && moveValue < bestMovePoints)
+			{
+				bestMovePoints = moveValue;
+				if (bestMovePoints < beta)
+					beta = bestMovePoints;
+			}
+
+			if (beta <= alpha)
 				break;
 		}
 

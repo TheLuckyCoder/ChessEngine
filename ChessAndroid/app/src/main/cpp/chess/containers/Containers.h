@@ -3,7 +3,6 @@
 //#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 
 #include "StackVector.h"
-#include "HashTable.h"
 #include "sparsepp/spp.h"
 
 class Pos;

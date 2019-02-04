@@ -53,6 +53,11 @@ public:
 	{
 		return board.value < other.board.value;
 	}
+
+	bool operator>(const Move &other) const
+	{
+		return board.value > other.board.value;
+	}
 };
 
 class Cache final
@@ -93,7 +98,10 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 		}
 	}
 
-	std::sort(moves.begin(), moves.end());
+	if (isWhite)
+		std::sort(moves.begin(), moves.end(), std::greater<>());
+	else
+		std::sort(moves.begin(), moves.end());
 
 	return moves;
 }

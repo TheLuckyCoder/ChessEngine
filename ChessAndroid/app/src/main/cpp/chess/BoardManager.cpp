@@ -73,9 +73,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 {
 	if (!selectedPos.isValid() || !destPos.isValid()) return;
 
-	StackVector<PosPair, 2> piecesMoved;
-	piecesMoved.emplace_back(selectedPos, destPos);
-
+	StackVector<PosPair, 2> piecesMoved { {selectedPos, destPos} };
 	
 	auto &selectedPiece = m_Board[selectedPos];
 	bool shouldRedraw = false;
@@ -177,19 +175,19 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		if (whiteInChess)
 			board.state = State::WHITE_IN_CHESS;
 
-		if (Player::hasNoMoves(true, board))
+		if (Player::hasNoValidMoves(true, board))
 			board.state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
 		else
 		{
 			if (blackInChess)
 				board.state = State::BLACK_IN_CHESS;
-			if (Player::hasNoMoves(false, board))
+			if (Player::hasNoValidMoves(false, board))
 				board.state = blackInChess ? State::WINNER_WHITE : State::DRAW;
 		}
 
 		/*if (cacheTable.get(board.hash, cache))
 		{
-			//board.state = cache.state;
+			board.state = cache.state;
 			board.value = cache.value;
 			return;
 		}*/
@@ -207,7 +205,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		case State::WINNER_BLACK:
 			board.value = MiniMax::VALUE_WINNER_BLACK;
 			break;
-		default:
+		case State::DRAW:
 			board.value = 0;
 			break;
 		}
