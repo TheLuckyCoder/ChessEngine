@@ -178,6 +178,10 @@ int Evaluation::evaluate(const Board &board)
 				npm += [&]() -> short {
 					switch (piece.type)
 					{
+					case Piece::Type::PAWN:
+					case Piece::Type::KING:
+					case Piece::Type::NONE:
+						return 0;
 					case Piece::Type::KNIGHT:
 						return KNIGHT.mg;
 					case Piece::Type::BISHOP:
@@ -189,8 +193,6 @@ int Evaluation::evaluate(const Board &board)
 						return ROOK.mg;
 					case Piece::Type::QUEEN:
 						return QUEEN.mg;
-					default:
-						return 0;
 					}
 				}();
 			}
@@ -356,7 +358,7 @@ inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const
 	value += QUEEN_MOBILITY[MoveGen<ALL>::generateQueenMoves(piece, pos, board).size()];
 
 	if (piece.moved)
-		value.mg -= 20;
+		value.mg -= 30;
 
 	return value;
 }
