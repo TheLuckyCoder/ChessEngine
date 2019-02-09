@@ -8,17 +8,6 @@
 namespace Player
 {
 
-	Pos getKingPos(const bool isWhite, const Board &board)
-	{
-		for (byte x = 0; x < 8; x++)
-			for (byte y = 0; y < 8; y++)
-				if (const auto &piece = board.data[x][y];
-					piece.type == Piece::Type::KING && piece.isWhite == isWhite)
-					return Pos(x, y);
-
-		return Pos();
-	}
-
 	bool onlyKingsLeft(const Board &board)
 	{
 		for (byte x = 0; x < 8; x++)
@@ -60,8 +49,9 @@ namespace Player
 
 	bool isInChess(const bool isWhite, const Board &board)
 	{
-		const auto bitboard = MoveGen<CAPTURES>::getAttacksPerColorBitboard(!isWhite, board);
-		return bitboard & getKingPos(isWhite, board).toBitboard();
+		const Bitboard bitboard = MoveGen<CAPTURES>::getAttacksPerColorBitboard(!isWhite, board);
+		const Bitboard kingPos = isWhite ? board.whiteKingPos : board.blackKingPos;
+		return bitboard & kingPos;
 	}
 
 	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(const bool isWhite, const Board &board)

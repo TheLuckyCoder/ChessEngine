@@ -13,6 +13,8 @@ public:
 	std::uint64_t hash = 0;
 	bool whiteCastled = false;
 	bool blackCastled = false;
+	Bitboard whiteKingPos = 0;
+	Bitboard blackKingPos = 0;
 	State state = State::NONE;
 	int value = 0;
 
@@ -86,8 +88,9 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 			Board board = *this;
 			BoardManager::movePieceInternal(selectedPos, destPos, board);
 
-			if ((isWhite && board.state == State::WHITE_IN_CHESS) ||
-				(!isWhite && board.state == State::BLACK_IN_CHESS))
+			if (isWhite && (board.state == State::WHITE_IN_CHESS || board.state == State::WINNER_BLACK))
+				continue;
+			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
 				continue;
 
 			if constexpr (std::is_same_v<T, Move>)

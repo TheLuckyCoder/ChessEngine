@@ -14,9 +14,9 @@ jobs:
     - run:
         name: Decode Keystore
         command: echo $ENCODED_KEYSTORE | base64 --decode >> ${HOME}/ChessEngine/ChessAndroid/keystore.jks
-    - run:
-        name: Store Keystore
-        command: echo 'export KEYSTORE=${HOME}/ChessEngine/ChessAndroid/keystore.jks' >> $BASH_ENV
+#    - run:
+#        name: Set Keystore Variable
+#        command: echo 'export KEYSTORE=${HOME}/ChessEngine/ChessAndroid/keystore.jks' >> $BASH_ENV
     - run:
         name: Download Dependencies
         command: ./gradlew androidDependencies

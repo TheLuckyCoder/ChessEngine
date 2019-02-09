@@ -74,15 +74,20 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 {
 	if (!selectedPos.isValid() || !destPos.isValid()) return;
 
-	StackVector<PosPair, 2> piecesMoved { {selectedPos, destPos} };
+	StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
 	
 	auto &selectedPiece = m_Board[selectedPos];
 	bool shouldRedraw = false;
 
 	if (selectedPiece.type == Piece::Type::PAWN)
 		shouldRedraw = movePawn(selectedPiece, destPos);
-	else if (selectedPiece.type == Piece::Type::KING && !selectedPiece.moved)
+	else if (selectedPiece.type == Piece::Type::KING)
 	{
+		if (selectedPiece.isWhite)
+			m_Board.whiteKingPos = destPos.toBitboard();
+		else
+			m_Board.blackKingPos = destPos.toBitboard();
+
 		const auto &pair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
 		if (pair.first.isValid())
 		{
@@ -134,9 +139,14 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 	if (selectedPiece.type == Piece::Type::PAWN)
 		recalculateHash = movePawn(selectedPiece, destPos);
-	else if (selectedPiece.type == Piece::Type::KING && !selectedPiece.moved)
+	else if (selectedPiece.type == Piece::Type::KING)
 	{
-		if (moveKing(selectedPiece, selectedPos, destPos, board).first.isValid())
+		if (selectedPiece.isWhite)
+			board.whiteKingPos = destPos.toBitboard();
+		else
+			board.blackKingPos = destPos.toBitboard();
+
+		if (!selectedPiece.moved && moveKing(selectedPiece, selectedPos, destPos, board).first.isValid())
 		{
 			recalculateHash = true;
 			if (selectedPiece.isWhite)
@@ -288,7 +298,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		{
 			rook.moved = true;
 
-			const byte destX = 5;
+			const byte destX = 3;
 			board.data[destX][y] = rook;
 			board.data[startX][y] = Piece();
 

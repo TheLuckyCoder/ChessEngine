@@ -8,6 +8,8 @@ Board::Board(const Board &board) noexcept
 	hash = board.hash;
 	whiteCastled = board.whiteCastled;
 	blackCastled = board.blackCastled;
+	whiteKingPos = board.whiteKingPos;
+	blackKingPos = board.blackKingPos;
 	state = board.state;
 }
 
@@ -17,6 +19,8 @@ Board &Board::operator=(const Board &other) noexcept
 	hash = other.hash;
 	whiteCastled = other.whiteCastled;
 	blackCastled = other.blackCastled;
+	whiteKingPos = other.whiteKingPos;
+	blackKingPos = other.blackKingPos;
 	state = other.state;
 	return *this;
 }
@@ -78,6 +82,8 @@ void Board::initDefaultBoard() noexcept
 	hash = Hash::compute(*this);
 	whiteCastled = false;
 	blackCastled = false;
+	whiteKingPos = Pos(4, 0).toBitboard();
+	blackKingPos = Pos(4, 7).toBitboard();
 	state = State::NONE;
 }
 
