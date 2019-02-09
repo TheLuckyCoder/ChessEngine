@@ -12,17 +12,21 @@ android {
         versionName "0.12"
     }
 
-    buildTypes {
-        debug {
-            externalNativeBuild {
-                cmake {
-                    arguments "-DANDROID_ABI=arm64-v8a"
-                }
-            }
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE") ?: "keystore.jks")
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEYSTORE_PASSWORD")
         }
+    }
+
+    buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
+            zipAlignEnabled true
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
