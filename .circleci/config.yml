@@ -1,0 +1,32 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/ChessEngine/ChessAndroid
+    docker:
+    - image: circleci/android:api-28-ndk
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+    - checkout
+    - restore_cache:
+        key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+    - run: echo $ENCODED_KEYSTORE | base64 --decode >> ${HOME}/ChessEngine/ChessAndroid/keystore.jks
+    - run: echo 'export KEYSTORE=${HOME}/ChessEngine/ChessAndroid/keystore.jks' >> $BASH_ENV
+    - run:
+        name: Download Dependencies
+        command: ./gradlew androidDependencies
+    - save_cache:
+        paths:
+        - ~/.gradle
+        key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+    - run:
+        name: Build Artifact
+        command: ./gradlew assembleRelease
+    - store_artifacts:
+        name: Store Reports
+        path: app/build/reports
+        destination: reports
+    - store_artifacts:
+        name: Store APK
+        path: app/build/outputs/apk
+        destination: apk
