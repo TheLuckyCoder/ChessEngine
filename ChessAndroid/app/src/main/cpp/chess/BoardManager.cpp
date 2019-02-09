@@ -172,7 +172,6 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		board.state = State::NONE;
 
 		const bool whiteInChess = Player::isInChess(true, board);
-		const bool blackInChess = Player::isInChess(false, board);
 		if (whiteInChess)
 			board.state = State::WHITE_IN_CHESS;
 
@@ -180,6 +179,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			board.state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
 		else
 		{
+			const bool blackInChess = Player::isInChess(false, board);
 			if (blackInChess)
 				board.state = State::BLACK_IN_CHESS;
 			if (Player::hasNoValidMoves(false, board))

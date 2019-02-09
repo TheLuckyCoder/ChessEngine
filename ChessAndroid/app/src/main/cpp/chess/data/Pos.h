@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include "Bitboard.h"
 
 using byte = unsigned char;
 
@@ -65,6 +66,11 @@ public:
 	constexpr bool isValid() const noexcept
 	{
 		return x < 8 && y < 8;
+	}
+
+	constexpr Bitboard toBitboard() const noexcept
+	{
+		return 1ull << (x * 8 + y);
 	}
 
 };

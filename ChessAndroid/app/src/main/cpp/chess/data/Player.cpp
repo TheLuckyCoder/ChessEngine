@@ -60,8 +60,8 @@ namespace Player
 
 	bool isInChess(const bool isWhite, const Board &board)
 	{
-		const auto moves = MoveGen<CAPTURES>::getAttacksPerColor(!isWhite, board);
-		return exists(moves, getKingPos(isWhite, board));
+		const auto bitboard = MoveGen<CAPTURES>::getAttacksPerColorBitboard(!isWhite, board);
+		return bitboard & getKingPos(isWhite, board).toBitboard();
 	}
 
 	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(const bool isWhite, const Board &board)

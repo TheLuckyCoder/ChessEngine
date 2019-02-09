@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../containers/Containers.h"
+#include "../data/Bitboard.h"
 
 enum GenType : unsigned char
 {
@@ -28,7 +29,7 @@ public:
 	static PosVector<8> generateKingInitialMoves(Pos pos);
 	static PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 
-	static PosSet getAttacksPerColor(bool white, const Board &board);
+	static Bitboard getAttacksPerColorBitboard(bool white, const Board &board);
 	static PosMap getMovesPerColorMap(bool white, const Board &board);
 };
 

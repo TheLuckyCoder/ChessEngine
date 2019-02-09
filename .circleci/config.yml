@@ -1,21 +1,21 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/project/ChessAndroid
+    working_directory: ~/ChessEngine/ChessAndroid
     docker:
     - image: circleci/android:api-28-ndk
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
     - checkout:
-          path: ~/project
+          path: ~/ChessEngine
     - restore_cache:
         key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
     - run:
         name: Decode Keystore
         command: echo $ENCODED_KEYSTORE | base64 --decode >> ${HOME}/ChessEngine/ChessAndroid/keystore.jks
     - run:
-        name: Save Keystore
+        name: Store Keystore
         command: echo 'export KEYSTORE=${HOME}/ChessEngine/ChessAndroid/keystore.jks' >> $BASH_ENV
     - run:
         name: Download Dependencies

@@ -313,11 +313,11 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 
 	if (moves.empty()) return moves;
 
-	const auto opponentsMoves = MoveGen<ALL>::getAttacksPerColor(!piece.isWhite, board);
+	const auto opponentsMoves = MoveGen<ALL>::getAttacksPerColorBitboard(!piece.isWhite, board);
 
 	for (unsigned int i = 0; i < moves.size(); i++)
 	{
-		if (exists(opponentsMoves, moves[i]))
+		if (opponentsMoves & moves[i].toBitboard())
 		{
 			moves[i] = moves.back();
 			moves.pop_back();
@@ -326,11 +326,11 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	}
 
 	// Castling
-	if (!piece.moved && !exists(opponentsMoves, pos))
+	if (!piece.moved && !(opponentsMoves & pos.toBitboard()))
 	{
 		const auto y = pos.y;
 		const auto isEmptyAndChessFree = [&, y](const byte x) {
-			return !board.data[x][y] && !exists(opponentsMoves, Pos(x, y));
+			return !board.data[x][y] && !(opponentsMoves & Pos(x, y).toBitboard());
 		};
 
 		if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
@@ -348,9 +348,9 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 }
 
 template<GenType T>
-PosSet MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
+Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &board)
 {
-	PosSet attacks(T == ALL ? 64u : 32u);
+	Bitboard bitboard{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -363,7 +363,7 @@ PosSet MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
 				switch (piece.type)
 				{
 				case Piece::Type::PAWN:
-					moves = generatePawnMoves(piece, pos, board);
+					moves = MoveGen<CAPTURES>::generatePawnMoves(piece, pos, board);
 					break;
 				case Piece::Type::KNIGHT:
 					moves = generateKnightMoves(piece, pos, board);
@@ -385,11 +385,11 @@ PosSet MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
 				}
 
 				for (const auto &move : moves)
-					attacks.insert(move);
+					bitboard |= move.toBitboard();
 			}
 		}
 
-	return attacks;
+	return bitboard;
 }
 
 template<GenType T>
@@ -409,7 +409,7 @@ PosMap MoveGen<T>::getMovesPerColorMap(const bool white, const Board &board)
 				switch (piece.type)
 				{
 				case Piece::Type::PAWN:
-					moves = generatePawnMoves(piece, pos, board);
+					moves = MoveGen<CAPTURES>::generatePawnMoves(piece, pos, board);
 					break;
 				case Piece::Type::KNIGHT:
 					moves = generateKnightMoves(piece, pos, board);
