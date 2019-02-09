@@ -19,10 +19,10 @@ public:
 	constexpr Pos(const Pos pos, const byte x, const byte y) noexcept
 		: x(pos.x + x), y(pos.y + y) {}
 
-	friend Pos operator+(Pos left, const Pos &right) noexcept;
-	friend Pos operator-(Pos left, const Pos &right) noexcept;
-	friend Pos operator*(Pos left, const Pos &right) noexcept;
-	friend Pos operator/(Pos left, const Pos &right) noexcept;
+	constexpr friend Pos operator+(Pos left, const Pos &right) noexcept;
+	constexpr friend Pos operator-(Pos left, const Pos &right) noexcept;
+	constexpr friend Pos operator*(Pos left, const Pos &right) noexcept;
+	constexpr friend Pos operator/(Pos left, const Pos &right) noexcept;
 
 	constexpr bool operator==(const Pos &other) const noexcept
 	{
@@ -33,10 +33,34 @@ public:
 		return !(*this == other);
 	}
 
-	constexpr Pos& operator+=(const Pos &other) noexcept;
-	constexpr Pos& operator-=(const Pos &other) noexcept;
-	constexpr Pos& operator*=(const Pos &other) noexcept;
-	constexpr Pos& operator/=(const Pos &other) noexcept;
+	constexpr Pos &operator+=(const Pos &other) noexcept
+	{
+		x += other.x;
+		y += other.y;
+
+		return *this;
+	}
+	constexpr Pos &operator-=(const Pos &other) noexcept
+	{
+		x -= other.x;
+		y -= other.y;
+
+		return *this;
+	}
+	constexpr Pos &operator*=(const Pos &other) noexcept
+	{
+		x *= other.x;
+		y *= other.y;
+
+		return *this;
+	}
+	constexpr Pos &operator/=(const Pos &other) noexcept
+	{
+		x /= other.x;
+		y /= other.y;
+
+		return *this;
+	}
 
 	constexpr bool isValid() const noexcept
 	{
@@ -44,6 +68,26 @@ public:
 	}
 
 };
+
+constexpr Pos operator+(Pos left, const Pos &right) noexcept
+{
+	return left += right;
+}
+
+constexpr Pos operator-(Pos left, const Pos &right) noexcept
+{
+	return left -= right;
+}
+
+constexpr Pos operator*(Pos left, const Pos &right) noexcept
+{
+	return left *= right;
+}
+
+constexpr Pos operator/(Pos left, const Pos &right) noexcept
+{
+	return left /= right;
+}
 
 using PosPair = std::pair<Pos, Pos>;
 

@@ -1,8 +1,8 @@
 #include "Player.h"
 
 #include "Board.h"
-#include "pieces/Piece.h"
-#include "pieces/MoveGen.h"
+#include "Piece.h"
+#include "../minimax/MoveGen.h"
 #include "../BoardManager.h"
 
 namespace Player

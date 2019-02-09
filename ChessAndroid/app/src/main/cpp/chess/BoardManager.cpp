@@ -6,6 +6,7 @@
 #include "DebugFile.h"
 #include "data/Board.h"
 #include "minimax/MiniMax.h"
+#include "minimax/Evaluation.h"
 #include "minimax/Hash.h"
 
 BoardManager::PieceChangeListener BoardManager::m_Listener;

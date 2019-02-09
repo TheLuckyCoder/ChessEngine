@@ -3,8 +3,7 @@
 #include <array>
 
 #include "Player.h"
-#include "pieces/Evaluation.h"
-#include "pieces/Piece.h"
+#include "Piece.h"
 #include "../BoardManager.h"
 
 class Board final

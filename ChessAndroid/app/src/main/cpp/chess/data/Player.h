@@ -9,7 +9,6 @@ class Board;
 namespace Player
 {
 
-	static Pos getKingPos(bool isWhite, const Board &board);
 	bool onlyKingsLeft(const Board &board);
 	bool hasNoValidMoves(bool isWhite, const Board &board);
 	bool isInChess(bool isWhite, const Board &board);

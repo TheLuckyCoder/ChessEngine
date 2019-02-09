@@ -1,6 +1,5 @@
 #include "Board.h"
 
-#include "pieces/Piece.h"
 #include "../minimax/Hash.h"
 
 Board::Board(const Board &board) noexcept

@@ -9,7 +9,7 @@
 #include "containers/HashTable.h"
 #include "data/Enums.h"
 #include "data/Player.h"
-#include "data/pieces/Piece.h"
+#include "data/Piece.h"
 
 class Cache;
 

@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-#include "../Board.h"
+#include "../data/Board.h"
 
 template<GenType T>
 PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Board &board)

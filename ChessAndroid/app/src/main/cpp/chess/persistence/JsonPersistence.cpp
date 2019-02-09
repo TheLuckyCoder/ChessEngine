@@ -3,7 +3,6 @@
 #include <cctype>
 
 #include "../data/Board.h"
-#include "../data/pieces/Piece.h"
 #include "../minimax/Hash.h"
 
 Board JsonPersistence::load(std::string str)

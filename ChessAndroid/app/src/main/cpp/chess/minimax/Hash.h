@@ -3,7 +3,7 @@
 #include <array>
 
 #include "../data/Pos.h"
-#include "../data/pieces/Piece.h"
+#include "../data/Piece.h"
 
 class Hash final
 {

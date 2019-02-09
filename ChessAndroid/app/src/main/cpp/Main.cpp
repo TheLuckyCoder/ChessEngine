@@ -5,6 +5,7 @@
 
 #include "chess/BoardManager.h"
 #include "chess/data/Board.h"
+#include "chess/minimax/Evaluation.h"
 #include "chess/persistence/JsonPersistence.h"
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/Utils.h"
@@ -166,7 +167,7 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jclass __unus
 
     const Pos pos(getByte(pEnv, posClass, dest, "x"), getByte(pEnv, posClass, dest, "y"));
     const auto possibleMoves = BoardManager::getPossibleMoves(pos);
-    auto *result = pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), posClass, NULL);
+    auto *result = pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), posClass, nullptr);
 
     for (unsigned i = 0; i < possibleMoves.size(); ++i)
     {
