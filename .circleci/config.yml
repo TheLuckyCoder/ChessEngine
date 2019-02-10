@@ -13,10 +13,10 @@ jobs:
         key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
     - run:
         name: Decode Keystore
-        command: echo $ENCODED_KEYSTORE | base64 --decode >> ${HOME}/ChessEngine/ChessAndroid/keystore.jks
-#    - run:
-#        name: Set Keystore Variable
-#        command: echo 'export KEYSTORE=${HOME}/ChessEngine/ChessAndroid/keystore.jks' >> $BASH_ENV
+        command: echo $ENCODED_KEYSTORE | base64 --decode >> ${HOME}/ChessEngine/ChessAndroid/app/keystore.jks
+    - run:
+        name: Set Keystore Variable
+        command: echo 'export KEYSTORE=${HOME}/ChessEngine/ChessAndroid/app/keystore.jks' >> $BASH_ENV
     - run:
         name: Download Dependencies
         command: ./gradlew androidDependencies

@@ -8,6 +8,7 @@
 #include "minimax/MiniMax.h"
 #include "minimax/Evaluation.h"
 #include "minimax/Hash.h"
+#include "minimax/NegaMax.h"
 
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
@@ -88,13 +89,16 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 		else
 			m_Board.blackKingPos = destPos.toBitboard();
 
-		const auto &pair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
-		if (pair.first.isValid())
+		if (!selectedPiece.moved)
 		{
-			if (selectedPiece.isWhite)
-				m_Board.whiteCastled = true;
-			else
-				m_Board.blackCastled = true;
+			const auto &pair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
+			if (pair.first.isValid())
+			{
+				if (selectedPiece.isWhite)
+					m_Board.whiteCastled = true;
+				else
+					m_Board.blackCastled = true;
+			}
 		}
 	}
 
@@ -211,10 +215,10 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			board.value = Evaluation::evaluate(board);
 			break;
 		case State::WINNER_WHITE:
-			board.value = MiniMax::VALUE_WINNER_WHITE;
+			board.value = VALUE_WINNER_WHITE;
 			break;
 		case State::WINNER_BLACK:
-			board.value = MiniMax::VALUE_WINNER_BLACK;
+			board.value = VALUE_WINNER_BLACK;
 			break;
 		case State::DRAW:
 			board.value = 0;
@@ -236,7 +240,8 @@ void BoardManager::moveComputerPlayer()
 	allocatedMemory = 0;
 #endif
 
-	const auto pair = isPlayerWhite ? MiniMax::minMove(getBoard()) : MiniMax::maxMove(getBoard());
+	//const auto pair = isPlayerWhite ? MiniMax::minMove(getBoard()) : MiniMax::maxMove(getBoard());
+	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite);
 	movePiece(pair.first, pair.second, false);
 
 	if (m_WorkerThread)

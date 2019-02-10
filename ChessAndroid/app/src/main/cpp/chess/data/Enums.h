@@ -15,3 +15,11 @@ enum class Phase
 	ENDING,
 	MIDDLE = 128
 };
+
+enum Value : int
+{
+	VALUE_MAX = 2000000000,
+	VALUE_MIN = -2000000000,
+	VALUE_WINNER_WHITE = 32767,
+	VALUE_WINNER_BLACK = -32767
+};

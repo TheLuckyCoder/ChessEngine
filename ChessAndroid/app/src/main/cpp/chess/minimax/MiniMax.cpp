@@ -1,5 +1,6 @@
 #include "MiniMax.h"
 
+#include "../data/Enums.h"
 #include "../data/Board.h"
 #include "../threads/ThreadPool.hpp"
 

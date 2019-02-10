@@ -9,11 +9,6 @@ class MiniMax final
 public:
 	MiniMax() = delete;
 
-	constexpr static int VALUE_MAX = 2000000000;
-	constexpr static int VALUE_MIN = -2000000000;
-	constexpr static int VALUE_WINNER_WHITE = 32767;
-	constexpr static int VALUE_WINNER_BLACK = -32767;
-
 	static PosPair maxMove(const Board &board);
 	static PosPair minMove(const Board &board);
 
