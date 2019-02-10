@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+
 #include "Bitboard.h"
 
 using byte = unsigned char;
@@ -70,7 +71,7 @@ public:
 
 	constexpr Bitboard toBitboard() const noexcept
 	{
-		return 1ull << (x * 8 + y);
+		return 1ull << (x * 8u + y);
 	}
 
 };
@@ -106,7 +107,7 @@ namespace std
 	{
 		constexpr std::size_t operator()(const Pos &pos) const noexcept
 		{
-			return pos.x * 1000 + pos.y;
+			return pos.x * 1000u + pos.y;
 		}
 	};
 

@@ -6,7 +6,6 @@
 #include "chess/BoardManager.h"
 #include "chess/data/Board.h"
 #include "chess/minimax/Evaluation.h"
-#include "chess/persistence/JsonPersistence.h"
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/Utils.h"
 
@@ -184,22 +183,6 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv __unused *pEnv, __unused jc
 {
     BoardManager::movePiece(Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)),
 							Pos(static_cast<byte>(destX), static_cast<byte>(destY)));
-}
-
-external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_loadFromJson(JNIEnv __unused *pEnv, __unused jclass type, jstring json)
-{
-	const char *nativeString = pEnv->GetStringUTFChars(json, nullptr);
-
-	BoardManager::loadGame(JsonPersistence::load(nativeString));
-
-	pEnv->ReleaseStringUTFChars(json, nativeString);
-}
-
-external JNIEXPORT jstring JNICALL
-Java_net_theluckycoder_chess_Native_saveToJson(JNIEnv __unused *pEnv, __unused jclass type)
-{
-	return pEnv->NewStringUTF(JsonPersistence::save(BoardManager::getBoard()).c_str());
 }
 
 external JNIEXPORT void JNICALL

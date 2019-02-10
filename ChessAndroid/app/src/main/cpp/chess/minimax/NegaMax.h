@@ -12,6 +12,6 @@ public:
 	static PosPair negaMax(const Board &board, bool isWhite);
 
 private:
-	static int sideToMoveScore(int score, bool isWhite);
-	inline static int negaMax(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
+	inline static int negaMax(const Board &board, byte depth, int alpha, int beta, bool isWhite, bool extended);
+	inline static int quiescence(const Board &board, byte depth, int alpha, int beta, bool isWhite);
 };

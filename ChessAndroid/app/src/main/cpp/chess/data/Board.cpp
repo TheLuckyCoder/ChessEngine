@@ -99,7 +99,7 @@ StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
 	return pieces;
 }
 
-StackVector<Board, 50> Board::listValidMovesQ(const bool isWhite) const noexcept
+StackVector<Board, 50> Board::listValidCaptures(const bool isWhite) const noexcept
 {
 	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
 	StackVector<Board, 50> moves;

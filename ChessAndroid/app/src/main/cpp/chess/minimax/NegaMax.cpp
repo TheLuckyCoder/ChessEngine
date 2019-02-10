@@ -12,13 +12,13 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite)
 		if (move.board.state == State::WINNER_BLACK)
 			return PosPair(move.start, move.dest);
 
-	const short depth = validMoves.size() <= 15 ? 5 : 4;
+	const byte depth = validMoves.size() <= 15 ? 5 : 4;
 
 	std::vector<ThreadPool::TaskFuture<int>> futures;
 	futures.reserve(validMoves.size());
 
 	for (const auto &move : validMoves)
-		futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const short depth, const bool isWhite) {
+		futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const byte depth, const bool isWhite) {
 			return -negaMax(board, depth - 1, VALUE_MIN, VALUE_MAX, !isWhite, false);
 		}, move.board, depth, isWhite));
 
@@ -39,14 +39,7 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite)
 	return PosPair(bestMove->start, bestMove->dest);
 }
 
-int NegaMax::sideToMoveScore(const int score, const bool isWhite)
-{
-	if (!isWhite)
-		return -score;
-	return score;
-}
-
-int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta, const bool isWhite, bool extended)
+inline int NegaMax::negaMax(const Board &board, byte depth, int alpha, const int beta, const bool isWhite, bool extended)
 {
 	if (depth == 0)
 	{
@@ -55,7 +48,8 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 			depth++;
 			extended = true;
 		}
-		else return sideToMoveScore(board.value, isWhite);
+		else
+			return isWhite ? board.value : -board.value;
 	}
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
@@ -66,6 +60,34 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 		if (move.value == VALUE_WINNER_WHITE || move.value == VALUE_WINNER_BLACK)
 			return move.value;
 		const int moveValue = -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended);
+
+		if (moveValue > bestValue)
+		{
+			bestValue = moveValue;
+			if (moveValue > alpha)
+				alpha = moveValue;
+		}
+
+		if (alpha >= beta)
+			break;
+	}
+
+	return bestValue;
+}
+
+inline int NegaMax::quiescence(const Board &board, byte const depth, int alpha, const int beta, const bool isWhite)
+{
+	if (depth == 0)
+		return isWhite ? board.value : -board.value;
+
+	const auto validMoves = board.listValidCaptures(isWhite);
+	int bestValue = VALUE_MIN;
+
+	for (const auto &move : validMoves)
+	{
+		if (move.value == VALUE_WINNER_WHITE || move.value == VALUE_WINNER_BLACK)
+			return move.value;
+		const int moveValue = -quiescence(move, depth - 1, -beta, -alpha, !isWhite);
 
 		if (moveValue > bestValue)
 		{

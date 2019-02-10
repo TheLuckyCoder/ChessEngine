@@ -36,8 +36,7 @@ namespace Player
 					Board newBoard = board;
 					BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
 
-					if ((isWhite && isInChess(true, newBoard)) ||
-						(!isWhite && isInChess(false, newBoard)))
+					if (isInChess(isWhite, newBoard))
 						continue;
 
 					return false;

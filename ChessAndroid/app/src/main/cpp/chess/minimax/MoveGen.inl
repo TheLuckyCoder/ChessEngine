@@ -22,7 +22,7 @@ PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 				Pos posCopy = pos;
 
 				piece.isWhite ? posCopy.y++ : posCopy.y--;
-				if (!board[posCopy])
+				if (posCopy.isValid() && !board[posCopy])
 					moves.push_back(posCopy);
 			}
 		}
@@ -359,7 +359,7 @@ Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &b
 			const auto &piece = board[pos];
 			if (piece && piece.isWhite == white)
 			{
-				Piece::MovesReturnType moves;
+				Piece::MaxMovesVector moves;
 				switch (piece.type)
 				{
 				case Piece::Type::PAWN:
@@ -405,7 +405,7 @@ PosMap MoveGen<T>::getMovesPerColorMap(const bool white, const Board &board)
 
 			if (piece && piece.isWhite == white)
 			{
-				Piece::MovesReturnType moves;
+				Piece::MaxMovesVector moves;
 				switch (piece.type)
 				{
 				case Piece::Type::PAWN:

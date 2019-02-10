@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="HardcodedText">
 
-    <item android:title="Debug"
-        tools:ignore="HardcodedText">
+    <item android:title="Debug">
         <menu>
             <item
                 android:id="@+id/action_redraw"
@@ -17,9 +17,6 @@
     <item android:title="Load">
         <menu>
             <item
-                android:id="@+id/action_load_json"
-                android:title="JSON"/>
-            <item
                 android:id="@+id/action_load_moves"
                 android:title="Moves(not working)" />
         </menu>
@@ -27,9 +24,6 @@
 
     <item android:title="Save">
         <menu>
-            <item
-                android:id="@+id/action_save_json"
-                android:title="JSON"/>
             <item
                 android:id="@+id/action_save_moves"
                 android:title="Moves" />

@@ -26,12 +26,6 @@ object Native {
     external fun movePiece(selectedX: Byte, selectedY: Byte, destX: Byte, destY: Byte): Boolean
 
     @JvmStatic
-    external fun loadFromJson(json: String)
-
-    @JvmStatic
-    external fun saveToJson(): String
-
-    @JvmStatic
     external fun loadMoves(moves: String)
 
     @JvmStatic

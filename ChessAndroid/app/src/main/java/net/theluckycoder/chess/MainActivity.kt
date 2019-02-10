@@ -33,7 +33,6 @@ class MainActivity : Activity(), CustomView.ClickListener {
     private lateinit var tvState: TextView
     private val cells = HashMap<Pos, CellView>(64)
     val pieces = HashMap<Pos, PieceView>(32)
-    private val isPlayerWhite = Native.isPlayerWhite()
     private var selectedPos = Pos()
     private var canMove = true
 
@@ -53,6 +52,8 @@ class MainActivity : Activity(), CustomView.ClickListener {
         pbLoading = findViewById(R.id.pb_loading)
         tvBoards = findViewById(R.id.tv_boards)
         tvState = findViewById(R.id.tv_state)
+
+        val isPlayerWhite = Native.isPlayerWhite()
 
         for (i in 0..7) {
             for (j in 0..7) {
@@ -95,23 +96,9 @@ class MainActivity : Activity(), CustomView.ClickListener {
         when (item.itemId) {
             R.id.action_redraw -> updatePieces()
             R.id.action_memory -> updateMemoryUsage()
-            R.id.action_load_json -> loadJson()
             R.id.action_load_moves -> loadMoves()
-            R.id.action_save_json -> saveJson()
             R.id.action_save_moves -> saveMoves()
-            R.id.action_restart -> {
-                thread {
-                    while (Native.isWorking()) {
-                        Thread.sleep(200)
-                    }
-                    runOnUiThread {
-                        initBoard(true)
-                        updatePieces()
-                        updateState(0)
-                        canMove = true
-                    }
-                }
-            }
+            R.id.action_restart -> restartGame()
         }
         return super.onMenuItemSelected(featureId, item)
     }
@@ -250,36 +237,22 @@ class MainActivity : Activity(), CustomView.ClickListener {
         }
     }
 
-    // Saving/Loading
-
-    private fun loadJson() {
-        val editText = EditText(this)
-
-        AlertDialog.Builder(this)
-            .setTitle("Load Json")
-            .setView(editText)
-            .setPositiveButton("Load") { _, _ ->
-                Native.loadFromJson(editText.text?.toString().orEmpty())
+    private fun restartGame() {
+        thread {
+            while (Native.isWorking()) {
+                Thread.sleep(200)
+            }
+            runOnUiThread {
+                initBoard(true)
                 updatePieces()
+                clearCells()
+                updateState(0)
+                canMove = true
             }
-            .show()
+        }
     }
 
-    private fun saveJson() {
-        val json = Native.saveToJson()
-
-        AlertDialog.Builder(this)
-            .setTitle("Json")
-            .setMessage(json)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton("Copy") { _, _ ->
-                val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                val clip = ClipData.newPlainText("label", json)
-                clipboardManager.primaryClip = clip
-            }
-            .show()
-    }
+    // Saving/Loading
 
     private fun loadMoves() {
         val editText = EditText(this)

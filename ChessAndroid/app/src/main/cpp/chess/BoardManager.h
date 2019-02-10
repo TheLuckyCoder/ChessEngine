@@ -30,13 +30,12 @@ public:
 	static std::atomic_size_t boardsEvaluated;
 
 	static void initBoardManager(const PieceChangeListener& listener);
-	static void loadGame(const Board &board);
-	static void loadGame(const std::vector<PosPair> &moves);
+	static void loadGame(std::vector<PosPair> &&moves);
 
 	static Board &getBoard() { return m_Board; }
 	static const auto &getMovesHistory() { return movesHistory; }
 	static bool isWorking() { return m_WorkerThread != nullptr; }
-	static Piece::MovesReturnType getPossibleMoves(const Pos &selectedPos);
+	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
 	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);
 
@@ -44,4 +43,5 @@ private:
 	static void moveComputerPlayer();
 	static bool movePawn(Piece &selectedPiece, const Pos &destPos);
 	static PosPair moveKing(Piece &king, const Pos &selectedPos, const Pos &destPos, Board &board);
+	static void setBoardState(Board &board);
 };

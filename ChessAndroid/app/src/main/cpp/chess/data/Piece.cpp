@@ -2,9 +2,9 @@
 
 #include "../minimax/MoveGen.h"
 
-Piece::MovesReturnType Piece::getPossibleMoves(const Pos &pos, const Board &board) const noexcept
+Piece::MaxMovesVector Piece::getPossibleMoves(const Pos &pos, const Board &board) const noexcept
 {
-	MovesReturnType result;
+	MaxMovesVector result;
 
 	switch (type)
 	{
@@ -33,9 +33,9 @@ Piece::MovesReturnType Piece::getPossibleMoves(const Pos &pos, const Board &boar
 	return result;
 }
 
-Piece::MovesReturnType Piece::getPossibleCaptures(const Pos &pos, const Board &board) const noexcept
+Piece::MaxMovesVector Piece::getPossibleCaptures(const Pos &pos, const Board &board) const noexcept
 {
-	MovesReturnType result;
+	MaxMovesVector result;
 
 	switch (type)
 	{

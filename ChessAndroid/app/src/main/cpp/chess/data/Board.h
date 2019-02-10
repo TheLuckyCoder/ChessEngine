@@ -37,7 +37,7 @@ public:
 
 	template<class T> // Move or Board
 	StackVector<T, 150> listValidMoves(bool isWhite) const noexcept;
-	StackVector<Board, 50> listValidMovesQ(bool isWhite) const noexcept;
+	StackVector<Board, 50> listValidCaptures(bool isWhite) const noexcept;
 };
 
 class Move final

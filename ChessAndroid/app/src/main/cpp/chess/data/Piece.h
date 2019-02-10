@@ -8,7 +8,7 @@ class Board;
 class Piece final
 {
 public:
-	using MovesReturnType = StackVector<Pos, 27>;
+	using MaxMovesVector = StackVector<Pos, 27>;
 
 	enum class Type : unsigned char
 	{
@@ -36,8 +36,8 @@ public:
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
-	MovesReturnType getPossibleMoves(const Pos &pos, const Board &board) const noexcept;
-	MovesReturnType getPossibleCaptures(const Pos &pos, const Board &board) const noexcept;
+	MaxMovesVector getPossibleMoves(const Pos &pos, const Board &board) const noexcept;
+	MaxMovesVector getPossibleCaptures(const Pos &pos, const Board &board) const noexcept;
 
 	constexpr bool hasSameColor(const Piece &other) const noexcept
 	{
