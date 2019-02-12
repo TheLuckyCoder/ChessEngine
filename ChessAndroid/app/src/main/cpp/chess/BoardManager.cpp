@@ -40,7 +40,7 @@ void BoardManager::loadGame(std::vector<PosPair> &&moves)
 	for (const auto &move : moves)
 		movePieceInternal(move.first, move.second, m_Board, false);
 
-	setBoardState(m_Board);
+	m_Board.updateState();
 
 	movesHistory = std::move(moves);
 	m_Listener(m_Board.state, true, {});
@@ -97,10 +97,8 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board[destPos] = selectedPiece;
 	m_Board[selectedPos] = Piece();
 
-	m_Board.state = Player::onlyKingsLeft(m_Board) ? State::DRAW : State::NONE;
-
 	if (m_Board.state == State::NONE)
-		setBoardState(m_Board);
+		m_Board.updateState();
 
 	movesHistory.emplace_back(selectedPos, destPos);
 	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
@@ -161,7 +159,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 		board.state = State::NONE;
 
-		setBoardState(board);
+		board.updateState();
 
 		/*if (cacheTable.get(board.hash, cache))
 		{
@@ -274,22 +272,4 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 	}
 
 	return std::make_pair(Pos(), Pos());
-}
-
-void BoardManager::setBoardState(Board &board)
-{
-	const bool whiteInChess = Player::isInChess(true, board);
-	if (whiteInChess)
-		board.state = State::WHITE_IN_CHESS;
-
-	if (Player::hasNoValidMoves(true, board))
-		board.state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
-	else
-	{
-		const bool blackInChess = Player::isInChess(false, board);
-		if (blackInChess)
-			board.state = State::BLACK_IN_CHESS;
-		if (Player::hasNoValidMoves(false, board))
-			board.state = blackInChess ? State::WINNER_WHITE : State::DRAW;
-	}
 }

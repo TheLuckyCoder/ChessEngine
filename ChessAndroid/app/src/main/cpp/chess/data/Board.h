@@ -33,6 +33,7 @@ public:
 	bool operator>(const Board &other) const noexcept;
 
 	void initDefaultBoard() noexcept;
+	void updateState() noexcept;
 	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const noexcept;
 
 	template<class T> // Move or Board

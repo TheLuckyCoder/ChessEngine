@@ -87,6 +87,26 @@ void Board::initDefaultBoard() noexcept
 	state = State::NONE;
 }
 
+void Board::updateState() noexcept
+{
+	state = Player::onlyKingsLeft(*this) ? State::DRAW : State::NONE;
+
+	const bool whiteInChess = Player::isInChess(true, *this);
+	if (whiteInChess)
+		state = State::WHITE_IN_CHESS;
+
+	if (Player::hasNoValidMoves(true, *this))
+		state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
+	else
+	{
+		const bool blackInChess = Player::isInChess(false, *this);
+		if (blackInChess)
+			state = State::BLACK_IN_CHESS;
+		if (Player::hasNoValidMoves(false, *this))
+			state = blackInChess ? State::WINNER_WHITE : State::DRAW;
+	}
+}
+
 StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
 {
 	StackVector<std::pair<Pos, Piece>, 32> pieces;
