@@ -30,7 +30,7 @@ public:
 	static PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 
 	static Bitboard getAttacksPerColorBitboard(bool white, const Board &board);
-	static PosMap getMovesPerColorMap(bool white, const Board &board);
+	static PosMap getAttacksPerColorMap(bool white, const Board &board);
 };
 
 #include "MoveGen.inl"

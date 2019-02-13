@@ -12,7 +12,7 @@ constexpr Score BISHOP(830, 918);
 constexpr Score ROOK(1289, 1378);
 constexpr Score QUEEN(2529, 2687);
 
-constexpr EvalArray reverseCopy(const EvalArray &source)
+constexpr EvalArray reverseCopy(const EvalArray &source) noexcept
 {
 	const auto first = source.begin();
 	auto last = source.end();
@@ -99,14 +99,14 @@ constexpr EvalArray BOARD_KING_WHITE =
 
 constexpr EvalArray BOARD_KING_WHITE_ENDING =
 { {
-	{-50, -40, -30, -20, -20, -30, -40, -50},
-	{-30, -20, -10,   0,   0, -10, -20, -30},
-	{-30, -10,  20,  30,  30,  20, -10, -30},
-	{-30, -10,  20,  30,  30,  20, -10, -30},
-	{-30, -10,  30,  40,  40,  30, -10, -30},
-	{-30, -10,  20,  30,  30,  20, -10, -30},
-	{-30, -30,   0,   0,   0,   0, -30, -30},
-	{-50, -30, -30, -30, -30, -30, -30, -50}
+	{-60, -50, -40, -30, -30, -40, -50, -60},
+	{-40, -30, -15,  -5,  -5, -15, -30, -40},
+	{-40, -15,  20,  30,  30,  20, -15, -40},
+	{-40, -15,  20,  30,  30,  20, -15, -40},
+	{-40, -15,  30,  40,  40,  30, -15, -40},
+	{-40, -15,  20,  30,  30,  20, -15, -40},
+	{-40, -30,  -5,  -5,  -5,  -5, -30, -40},
+	{-60, -40, -40, -40, -40, -40, -40, -60}
 } };
 
 constexpr EvalArray BOARD_PAWN_BLACK = reverseCopy(BOARD_PAWN_WHITE);
@@ -124,8 +124,8 @@ constexpr S PAWN_ISOLATED(5, 15);
 
 constexpr Score KNIGHT_MOBILITY[] =
 {
-	S(-62,-81), S(-53,-56), S(-12,-30), S(-4,-14), S(3,  8), S(13, 15),
-	S(22, 23), S(28, 27), S(33, 33)
+    S(-62, -81), S(-53, -56), S(-12, -30), S(-4, -14), S(3, 8), S(13, 15),
+    S(22, 23), S(28, 27), S(33, 33)
 };
 constexpr Score BISHOP_MOBILITY[] =
 {
@@ -135,17 +135,17 @@ constexpr Score BISHOP_MOBILITY[] =
 };
 constexpr Score ROOK_MOBILITY[] =
 {
-	S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S(-5, 69), S(-2, 82),
-	S(9,112), S(16,118), S(30,132), S(29,142), S(32,155), S(38,165),
-	S(46,166), S(48,169), S(58,171)
+    S(-58, -76), S(-27, -18), S(-15, 28), S(-10, 55), S(-5, 69), S(-2, 82),
+    S(9, 112), S(16, 118), S(30, 132), S(29, 142), S(32, 155), S(38, 165),
+    S(46, 166), S(48, 169), S(58, 171)
 };
 constexpr Score QUEEN_MOBILITY[] =
 {
-	S(-39,-36), S(-21,-15), S(3,  8), S(3, 18), S(14, 34), S(22, 54),
-	S(28, 61), S(41, 73), S(43, 79), S(48, 92), S(56, 94), S(60,104),
-	S(60,113), S(66,120), S(67,123), S(70,126), S(71,133), S(73,136),
-	S(79,140), S(88,143), S(88,148), S(99,166), S(102,170), S(102,175),
-	S(106,184), S(109,191), S(113,206), S(116,212)
+    S(-39, -36), S(-21, -15), S(3, 8), S(3, 18), S(14, 34), S(22, 54),
+    S(28, 61), S(41, 73), S(43, 79), S(48, 92), S(56, 94), S(60, 104),
+    S(60, 113), S(66, 120), S(67, 123), S(70, 126), S(71, 133), S(73, 136),
+    S(79, 140), S(88, 143), S(88, 148), S(99, 166), S(102, 170), S(102, 175),
+    S(106, 184), S(109, 191), S(113, 206), S(116, 212)
 };
 
 #undef S
@@ -159,22 +159,13 @@ int Evaluation::evaluate(const Board &board)
 
 	std::pair<short, short> bishopCount;
 
-	auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getMovesPerColorMap(true, board);
-	auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getMovesPerColorMap(false, board);
+	const auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColorMap(true, board);
+	const auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColorMap(false, board);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
 			if (const auto &piece = board.data[x][y]; piece && piece.type != Piece::Type::KING)
 			{
-				{
-					const Pos pos(x, y);
-					const auto defendedValue = piece.isWhite ? whiteMoves[pos] : blackMoves[pos];
-					const auto attackedValue = piece.isWhite ? blackMoves[pos] : whiteMoves[pos];
-
-					if (defendedValue < attackedValue)
-						score -= (attackedValue - defendedValue) * 10;
-				}
-
 				npm += [&]() -> short {
 					switch (piece.type)
 					{
@@ -195,6 +186,13 @@ int Evaluation::evaluate(const Board &board)
 						return QUEEN.mg;
 					}
 				}();
+
+				const Pos pos(x, y);
+				const auto defendedValue = piece.isWhite ? whiteMoves[pos] : blackMoves[pos];
+				const auto attackedValue = piece.isWhite ? blackMoves[pos] : whiteMoves[pos];
+
+				if (defendedValue < attackedValue)
+					score -= (attackedValue - defendedValue) * 10;
 			}
 
 	// 2 Bishops receive a bonus
@@ -260,7 +258,7 @@ int Evaluation::evaluate(const Board &board)
 	return score.eg;
 }
 
-inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, PosMap &opponentsAttacks)
+inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const PosMap &opponentsAttacks)
 {
 	Score value = PAWN;
 	value.mg += piece.isWhite ? BOARD_PAWN_WHITE[pos.y][pos.x] : BOARD_PAWN_BLACK[pos.y][pos.x];

@@ -73,7 +73,6 @@ public:
 	{
 		return 1ull << (x * 8u + y);
 	}
-
 };
 
 constexpr Pos operator+(Pos left, const Pos &right) noexcept
@@ -97,18 +96,3 @@ constexpr Pos operator/(Pos left, const Pos &right) noexcept
 }
 
 using PosPair = std::pair<Pos, Pos>;
-
-namespace std
-{
-
-	// Needed for std::unordered_map and std::unordered_set
-	template <>
-	struct hash<Pos>
-	{
-		constexpr std::size_t operator()(const Pos &pos) const noexcept
-		{
-			return pos.x * 1000u + pos.y;
-		}
-	};
-
-}

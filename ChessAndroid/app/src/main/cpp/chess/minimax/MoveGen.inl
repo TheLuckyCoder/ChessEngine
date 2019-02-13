@@ -393,9 +393,9 @@ Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &b
 }
 
 template<GenType T>
-PosMap MoveGen<T>::getMovesPerColorMap(const bool white, const Board &board)
+PosMap MoveGen<T>::getAttacksPerColorMap(const bool white, const Board &board)
 {
-	PosMap allMoves(48);
+	PosMap allMoves;
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)

@@ -157,8 +157,6 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		if (recalculateHash)
 			board.hash = Hash::compute(board);*/
 
-		board.state = State::NONE;
-
 		board.updateState();
 
 		/*if (cacheTable.get(board.hash, cache))

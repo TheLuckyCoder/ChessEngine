@@ -9,7 +9,7 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite)
 	const auto validMoves = board.listValidMoves<Move>(isWhite);
 
 	for (const auto &move : validMoves)
-		if (move.board.state == State::WINNER_BLACK)
+		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
 			return PosPair(move.start, move.dest);
 
 	const byte depth = validMoves.size() <= 15 ? 5u : 4u;
@@ -19,10 +19,10 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite)
 
 	for (const auto &move : validMoves)
 		futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const byte depth, const bool isWhite) {
-			return -negaMax(board, depth - 1, VALUE_MIN, VALUE_MAX, !isWhite, false);
+			return -negaMax(board, depth - 1u, VALUE_MIN, VALUE_MAX, !isWhite, false);
 		}, move.board, depth, isWhite));
 
-	Move *bestMove = &validMoves.front();
+	const Move *bestMove = &validMoves.front();
 	int bestMovePoints = futures.front().get();
 
 	for (auto i = 1u; i < validMoves.size(); ++i)
@@ -60,7 +60,7 @@ int NegaMax::negaMax(const Board &board, byte depth, int alpha, const int beta, 
 	{
 		if (move.value == VALUE_WINNER_WHITE || move.value == VALUE_WINNER_BLACK)
 			return move.value;
-		const int moveValue = -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended);
+		const int moveValue = -negaMax(move, depth - 1u, -beta, -alpha, !isWhite, extended);
 
 		if (moveValue > bestValue)
 		{
@@ -87,7 +87,7 @@ int NegaMax::quiescence(const Board &board, const byte depth, int alpha, const i
 	{
 		if (move.value == VALUE_WINNER_WHITE || move.value == VALUE_WINNER_BLACK)
 			return move.value;
-		const int moveValue = -quiescence(move, depth - 1, -beta, -alpha, !isWhite);
+		const int moveValue = -quiescence(move, depth - 1u, -beta, -alpha, !isWhite);
 
 		if (moveValue > alpha)
 			alpha = moveValue;

@@ -96,7 +96,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 			if constexpr (std::is_same_v<T, Move>)
 				moves.emplace_back(selectedPos, destPos, std::move(board));
-			else if constexpr (std::is_same_v<T, Board>)
+			else if (std::is_same_v<T, Board>)
 				moves.push_back(std::move(board));
 		}
 	}
