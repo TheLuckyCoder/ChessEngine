@@ -3,143 +3,106 @@
 #include "MoveGen.h"
 #include "../data/Board.h"
 #include "../data/Enums.h"
+#include "../Stats.h"
 
 using EvalArray = std::array<std::array<short, 8>, 8>;
 
-constexpr Score PAWN(136, 208);
-constexpr Score KNIGHT(782, 865);
-constexpr Score BISHOP(830, 918);
-constexpr Score ROOK(1289, 1378);
-constexpr Score QUEEN(2529, 2687);
-
-constexpr EvalArray reverseCopy(const EvalArray &source) noexcept
-{
-	const auto first = source.begin();
-	auto last = source.end();
-	auto dest = source;
-	auto destFirst = dest.begin();
-
-	while (first != last)
-		*(destFirst++) = *(--last);
-
-	return dest;
-}
-
-constexpr EvalArray BOARD_PAWN_WHITE
-{ {
-	{ 0,  0,   0,   0,   0,   0,   0,  0},
-	{50, 50,  50,  50,  50,  50,  50, 50},
-	{10, 10,  20,  30,  30,  20,  10, 10},
-	{ 5,  5,  10,  35,  35,  10,   5,  5},
-	{ 0,  0,   0,  25,  25,   0,   0,  0},
-	{ 5, -5, -10,   0,   0, -10,  -5,  5},
-	{ 5, 10,  10, -20, -20,  10,  10,  5},
-	{ 0,  0,   0,   0,   0,   0,   0,  0}
-} };
-
-constexpr EvalArray BOARD_KNIGHT_WHITE
-{ {
-	{-50, -40, -30, -30, -30, -30, -40, -50},
-	{-40, -20,   0,   0,   0,   0, -20, -40},
-	{-30,   0,  10,  15,  15,  10,   0, -30},
-	{-30,   5,  15,  20,  20,  15,   5, -30},
-	{-30,   0,  15,  20,  20,  15,   0, -30},
-	{-30,   5,  10,  15,  15,  10,   5, -30},
-	{-40, -20,   0,   5,   5,   0, -20, -40},
-	{-50, -40, -30, -30, -30, -30, -40, -50}
-} };
-
-constexpr EvalArray BOARD_BISHOP_WHITE
-{ {
-	{-20, -10, -10, -10, -10, -10, -10, -20},
-	{-10,   0,   0,   0,   0,   0,   0, -10},
-	{-10,   0,   5,  10,  10,   5,   0, -10},
-	{-10,   5,   5,  10,  10,   5,   5, -10},
-	{-10,   0,  10,  10,  10,  10,   0, -10},
-	{-10,  10,  10,  10,  10,  10,  10, -10},
-	{-10,   5,   0,   0,   0,   0,   5, -10},
-	{-20, -10, -10, -10, -10, -10, -10, -20}
-} };
-
-constexpr EvalArray BOARD_ROOK_WHITE
-{ {
-	{ 0,  0,  0,  0,  0,  0,  0,  0},
-	{ 5, 10, 10, 10, 10, 10, 10,  5},
-	{-5,  0,  0,  0,  0,  0,  0, -5},
-	{-5,  0,  0,  0,  0,  0,  0, -5},
-	{-5,  0,  0,  0,  0,  0,  0, -5},
-	{-5,  0,  0,  0,  0,  0,  0, -5},
-	{-5,  0,  0,  0,  0,  0,  0, -5},
-	{ 0,  0,  0,  5,  5,  0,  0,  0}
-} };
-
-constexpr EvalArray BOARD_QUEEN_WHITE
-{ {
-	{-20, -10, -10, -5, -5, -10, -10, -20},
-	{-10,   0,   0,  0,  0,   0,   0, -10},
-	{-10,   0,   5,  5,  5,   5,   0, -10},
-	{ -5,   0,   5,  5,  5,   5,   0,  -5},
-	{  0,   0,   5,  5,  5,   5,   0,  -5},
-	{-10,   5,   5,  5,  5,   5,   0, -10},
-	{-10,   0,   5,  0,  0,   0,   0, -10},
-	{-20, -10, -10, -5, -5, -10, -10, -20}
-} };
-
-constexpr EvalArray BOARD_KING_WHITE =
-{ {
-	{-30, -40, -40, -50, -50, -40, -40, -30},
-	{-30, -40, -40, -50, -50, -40, -40, -30},
-	{-30, -40, -40, -50, -50, -40, -40, -30},
-	{-30, -40, -40, -50, -50, -40, -40, -30},
-	{-20, -30, -30, -40, -40, -30, -30, -20},
-	{-10, -20, -20, -20, -20, -20, -20, -10},
-	{ 20,  20,   0,   0,   0,   0,  20,  20},
-	{ 20,  30,  10,   0,   0,  10,  30,  20}
-} };
-
-constexpr EvalArray BOARD_KING_WHITE_ENDING =
-{ {
-	{-60, -50, -40, -30, -30, -40, -50, -60},
-	{-40, -30, -15,  -5,  -5, -15, -30, -40},
-	{-40, -15,  20,  30,  30,  20, -15, -40},
-	{-40, -15,  20,  30,  30,  20, -15, -40},
-	{-40, -15,  30,  40,  40,  30, -15, -40},
-	{-40, -15,  20,  30,  30,  20, -15, -40},
-	{-40, -30,  -5,  -5,  -5,  -5, -30, -40},
-	{-60, -40, -40, -40, -40, -40, -40, -60}
-} };
-
-constexpr EvalArray BOARD_PAWN_BLACK = reverseCopy(BOARD_PAWN_WHITE);
-constexpr EvalArray BOARD_KNIGHT_BLACK = reverseCopy(BOARD_KNIGHT_WHITE);
-constexpr EvalArray BOARD_BISHOP_BLACK = reverseCopy(BOARD_BISHOP_WHITE);
-constexpr EvalArray BOARD_ROOK_BLACK = reverseCopy(BOARD_ROOK_WHITE);
-constexpr EvalArray BOARD_QUEEN_BLACK = reverseCopy(BOARD_QUEEN_WHITE);
-constexpr EvalArray BOARD_KING_BLACK = reverseCopy(BOARD_KING_WHITE);
-constexpr EvalArray BOARD_KING_BLACK_ENDING = reverseCopy(BOARD_KING_WHITE_ENDING);
-
 #define S Score
+
+constexpr S PAWN(136, 208);
+constexpr S KNIGHT(782, 865);
+constexpr S BISHOP(830, 918);
+constexpr S ROOK(1289, 1378);
+constexpr S QUEEN(2529, 2687);
 
 constexpr S PAWN_DOUBLED(11, 56);
 constexpr S PAWN_ISOLATED(5, 15);
 
-constexpr Score KNIGHT_MOBILITY[] =
+constexpr S PAWN_SQUARE[][4] =
+{
+	{ S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
+	{ S(-11, -3), S(7, -1), S(7, 7), S(17, 2) },
+	{ S(-16, -2), S(-3, 2), S(23, 6), S(23, -1) },
+	{ S(-14, 7), S(-7, -4), S(20, -8), S(24, 2) },
+	{ S(-5, 13), S(-2, 10), S(-1, -1), S(12, -8) },
+	{ S(-11, 16), S(-12, 6), S(-2, 1), S(4, 16) },
+	{ S(-2, 1), S(20, -12), S(-10, 6), S(-2, 25) },
+	{ S(0, 0), S(0, 0), S(0, 0), S(0, 0) }
+};
+constexpr S KNIGHT_SQUARE[][4] =
+{
+	{ S(-169,-105), S(-96,-74), S(-80,-46), S(-79,-18) },
+	{ S(-79, -70), S(-39,-56), S(-24,-15), S(-9,  6) },
+	{ S(-64, -38), S(-20,-33), S(4, -5), S(19, 27) },
+	{ S(-28, -36), S(5,  0), S(41, 13), S(47, 34) },
+	{ S(-29, -41), S(13,-20), S(42,  4), S(52, 35) },
+	{ S(-11, -51), S(28,-38), S(63,-17), S(55, 19) },
+	{ S(-67, -64), S(-21,-45), S(6,-37), S(37, 16) },
+	{ S(-200, -98), S(-80,-89), S(-53,-53), S(-32,-16) }
+};
+constexpr S BISHOP_SQUARE[][4] =
+{
+	{ S(-44,-63), S(-4,-30), S(-11,-35), S(-28, -8) },
+	{ S(-18,-38), S(7,-13), S(14,-14), S(3,  0) },
+	{ S(-8,-18), S(24,  0), S(-3, -7), S(15, 13) },
+	{ S(1,-26), S(8, -3), S(26,  1), S(37, 16) },
+	{ S(-7,-24), S(30, -6), S(23,-10), S(28, 17) },
+	{ S(-17,-26), S(4,  2), S(-1,  1), S(8, 16) },
+	{ S(-21,-34), S(-19,-18), S(10, -7), S(-6,  9) },
+	{ S(-48,-51), S(-3,-40), S(-12,-39), S(-25,-20) }
+};
+constexpr S ROOK_SQUARE[][4] =
+{
+   { S(-24, -2), S(-13,-6), S(-7, -3), S(2,-2) },
+   { S(-18,-10), S(-10,-7), S(-5,  1), S(9, 0) },
+   { S(-21, 10), S(-7,-4), S(3,  2), S(-1,-2) },
+   { S(-13, -5), S(-5, 2), S(-4, -8), S(-6, 8) },
+   { S(-24, -8), S(-12, 5), S(-1,  4), S(6,-9) },
+   { S(-24,  3), S(-4,-2), S(4,-10), S(10, 7) },
+   { S(-8,  1), S(6, 2), S(10, 17), S(12,-8) },
+   { S(-22, 12), S(-24,-6), S(-6, 13), S(4, 7) }
+};
+constexpr S QUEEN_SQUARE[][4] =
+{
+   { S(3,-69), S(-5,-57), S(-5,-47), S(4,-26) },
+   { S(-3,-55), S(5,-31), S(8,-22), S(12, -4) },
+   { S(-3,-39), S(6,-18), S(13, -9), S(7,  3) },
+   { S(4,-23), S(5, -3), S(9, 13), S(8, 24) },
+   { S(0,-29), S(14, -6), S(12,  9), S(5, 21) },
+   { S(-4,-38), S(10,-18), S(6,-12), S(8,  1) },
+   { S(-5,-50), S(6,-27), S(10,-24), S(8, -8) },
+   { S(-2,-75), S(-2,-52), S(1,-43), S(-2,-36) }
+};
+constexpr S KING_SQUARE[][4] =
+{
+   { S(272,  0), S(325, 41), S(273, 80), S(190, 93) },
+   { S(277, 57), S(305, 98), S(241,138), S(183,131) },
+   { S(198, 86), S(253,138), S(168,165), S(120,173) },
+   { S(169,103), S(191,152), S(136,168), S(108,169) },
+   { S(145, 98), S(176,166), S(112,197), S(69, 194) },
+   { S(122, 87), S(159,164), S(85, 174), S(36, 189) },
+   { S(87,  40), S(120, 99), S(64, 128), S(25, 141) },
+   { S(64,   5), S(87,  60), S(49,  75), S(0,   75) }
+};
+
+constexpr S KNIGHT_MOBILITY[] =
 {
     S(-62, -81), S(-53, -56), S(-12, -30), S(-4, -14), S(3, 8), S(13, 15),
     S(22, 23), S(28, 27), S(33, 33)
 };
-constexpr Score BISHOP_MOBILITY[] =
+constexpr S BISHOP_MOBILITY[] =
 {
 	S(-48,-59), S(-20,-23), S(16, -3), S(26, 13), S(38, 24), S(51, 42),
 	S(55, 54), S(63, 57), S(63, 65), S(68, 73), S(81, 78), S(81, 86),
 	S(91, 88), S(98, 97)
 };
-constexpr Score ROOK_MOBILITY[] =
+constexpr S ROOK_MOBILITY[] =
 {
     S(-58, -76), S(-27, -18), S(-15, 28), S(-10, 55), S(-5, 69), S(-2, 82),
     S(9, 112), S(16, 118), S(30, 132), S(29, 142), S(32, 155), S(38, 165),
     S(46, 166), S(48, 169), S(58, 171)
 };
-constexpr Score QUEEN_MOBILITY[] =
+constexpr S QUEEN_MOBILITY[] =
 {
     S(-39, -36), S(-21, -15), S(3, 8), S(3, 18), S(14, 34), S(22, 54),
     S(28, 61), S(41, 73), S(43, 79), S(48, 92), S(56, 94), S(60, 104),
@@ -150,9 +113,9 @@ constexpr Score QUEEN_MOBILITY[] =
 
 #undef S
 
-int Evaluation::evaluate(const Board &board)
+int Evaluation::evaluate(const Board &board) noexcept
 {
-	++BoardManager::boardsEvaluated;
+	++Stats::boardsEvaluated;
 
 	Score score;
 	int npm = 0;
@@ -258,14 +221,10 @@ int Evaluation::evaluate(const Board &board)
 	return score.eg;
 }
 
-inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const PosMap &opponentsAttacks)
+inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const PosMap &opponentsAttacks) noexcept
 {
 	Score value = PAWN;
-	value.mg += piece.isWhite ? BOARD_PAWN_WHITE[pos.y][pos.x] : BOARD_PAWN_BLACK[pos.y][pos.x];
-
-	// Rook Pawns are worth 15% less because they can only attack one way
-	if (pos.x == 0 || pos.x == 7)
-		value -= 15;
+	value += PAWN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 
 	bool isolated = true;
 
@@ -311,33 +270,31 @@ inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const 
 	return value;
 }
 
-inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board)
+inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = KNIGHT;
-	value.mg += piece.isWhite ? BOARD_KNIGHT_WHITE[pos.y][pos.x] : BOARD_KNIGHT_BLACK[pos.y][pos.x];
 
+	value += KNIGHT_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 	value += KNIGHT_MOBILITY[MoveGen<ALL>::generateKnightMoves(piece, pos, board).size()];
 
 	return value;
 }
 
-inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board)
+inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = BISHOP;
 
-	value.mg += piece.isWhite ? BOARD_BISHOP_WHITE[pos.y][pos.x] : BOARD_BISHOP_BLACK[pos.y][pos.x];
-
+	value += BISHOP_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 	value += BISHOP_MOBILITY[MoveGen<ALL>::generateBishopMoves(piece, pos, board).size()];
 
 	return value;
 }
 
-inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board)
+inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = ROOK;
 
-	value.mg += piece.isWhite ? BOARD_ROOK_WHITE[pos.y][pos.x] : BOARD_ROOK_BLACK[pos.y][pos.x];
-
+	value += ROOK_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 	value += ROOK_MOBILITY[MoveGen<ALL>::generateRookMoves(piece, pos, board).size()];
 
 	if (piece.moved)
@@ -348,11 +305,11 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 	return value;
 }
 
-inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board)
+inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = QUEEN;
-	value.mg += piece.isWhite ? BOARD_QUEEN_WHITE[pos.y][pos.x] : BOARD_QUEEN_BLACK[pos.y][pos.x];
 
+	value += QUEEN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 	value += QUEEN_MOBILITY[MoveGen<ALL>::generateQueenMoves(piece, pos, board).size()];
 
 	if (piece.moved)
@@ -361,10 +318,9 @@ inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const
 	return value;
 }
 
-inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board)
+inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value(piece.isWhite ? BOARD_KING_WHITE[pos.y][pos.x] : BOARD_KING_BLACK[pos.y][pos.x],
-		piece.isWhite ? BOARD_KING_WHITE_ENDING[pos.y][pos.x] : BOARD_KING_BLACK_ENDING[pos.y][pos.x]);
+	Score value = KING_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 
 	if (piece.moved)
 	{

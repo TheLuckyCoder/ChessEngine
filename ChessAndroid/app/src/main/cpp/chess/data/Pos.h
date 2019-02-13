@@ -69,9 +69,14 @@ public:
 		return x < 8 && y < 8;
 	}
 
+	constexpr byte toSquare() const noexcept
+	{
+		return x * 8u + y;
+	}
+
 	constexpr Bitboard toBitboard() const noexcept
 	{
-		return 1ull << (x * 8u + y);
+		return 1ull << toSquare();
 	}
 };
 

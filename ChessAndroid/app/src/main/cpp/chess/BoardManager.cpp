@@ -1,9 +1,9 @@
 #include "BoardManager.h"
 
 //#include <ctime>
-#include <chrono>
 
 #include "DebugFile.h"
+#include "Stats.h"
 #include "data/Board.h"
 #include "minimax/Evaluation.h"
 #include "minimax/Hash.h"
@@ -13,7 +13,6 @@ BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
 HashTable<Cache> BoardManager::cacheTable(1); // 30000000
 std::vector<PosPair> BoardManager::movesHistory;
-std::atomic_size_t BoardManager::boardsEvaluated = 0;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener)
 {
@@ -22,7 +21,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 	movesHistory.reserve(100);
 
 	movesHistory.clear();
-	boardsEvaluated = 0;
+	Stats::resetStats();
 
 	// TODO: Support both sides again
 	//srand(static_cast<unsigned int>(time(nullptr)));
@@ -192,15 +191,13 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 void BoardManager::moveComputerPlayer()
 {
-	boardsEvaluated = 0;
-#ifdef CR_PLATFORM_WINDOWS
-	const auto startTime = std::chrono::high_resolution_clock::now();
-	allocations = 0;
-	allocatedMemory = 0;
-#endif
+	Stats::resetStats();
+	Stats::startTimer();
 
 	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite);
 	movePiece(pair.first, pair.second, false);
+
+	Stats::stopTimer();
 
 	if (m_WorkerThread)
 	{
@@ -209,11 +206,7 @@ void BoardManager::moveComputerPlayer()
 		m_WorkerThread = nullptr;
 
 #ifdef CR_PLATFORM_WINDOWS
-		const auto endTime = std::chrono::high_resolution_clock::now();
-		writeTime("Board Evaluated: ", static_cast<size_t>(boardsEvaluated),
-			"\tTime Needed: ", std::chrono::duration<double, std::milli>(endTime - startTime).count(),
-			"\tAllocations: ", static_cast<size_t>(allocations),
-			"\tAllocated Memory: ", static_cast<size_t>(allocatedMemory));
+		writeTime(Stats::formatStats('\t'));
 #endif
 	}
 }

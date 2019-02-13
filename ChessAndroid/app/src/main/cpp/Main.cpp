@@ -4,10 +4,10 @@
 #include "external.h"
 
 #include "chess/BoardManager.h"
+#include "chess/Stats.h"
 #include "chess/data/Board.h"
 #include "chess/minimax/Evaluation.h"
 #include "chess/persistence/MovesPersistence.h"
-#include "chess/Utils.h"
 
 JavaVM *jvm;
 
@@ -18,6 +18,12 @@ jclass mainActivityClass;
 jclass posClass;
 jclass posPairClass;
 jclass pieceClass;
+
+template<typename E>
+constexpr auto to_underlying(E e) noexcept
+{
+	return static_cast<std::underlying_type_t<E>>(e);
+}
 
 const BoardManager::PieceChangeListener listener = [](State state, bool shouldRedraw, const StackVector<PosPair, 2> &moved) {
 	JNIEnv *env;
@@ -118,14 +124,14 @@ Java_net_theluckycoder_chess_Native_isWorking(JNIEnv __unused *pEnv, jclass __un
     return static_cast<jboolean>(BoardManager::isWorking());
 }
 
-external JNIEXPORT jint JNICALL
-Java_net_theluckycoder_chess_Native_getNumberOfEvaluatedBoards(JNIEnv __unused *pEnv, jclass __unused type)
+external JNIEXPORT jstring JNICALL
+Java_net_theluckycoder_chess_Native_getStats(JNIEnv __unused *pEnv, jclass __unused type)
 {
-	return static_cast<jint>(BoardManager::boardsEvaluated);
+	return pEnv->NewStringUTF(Stats::formatStats('\n').c_str());
 }
 
 external JNIEXPORT jint JNICALL
-Java_net_theluckycoder_chess_Native_getCurrentBoardEvaluation(JNIEnv __unused *pEnv, jclass __unused type)
+Java_net_theluckycoder_chess_Native_getBoardValue(JNIEnv __unused *pEnv, jclass __unused type)
 {
 	return static_cast<jint>(Evaluation::evaluate(BoardManager::getBoard()));
 }

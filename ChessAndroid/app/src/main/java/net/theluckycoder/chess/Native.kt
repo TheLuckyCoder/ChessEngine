@@ -5,10 +5,10 @@ object Native {
     external fun isPlayerWhite(): Boolean
 
     @JvmStatic
-    external fun getNumberOfEvaluatedBoards(): Int
+    external fun getStats(): String
 
     @JvmStatic
-    external fun getCurrentBoardEvaluation(): Int
+    external fun getBoardValue(): Int
 
     @JvmStatic
     external fun isWorking(): Boolean

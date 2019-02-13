@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <functional>
 #include <thread>
 #include <vector>
@@ -27,7 +26,6 @@ private:
 public:
 	static HashTable<Cache> cacheTable;
 	inline static bool isPlayerWhite = true;
-	static std::atomic_size_t boardsEvaluated;
 
 	static void initBoardManager(const PieceChangeListener& listener);
 	static void loadGame(std::vector<PosPair> &&moves);

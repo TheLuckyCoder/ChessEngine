@@ -1,5 +1,6 @@
 #include "NegaMax.h"
 
+#include "../Stats.h"
 #include "../data/Enums.h"
 #include "../data/Board.h"
 #include "../threads/ThreadPool.hpp"
@@ -52,6 +53,8 @@ int NegaMax::negaMax(const Board &board, byte depth, int alpha, const int beta, 
 			return isWhite ? board.value : -board.value;
 			//return -quiescence(board, 1, -beta, -alpha, !isWhite);
 	}
+
+	++Stats::nodesSearched;
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
 	int bestValue = VALUE_MIN;

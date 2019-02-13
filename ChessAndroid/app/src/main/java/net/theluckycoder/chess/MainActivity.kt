@@ -29,7 +29,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
 
     private lateinit var frameLayout: FrameLayout
     private lateinit var pbLoading: ProgressBar
-    private lateinit var tvBoards: TextView
+    private lateinit var tvStats: TextView
     private lateinit var tvState: TextView
     private val cells = HashMap<Pos, CellView>(64)
     val pieces = HashMap<Pos, PieceView>(32)
@@ -50,7 +50,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
         frameLayout = findViewById(R.id.layout_board)
         frameLayout.layoutParams = LinearLayout.LayoutParams(point.x, point.x)
         pbLoading = findViewById(R.id.pb_loading)
-        tvBoards = findViewById(R.id.tv_boards)
+        tvStats = findViewById(R.id.tv_stats)
         tvState = findViewById(R.id.tv_state)
 
         val isPlayerWhite = Native.isPlayerWhite()
@@ -172,9 +172,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun updateState(state: Int) {
-        val boardValue = Native.getCurrentBoardEvaluation()
-        val evaluatedBoards = Native.getNumberOfEvaluatedBoards()
-        tvBoards.text = getString(R.string.board_state, boardValue, evaluatedBoards)
+        tvStats.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue())
 
         tvState.text = when (state) {
             1 -> "White has won!"
@@ -201,7 +199,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
         val heapUsed = Debug.getNativeHeapAllocatedSize() / 1048576
         val heapSize = Debug.getNativeHeapSize() / 1048576
         val text = getString(R.string.memory_usage, heapUsed, heapSize)
-        tvState.append(text)
+        tvStats.append(text)
     }
 
     @Suppress("unused")

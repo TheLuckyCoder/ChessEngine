@@ -20,13 +20,13 @@
         android:visibility="invisible" />
 
     <TextView
-        android:id="@+id/tv_boards"
+        android:id="@+id/tv_stats"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:textColor="@android:color/black"
         android:textSize="16sp"
-        tools:text="Boards Evaluated: " />
+        tools:text="Stats " />
 
     <TextView
         android:id="@+id/tv_state"
