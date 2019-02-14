@@ -17,7 +17,7 @@ import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
 import kotlin.concurrent.thread
 
-class MainActivity : Activity(), CustomView.ClickListener {
+class ChessActivity : Activity(), CustomView.ClickListener {
 
     companion object {
         init {
@@ -39,7 +39,7 @@ class MainActivity : Activity(), CustomView.ClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initBoard(false)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_chess)
 
         val display = windowManager.defaultDisplay
         val point = Point()
@@ -60,13 +60,13 @@ class MainActivity : Activity(), CustomView.ClickListener {
                 val pos = Pos(i, 7 - j)
                 val isWhite = ((pos.x + pos.y) % 2 == 1) == isPlayerWhite
 
-                val xx = pos.x * viewSize
-                val yy = (7 - pos.y) * viewSize
+                val xSize = pos.x * viewSize
+                val ySize = (7 - pos.y) * viewSize
 
                 val cellView = CellView(this, isWhite, pos, this).apply {
                     layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
-                    x = xx.toFloat()
-                    y = yy.toFloat()
+                    x = xSize.toFloat()
+                    y = ySize.toFloat()
                 }
 
                 cells[pos] = cellView

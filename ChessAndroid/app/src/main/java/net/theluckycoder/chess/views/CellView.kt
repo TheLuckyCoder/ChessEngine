@@ -4,12 +4,12 @@ import android.annotation.SuppressLint
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import net.theluckycoder.chess.MainActivity
+import net.theluckycoder.chess.ChessActivity
 import net.theluckycoder.chess.Pos
 
 @SuppressLint("ViewConstructor")
 class CellView(
-    private val activity: MainActivity,
+    private val activity: ChessActivity,
     isWhiteBackground: Boolean,
     val pos: Pos,
     private val listener: CustomView.ClickListener

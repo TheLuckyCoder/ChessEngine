@@ -5,7 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import net.theluckycoder.chess.MainActivity
+import net.theluckycoder.chess.ChessActivity
 
 @SuppressLint("ViewConstructor")
 class PieceView(
@@ -19,7 +19,7 @@ class PieceView(
 
     init {
         val decodedBitmap = BitmapFactory.decodeResource(context.resources, res)
-        bitmap = Bitmap.createScaledBitmap(decodedBitmap, MainActivity.viewSize, MainActivity.viewSize, true)
+        bitmap = Bitmap.createScaledBitmap(decodedBitmap, ChessActivity.viewSize, ChessActivity.viewSize, true)
         decodedBitmap.recycle()
 
         if (isWhite) {

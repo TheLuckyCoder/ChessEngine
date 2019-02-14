@@ -189,12 +189,18 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	}
 }
 
+
+void BoardManager::setSettings(const Settings &settings)
+{
+    m_Settings = settings;
+}
+
 void BoardManager::moveComputerPlayer()
 {
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite);
+	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite, m_Settings);
 	movePiece(pair.first, pair.second, false);
 
 	Stats::stopTimer();

@@ -3,13 +3,14 @@
 #include "../data/Pos.h"
 
 class Board;
+class Settings;
 
 class NegaMax final
 {
 public:
 	NegaMax() = delete;
 
-	static PosPair negaMax(const Board &board, bool isWhite);
+	static PosPair negaMax(const Board &board, bool isWhite, const Settings &settings);
 
 private:
 	static int negaMax(const Board &board, byte depth, int alpha, int beta, bool isWhite, bool extended);

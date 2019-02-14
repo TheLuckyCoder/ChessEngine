@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 
+#include "Settings.h"
 #include "containers/StackVector.h"
 #include "containers/HashTable.h"
 #include "data/Enums.h"
@@ -18,6 +19,7 @@ public:
 	using PieceChangeListener = std::function<void(State state, bool shouldRedraw, const StackVector<PosPair, 2> &moved)>;
 
 private:
+	inline static Settings m_Settings = Settings(4u, std::thread::hardware_concurrency() - 1u);
 	inline static std::thread *m_WorkerThread = nullptr;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
@@ -36,6 +38,7 @@ public:
 	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
 	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);
+	static void setSettings(const Settings &settings);
 
 private:
 	static void moveComputerPlayer();

@@ -137,6 +137,11 @@ public:
 		destroy();
 	}
 
+	std::size_t threadCount() const
+	{
+		return m_threads.size();
+	}
+
 	/**
 	 * Submit a job to be run by the thread pool.
 	 */
@@ -184,25 +189,3 @@ private:
 	ThreadSafeQueue<std::unique_ptr<IThreadTask>> m_workQueue;
 	std::vector<std::thread> m_threads;
 };
-
-namespace DefaultThreadPool
-{
-	/**
-	 * Get the default thread pool for the application.
-	 * This pool is created with std::thread::hardware_concurrency() - 1 threads.
-	 */
-	inline ThreadPool& getThreadPool()
-	{
-		static ThreadPool defaultPool;
-		return defaultPool;
-	}
-
-	/**
-	 * Submit a job to the default thread pool.
-	 */
-	template <typename ResultType, typename Func, typename... Args>
-	ThreadPool::TaskFuture<ResultType> submitJob(Func&& func, Args&&... args)
-	{
-		return getThreadPool().submit<ResultType>(std::forward<Func>(func), std::forward<Args>(args)...);
-	}
-}

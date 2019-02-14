@@ -124,6 +124,7 @@ Java_net_theluckycoder_chess_Native_isWorking(JNIEnv __unused *pEnv, jclass __un
     return static_cast<jboolean>(BoardManager::isWorking());
 }
 
+
 external JNIEXPORT jstring JNICALL
 Java_net_theluckycoder_chess_Native_getStats(JNIEnv __unused *pEnv, jclass __unused type)
 {
@@ -183,13 +184,23 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jclass __unus
     return result;
 }
 
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_setSettings(JNIEnv __unused *pEnv, __unused jclass type,
+		jint baseSearchDepth, jint threadCount)
+{
+	BoardManager::setSettings({static_cast<short>(baseSearchDepth), static_cast<unsigned int>(threadCount)});
+}
+
+
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_movePiece(JNIEnv __unused *pEnv, __unused jclass type,
-											  jbyte selectedX, jbyte selectedY, jbyte destX, jbyte destY)
+		jbyte selectedX, jbyte selectedY, jbyte destX, jbyte destY)
 {
     BoardManager::movePiece(Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)),
 							Pos(static_cast<byte>(destX), static_cast<byte>(destY)));
 }
+
 
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv __unused *pEnv, __unused jclass type, jstring moves)

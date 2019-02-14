@@ -14,7 +14,7 @@
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ChessActivity"
             android:configChanges="screenLayout|screenSize|orientation"
             android:screenOrientation="portrait">
             <intent-filter>

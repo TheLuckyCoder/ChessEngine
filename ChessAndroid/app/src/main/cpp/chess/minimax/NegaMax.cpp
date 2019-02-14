@@ -1,11 +1,12 @@
 #include "NegaMax.h"
 
 #include "../Stats.h"
+#include "../Settings.h"
 #include "../data/Enums.h"
 #include "../data/Board.h"
-#include "../threads/ThreadPool.hpp"
+#include "../threads/NegaMaxThreadPool.h"
 
-PosPair NegaMax::negaMax(const Board &board, const bool isWhite)
+PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<Move>(isWhite);
 
@@ -13,15 +14,18 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
 			return PosPair(move.start, move.dest);
 
-	const byte depth = validMoves.size() <= 15 ? 5u : 4u;
+	auto depth = settings.getBaseSearchDepth();
+	if (validMoves.size() <= 15)
+		depth++;
+	NegaMaxThreadPool::createThreadPool(settings.getThreadCount());
 
 	std::vector<ThreadPool::TaskFuture<int>> futures;
 	futures.reserve(validMoves.size());
 
 	for (const auto &move : validMoves)
-		futures.emplace_back(DefaultThreadPool::submitJob<int>([](const Board &board, const byte depth, const bool isWhite) {
-			return -negaMax(board, depth - 1u, VALUE_MIN, VALUE_MAX, !isWhite, false);
-		}, move.board, depth, isWhite));
+		futures.emplace_back(NegaMaxThreadPool::submitJob<int>([](const Board &board, const byte depth, const bool isWhite) {
+			return -negaMax(board, depth, VALUE_MIN, VALUE_MAX, !isWhite, false);
+		}, move.board, --depth, isWhite));
 
 	const Move *bestMove = &validMoves.front();
 	int bestMovePoints = futures.front().get();
