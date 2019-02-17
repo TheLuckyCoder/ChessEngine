@@ -1,6 +1,6 @@
 #include "Piece.h"
 
-#include "../minimax/MoveGen.h"
+#include "../algorithm/MoveGen.h"
 
 Piece::MaxMovesVector Piece::getPossibleMoves(const Pos &pos, const Board &board) const noexcept
 {

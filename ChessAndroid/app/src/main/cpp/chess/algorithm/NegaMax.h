@@ -13,6 +13,6 @@ public:
 	static PosPair negaMax(const Board &board, bool isWhite, const Settings &settings);
 
 private:
-	static int negaMax(const Board &board, byte depth, int alpha, int beta, bool isWhite, bool extended);
-	static int quiescence(const Board &board, byte depth, int alpha, int beta, bool isWhite);
+	static int negaMax(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
+	static int quiescence(const Board &board, short depth, int alpha, int beta, bool isWhite);
 };

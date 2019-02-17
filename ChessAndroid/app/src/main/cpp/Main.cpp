@@ -6,15 +6,15 @@
 #include "chess/BoardManager.h"
 #include "chess/Stats.h"
 #include "chess/data/Board.h"
-#include "chess/minimax/Evaluation.h"
+#include "chess/algorithm/Evaluation.h"
 #include "chess/persistence/MovesPersistence.h"
 
 JavaVM *jvm;
 
 bool boardManagerInitialized = false;
 
-jobject mainActivityInstance;
-jclass mainActivityClass;
+jobject chessActivityInstance;
+jclass chessActivityClass;
 jclass posClass;
 jclass posPairClass;
 jclass pieceClass;
@@ -50,8 +50,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 		}
 	}
 
-	const static jmethodID callbackId = env->GetMethodID(mainActivityClass, "callback", "(IZ[Lnet/theluckycoder/chess/PosPair;)V");
-	env->CallVoidMethod(mainActivityInstance, callbackId, static_cast<jint>(to_underlying(state)), shouldRedraw, result);
+	const static jmethodID callbackId = env->GetMethodID(chessActivityClass, "callback", "(IZ[Lnet/theluckycoder/chess/PosPair;)V");
+	env->CallVoidMethod(chessActivityInstance, callbackId, static_cast<jint>(to_underlying(state)), shouldRedraw, result);
 
 	if (getEnvStat == JNI_EDETACHED)
 	{
@@ -85,8 +85,8 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void __unused *reserved)
     vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6);
 
     // Cleaning the caches
-    env->DeleteGlobalRef(mainActivityInstance);
-    env->DeleteGlobalRef(mainActivityClass);
+    env->DeleteGlobalRef(chessActivityInstance);
+    env->DeleteGlobalRef(chessActivityClass);
 
     env->DeleteGlobalRef(posClass);
     env->DeleteGlobalRef(posPairClass);
@@ -94,14 +94,14 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void __unused *reserved)
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_MainActivity_initBoard(JNIEnv *pEnv, jobject instance, jboolean restartGame)
+Java_net_theluckycoder_chess_ChessActivity_initBoard(JNIEnv *pEnv, jobject instance, jboolean restartGame)
 {
 	pEnv->ExceptionClear();
 	if (!boardManagerInitialized)
 	{
-		pEnv->DeleteGlobalRef(mainActivityInstance);
-		mainActivityInstance = pEnv->NewGlobalRef(instance);
-		mainActivityClass = cacheClass(pEnv, pEnv->GetObjectClass(mainActivityInstance));
+		pEnv->DeleteGlobalRef(chessActivityInstance);
+		chessActivityInstance = pEnv->NewGlobalRef(instance);
+		chessActivityClass = cacheClass(pEnv, pEnv->GetObjectClass(chessActivityInstance));
 
 		boardManagerInitialized = true;
 		BoardManager::initBoardManager(listener);
@@ -189,7 +189,7 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_setSettings(JNIEnv __unused *pEnv, __unused jclass type,
 		jint baseSearchDepth, jint threadCount)
 {
-	BoardManager::setSettings({static_cast<short>(baseSearchDepth), static_cast<unsigned int>(threadCount)});
+	BoardManager::setSettings(Settings(static_cast<short>(baseSearchDepth), static_cast<unsigned int>(threadCount)));
 }
 
 

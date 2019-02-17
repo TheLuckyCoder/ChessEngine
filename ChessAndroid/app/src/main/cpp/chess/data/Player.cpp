@@ -2,7 +2,7 @@
 
 #include "Board.h"
 #include "Piece.h"
-#include "../minimax/MoveGen.h"
+#include "../algorithm/MoveGen.h"
 #include "../BoardManager.h"
 
 namespace Player

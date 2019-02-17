@@ -9,12 +9,13 @@
                 android:id="@+id/action_redraw"
                 android:title="Redraw Board"/>
             <item
-                android:id="@+id/action_memory"
-                android:title="Show Memory Usage"/>
+                android:id="@+id/action_debug_info"
+                android:title="Show/Hide Debug Info"/>
         </menu>
     </item>
 
-    <item android:title="Load">
+    <item android:title="Load"
+        android:enabled="false">
         <menu>
             <item
                 android:id="@+id/action_load_moves"
@@ -22,15 +23,12 @@
         </menu>
     </item>
 
-    <item android:title="Save">
+    <item android:title="Save"
+        android:enabled="false">
         <menu>
             <item
                 android:id="@+id/action_save_moves"
                 android:title="Moves" />
         </menu>
     </item>
-
-    <item
-        android:id="@+id/action_restart"
-        android:title="Restart" />
 </menu>

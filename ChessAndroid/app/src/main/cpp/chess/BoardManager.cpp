@@ -5,9 +5,9 @@
 #include "DebugFile.h"
 #include "Stats.h"
 #include "data/Board.h"
-#include "minimax/Evaluation.h"
-#include "minimax/Hash.h"
-#include "minimax/NegaMax.h"
+#include "algorithm/Evaluation.h"
+#include "algorithm/Hash.h"
+#include "algorithm/NegaMax.h"
 
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
@@ -28,7 +28,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 	//isPlayerWhite = rand() % 2 == 0;
 
 	if (!isPlayerWhite)
-		m_WorkerThread = new std::thread(moveComputerPlayer);
+		m_WorkerThread = new std::thread(moveComputerPlayer, m_Settings);
 }
 
 void BoardManager::loadGame(std::vector<PosPair> &&moves)
@@ -105,7 +105,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board.hash = Hash::compute(m_Board);
 
 	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
-		m_WorkerThread = new std::thread(moveComputerPlayer);
+		m_WorkerThread = new std::thread(moveComputerPlayer, m_Settings);
 }
 
 void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool checkValid)
@@ -195,12 +195,12 @@ void BoardManager::setSettings(const Settings &settings)
     m_Settings = settings;
 }
 
-void BoardManager::moveComputerPlayer()
+void BoardManager::moveComputerPlayer(const Settings &settings)
 {
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite, m_Settings);
+	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite, settings);
 	movePiece(pair.first, pair.second, false);
 
 	Stats::stopTimer();

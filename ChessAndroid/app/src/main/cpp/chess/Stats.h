@@ -9,7 +9,7 @@ class Stats final
 	static std::chrono::time_point<std::chrono::steady_clock> _startTime;
 	static double _elapsedTime;
 public:
-	Stats = delete();
+	Stats() = delete;
 
 	static std::atomic_size_t boardsEvaluated;
 	static std::atomic_size_t nodesSearched;

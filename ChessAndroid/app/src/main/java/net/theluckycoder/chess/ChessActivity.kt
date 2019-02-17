@@ -7,11 +7,15 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Point
 import android.os.Bundle
-import android.os.Debug
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ProgressBar
+import android.widget.RelativeLayout
+import android.widget.TextView
 import net.theluckycoder.chess.views.CellView
 import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
@@ -20,20 +24,18 @@ import kotlin.concurrent.thread
 class ChessActivity : Activity(), CustomView.ClickListener {
 
     companion object {
-        init {
-            System.loadLibrary("chess")
-        }
-
         var viewSize = 0
     }
 
     private lateinit var frameLayout: FrameLayout
     private lateinit var pbLoading: ProgressBar
-    private lateinit var tvStats: TextView
+    private lateinit var tvDebug: TextView
     private lateinit var tvState: TextView
     private val cells = HashMap<Pos, CellView>(64)
     val pieces = HashMap<Pos, PieceView>(32)
+    private var settings = Settings()
     private var selectedPos = Pos()
+    private var showDebugInfo = false
     private var canMove = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,10 +50,34 @@ class ChessActivity : Activity(), CustomView.ClickListener {
         viewSize = point.x / 8
 
         frameLayout = findViewById(R.id.layout_board)
-        frameLayout.layoutParams = LinearLayout.LayoutParams(point.x, point.x)
+        frameLayout.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
         pbLoading = findViewById(R.id.pb_loading)
-        tvStats = findViewById(R.id.tv_stats)
+        tvDebug = findViewById(R.id.tv_debug)
         tvState = findViewById(R.id.tv_state)
+
+        findViewById<Button>(R.id.btn_new_game).setOnClickListener {
+            val customView = View.inflate(this, R.layout.dialog_settings, null)
+
+            val etBaseSearchDepth = customView.findViewById<TextView>(R.id.et_base_search_depth)
+            val etThreadCount = customView.findViewById<TextView>(R.id.et_thread_count)
+
+            etBaseSearchDepth.text = settings.baseSearchDepth.toString()
+            etThreadCount.text = settings.threadCount.toString()
+
+            AlertDialog.Builder(this)
+                .setTitle("Settings")
+                .setView(customView)
+                .setPositiveButton("Restart Game") { _, _ ->
+                    val newBaseSearchDepth = etBaseSearchDepth.text?.toString()?.toInt() ?: settings.baseSearchDepth
+                    val newThreadCount = etThreadCount.text?.toString()?.toInt() ?: settings.threadCount
+
+                    settings = Settings(newBaseSearchDepth, newThreadCount)
+                    Native.setSettings(settings)
+                    restartGame()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
 
         val isPlayerWhite = Native.isPlayerWhite()
 
@@ -61,7 +87,7 @@ class ChessActivity : Activity(), CustomView.ClickListener {
                 val isWhite = ((pos.x + pos.y) % 2 == 1) == isPlayerWhite
 
                 val xSize = pos.x * viewSize
-                val ySize = (7 - pos.y) * viewSize
+                val ySize = (if (isPlayerWhite) 7 - pos.y else pos.y.toInt()) * viewSize
 
                 val cellView = CellView(this, isWhite, pos, this).apply {
                     layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
@@ -95,18 +121,19 @@ class ChessActivity : Activity(), CustomView.ClickListener {
     override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_redraw -> updatePieces()
-            R.id.action_memory -> updateMemoryUsage()
+            R.id.action_debug_info -> showDebugInfo = !showDebugInfo
             R.id.action_load_moves -> loadMoves()
             R.id.action_save_moves -> saveMoves()
-            R.id.action_restart -> restartGame()
         }
         return super.onMenuItemSelected(featureId, item)
     }
 
     //------------------------------------------------------------------------
 
-    private fun clearCells() {
+    private fun clearCells(clearMoved: Boolean = false) {
         cells.forEach {
+            if (clearMoved && it.value.lastMoved)
+                it.value.lastMoved = false
             it.value.state = CellView.State.NONE
         }
     }
@@ -114,11 +141,13 @@ class ChessActivity : Activity(), CustomView.ClickListener {
     private fun movePiece(view: CellView) {
         if (!selectedPos.isValid || !canMove) return
 
+        val startPos = selectedPos
         Native.movePiece(selectedPos, view.pos)
-        clearCells()
+        clearCells(true)
         selectedPos = Pos()
 
-        pbLoading.visibility = View.VISIBLE
+        cells[startPos]?.lastMoved = true
+        cells[view.pos]?.lastMoved = true
     }
 
     private fun selectPiece(view: PieceView) {
@@ -148,13 +177,13 @@ class ChessActivity : Activity(), CustomView.ClickListener {
             val isWhite = it.type in 1..6
             val resource = pieceResources[it.type.toInt()]
 
-            val xx = it.x * viewSize
-            val yy = (7 - it.y) * viewSize
+            val xSize = it.x * viewSize
+            val ySize = (7 - it.y) * viewSize
 
             val pieceView = PieceView(this, isWhite, resource, this).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
-                x = xx.toFloat()
-                y = yy.toFloat()
+                x = xSize.toFloat()
+                y = ySize.toFloat()
             }
 
             pieces[Pos(it.x, it.y)] = pieceView
@@ -172,7 +201,12 @@ class ChessActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun updateState(state: Int) {
-        tvStats.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue())
+        if (showDebugInfo) {
+            tvDebug.visibility = View.VISIBLE
+            tvDebug.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue())
+        } else {
+            tvDebug.visibility = View.GONE
+        }
 
         tvState.text = when (state) {
             1 -> "White has won!"
@@ -195,44 +229,39 @@ class ChessActivity : Activity(), CustomView.ClickListener {
         }
     }
 
-    private fun updateMemoryUsage() {
-        val heapUsed = Debug.getNativeHeapAllocatedSize() / 1048576
-        val heapSize = Debug.getNativeHeapSize() / 1048576
-        val text = getString(R.string.memory_usage, heapUsed, heapSize)
-        tvStats.append(text)
-    }
-
     @Suppress("unused")
-    private fun callback(gameState: Int, shouldRedraw: Boolean, moves: Array<PosPair>) {
-        runOnUiThread {
-            moves.forEach {
-                val startPos = Pos(it.startX, it.startY)
-                val destPos = Pos(it.destX, it.destY)
+    private fun callback(gameState: Int, shouldRedraw: Boolean, moves: Array<PosPair>) = runOnUiThread {
+        clearCells(true)
+        moves.forEach {
+            val startPos = Pos(it.startX, it.startY)
+            val destPos = Pos(it.destX, it.destY)
 
-                if (startPos.isValid && destPos.isValid) {
-                    val pieceView = pieces.remove(startPos)!!
+            if (startPos.isValid && destPos.isValid) {
+                val pieceView = pieces.remove(startPos)!!
 
-                    val xx = it.destX * viewSize
-                    val yy = (7 - it.destY) * viewSize
+                val xx = it.destX * viewSize
+                val yy = (7 - it.destY) * viewSize
 
-                    pieceView.animate()
-                        .x(xx.toFloat())
-                        .y(yy.toFloat())
-                        .start()
+                pieceView.animate()
+                    .x(xx.toFloat())
+                    .y(yy.toFloat())
+                    .start()
 
-                    pieces[destPos]?.let { destView ->
-                        frameLayout.removeView(destView)
-                    }
-
-                    pieces[destPos] = pieceView
+                pieces[destPos]?.let { destView ->
+                    frameLayout.removeView(destView)
                 }
+
+                pieces[destPos] = pieceView
+
+                cells[startPos]?.lastMoved = true
+                cells[destPos]?.lastMoved = true
             }
-
-            if (shouldRedraw)
-                updatePieces()
-
-            updateState(gameState)
         }
+
+        if (shouldRedraw)
+            updatePieces()
+
+        updateState(gameState)
     }
 
     private fun restartGame() {
@@ -243,7 +272,7 @@ class ChessActivity : Activity(), CustomView.ClickListener {
             runOnUiThread {
                 initBoard(true)
                 updatePieces()
-                clearCells()
+                clearCells(true)
                 updateState(0)
                 canMove = true
             }

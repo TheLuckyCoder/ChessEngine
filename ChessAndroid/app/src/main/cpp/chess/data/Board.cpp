@@ -1,6 +1,6 @@
 #include "Board.h"
 
-#include "../minimax/Hash.h"
+#include "../algorithm/Hash.h"
 
 Board::Board(const Board &board) noexcept
 {

@@ -6,10 +6,13 @@ Settings::Settings(const short baseSearchDepth, const unsigned int threadCount) 
     : baseSearchDepth(baseSearchDepth)
 {
     const auto maxThreads = std::thread::hardware_concurrency();
-    if (threadCount > maxThreads)
-        this->threadCount = maxThreads;
-    else if (threadCount < 1u)
-        this->threadCount = 1u;
+
+	if (threadCount > maxThreads)
+		this->threadCount = maxThreads;
+	else if (threadCount == 0)
+		this->threadCount = 1u;
+	else
+		this->threadCount = threadCount;
 }
 
 short Settings::getBaseSearchDepth() const noexcept

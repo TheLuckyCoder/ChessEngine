@@ -2,7 +2,7 @@
 
 class Settings final
 {
-    const short baseSearchDepth;
+    short baseSearchDepth;
     unsigned int threadCount;
 
 public:

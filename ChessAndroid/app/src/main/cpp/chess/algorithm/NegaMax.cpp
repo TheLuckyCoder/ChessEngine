@@ -16,16 +16,17 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings 
 
 	auto depth = settings.getBaseSearchDepth();
 	if (validMoves.size() <= 15)
-		depth++;
+		++depth;
 	NegaMaxThreadPool::createThreadPool(settings.getThreadCount());
 
 	std::vector<ThreadPool::TaskFuture<int>> futures;
 	futures.reserve(validMoves.size());
 
+	--depth;
 	for (const auto &move : validMoves)
-		futures.emplace_back(NegaMaxThreadPool::submitJob<int>([](const Board &board, const byte depth, const bool isWhite) {
+		futures.emplace_back(NegaMaxThreadPool::submitJob<int>([](const Board &board, const short depth, const bool isWhite) {
 			return -negaMax(board, depth, VALUE_MIN, VALUE_MAX, !isWhite, false);
-		}, move.board, --depth, isWhite));
+		}, move.board, depth, isWhite));
 
 	const Move *bestMove = &validMoves.front();
 	int bestMovePoints = futures.front().get();
@@ -44,7 +45,7 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings 
 	return PosPair(bestMove->start, bestMove->dest);
 }
 
-int NegaMax::negaMax(const Board &board, byte depth, int alpha, const int beta, const bool isWhite, bool extended)
+int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta, const bool isWhite, bool extended)
 {
 	if (depth == 0)
 	{
@@ -83,7 +84,7 @@ int NegaMax::negaMax(const Board &board, byte depth, int alpha, const int beta, 
 	return bestValue;
 }
 
-int NegaMax::quiescence(const Board &board, const byte depth, int alpha, const int beta, const bool isWhite)
+int NegaMax::quiescence(const Board &board, const short depth, int alpha, const int beta, const bool isWhite)
 {
 	if (depth == 0)
 		return isWhite ? board.value : -board.value;

@@ -4,7 +4,7 @@
 
 class NegaMaxThreadPool final
 {
-    static ThreadPool* pool = nullptr;
+    inline static ThreadPool *pool = nullptr;
 
 public:
     NegaMaxThreadPool() = delete;
@@ -26,6 +26,6 @@ public:
     template <typename ResultType, typename Func, typename... Args>
     static ThreadPool::TaskFuture<ResultType> submitJob(Func&& func, Args&&... args)
     {
-        return pool->.submit<ResultType>(std::forward<Func>(func), std::forward<Args>(args)...);
+        return pool->submit<ResultType>(std::forward<Func>(func), std::forward<Args>(args)...);
     }
-}
+};

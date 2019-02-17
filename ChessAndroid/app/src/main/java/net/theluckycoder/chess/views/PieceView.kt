@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import net.theluckycoder.chess.ChessActivity
+import net.theluckycoder.chess.Native
 
 @SuppressLint("ViewConstructor")
 class PieceView(
@@ -22,7 +23,7 @@ class PieceView(
         bitmap = Bitmap.createScaledBitmap(decodedBitmap, ChessActivity.viewSize, ChessActivity.viewSize, true)
         decodedBitmap.recycle()
 
-        if (isWhite) {
+        if (isWhite == Native.isPlayerWhite()) {
             setOnClickListener {
                 listener.onClick(this)
             }

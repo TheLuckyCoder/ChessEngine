@@ -35,21 +35,25 @@ class CellView(
     var state = State.NONE
         set(value) {
             field = value
-
+            invalidate()
+        }
+    var lastMoved = false
+        set(value) {
+            field = value
             invalidate()
         }
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(backgroundColor)
 
-        if (state == State.SELECTED) {
-            canvas.drawColor(Color.parseColor("#ef4fc3f7"))
-        } else if (state == State.POSSIBLE) {
-            if (activity.pieces[pos] == null) {
-                canvas.drawCircle(width / 2f, height / 2f, 21f, possibleStatePaint)
+        when (state) {
+            State.SELECTED -> canvas.drawColor(Color.parseColor("#ef4fc3f7"))
+            State.POSSIBLE -> if (activity.pieces[pos] == null) {
+                canvas.drawCircle(width / 2f, height / 2f, width / 6.5f, possibleStatePaint)
             } else {
                 canvas.drawPaint(possibleStatePaint)
             }
+            else -> if (lastMoved) canvas.drawColor(Color.parseColor("#99fbc02d"))
         }
     }
 }
