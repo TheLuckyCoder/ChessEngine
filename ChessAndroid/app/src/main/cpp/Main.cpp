@@ -84,7 +84,7 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void __unused *reserved)
     JNIEnv* env;
     vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6);
 
-    // Cleaning the caches
+    // Clean the caches
     env->DeleteGlobalRef(chessActivityInstance);
     env->DeleteGlobalRef(chessActivityClass);
 
@@ -190,6 +190,12 @@ Java_net_theluckycoder_chess_Native_setSettings(JNIEnv __unused *pEnv, __unused 
 		jint baseSearchDepth, jint threadCount)
 {
 	BoardManager::setSettings(Settings(static_cast<short>(baseSearchDepth), static_cast<unsigned int>(threadCount)));
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_enableStats(JNIEnv __unused *pEnv, __unused jclass type, jboolean enabled)
+{
+	Stats::setEnabled(enabled);
 }
 
 

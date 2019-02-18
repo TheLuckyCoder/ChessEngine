@@ -59,7 +59,8 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 			//return -quiescence(board, 1, -beta, -alpha, !isWhite);
 	}
 
-	++Stats::nodesSearched;
+	if (Stats::enabled())
+		++Stats::nodesSearched;
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
 	int bestValue = VALUE_MIN;

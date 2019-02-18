@@ -14,8 +14,8 @@
         android:id="@+id/pb_loading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
         android:layout_below="@id/layout_board"
+        android:layout_marginTop="24dp"
         android:indeterminateOnly="true"
         android:visibility="invisible" />
 
@@ -33,19 +33,20 @@
         android:id="@+id/tv_state"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:layout_below="@id/tv_debug"
         android:gravity="center_horizontal"
         android:textColor="@android:color/black"
-        android:textSize="18sp"
+        android:textSize="17sp"
         tools:text="Winner" />
 
     <Button
         android:id="@+id/btn_new_game"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="8dp"
         android:text="New Game" />
 
 </RelativeLayout>

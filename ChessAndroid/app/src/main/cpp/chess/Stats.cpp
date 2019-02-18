@@ -4,24 +4,34 @@
 
 void *operator new(const std::size_t _Size) noexcept(false)
 {
-	++Stats::allocationsCount;
-	Stats::allocatedMemory += _Size;
+	if (Stats::enabled())
+	{
+		++Stats::allocationsCount;
+		Stats::allocatedMemory += _Size;
+	}
 	return std::malloc(_Size);
 }
 
 void *operator new[](const std::size_t _Size) noexcept(false)
 {
-	++Stats::allocationsCount;
-	Stats::allocatedMemory += _Size;
+	if (Stats::enabled())
+	{
+		++Stats::allocationsCount;
+		Stats::allocatedMemory += _Size;
+	}
 	return std::malloc(_Size);
 }
 
 std::chrono::time_point<std::chrono::steady_clock> Stats::_startTime;
-double Stats::_elapsedTime;
 std::atomic_size_t Stats::boardsEvaluated;
 std::atomic_size_t Stats::nodesSearched;
 std::atomic_size_t Stats::allocationsCount;
 std::atomic_size_t Stats::allocatedMemory;
+
+void Stats::setEnabled(const bool enabled) noexcept
+{
+	_statsEnabled = enabled;
+}
 
 void Stats::resetStats() noexcept
 {
@@ -48,7 +58,7 @@ double Stats::getElapsedTime() noexcept
 	return _elapsedTime;
 }
 
-std::string Stats::formatStats(const char separator) noexcept
+std::string Stats::formatStats(const char separator) noexcept(false)
 {
 	std::stringstream stream;
 

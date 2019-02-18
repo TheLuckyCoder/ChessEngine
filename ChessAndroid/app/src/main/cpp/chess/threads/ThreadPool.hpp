@@ -107,6 +107,7 @@ public:
 	explicit ThreadPool(const std::uint32_t numThreads)
 		: m_done{ false }
 	{
+		m_threads.reserve(numThreads);
 		try
 		{
 			for (auto i = 0u; i < numThreads; ++i)

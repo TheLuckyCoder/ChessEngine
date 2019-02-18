@@ -148,6 +148,8 @@ class ChessActivity : Activity(), CustomView.ClickListener {
 
         cells[startPos]?.lastMoved = true
         cells[view.pos]?.lastMoved = true
+
+        pbLoading.visibility = View.VISIBLE
     }
 
     private fun selectPiece(view: PieceView) {
@@ -201,6 +203,7 @@ class ChessActivity : Activity(), CustomView.ClickListener {
     }
 
     private fun updateState(state: Int) {
+        Native.enableStats(showDebugInfo)
         if (showDebugInfo) {
             tvDebug.visibility = View.VISIBLE
             tvDebug.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue())

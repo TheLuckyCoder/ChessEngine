@@ -1,5 +1,4 @@
 <resources>
     <string name="app_name">Chess</string>
-    <string name="stats">%s\nCurrent Board is evaluated at: %d</string>
-    <string name="memory_usage">\n%dMB used/%dMB</string>
+    <string name="stats">%sCurrent Board is evaluated at: %d</string>
 </resources>

@@ -115,7 +115,8 @@ constexpr S QUEEN_MOBILITY[] =
 
 int Evaluation::evaluate(const Board &board) noexcept
 {
-	++Stats::boardsEvaluated;
+	if (Stats::enabled())
+		++Stats::boardsEvaluated;
 
 	Score score;
 	int npm = 0;

@@ -50,7 +50,7 @@ namespace Player
 	{
 		const Bitboard bitboard = MoveGen<CAPTURES>::getAttacksPerColorBitboard(!isWhite, board);
 		const Bitboard kingPos = isWhite ? board.whiteKingPos : board.blackKingPos;
-		return bitboard & kingPos;
+		return static_cast<bool>(bitboard & kingPos);
 	}
 
 	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(const bool isWhite, const Board &board)

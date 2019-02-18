@@ -96,8 +96,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board[destPos] = selectedPiece;
 	m_Board[selectedPos] = Piece();
 
-	if (m_Board.state == State::NONE)
-		m_Board.updateState();
+	m_Board.updateState();
 
 	movesHistory.emplace_back(selectedPos, destPos);
 	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
