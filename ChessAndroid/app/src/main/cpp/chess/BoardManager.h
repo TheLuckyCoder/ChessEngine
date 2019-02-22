@@ -29,7 +29,7 @@ public:
 	static HashTable<Cache> cacheTable;
 	inline static bool isPlayerWhite = true;
 
-	static void initBoardManager(const PieceChangeListener& listener);
+	static void initBoardManager(const PieceChangeListener &listener);
 	static void loadGame(std::vector<PosPair> &&moves);
 
 	static Board &getBoard() { return m_Board; }

@@ -67,6 +67,8 @@ class Cache final
 public:
 	State state;
 	int value;
+	short depth;
+	int bestMoveScore;
 };
 
 template<class T>

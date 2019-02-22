@@ -9,7 +9,7 @@ class NegaMaxThreadPool final
 public:
     NegaMaxThreadPool() = delete;
 
-    static void createThreadPool(unsigned int threadCount)
+    static void createThreadPool(const unsigned int threadCount)
     {
         if (!pool)
             pool = new ThreadPool(threadCount);
@@ -20,9 +20,6 @@ public:
         }
     }
 
-    /**
-     * Submit a job to the default thread pool.
-     */
     template <typename ResultType, typename Func, typename... Args>
     static ThreadPool::TaskFuture<ResultType> submitJob(Func&& func, Args&&... args)
     {

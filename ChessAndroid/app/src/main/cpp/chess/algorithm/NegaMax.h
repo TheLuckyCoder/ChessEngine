@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../data/Pos.h"
+#include "../data/Board.h"
 
 class Board;
 class Settings;
@@ -13,6 +14,7 @@ public:
 	static PosPair negaMax(const Board &board, bool isWhite, const Settings &settings);
 
 private:
-	static int negaMax(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
+	static void processWork(StackVector<Move, 150> &validMoves, Move &bestMove, int &alpha, unsigned jobCount, short depth, bool isWhite);
+	static int negaMaxRecursive(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
 	static int quiescence(const Board &board, short depth, int alpha, int beta, bool isWhite);
 };
