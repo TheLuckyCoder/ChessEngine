@@ -28,7 +28,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 	//isPlayerWhite = rand() % 2 == 0;
 
 	if (!isPlayerWhite)
-		m_WorkerThread = new std::thread(moveComputerPlayer, m_Settings);
+	    m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
 }
 
 void BoardManager::loadGame(std::vector<PosPair> &&moves)
@@ -104,7 +104,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board.hash = Hash::compute(m_Board);
 
 	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
-		m_WorkerThread = new std::thread(moveComputerPlayer, m_Settings);
+		m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
 }
 
 void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool checkValid)
@@ -188,14 +188,9 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	}
 }
 
-
-void BoardManager::setSettings(const Settings &settings)
-{
-    m_Settings = settings;
-}
-
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
+    m_IsWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();
 
@@ -204,16 +199,8 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 
 	Stats::stopTimer();
 
-	if (m_WorkerThread)
-	{
-		m_WorkerThread->detach();
-		delete m_WorkerThread;
-		m_WorkerThread = nullptr;
-
-#ifdef CR_PLATFORM_WINDOWS
-		writeTime(Stats::formatStats('\t'));
-#endif
-	}
+	m_WorkerThread.detach();
+	m_IsWorking = false;
 }
 
 bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)

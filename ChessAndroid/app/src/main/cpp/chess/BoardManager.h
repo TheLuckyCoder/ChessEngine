@@ -20,7 +20,8 @@ public:
 
 private:
 	inline static Settings m_Settings = Settings(4u, std::thread::hardware_concurrency() - 1u);
-	inline static std::thread *m_WorkerThread = nullptr;
+	inline static std::thread m_WorkerThread;
+	inline static bool m_IsWorking = false;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
 	static std::vector<PosPair> movesHistory;
@@ -34,11 +35,11 @@ public:
 
 	static Board &getBoard() { return m_Board; }
 	static const auto &getMovesHistory() { return movesHistory; }
-	static bool isWorking() { return m_WorkerThread != nullptr; }
+	static bool isWorking() { return m_IsWorking; }
 	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
 	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);
-	static void setSettings(const Settings &settings);
+	static void setSettings(const Settings &settings) { m_Settings = settings; }
 
 private:
 	static void moveComputerPlayer(const Settings &settings);
