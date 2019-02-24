@@ -16,7 +16,7 @@ public:
 	Bitboard whiteKingPos = 0;
 	Bitboard blackKingPos = 0;
 	State state = State::NONE;
-	int value = 0;
+	int score = 0;
 
 	Board() = default;
 	Board(Board&&) = default;
@@ -53,12 +53,12 @@ public:
 
 	bool operator<(const Move &other) const
 	{
-		return board.value < other.board.value;
+		return board.score < other.board.score;
 	}
 
 	bool operator>(const Move &other) const
 	{
-		return board.value > other.board.value;
+		return board.score > other.board.score;
 	}
 };
 
@@ -66,8 +66,8 @@ class Cache final
 {
 public:
 	State state;
-	int value;
-	short depth;
+	int score; 
+	short depth = 0;
 	int bestMoveScore;
 };
 

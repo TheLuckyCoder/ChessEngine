@@ -66,7 +66,7 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 			extended = true;
 		}
 		else
-			return isWhite ? board.value : -board.value;
+			return isWhite ? board.score : -board.score;
 			// Switch to Quiescence Search
 			//return quiescence(board, 1, alpha, beta, isWhite);
 	}
@@ -79,8 +79,8 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 
 	for (const auto &move : validMoves)
 	{
-		if (move.value == VALUE_WINNER_WHITE || move.value == VALUE_WINNER_BLACK)
-			return move.value;
+		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
+			return move.score;
 		const int moveValue = -negaMaxRecursive(move, depth - 1u, -beta, -alpha, !isWhite, extended);
 
 		if (moveValue > bestValue)
@@ -100,11 +100,11 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 int NegaMax::quiescence(const Board &board, const short depth, int alpha, const int beta, const bool isWhite)
 {
 	if (depth == 0)
-		return isWhite ? board.value : -board.value;
+		return isWhite ? board.score : -board.score;
 
 	const auto validMoves = board.listValidCaptures(isWhite);
 	if (validMoves.empty())
-		return isWhite ? board.value : -board.value;
+		return isWhite ? board.score : -board.score;
 	int bestValue = VALUE_MIN;
 
 	if (Stats::enabled())
@@ -112,8 +112,8 @@ int NegaMax::quiescence(const Board &board, const short depth, int alpha, const 
 
 	for (const auto &move : validMoves)
 	{
-		if (move.value == VALUE_WINNER_WHITE || move.value == VALUE_WINNER_BLACK)
-			return move.value;
+		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
+			return move.score;
 		const int moveValue = -quiescence(move, depth - 1u, -beta, -alpha, !isWhite);
 
 		if (moveValue > bestValue)

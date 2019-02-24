@@ -9,24 +9,24 @@ android {
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
-        versionName "0.14"
+        versionName "0.15"
     }
 
-    signingConfigs {
+    /*signingConfigs {
         release {
             storeFile file(System.getenv("KEYSTORE") ?: "keystore.jks")
             storePassword System.getenv("KEYSTORE_PASSWORD")
             keyAlias System.getenv("KEY_ALIAS")
             keyPassword System.getenv("KEYSTORE_PASSWORD")
         }
-    }
+    }*/
 
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             zipAlignEnabled true
-            signingConfig signingConfigs.release
+            //signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

@@ -20,7 +20,7 @@ public:
 	using reference = value_type & ;
 	using const_reference = const value_type&;
 
-	class iterator 
+	class iterator
 	{
 	public:
 		using iterator_category = std::forward_iterator_tag;
@@ -112,8 +112,13 @@ public:
 	{
 		std::copy(list.begin(), list.begin() + _size, begin());
 	}
-	StackVector(const StackVector&) = default;
-	StackVector(StackVector&&) noexcept = default;
+	CPP14_CONSTEXPR StackVector(const StackVector&) noexcept = default;
+	CPP14_CONSTEXPR StackVector(StackVector&&) noexcept = default;
+
+	~StackVector()
+	{
+		destroyAll(begin(), end());
+	}
 
 	CPP14_CONSTEXPR StackVector &operator=(std::initializer_list<T> list) noexcept
 	{
@@ -134,6 +139,7 @@ public:
 		return *this;
 	}
 
+
 	template<size_type otherN>
 	CPP14_CONSTEXPR StackVector &operator+=(StackVector<T, otherN> &&other) noexcept
 	{
@@ -149,25 +155,29 @@ public:
 		return *this;
 	}
 
-	StackVector &operator=(const StackVector&) = default;
-	StackVector &operator=(StackVector&&) noexcept = default;
+	CPP14_CONSTEXPR StackVector &operator=(const StackVector&) noexcept = default;
+	CPP14_CONSTEXPR StackVector &operator=(StackVector&&) noexcept = default;
 
 	// Element Access
 	CPP14_CONSTEXPR reference at(size_type pos) noexcept(false)
 	{
+		if (pos >= _size) throwLengthException();
 		return _array[pos];
 	}
 	CPP14_CONSTEXPR const_reference at(size_type pos) const noexcept(false)
 	{
+		if (pos >= _size) throwLengthException();
 		return _array[pos];
 	}
 
 	CPP14_CONSTEXPR reference operator[](size_type pos) noexcept(false)
 	{
+		if (pos >= _size) throwLengthException();
 		return _array[pos];
 	}
 	CPP14_CONSTEXPR const_reference operator[](size_type pos) const noexcept(false)
 	{
+		if (pos >= _size) throwLengthException();
 		return _array[pos];
 	}
 
@@ -201,12 +211,14 @@ public:
 	// Modifiers
 	CPP14_CONSTEXPR void clear() noexcept
 	{
+		destroyAll(begin(), end());
 		_size = 0;
 	}
 
 	template<class... Args >
 	CPP14_CONSTEXPR reference emplace(size_type pos, Args&&... args) noexcept(false)
 	{
+		if (++_size > N) throwLengthException();
 		std::move(_array + pos, _array + _size - 1, _array + pos + 1);
 
 		reference ref = _array[_size - 1];
@@ -227,6 +239,7 @@ public:
 
 	CPP14_CONSTEXPR iterator erase(iterator first, iterator last) noexcept
 	{
+		destroyAll(first, last);
 		std::move(last, end(), first);
 
 		_size -= last - first;
@@ -236,17 +249,21 @@ public:
 
 	CPP14_CONSTEXPR void push_back(T &&value) noexcept(false)
 	{
+		if (++_size > N) throwLengthException();
 		_array[_size - 1] = std::move(value);
 	}
 
 	CPP14_CONSTEXPR void push_back(const T &value) noexcept(false)
 	{
+		if (++_size > N) throwLengthException();
 		_array[_size - 1] = value;
 	}
 
 	template<class... Args >
 	CPP14_CONSTEXPR reference emplace_back(Args&&... args) noexcept(false)
 	{
+		if (++_size > N) throwLengthException();
+
 		reference ref = _array[_size - 1];
 		new (&ref) T(std::forward<Args>(args)...);
 
@@ -275,4 +292,12 @@ private:
 		value_type _array[N];
 	};
 	size_type _size;
+
+	CPP14_CONSTEXPR void destroyAll(iterator first, iterator last)
+	{
+	}
+
+	static CPP14_CONSTEXPR void throwLengthException() noexcept(false)
+	{
+	}
 };

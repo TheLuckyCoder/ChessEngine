@@ -2,7 +2,6 @@
 
 //#include <ctime>
 
-#include "DebugFile.h"
 #include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Evaluation.h"
@@ -160,7 +159,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		/*if (cacheTable.get(board.hash, cache))
 		{
 			board.state = cache.state;
-			board.value = cache.value;
+			board.score = cache.score;
 			return;
 		}*/
 
@@ -169,21 +168,21 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		case State::NONE:
 		case State::WHITE_IN_CHESS:
 		case State::BLACK_IN_CHESS:
-			board.value = Evaluation::evaluate(board);
+			board.score = Evaluation::evaluate(board);
 			break;
 		case State::WINNER_WHITE:
-			board.value = VALUE_WINNER_WHITE;
+			board.score = VALUE_WINNER_WHITE;
 			break;
 		case State::WINNER_BLACK:
-			board.value = VALUE_WINNER_BLACK;
+			board.score = VALUE_WINNER_BLACK;
 			break;
 		case State::DRAW:
-			board.value = 0;
+			board.score = 0;
 			break;
 		}
 
 		/*cache.state = board.state;
-		cache.value = board.value;
+		cache.score = board.score;
 		cacheTable.insert(board.hash, cache);*/
 	}
 }

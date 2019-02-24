@@ -18,6 +18,11 @@ constexpr S QUEEN(2529, 2687);
 constexpr S PAWN_DOUBLED(11, 56);
 constexpr S PAWN_ISOLATED(5, 15);
 
+constexpr S ROOK_ON_FILE[] =
+{
+	S(0, 0), S(18, 7), S(44, 20)
+};
+
 constexpr S PAWN_SQUARE[][4] =
 {
 	{ S(0, 0),    S(0, 0),    S(0, 0),   S(0, 0)   },
@@ -229,12 +234,7 @@ inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const 
 
 	bool isolated = true;
 
-	if (const auto &pieceAbove = board.data[pos.x][pos.y + 1];
-		piece.hasSameColor(pieceAbove) && pieceAbove.type == Piece::Type::PAWN)
-	{
-		value -= PAWN_DOUBLED;
-		isolated = false;
-	} else if (const auto &pieceBelow = board.data[pos.x][pos.y - 1];
+	if (const auto &pieceBelow = board.data[pos.x][pos.y - 1];
 		piece.hasSameColor(pieceBelow) && pieceBelow.type == Piece::Type::PAWN)
 	{
 		value -= PAWN_DOUBLED;
@@ -288,6 +288,20 @@ inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, cons
 	value += BISHOP_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 	value += BISHOP_MOBILITY[MoveGen<ALL>::generateBishopMoves(piece, pos, board).size()];
 
+	// Long Diagonal Bishop
+	if (pos.y - pos.x == 0 || pos.y - (7 - pos.x) == 0)
+	{
+		byte x1 = pos.x, y1 = pos.y;
+		if (std::min<byte>(x1, 7u - x1) > 2) return value;
+		for (byte i = std::min<byte>(x1, 7u - x1); i < 4; i++) {
+			if (board.data[x1][y1].type == Piece::Type::PAWN) return value;
+			if (x1 < 4) x1++; else x1--;
+			if (y1 < 4) y1++; else y1--;
+		}
+	}
+	
+	value.mg += 44;
+
 	return value;
 }
 
@@ -299,9 +313,27 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 	value += ROOK_MOBILITY[MoveGen<ALL>::generateRookMoves(piece, pos, board).size()];
 
 	if (piece.moved)
+	{
 		if ((piece.isWhite && !board.whiteCastled) ||
 			(!piece.isWhite && !board.blackCastled))
 			value.mg -= 10;
+	}
+
+	const auto rookOnFile = [&] {
+		byte open = 1;
+		for (byte y = 0; y < 8; y++)
+		{
+			const auto &other = board.data[pos.x][y];
+			if (other.type == Piece::Type::PAWN)
+			{
+				if (piece.hasSameColor(other))
+					return 0;
+				open = 0;
+			}
+		}
+		return open + 1;
+	}();
+	value += ROOK_ON_FILE[rookOnFile];
 
 	return value;
 }

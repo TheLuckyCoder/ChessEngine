@@ -37,12 +37,12 @@ const Piece &Board::operator[](const Pos &pos) const noexcept
 
 bool Board::operator<(const Board& other) const noexcept
 {
-	return value < other.value;
+	return score < other.score;
 }
 
 bool Board::operator>(const Board& other) const noexcept
 {
-	return value > other.value;
+	return score > other.score;
 }
 
 void Board::initDefaultBoard() noexcept
