@@ -34,3 +34,10 @@ public:
 		eg -= score;
 	}
 };
+
+constexpr Score operator*(Score score, const int rhs) noexcept
+{
+	score.mg *= rhs;
+	score.eg *= rhs;
+	return score;
+}

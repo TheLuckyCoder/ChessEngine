@@ -17,6 +17,7 @@ public:
 	Bitboard blackKingPos = 0;
 	State state = State::NONE;
 	int score = 0;
+	bool whiteToMove = true;
 
 	Board() = default;
 	Board(Board&&) = default;
@@ -65,10 +66,8 @@ public:
 class Cache final
 {
 public:
-	State state;
-	int score; 
 	short depth = 0;
-	int bestMoveScore;
+	int bestMoveScore, alpha, beta;
 };
 
 template<class T>
@@ -79,9 +78,9 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 	for (const auto &pair : pieces)
 	{
-		const auto &selectedPos = pair.first;
+		const auto &startPos = pair.first;
 		const auto &selectedPiece = pair.second;
-		const auto possibleMoves = selectedPiece.getPossibleMoves(selectedPos, *this);
+		const auto possibleMoves = selectedPiece.getPossibleMoves(startPos, *this);
 
 		for (const auto &destPos : possibleMoves)
 		{
@@ -89,7 +88,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 				continue;
 
 			Board board = *this;
-			BoardManager::movePieceInternal(selectedPos, destPos, board);
+			BoardManager::movePieceInternal(startPos, destPos, board);
 
 			if (isWhite && (board.state == State::WHITE_IN_CHESS || board.state == State::WINNER_BLACK))
 				continue;
@@ -97,7 +96,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 				continue;
 
 			if constexpr (std::is_same_v<T, Move>)
-				moves.emplace_back(selectedPos, destPos, std::move(board));
+				moves.emplace_back(startPos, destPos, std::move(board));
 			else if (std::is_same_v<T, Board>)
 				moves.push_back(std::move(board));
 		}

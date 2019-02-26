@@ -10,11 +10,13 @@
 
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
-HashTable<Cache> BoardManager::cacheTable(1); // 30000000
+HashTable<Cache> BoardManager::cacheTable(10000000); // 10000000
 std::vector<PosPair> BoardManager::movesHistory;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener)
 {
+	Hash::initHashKeys();
+
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
 	movesHistory.reserve(100);
@@ -62,6 +64,7 @@ Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const bool movedByPlayer)
 {
 	if (!selectedPos.isValid() || !destPos.isValid()) return;
+	m_Board.whiteToMove = !m_Board.whiteToMove;
 
 	StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
 	
@@ -108,6 +111,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool checkValid)
 {
+	board.whiteToMove = !board.whiteToMove;
 	auto &selectedPiece = board[selectedPos];
 	auto &destPiece = board[destPos];
 	bool recalculateHash = false;
@@ -131,34 +135,39 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		}
 	}
 
-	/*if (!recalculateHash)
+	recalculateHash = true;
+
+	if (!recalculateHash)
 	{
 		// Remove Selected Piece
 		board.hash ^= Hash::getHash(selectedPos, selectedPiece);
 
-		if (destPiece) // Remove Dest Piece
+		if (destPiece) // Remove Destination Piece if any
 			board.hash ^= Hash::getHash(destPos, destPiece);
 
 		// Add Selected Piece to Destination
 		selectedPiece.moved = true;
 		board.hash ^= Hash::getHash(destPos, selectedPiece);
+
+		// Flip the Side
+		board.hash ^= Hash::whiteToMove;
 	} else
-		selectedPiece.moved = true;*/
+		selectedPiece.moved = true;
 
 	destPiece = selectedPiece;
 	board[selectedPos] = Piece();
 
 	if (checkValid)
 	{
-		/*Cache cache;
+		Cache cache;
 		if (recalculateHash)
-			board.hash = Hash::compute(board);*/
+			board.hash = Hash::compute(board);
 
 		board.updateState();
 
 		/*if (cacheTable.get(board.hash, cache))
 		{
-			board.state = cache.state;
+			//board.state = cache.state;
 			board.score = cache.score;
 			return;
 		}*/
@@ -181,14 +190,15 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			break;
 		}
 
-		/*cache.state = board.state;
-		cache.score = board.score;
-		cacheTable.insert(board.hash, cache);*/
+		//cache.score = board.score;
+		//cacheTable.insert(board.hash, cache);
 	}
 }
 
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
+	cacheTable.checkSize();
+
     m_IsWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();

@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "../Stats.h"
-#include "../Settings.h"
+#include "../BoardManager.h"
 #include "../data/Enums.h"
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
@@ -72,7 +72,7 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 	}
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
-	int bestValue = VALUE_MIN;
+	int bestScore = VALUE_MIN;
 
 	if (Stats::enabled())
 		++Stats::nodesSearched;
@@ -81,20 +81,37 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 	{
 		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
 			return move.score;
-		const int moveValue = -negaMaxRecursive(move, depth - 1u, -beta, -alpha, !isWhite, extended);
 
-		if (moveValue > bestValue)
+		/*Cache cache;
+		int moveScore = VALUE_MIN;
+		const bool found = BoardManager::cacheTable.get(board.hash, cache);
+
+		if (found)
 		{
-			bestValue = moveValue;
-			if (moveValue > alpha)
-				alpha = moveValue;
+			if (cache.alpha > alpha) alpha = cache.alpha;
+			if (cache.beta > alpha) alpha = cache.beta;
+			if (cache.depth >= depth) moveScore = cache.bestMoveScore;
+		}
+
+		if (moveScore == VALUE_MIN)
+		{
+			moveScore = -negaMaxRecursive(move, depth - 1u, -beta, -alpha, !isWhite, extended);
+			BoardManager::cacheTable.insert(board.hash, { depth, moveScore, alpha, beta });
+		}*/
+		const int moveScore = -negaMaxRecursive(move, depth - 1, -beta, -alpha, !isWhite, extended);
+
+		if (moveScore > bestScore)
+		{
+			bestScore = moveScore;
+			if (moveScore > alpha)
+				alpha = moveScore;
 		}
 
 		if (alpha >= beta)
 			break;
 	}
 
-	return bestValue;
+	return bestScore;
 }
 
 int NegaMax::quiescence(const Board &board, const short depth, int alpha, const int beta, const bool isWhite)

@@ -7,17 +7,24 @@
 
 class Hash final
 {
-	using HashArray = std::array<std::array<std::array<std::array<std::uint64_t, 2>, 12>, 8>, 8>;
-	const static HashArray array;
+public:
+	using Key = std::uint64_t;
+
+private:
+	using HashArray = std::array<std::array<std::array<std::array<Key, 2>, 12>, 8>, 8>;
+	static HashArray array;
+	inline static bool initialized = false;
 
 public:
+	static Key whiteToMove;
+
 	Hash() = delete;
 
 private:
-	static HashArray getRandomHashArray();
 	static byte indexOf(const Piece &piece);
 
 public:
-	static std::uint64_t getHash(const Pos &pos, const Piece &piece);
-	static std::uint64_t compute(const Board &board);
+	static void initHashKeys();
+	static Key getHash(const Pos &pos, const Piece &piece);
+	static Key compute(const Board &board);
 };

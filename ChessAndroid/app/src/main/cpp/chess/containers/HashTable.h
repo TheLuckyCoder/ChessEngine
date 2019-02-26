@@ -50,10 +50,10 @@ class HashTable
 
 public:
 	explicit HashTable(const std::size_t tableSize)
-		: _tableSize(tableSize / 3)
+		: _tableSize(tableSize / 4)
 	{
 		_pointerTable = new HashNode<Key, Val> *[_tableSize]();
-		_values.reserve(_tableSize * 2);
+		_values.reserve(tableSize);
 	}
 
 	~HashTable()
@@ -103,9 +103,16 @@ public:
 		}
 	}
 
+	void checkSize()
+	{
+		std::unique_lock lock(_mutex);
+		if (_tableSize - _values.size() < 2000000u)
+			clear();
+	}
+
 	void clear()
 	{
-		memset(_pointerTable, nullptr, sizeof(_pointerTable) * _tableSize);
+		std::memset(_pointerTable, 0, sizeof _pointerTable);
 		_values.clear();
 	}
 };

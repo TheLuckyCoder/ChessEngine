@@ -21,27 +21,28 @@ namespace Player
 
 	bool hasNoValidMoves(const bool isWhite, const Board &board)
 	{
-		for (byte x = 0; x < 8; x++)
-			for (byte y = 0; y < 8; y++)
+		const auto pieces = getAllOwnedPieces(isWhite, board);
+
+		for (const auto &pair : pieces)
+		{
+			const auto &startPos = pair.first;
+			const auto &selectedPiece = pair.second;
+			const auto possibleMoves = selectedPiece.getPossibleMoves(startPos, board);
+
+			for (const auto &destPos : possibleMoves)
 			{
-				const Pos startPos(x, y);
-				const auto &piece = board[startPos];
-				const auto possibleMoves = piece.getPossibleMoves(startPos, board);
+				if (board[destPos].type == Piece::Type::KING)
+					continue;
 
-				for (const auto &destPos : possibleMoves)
-				{
-					if (board[destPos].type == Piece::Type::KING)
-						continue;
+				Board newBoard = board;
+				BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
 
-					Board newBoard = board;
-					BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
+				if (isInChess(isWhite, newBoard))
+					continue;
 
-					if (isInChess(isWhite, newBoard))
-						continue;
-
-					return false;
-				}
+				return false;
 			}
+		}
 
 		return true;
 	}

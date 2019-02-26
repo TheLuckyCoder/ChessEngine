@@ -4,24 +4,12 @@
 
 Board::Board(const Board &board) noexcept
 {
-	std::memcpy(&data, &board.data, sizeof(data));
-	hash = board.hash;
-	whiteCastled = board.whiteCastled;
-	blackCastled = board.blackCastled;
-	whiteKingPos = board.whiteKingPos;
-	blackKingPos = board.blackKingPos;
-	state = board.state;
+	std::memcpy(this, &board, sizeof Board);
 }
 
 Board &Board::operator=(const Board &other) noexcept
 {
-	std::memcpy(&data, &other.data, sizeof(data));
-	hash = other.hash;
-	whiteCastled = other.whiteCastled;
-	blackCastled = other.blackCastled;
-	whiteKingPos = other.whiteKingPos;
-	blackKingPos = other.blackKingPos;
-	state = other.state;
+	std::memcpy(this, &other, sizeof Board);
 	return *this;
 }
 

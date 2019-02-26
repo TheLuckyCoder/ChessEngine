@@ -21,10 +21,10 @@ private:
 	public:
 		IThreadTask() = default;
 		virtual ~IThreadTask() = default;
-		IThreadTask(const IThreadTask &rhs) = delete;
-		IThreadTask &operator=(const IThreadTask &rhs) = delete;
-		IThreadTask(IThreadTask &&other) = default;
-		IThreadTask &operator=(IThreadTask &&other) = default;
+		IThreadTask(const IThreadTask&) = delete;
+		IThreadTask &operator=(const IThreadTask&) = delete;
+		IThreadTask(IThreadTask&&) noexcept = default;
+		IThreadTask &operator=(IThreadTask&&) noexcept = default;
 
 		/**
 		 * Run the task.
@@ -42,8 +42,8 @@ private:
 		~ThreadTask() override = default;
 		ThreadTask(const ThreadTask &rhs) = delete;
 		ThreadTask &operator=(const ThreadTask &rhs) = delete;
-		ThreadTask(ThreadTask &&other) = default;
-		ThreadTask &operator=(ThreadTask &&other) = default;
+		ThreadTask(ThreadTask&&) noexcept = default;
+		ThreadTask &operator=(ThreadTask&&) noexcept = default;
 
 		/**
 		 * Run the task.
@@ -67,7 +67,7 @@ public:
 	{
 	public:
 		explicit TaskFuture(std::future<T> &&future)
-			:m_future{ std::move(future) } {}
+			: m_future{ std::move(future) } {}
 
 		TaskFuture(const TaskFuture &rhs) = delete;
 		TaskFuture &operator=(const TaskFuture &rhs) = delete;
