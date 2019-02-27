@@ -16,8 +16,9 @@ public:
 	Bitboard whiteKingPos = 0;
 	Bitboard blackKingPos = 0;
 	State state = State::NONE;
-	int score = 0;
 	bool whiteToMove = true;
+	int score = 0;
+	int npm = 0;
 
 	Board() = default;
 	Board(Board&&) = default;
@@ -35,6 +36,7 @@ public:
 
 	void initDefaultBoard() noexcept;
 	void updateState() noexcept;
+	Phase getPhase() const noexcept;
 	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const noexcept;
 
 	template<class T> // Move or Board

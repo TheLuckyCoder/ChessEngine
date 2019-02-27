@@ -2,8 +2,6 @@
 
 #include "MoveGen.h"
 
-#include <algorithm>
-
 #include "../data/Board.h"
 
 template<GenType T>
@@ -29,7 +27,7 @@ PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 	}
 
 	const auto handleCapture = [&piece, &moves](const Piece &other, const Pos &pos) {
-		if constexpr (T == ALL || T == CAPTURES)
+		if constexpr (T == ALL || T == CAPTURES || T == KING_DANGER)
 		{
 			if (other && !piece.hasSameColor(other))
 				moves.push_back(pos);
@@ -64,7 +62,7 @@ PosVector<8> MoveGen<T>::generateKnightMoves(const Piece &piece, const Pos &pos,
 		{
 			const auto &other = board[newPos];
 
-			if constexpr (T == ALL)
+			if constexpr (T == ALL || T == KING_DANGER)
 			{
 				if (!other || !piece.hasSameColor(other))
 					moves.push_back(newPos);
@@ -132,6 +130,21 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 				moves.push_back(newPos);
 				return true;
 			}
+		}
+		else if (T == KING_DANGER)
+		{
+			if (other)
+			{
+				if (!piece.hasSameColor(other))
+				{
+					moves.push_back(newPos);
+					if (other.type != Piece::Type::KING)
+						return true;
+				} else
+					return true;
+			}
+			else
+				moves.push_back(newPos);
 		}
 
 		return false;
@@ -215,6 +228,22 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 				return true;
 			}
 		}
+		else if (T == KING_DANGER)
+		{
+			if (other)
+			{
+				if (!piece.hasSameColor(other))
+				{
+					moves.push_back(newPos);
+					if (other.type != Piece::Type::KING)
+						return true;
+				}
+				else
+					return true;
+			}
+			else
+				moves.push_back(newPos);
+		}
 
 		return false;
 	};
@@ -267,54 +296,70 @@ PosVector<27> MoveGen<T>::generateQueenMoves(const Piece &piece, const Pos &pos,
 }
 
 template<GenType T>
-PosVector<8> MoveGen<T>::generateKingInitialMoves(Pos pos)
+PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<8> moves;
 
+	const auto handleCase = [&](const byte x, const byte y) {
+
+		const Pos newPos(x, y);
+		const auto &other = board[newPos];
+
+		if constexpr (T == ALL)
+		{
+			if (other)
+			{
+				if (!piece.hasSameColor(other))
+					moves.push_back(newPos);
+			} else
+				moves.push_back(newPos);
+		}
+		else if (T == CAPTURES)
+		{
+			if (other && !piece.hasSameColor(other))
+				moves.push_back(newPos);
+		}
+		else if (T == ATTACKS_DEFENSES)
+		{
+			if (other)
+				moves.push_back(newPos);
+		}
+		else if (T == KING_DANGER)
+			moves.emplace_back(x, y);
+	};
+
 	// Vertical and Horizontal
 	if (pos.x > 0)
-		moves.emplace_back(pos.x - 1, pos.y);
+		handleCase(pos.x - 1, pos.y);
 
 	if (pos.x < 7)
-		moves.emplace_back(pos.x + 1, pos.y);
+		handleCase(pos.x + 1, pos.y);
 
 	if (pos.y > 0)
-		moves.emplace_back(pos.x, pos.y - 1);
+		handleCase(pos.x, pos.y - 1);
 
 	if (pos.y < 7)
-		moves.emplace_back(pos.x, pos.y + 1);
+		handleCase(pos.x, pos.y + 1);
 
 	// Diagonal
 	if (pos.x < 7 && pos.y > 0)
-		moves.emplace_back(pos.x + 1, pos.y - 1);
+		handleCase(pos.x + 1, pos.y - 1);
 
 	if (pos.x < 7 && pos.y < 7)
-		moves.emplace_back(pos.x + 1, pos.y + 1);
+		handleCase(pos.x + 1, pos.y + 1);
 
 	if (pos.x > 0 && pos.y > 0)
-		moves.emplace_back(pos.x - 1, pos.y - 1);
+		handleCase(pos.x - 1, pos.y - 1);
 
 	if (pos.x > 0 && pos.y < 7)
-		moves.emplace_back(pos.x - 1, pos.y + 1);
+		handleCase(pos.x - 1, pos.y + 1);
 
-	return moves;
-}
-
-template<GenType T>
-PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, const Board &board)
-{
-	auto moves = generateKingInitialMoves(pos);
-
-	{
-		const auto iterator = std::remove_if(moves.begin(), moves.end(),
-			[&piece, &board](const Pos &pos) { return board[pos] && piece.hasSameColor(board[pos]); });
-		moves.erase(iterator, moves.end());
-	}
-
+	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER) return moves;
 	if (moves.empty()) return moves;
 
-	const auto opponentsMoves = MoveGen<ALL>::getAttacksPerColorBitboard(!piece.isWhite, board);
+	const auto opponentsMoves = MoveGen<KING_DANGER>::getAttacksPerColorBitboard(!piece.isWhite, board);
 
+	// Remove Attacked Positions
 	for (unsigned int i = 0; i < moves.size(); i++)
 	{
 		if (opponentsMoves & moves[i].toBitboard())
@@ -378,7 +423,7 @@ Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &b
 					moves = generateQueenMoves(piece, pos, board);
 					break;
 				case Piece::Type::KING:
-					moves = generateKingInitialMoves(pos);
+					moves = MoveGen<KING_DANGER>::generateKingMoves(piece, pos, board);
 					break;
 				case Piece::Type::NONE:
 					break;
@@ -424,7 +469,7 @@ PosMap MoveGen<T>::getAttacksPerColorMap(const bool white, const Board &board)
 					moves = generateQueenMoves(piece, pos, board);
 					break;
 				case Piece::Type::KING:
-					moves = generateKingInitialMoves(pos);
+					moves = MoveGen<KING_DANGER>::generateKingMoves(piece, pos, board);
 					break;
 				case Piece::Type::NONE:
 					break;

@@ -205,6 +205,7 @@ public:
 
 	// Capacity
 	constexpr bool empty() const noexcept { return _size == 0; }
+	constexpr bool full() const noexcept { return _size == N; }
 	constexpr size_type size() const noexcept { return _size; }
 	static constexpr size_type capacity() noexcept { return N; }
 

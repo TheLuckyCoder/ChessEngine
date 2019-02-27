@@ -10,7 +10,7 @@
 
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
-HashTable<Cache> BoardManager::cacheTable(10000000); // 10000000
+HashTable<Cache> BoardManager::cacheTable(10000000);
 std::vector<PosPair> BoardManager::movesHistory;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener)
@@ -95,6 +95,8 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 	selectedPiece.moved = true;
 
+	m_Board.npm -= Evaluation::getPieceValue(m_Board[destPos].type);
+
 	m_Board[destPos] = selectedPiece;
 	m_Board[selectedPos] = Piece();
 
@@ -153,6 +155,8 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		board.hash ^= Hash::whiteToMove;
 	} else
 		selectedPiece.moved = true;
+
+	board.npm -= Evaluation::getPieceValue(destPiece.type);
 
 	destPiece = selectedPiece;
 	board[selectedPos] = Piece();

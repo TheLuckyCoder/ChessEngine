@@ -1,3 +1,3 @@
 #pragma once
 
-using Bitboard = uint64_t;
+using Bitboard = std::uint64_t;

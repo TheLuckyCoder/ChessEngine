@@ -22,6 +22,9 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings 
 		++depth;
 	--depth;
 
+	if (board.getPhase() == Phase::ENDING)
+		++depth;
+
 	NegaMaxThreadPool::createThreadPool(threadCount);
 
 	Move bestMove = validMoves.front();

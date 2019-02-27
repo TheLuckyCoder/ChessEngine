@@ -5,8 +5,6 @@
 #include "../data/Enums.h"
 #include "../Stats.h"
 
-constexpr int MID_GAME_NPM_LIMIT = 15258, END_GAME_NPM_LIMIT = 3915;
-
 #define S Score
 
 constexpr S PAWN(136, 208);
@@ -127,7 +125,6 @@ int Evaluation::evaluate(const Board &board) noexcept
 		++Stats::boardsEvaluated;
 
 	Score score;
-	int npm = 0;
 
 	std::pair<short, short> bishopCount;
 
@@ -138,27 +135,9 @@ int Evaluation::evaluate(const Board &board) noexcept
 		for (byte y = 0; y < 8; y++)
 			if (const auto &piece = board.data[x][y]; piece && piece.type != Piece::Type::KING)
 			{
-				switch (piece.type)
+				if (piece.type == Piece::Type::BISHOP)
 				{
-					case Piece::Type::PAWN:
-						break;
-					case Piece::Type::KNIGHT:
-						npm += KNIGHT.mg;
-						break;
-					case Piece::Type::BISHOP:
-					{
-						if (piece.isWhite) bishopCount.first++; else bishopCount.second++;
-						npm += BISHOP.mg;
-						break;
-					}
-					case Piece::Type::ROOK:
-						npm += ROOK.mg;
-						break;
-					case Piece::Type::QUEEN:
-						npm += QUEEN.mg;
-						break;
-					default:
-						break;
+					if (piece.isWhite) bishopCount.first++; else bishopCount.second++;
 				}
 				const Pos pos(x, y);
 				const auto defendedValue = piece.isWhite ? whiteMoves[pos] : blackMoves[pos];
@@ -174,8 +153,7 @@ int Evaluation::evaluate(const Board &board) noexcept
 	if (bishopCount.second >= 2)
 		score -= 10;
 
-	npm = std::max(END_GAME_NPM_LIMIT, std::min(npm, MID_GAME_NPM_LIMIT));
-	const auto phase = static_cast<Phase>(((npm - END_GAME_NPM_LIMIT) * 128) / (MID_GAME_NPM_LIMIT - END_GAME_NPM_LIMIT));
+	
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -225,7 +203,7 @@ int Evaluation::evaluate(const Board &board) noexcept
 		score.eg -= 40;
 	}
 
-	if (phase == Phase::MIDDLE)
+	if (board.getPhase() == Phase::MIDDLE)
 		return score.mg;
 	return score.eg;
 }

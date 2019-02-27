@@ -7,7 +7,8 @@ enum GenType : unsigned char
 {
 	ALL,
 	CAPTURES,
-	ATTACKS_DEFENSES
+	ATTACKS_DEFENSES,
+	KING_DANGER
 };
 
 template<GenType T>
@@ -26,7 +27,6 @@ public:
 
 	static PosVector<27> generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board);
 
-	static PosVector<8> generateKingInitialMoves(Pos pos);
 	static PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 
 	static Bitboard getAttacksPerColorBitboard(bool white, const Board &board);

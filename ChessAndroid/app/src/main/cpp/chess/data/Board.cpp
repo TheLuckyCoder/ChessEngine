@@ -1,6 +1,7 @@
 #include "Board.h"
 
 #include "../algorithm/Hash.h"
+#include "../algorithm/Evaluation.h"
 
 Board &Board::operator=(const Board &other) noexcept
 {
@@ -32,8 +33,8 @@ void Board::initDefaultBoard() noexcept
 {
 	using Type = Piece::Type;
 
-	for (byte x = 0; x < 8; x++)
-		data[x].fill(Piece());
+	std::memset(&data, 0, sizeof(data));
+	npm = 0;
 
 	for (byte x = 0; x < 8; x++)
 		data[x][1] = Piece(Type::PAWN, true);
@@ -41,23 +42,29 @@ void Board::initDefaultBoard() noexcept
 	for (byte x = 0; x < 8; x++)
 		data[x][6] = Piece(Type::PAWN, false);
 
+	npm += 16 * Evaluation::getPieceValue(Type::PAWN);
+
 	data[1][0] = Piece(Type::KNIGHT, true);
 	data[6][0] = Piece(Type::KNIGHT, true);
 	data[1][7] = Piece(Type::KNIGHT, false);
 	data[6][7] = Piece(Type::KNIGHT, false);
+	npm += 4 * Evaluation::getPieceValue(Type::KNIGHT);
 
 	data[2][0] = Piece(Type::BISHOP, true);
 	data[5][0] = Piece(Type::BISHOP, true);
 	data[2][7] = Piece(Type::BISHOP, false);
 	data[5][7] = Piece(Type::BISHOP, false);
+	npm += 4 * Evaluation::getPieceValue(Type::BISHOP);
 
 	data[0][0] = Piece(Type::ROOK, true);
 	data[7][0] = Piece(Type::ROOK, true);
 	data[0][7] = Piece(Type::ROOK, false);
 	data[7][7] = Piece(Type::ROOK, false);
+	npm += 4 * Evaluation::getPieceValue(Type::ROOK);
 
 	data[3][0] = Piece(Type::QUEEN, true);
 	data[3][7] = Piece(Type::QUEEN, false);
+	npm += 2 * Evaluation::getPieceValue(Type::QUEEN);
 
 	data[4][0] = Piece(Type::KING, true);
 	data[4][7] = Piece(Type::KING, false);
@@ -88,6 +95,14 @@ void Board::updateState() noexcept
 		if (Player::hasNoValidMoves(false, *this))
 			state = blackInChess ? State::WINNER_WHITE : State::DRAW;
 	}
+}
+
+Phase Board::getPhase() const noexcept
+{
+	constexpr int midGameLimit = 15258, endGameLimit = 3915;
+
+	const int limit = std::max(endGameLimit, std::min(npm, midGameLimit));
+	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
 StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
