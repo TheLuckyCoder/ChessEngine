@@ -21,7 +21,7 @@ public:
 
 	Board() = default;
 	Board(Board&&) = default;
-	Board(const Board &board) noexcept;
+	Board(const Board &board) = default;
 	~Board() = default;
 
 	Board &operator=(Board&&) = default;

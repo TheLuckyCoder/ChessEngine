@@ -3,17 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="HardcodedText">
 
-    <item android:title="Debug">
-        <menu>
-            <item
-                android:id="@+id/action_redraw"
-                android:title="Redraw Board"/>
-            <item
-                android:id="@+id/action_debug_info"
-                android:title="Show/Hide Debug Info"/>
-        </menu>
-    </item>
-
     <item android:title="Load"
         android:enabled="false">
         <menu>

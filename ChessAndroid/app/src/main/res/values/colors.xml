@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="tile_white">#eeeed2</color>
+    <color name="tile_black">#769656</color>
+    <color name="tile_selected">#ef4fc3f7</color>
+    <color name="tile_possible">#4caf50</color>
+    <color name="tile_last_moved">#99fbc02d</color>
+</resources>

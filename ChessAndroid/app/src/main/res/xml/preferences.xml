@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="Appearance">
+
+        <com.jaredrummler.android.colorpicker.ColorPreference
+            android:defaultValue="@color/tile_white"
+            android:key="key_tile_white"
+            android:title="White Tile Color"
+            app:cpv_colorShape="square"
+            app:cpv_showAlphaSlider="false" />
+
+        <com.jaredrummler.android.colorpicker.ColorPreference
+            android:defaultValue="@color/tile_black"
+            android:key="key_tile_black"
+            android:title="Black Tile Color"
+            app:cpv_colorShape="square"
+            app:cpv_showAlphaSlider="false" />
+
+        <com.jaredrummler.android.colorpicker.ColorPreference
+            android:defaultValue="@color/tile_possible"
+            android:key="key_tile_possible"
+            android:title="Possible Tile Color"
+            app:cpv_colorShape="square"
+            app:cpv_showAlphaSlider="true" />
+
+        <com.jaredrummler.android.colorpicker.ColorPreference
+            android:defaultValue="@color/tile_selected"
+            android:key="key_tile_selected"
+            android:title="Selected Tile Color"
+            app:cpv_colorShape="square"
+            app:cpv_showAlphaSlider="true" />
+
+        <com.jaredrummler.android.colorpicker.ColorPreference
+            android:defaultValue="@color/tile_last_moved"
+            android:key="key_tile_last_moved"
+            android:title="Last Moved Tile Color"
+            app:cpv_colorShape="square"
+            app:cpv_showAlphaSlider="true" />
+
+        <Preference
+            android:key="key_reset_tile_colors"
+            android:title="Reset Tile Colors" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Algorithm Settings">
+
+        <EditTextPreference
+            android:inputType="number"
+            android:key="key_depth"
+            android:summary="Search Depth of the Algorithm"
+            android:title="Base Search Depth" />
+
+        <EditTextPreference
+            android:inputType="number"
+            android:key="key_threads"
+            android:summary="Worker Threads to be created"
+            android:title="Thread Count" />
+
+    </PreferenceCategory>
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="key_debug_info"
+        android:title="Enable Debug Info" />
+
+</PreferenceScreen>

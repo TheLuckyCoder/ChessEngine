@@ -2,14 +2,9 @@
 
 #include "../algorithm/Hash.h"
 
-Board::Board(const Board &board) noexcept
-{
-	std::memcpy(this, &board, sizeof Board);
-}
-
 Board &Board::operator=(const Board &other) noexcept
 {
-	std::memcpy(this, &other, sizeof Board);
+	std::memcpy(this, &other, sizeof(Board));
 	return *this;
 }
 

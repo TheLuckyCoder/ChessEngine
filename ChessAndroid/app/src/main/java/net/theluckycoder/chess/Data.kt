@@ -35,17 +35,18 @@ data class PosPair(
 )
 
 class Settings(
-    val baseSearchDepth: Int = 4,
+    baseSearchDepth: Int = 4,
     threadCount: Int = Runtime.getRuntime().availableProcessors() - 1
 ) {
 
+    val baseSearchDepth = if (baseSearchDepth < 0) 4 else baseSearchDepth
     val threadCount: Int
 
     init {
         val maxThreadCount = Runtime.getRuntime().availableProcessors()
         this.threadCount = when {
             threadCount > maxThreadCount -> maxThreadCount
-            threadCount < 1 -> 1
+            threadCount < 1 -> Runtime.getRuntime().availableProcessors() - 1
             else -> threadCount
         }
     }
