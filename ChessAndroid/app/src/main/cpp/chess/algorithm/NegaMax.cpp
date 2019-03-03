@@ -8,20 +8,19 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings &settings)
+PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings &settings, const bool firstMove)
 {
-	auto validMoves = board.listValidMoves<Move>(isWhite);
+	const auto validMoves = board.listValidMoves<Move>(isWhite);
 
 	for (const auto &move : validMoves)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
 			return PosPair(move.start, move.dest);
 
-	auto depth = settings.getBaseSearchDepth();
+	auto depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
+
 	if (validMoves.size() <= 15)
 		++depth;
-	--depth;
-
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
@@ -30,13 +29,28 @@ PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings 
 	Move bestMove = validMoves.front();
 	int alpha = VALUE_MIN;
 
-	while (!validMoves.empty())
-		processWork(validMoves, bestMove, alpha, std::min<unsigned>(threadCount, validMoves.size()), depth, isWhite);
+    {
+        auto validMovesCopy = validMoves;
+        while (!validMovesCopy.empty())
+            processWork(validMovesCopy, bestMove, alpha, std::min<unsigned>(threadCount, validMoves.size()), depth, isWhite);
+    }
 
-	return PosPair(bestMove.start, bestMove.dest);
+	/*if (firstMove)
+	{
+        std::random_device rd;
+        std::mt19937 mt(rd());
+        std::uniform_int_distribution<int> dist(1, std::min(4, static_cast<int>(bestMoves.size())));
+
+        int i = dist(mt);
+        const auto &best = bestMoves[bestMoves.size() - i];
+        return PosPair(best.start, best.dest);
+	}
+	return PosPair(bestMoves.back().start, bestMoves.back().dest);*/
+    return PosPair(bestMove.start, bestMove.dest);
 }
 
-void NegaMax::processWork(StackVector<Move, 150> &validMoves, Move &bestMove, int &alpha, const unsigned jobCount, const short depth, const bool isWhite)
+void NegaMax::processWork(StackVector<Move, 150> &validMoves, Move &bestMove, int &alpha, const unsigned jobCount,
+						  const short depth, const bool isWhite)
 {
 	std::vector<ThreadPool::TaskFuture<int>> futures;
 	futures.reserve(jobCount);
@@ -74,6 +88,10 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 			//return quiescence(board, 1, alpha, beta, isWhite);
 	}
 
+	auto cache = BoardManager::searchCache.get(board.key);
+	if (board.key == cache.key && cache.depth >= depth)
+	    return cache.score;
+
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
 	int bestScore = VALUE_MIN;
 
@@ -83,24 +101,8 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 	for (const auto &move : validMoves)
 	{
 		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
-			return move.score;
+			return VALUE_WINNER_WHITE;
 
-		/*Cache cache;
-		int moveScore = VALUE_MIN;
-		const bool found = BoardManager::cacheTable.get(board.hash, cache);
-
-		if (found)
-		{
-			if (cache.alpha > alpha) alpha = cache.alpha;
-			if (cache.beta > alpha) alpha = cache.beta;
-			if (cache.depth >= depth) moveScore = cache.bestMoveScore;
-		}
-
-		if (moveScore == VALUE_MIN)
-		{
-			moveScore = -negaMaxRecursive(move, depth - 1u, -beta, -alpha, !isWhite, extended);
-			BoardManager::cacheTable.insert(board.hash, { depth, moveScore, alpha, beta });
-		}*/
 		const int moveScore = -negaMaxRecursive(move, depth - 1, -beta, -alpha, !isWhite, extended);
 
 		if (moveScore > bestScore)
@@ -113,6 +115,11 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 		if (alpha >= beta)
 			break;
 	}
+
+	cache.key = board.key;
+	cache.depth = depth;
+	cache.score = bestScore;
+	//BoardManager::searchCache.insert(cache);
 
 	return bestScore;
 }
@@ -133,14 +140,15 @@ int NegaMax::quiescence(const Board &board, const short depth, int alpha, const 
 	for (const auto &move : validMoves)
 	{
 		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
-			return move.score;
-		const int moveValue = -quiescence(move, depth - 1u, -beta, -alpha, !isWhite);
+			return VALUE_WINNER_WHITE;
 
-		if (moveValue > bestValue)
+		const int moveScore = -quiescence(move, depth - 1, -beta, -alpha, !isWhite);
+
+		if (moveScore > bestValue)
 		{
-			bestValue = moveValue;
-			if (moveValue > alpha)
-				alpha = moveValue;
+			bestValue = moveScore;
+			if (moveScore > alpha)
+				alpha = moveScore;
 		}
 
 		if (alpha >= beta)

@@ -6,12 +6,10 @@
 
 #include "Settings.h"
 #include "containers/StackVector.h"
-#include "containers/HashTable.h"
+#include "containers/TranspositionTable.h"
 #include "data/Enums.h"
 #include "data/Player.h"
 #include "data/Piece.h"
-
-class Cache;
 
 class BoardManager final
 {
@@ -24,17 +22,18 @@ private:
 	inline static bool m_IsWorking = false;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
-	static std::vector<PosPair> movesHistory;
+	static std::vector<PosPair> m_MovesHistory;
 
 public:
-	static HashTable<Cache> cacheTable;
+    inline static TranspositionTable<SearchCache> searchCache{ 16777215 };
+    inline static TranspositionTable<EvaluationCache> evaluationCache{ 16777215 };
 	inline static bool isPlayerWhite = true;
 
 	static void initBoardManager(const PieceChangeListener &listener);
 	static void loadGame(std::vector<PosPair> &&moves);
 
 	static Board &getBoard() { return m_Board; }
-	static const auto &getMovesHistory() { return movesHistory; }
+	static const auto &getMovesHistory() { return m_MovesHistory; }
 	static bool isWorking() { return m_IsWorking; }
 	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);

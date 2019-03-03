@@ -10,7 +10,7 @@ class Board final
 {
 public:
 	std::array<std::array<Piece, 8>, 8> data;
-	std::uint64_t hash = 0;
+	std::uint64_t key = 0;
 	bool whiteCastled = false;
 	bool blackCastled = false;
 	Bitboard whiteKingPos = 0;
@@ -63,13 +63,6 @@ public:
 	{
 		return board.score > other.board.score;
 	}
-};
-
-class Cache final
-{
-public:
-	short depth = 0;
-	int bestMoveScore, alpha, beta;
 };
 
 template<class T>

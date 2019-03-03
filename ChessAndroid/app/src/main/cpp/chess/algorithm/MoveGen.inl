@@ -330,29 +330,29 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 
 	// Vertical and Horizontal
 	if (pos.x > 0)
-		handleCase(pos.x - 1, pos.y);
+		handleCase(pos.x - 1u, pos.y);
 
 	if (pos.x < 7)
-		handleCase(pos.x + 1, pos.y);
+		handleCase(pos.x + 1u, pos.y);
 
 	if (pos.y > 0)
-		handleCase(pos.x, pos.y - 1);
+		handleCase(pos.x, pos.y - 1u);
 
 	if (pos.y < 7)
-		handleCase(pos.x, pos.y + 1);
+		handleCase(pos.x, pos.y + 1u);
 
 	// Diagonal
 	if (pos.x < 7 && pos.y > 0)
-		handleCase(pos.x + 1, pos.y - 1);
+		handleCase(pos.x + 1u, pos.y - 1u);
 
 	if (pos.x < 7 && pos.y < 7)
-		handleCase(pos.x + 1, pos.y + 1);
+		handleCase(pos.x + 1u, pos.y + 1u);
 
 	if (pos.x > 0 && pos.y > 0)
-		handleCase(pos.x - 1, pos.y - 1);
+		handleCase(pos.x - 1u, pos.y - 1u);
 
 	if (pos.x > 0 && pos.y < 7)
-		handleCase(pos.x - 1, pos.y + 1);
+		handleCase(pos.x - 1u, pos.y + 1u);
 
 	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER) return moves;
 	if (moves.empty()) return moves;

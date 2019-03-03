@@ -121,6 +121,10 @@ constexpr S QUEEN_MOBILITY[] =
 
 int Evaluation::evaluate(const Board &board) noexcept
 {
+    const auto cache = BoardManager::evaluationCache.get(board.key);
+    if (cache.key == board.key)
+        //return cache.score;
+
 	if (Stats::enabled())
 		++Stats::boardsEvaluated;
 
@@ -152,8 +156,6 @@ int Evaluation::evaluate(const Board &board) noexcept
 		score += 10;
 	if (bishopCount.second >= 2)
 		score -= 10;
-
-	
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -203,9 +205,9 @@ int Evaluation::evaluate(const Board &board) noexcept
 		score.eg -= 40;
 	}
 
-	if (board.getPhase() == Phase::MIDDLE)
-		return score.mg;
-	return score.eg;
+	int result = board.getPhase() == Phase::MIDDLE ? score.mg : score.eg;
+	BoardManager::evaluationCache.insert({ board.key, result });
+	return result;
 }
 
 inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const PosMap &opponentsAttacks) noexcept
@@ -301,7 +303,7 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 	}
 
 	const auto rookOnPawn = [&] {
-		if ((piece.isWhite && pos.y < 5) || !piece.isWhite && pos.y > 4) return 0;
+		if ((piece.isWhite && pos.y < 5) || (!piece.isWhite && pos.y > 4)) return 0;
 		int count = 0;
 		for (byte x = 0; x < 8; x++)
 			if (const auto &other = board.data[x][pos.y];

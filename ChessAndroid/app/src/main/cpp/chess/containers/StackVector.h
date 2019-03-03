@@ -224,6 +224,7 @@ public:
 
 		reference ref = _array[_size - 1];
 		ref.~T();
+
 		new (&ref) T(std::forward<Args>(args)...);
 
 		return ref;

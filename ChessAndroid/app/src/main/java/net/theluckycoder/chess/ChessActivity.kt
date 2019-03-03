@@ -94,8 +94,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         }
 
         updatePieces()
-
-        preferences.settings = Settings()
     }
 
     override fun onStart() {

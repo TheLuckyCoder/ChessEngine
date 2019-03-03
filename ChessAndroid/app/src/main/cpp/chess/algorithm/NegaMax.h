@@ -11,10 +11,11 @@ class NegaMax final
 public:
 	NegaMax() = delete;
 
-	static PosPair negaMax(const Board &board, bool isWhite, const Settings &settings);
+	static PosPair negaMax(const Board &board, bool isWhite, const Settings &settings, bool firstMove);
 
 private:
-	static void processWork(StackVector<Move, 150> &validMoves, Move &bestMove, int &alpha, unsigned jobCount, short depth, bool isWhite);
+	static void processWork(StackVector<Move, 150> &validMoves, Move &bestMove, int &alpha, const unsigned int jobCount,
+                            const short depth, const bool isWhite);
 	static int negaMaxRecursive(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
 	static int quiescence(const Board &board, short depth, int alpha, int beta, bool isWhite);
 };

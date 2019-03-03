@@ -10,18 +10,17 @@
 
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
-HashTable<Cache> BoardManager::cacheTable(10000000);
-std::vector<PosPair> BoardManager::movesHistory;
+std::vector<PosPair> BoardManager::m_MovesHistory;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener)
 {
-	Hash::initHashKeys();
+    Hash::init();
 
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
-	movesHistory.reserve(100);
+	m_MovesHistory.reserve(100);
 
-	movesHistory.clear();
+	m_MovesHistory.clear();
 	Stats::resetStats();
 
 	// TODO: Support both sides again
@@ -35,14 +34,14 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 void BoardManager::loadGame(std::vector<PosPair> &&moves)
 {
 	m_Board.initDefaultBoard();
-	m_Board.hash = Hash::compute(m_Board);
+	m_Board.key = Hash::compute(m_Board);
 
 	for (const auto &move : moves)
 		movePieceInternal(move.first, move.second, m_Board, false);
 
 	m_Board.updateState();
 
-	movesHistory = std::move(moves);
+	m_MovesHistory = std::move(moves);
 	m_Listener(m_Board.state, true, {});
 }
 
@@ -102,10 +101,10 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 	m_Board.updateState();
 
-	movesHistory.emplace_back(selectedPos, destPos);
+	m_MovesHistory.emplace_back(selectedPos, destPos);
 	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
 
-	m_Board.hash = Hash::compute(m_Board);
+	m_Board.key = Hash::compute(m_Board);
 
 	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
 		m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
@@ -142,17 +141,17 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	if (!recalculateHash)
 	{
 		// Remove Selected Piece
-		board.hash ^= Hash::getHash(selectedPos, selectedPiece);
+		board.key ^= Hash::getHash(selectedPos, selectedPiece);
 
 		if (destPiece) // Remove Destination Piece if any
-			board.hash ^= Hash::getHash(destPos, destPiece);
+			board.key ^= Hash::getHash(destPos, destPiece);
 
 		// Add Selected Piece to Destination
 		selectedPiece.moved = true;
-		board.hash ^= Hash::getHash(destPos, selectedPiece);
+		board.key ^= Hash::getHash(destPos, selectedPiece);
 
 		// Flip the Side
-		board.hash ^= Hash::whiteToMove;
+		board.key ^= Hash::whiteToMove;
 	} else
 		selectedPiece.moved = true;
 
@@ -163,18 +162,10 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 	if (checkValid)
 	{
-		Cache cache;
 		if (recalculateHash)
-			board.hash = Hash::compute(board);
+			board.key = Hash::compute(board);
 
 		board.updateState();
-
-		/*if (cacheTable.get(board.hash, cache))
-		{
-			//board.state = cache.state;
-			board.score = cache.score;
-			return;
-		}*/
 
 		switch (board.state)
 		{
@@ -193,21 +184,17 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			board.score = 0;
 			break;
 		}
-
-		//cache.score = board.score;
-		//cacheTable.insert(board.hash, cache);
 	}
 }
 
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
-	cacheTable.checkSize();
-
     m_IsWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite, settings);
+	const bool firstMove = m_MovesHistory.empty() || m_MovesHistory.size() == 1;
+	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite, settings, firstMove);
 	movePiece(pair.first, pair.second, false);
 
 	Stats::stopTimer();
@@ -234,8 +221,8 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 {
 	if (destPos.x == 6)
 	{
+		constexpr byte startX = 7;
 		const auto y = selectedPos.y;
-		const byte startX = 7;
 
 		auto &rook = board.data[startX][y];
 		if (rook.type == Piece::Type::ROOK && king.hasSameColor(rook) && !rook.moved)
@@ -251,7 +238,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 	}
 	else if (destPos.x == 2)
 	{
-		const byte startX = 0;
+		constexpr byte startX = 0;
 		const auto y = selectedPos.y;
 
 		auto &rook = board.data[startX][y];

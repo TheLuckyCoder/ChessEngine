@@ -69,30 +69,32 @@ void Board::initDefaultBoard() noexcept
 	data[4][0] = Piece(Type::KING, true);
 	data[4][7] = Piece(Type::KING, false);
 
-	hash = Hash::compute(*this);
+	key = Hash::compute(*this);
 	whiteCastled = false;
 	blackCastled = false;
 	whiteKingPos = Pos(4, 0).toBitboard();
 	blackKingPos = Pos(4, 7).toBitboard();
 	state = State::NONE;
+	score = 0;
 }
 
 void Board::updateState() noexcept
 {
 	state = Player::onlyKingsLeft(*this) ? State::DRAW : State::NONE;
+	if (state != State::NONE) return;
 
 	const bool whiteInChess = Player::isInChess(true, *this);
 	if (whiteInChess)
 		state = State::WHITE_IN_CHESS;
 
-	if (Player::hasNoValidMoves(true, *this))
+	if (whiteToMove && Player::hasNoValidMoves(true, *this))
 		state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
 	else
 	{
 		const bool blackInChess = Player::isInChess(false, *this);
 		if (blackInChess)
 			state = State::BLACK_IN_CHESS;
-		if (Player::hasNoValidMoves(false, *this))
+		if (!whiteToMove && Player::hasNoValidMoves(false, *this))
 			state = blackInChess ? State::WINNER_WHITE : State::DRAW;
 	}
 }
