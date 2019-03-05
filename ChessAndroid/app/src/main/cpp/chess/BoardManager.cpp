@@ -136,7 +136,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		}
 	}
 
-	recalculateHash = true;
+	//recalculateHash = true;
 
 	if (!recalculateHash)
 	{
@@ -147,16 +147,15 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			board.key ^= Hash::getHash(destPos, destPiece);
 
 		// Add Selected Piece to Destination
-		selectedPiece.moved = true;
 		board.key ^= Hash::getHash(destPos, selectedPiece);
 
 		// Flip the Side
 		board.key ^= Hash::whiteToMove;
-	} else
-		selectedPiece.moved = true;
+	}
 
 	board.npm -= Evaluation::getPieceValue(destPiece.type);
 
+	selectedPiece.moved = true;
 	destPiece = selectedPiece;
 	board[selectedPos] = Piece();
 
@@ -194,10 +193,10 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::startTimer();
 
 	const bool firstMove = m_MovesHistory.empty() || m_MovesHistory.size() == 1;
-	const auto pair = NegaMax::negaMax(m_Board, !isPlayerWhite, settings, firstMove);
-	movePiece(pair.first, pair.second, false);
+	const auto pair = NegaMax::getBestMove(m_Board, !isPlayerWhite, settings, firstMove);
 
 	Stats::stopTimer();
+	movePiece(pair.first, pair.second, false);
 
 	m_WorkerThread.detach();
 	m_IsWorking = false;

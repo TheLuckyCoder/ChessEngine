@@ -10,6 +10,15 @@ enum class State : unsigned char
 	BLACK_IN_CHESS
 };
 
+enum class CastlingRights : unsigned char
+{
+	NONE,
+	CAN_CASTLE_KING,
+	CAN_CASTLE_QUEEN,
+	CAN_CASTLE_BOTH,
+	CASTLED
+};
+
 enum class Phase
 {
 	ENDING,

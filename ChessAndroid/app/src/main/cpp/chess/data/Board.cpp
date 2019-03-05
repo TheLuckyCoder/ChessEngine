@@ -80,23 +80,34 @@ void Board::initDefaultBoard() noexcept
 
 void Board::updateState() noexcept
 {
-	state = Player::onlyKingsLeft(*this) ? State::DRAW : State::NONE;
-	if (state != State::NONE) return;
+	state = State::NONE;
+	if (Player::onlyKingsLeft(*this))
+	{
+		state = State::DRAW;
+		return;
+	}
 
 	const bool whiteInChess = Player::isInChess(true, *this);
 	if (whiteInChess)
 		state = State::WHITE_IN_CHESS;
 
-	if (whiteToMove && Player::hasNoValidMoves(true, *this))
-		state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
-	else
+	if (whiteToMove)
 	{
-		const bool blackInChess = Player::isInChess(false, *this);
-		if (blackInChess)
-			state = State::BLACK_IN_CHESS;
-		if (!whiteToMove && Player::hasNoValidMoves(false, *this))
-			state = blackInChess ? State::WINNER_WHITE : State::DRAW;
+		if (Player::hasNoValidMoves(true, *this))
+		{
+			state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
+			return;
+		}
+		if (state == State::WHITE_IN_CHESS)
+			return;
 	}
+
+	const bool blackInChess = Player::isInChess(false, *this);
+	if (blackInChess)
+		state = State::BLACK_IN_CHESS;
+
+	if (!whiteToMove && Player::hasNoValidMoves(false, *this))
+		state = blackInChess ? State::WINNER_WHITE : State::DRAW;
 }
 
 Phase Board::getPhase() const noexcept

@@ -121,10 +121,6 @@ constexpr S QUEEN_MOBILITY[] =
 
 int Evaluation::evaluate(const Board &board) noexcept
 {
-    const auto cache = BoardManager::evaluationCache.get(board.key);
-    if (cache.key == board.key)
-        //return cache.score;
-
 	if (Stats::enabled())
 		++Stats::boardsEvaluated;
 
@@ -205,9 +201,7 @@ int Evaluation::evaluate(const Board &board) noexcept
 		score.eg -= 40;
 	}
 
-	int result = board.getPhase() == Phase::MIDDLE ? score.mg : score.eg;
-	BoardManager::evaluationCache.insert({ board.key, result });
-	return result;
+	return board.getPhase() == Phase::MIDDLE ? score.mg : score.eg;
 }
 
 inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const PosMap &opponentsAttacks) noexcept

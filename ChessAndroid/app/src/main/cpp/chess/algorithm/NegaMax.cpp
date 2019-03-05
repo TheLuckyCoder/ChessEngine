@@ -8,7 +8,7 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-PosPair NegaMax::negaMax(const Board &board, const bool isWhite, const Settings &settings, const bool firstMove)
+PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings, const bool firstMove)
 {
 	const auto validMoves = board.listValidMoves<Move>(isWhite);
 
@@ -57,7 +57,7 @@ void NegaMax::processWork(StackVector<Move, 150> &validMoves, Move &bestMove, in
 
 	for (int offset = 0; futures.size() != validMoves.size() && offset < static_cast<int>(jobCount); ++offset)
 		futures.emplace_back(NegaMaxThreadPool::submitJob<int>(
-			negaMaxRecursive, validMoves[offset].board, depth, VALUE_MIN, -alpha, !isWhite, false));
+			negaMax, validMoves[offset].board, depth, VALUE_MIN, -alpha, !isWhite, false));
 
 	for (auto i = 0u; i < futures.size(); ++i)
 	{
@@ -73,7 +73,7 @@ void NegaMax::processWork(StackVector<Move, 150> &validMoves, Move &bestMove, in
 	validMoves.erase(validMoves.begin(), validMoves.begin() + futures.size());
 }
 
-int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const int beta, const bool isWhite, bool extended)
+int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta, const bool isWhite, bool extended)
 {
 	if (depth == 0)
 	{
@@ -89,8 +89,8 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 	}
 
 	auto cache = BoardManager::searchCache.get(board.key);
-	if (board.key == cache.key && cache.depth >= depth)
-	    return cache.score;
+	if (board.key == cache.key && cache.depth == depth && board.score == cache.score)
+	    return cache.bestMove;
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
 	int bestScore = VALUE_MIN;
@@ -103,7 +103,7 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
 
-		const int moveScore = -negaMaxRecursive(move, depth - 1, -beta, -alpha, !isWhite, extended);
+		const int moveScore = -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended);
 
 		if (moveScore > bestScore)
 		{
@@ -117,9 +117,10 @@ int NegaMax::negaMaxRecursive(const Board &board, short depth, int alpha, const 
 	}
 
 	cache.key = board.key;
-	cache.depth = depth;
-	cache.score = bestScore;
-	//BoardManager::searchCache.insert(cache);
+	cache.depth = static_cast<byte>(depth);
+	cache.score = board.score;
+	cache.bestMove = bestScore;
+	BoardManager::searchCache.insert(cache);
 
 	return bestScore;
 }
