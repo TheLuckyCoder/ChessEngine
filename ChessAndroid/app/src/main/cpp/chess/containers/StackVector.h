@@ -232,7 +232,8 @@ public:
 
 	CPP14_CONSTEXPR iterator erase(iterator pos) noexcept
 	{
-		(*pos).~T();
+		if (std::is_destructible<T>::value)
+			(*pos).~T();
 		std::move(pos + 1, end(), pos);
 		--_size;
 

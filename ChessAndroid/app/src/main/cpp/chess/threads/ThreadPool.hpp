@@ -84,6 +84,11 @@ public:
 			return m_future.get();
 		}
 
+		bool ready(const std::size_t millis) const
+		{
+			return m_future.wait_for(std::chrono::milliseconds(millis)) == std::future_status::ready;
+		}
+
 
 	private:
 		std::future<T> m_future;

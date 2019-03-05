@@ -1,6 +1,7 @@
 #include "NegaMax.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "../Stats.h"
 #include "../BoardManager.h"
@@ -26,14 +27,7 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
 
 	NegaMaxThreadPool::createThreadPool(threadCount);
 
-	Move bestMove = validMoves.front();
-	int alpha = VALUE_MIN;
-
-    {
-        auto validMovesCopy = validMoves;
-        while (!validMovesCopy.empty())
-            processWork(validMovesCopy, bestMove, alpha, std::min<unsigned>(threadCount, validMoves.size()), depth, isWhite);
-    }
+	Move bestMove = processWork(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, isWhite);
 
 	/*if (firstMove)
 	{
@@ -49,28 +43,63 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
     return PosPair(bestMove.start, bestMove.dest);
 }
 
-void NegaMax::processWork(StackVector<Move, 150> &validMoves, Move &bestMove, int &alpha, const unsigned jobCount,
-						  const short depth, const bool isWhite)
+Move NegaMax::processWork(StackVector<Move, 150> validMoves, const unsigned jobCount, const short depth, const bool isWhite)
 {
-	std::vector<ThreadPool::TaskFuture<int>> futures;
+	struct Future
+	{
+		ThreadPool::TaskFuture<int> task;
+		Move move;
+
+		Future(ThreadPool::TaskFuture<int> &&task, Move move)
+			: task(std::move(task)), move(std::move(move)) {}
+	};
+
+	int alpha = VALUE_MIN;
+	Move bestMove = validMoves.front();
+	std::vector<Future> futures;
 	futures.reserve(jobCount);
 
-	for (int offset = 0; futures.size() != validMoves.size() && offset < static_cast<int>(jobCount); ++offset)
-		futures.emplace_back(NegaMaxThreadPool::submitJob<int>(
-			negaMax, validMoves[offset].board, depth, VALUE_MIN, -alpha, !isWhite, false));
+	const auto addWork = [&](const Move &move) {
+		futures.emplace_back(NegaMaxThreadPool::submitJob<int>(negaMax, move.board, depth, VALUE_MIN, -alpha, !isWhite, false), move);
+	};
 
-	for (auto i = 0u; i < futures.size(); ++i)
+	while (futures.size() != jobCount)
 	{
-		const int moveValue = -futures[i].get();
+		addWork(validMoves.front());
+		validMoves.pop_front();
+	}
 
-		if (moveValue > alpha)
+	while (!futures.empty())
+	{
+		auto iter = futures.begin();
+		while (iter != futures.end())
 		{
-			bestMove = validMoves[i];
-			alpha = moveValue;
+			auto &future = *iter;
+			if (future.task.ready(10))
+			{
+				const int moveScore = -future.task.get();
+				if (moveScore > alpha)
+				{
+					bestMove = future.move;
+					alpha = moveScore;
+				}
+
+				// Remove the Future
+				futures.erase(iter);
+
+				// Add more work if possible
+				if (!validMoves.empty())
+				{
+					addWork(validMoves.front());
+					validMoves.pop_front();
+				}
+			}
+			else
+				++iter;
 		}
 	}
 
-	validMoves.erase(validMoves.begin(), validMoves.begin() + futures.size());
+	return bestMove;
 }
 
 int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta, const bool isWhite, bool extended)
@@ -89,7 +118,7 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 	}
 
 	auto cache = BoardManager::searchCache.get(board.key);
-	if (board.key == cache.key && cache.depth == depth && board.score == cache.score)
+	if (board.key == cache.key && board.score == cache.score && cache.depth == depth)
 	    return cache.bestMove;
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);

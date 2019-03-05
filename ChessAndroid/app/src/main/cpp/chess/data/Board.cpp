@@ -74,6 +74,7 @@ void Board::initDefaultBoard() noexcept
 	blackCastled = false;
 	whiteKingPos = Pos(4, 0).toBitboard();
 	blackKingPos = Pos(4, 7).toBitboard();
+	whiteToMove = true;
 	state = State::NONE;
 	score = 0;
 }
