@@ -7,7 +7,8 @@ enum class State : unsigned char
 	WINNER_BLACK,
 	DRAW,
 	WHITE_IN_CHESS,
-	BLACK_IN_CHESS
+	BLACK_IN_CHESS,
+	INVALID = 10
 };
 
 enum class CastlingRights : unsigned char

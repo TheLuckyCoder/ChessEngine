@@ -85,6 +85,8 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 			Board board = *this;
 			BoardManager::movePieceInternal(startPos, destPos, board);
 
+			if (board.state == State::INVALID)
+				continue;
 			if (isWhite && (board.state == State::WHITE_IN_CHESS || board.state == State::WINNER_BLACK))
 				continue;
 			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
@@ -93,7 +95,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 			if constexpr (std::is_same_v<T, Move>)
 				moves.emplace_back(startPos, destPos, std::move(board));
 			else if (std::is_same_v<T, Board>)
-				moves.push_back(std::move(board));
+				moves.push_back(board);
 		}
 	}
 

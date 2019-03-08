@@ -232,6 +232,12 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         }
+
+        if (state == 1 || state == 4) {
+            // TODO: Mark the White King with red
+        } else {
+            // TODO: Mark the Black King with red
+        }
     }
 
     @Suppress("unused")

@@ -30,7 +30,18 @@ class PieceView(
         }
     }
 
+    private val blurPaint = Paint().apply {
+        maskFilter = BlurMaskFilter(8, BlurMaskFilter.Blur.OUTER)
+    }
+    var isInChess = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     override fun onDraw(canvas: Canvas) {
         canvas.drawBitmap(bitmap, 0f, 0f, null)
+        if (isInChess)
+            canvas.drawCircle(width / 2f, height / 2f, width / 3f, blurPaint)
     }
 }

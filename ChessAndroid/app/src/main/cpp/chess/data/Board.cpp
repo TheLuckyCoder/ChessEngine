@@ -89,26 +89,28 @@ void Board::updateState() noexcept
 	}
 
 	const bool whiteInChess = Player::isInChess(true, *this);
-	if (whiteInChess)
-		state = State::WHITE_IN_CHESS;
+    const bool blackInChess = Player::isInChess(false, *this);
+
+	if (whiteInChess && blackInChess)
+    {
+        state = State::INVALID;
+        return;
+    }
+	else if (whiteInChess)
+        state = State::WHITE_IN_CHESS;
+	else if (blackInChess)
+        state = State::BLACK_IN_CHESS;
 
 	if (whiteToMove)
 	{
 		if (Player::hasNoValidMoves(true, *this))
-		{
 			state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
-			return;
-		}
-		if (state == State::WHITE_IN_CHESS)
-			return;
 	}
-
-	const bool blackInChess = Player::isInChess(false, *this);
-	if (blackInChess)
-		state = State::BLACK_IN_CHESS;
-
-	if (!whiteToMove && Player::hasNoValidMoves(false, *this))
-		state = blackInChess ? State::WINNER_WHITE : State::DRAW;
+	else
+    {
+        if (Player::hasNoValidMoves(false, *this))
+            state = blackInChess ? State::WINNER_WHITE : State::DRAW;
+    }
 }
 
 Phase Board::getPhase() const noexcept
@@ -149,12 +151,14 @@ StackVector<Board, 50> Board::listValidCaptures(const bool isWhite) const noexce
 			Board board = *this;
 			BoardManager::movePieceInternal(startPos, destPos, board);
 
+			if (board.state == State::INVALID)
+                continue;
 			if (isWhite && (board.state == State::WHITE_IN_CHESS || board.state == State::WINNER_BLACK))
 				continue;
 			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
 				continue;
 
-			moves.push_back(std::move(board));
+			moves.push_back(board);
 		}
 	}
 
