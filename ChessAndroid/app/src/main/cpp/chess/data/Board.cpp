@@ -96,7 +96,7 @@ void Board::updateState() noexcept
         state = State::INVALID;
         return;
     }
-	else if (whiteInChess)
+	if (whiteInChess)
         state = State::WHITE_IN_CHESS;
 	else if (blackInChess)
         state = State::BLACK_IN_CHESS;

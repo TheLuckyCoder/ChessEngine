@@ -11,14 +11,14 @@ struct SearchCache
 {
     U64 key = 0;
     int score = 0, bestMove = 0;
-    byte depth = 0;
+    short depth = 0;
 };
 
 template<class T>
 class TranspositionTable final
 {
     const std::size_t m_Size;
-    T *m_Values = new T[m_Size];
+	T *m_Values = new T[m_Size];
     mutable std::shared_mutex m_Mutex;
 
 public:
@@ -42,7 +42,10 @@ public:
     void insert(const T &value) noexcept
     {
         std::unique_lock lock(m_Mutex);
-        m_Values[value.key % m_Size] = value;
+
+		auto &ref = m_Values[value.key % m_Size];
+		if (ref.depth <= value.depth)
+			ref = value;
     }
 
 	void clear() noexcept

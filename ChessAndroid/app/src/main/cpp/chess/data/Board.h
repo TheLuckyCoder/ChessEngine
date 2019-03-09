@@ -51,6 +51,8 @@ public:
 	Pos dest;
 	Board board;
 
+	Move() = default;
+
 	Move(const Pos start, const Pos dest, Board &&board)
 		: start(start), dest(dest), board(std::move(board)) {}
 

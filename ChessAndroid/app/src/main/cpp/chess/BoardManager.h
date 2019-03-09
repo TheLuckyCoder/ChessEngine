@@ -6,7 +6,6 @@
 
 #include "Settings.h"
 #include "containers/StackVector.h"
-#include "containers/TranspositionTable.h"
 #include "data/Enums.h"
 #include "data/Player.h"
 #include "data/Piece.h"
@@ -25,7 +24,6 @@ private:
 	static std::vector<PosPair> m_MovesHistory;
 
 public:
-    inline static TranspositionTable<SearchCache> searchCache{ 10000000 };
 	inline static bool isPlayerWhite = true;
 
 	static void initBoardManager(const PieceChangeListener &listener);

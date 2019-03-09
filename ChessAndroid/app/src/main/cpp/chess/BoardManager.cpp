@@ -180,6 +180,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			board.score = VALUE_WINNER_BLACK;
 			break;
 		case State::DRAW:
+		case State::INVALID:
 			board.score = 0;
 			break;
 		}

@@ -20,14 +20,16 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
 	auto depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
 
+	NegaMaxThreadPool::createThreadPool(threadCount);
+
 	if (validMoves.size() <= 15)
-		++depth;
+		depth += 2;
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
-	NegaMaxThreadPool::createThreadPool(threadCount);
+	const Move bestMove = negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, !isWhite);
 
-	Move bestMove = processWork(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, isWhite);
+	searchCache.clear();
 
 	/*if (firstMove)
 	{
@@ -43,61 +45,40 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
     return PosPair(bestMove.start, bestMove.dest);
 }
 
-Move NegaMax::processWork(StackVector<Move, 150> validMoves, const unsigned jobCount, const short depth, const bool isWhite)
+Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobCount, const short depth, const bool isWhite)
 {
-	struct Future
-	{
-		ThreadPool::TaskFuture<int> task;
-		Move move;
-
-		Future(ThreadPool::TaskFuture<int> &&task, Move move)
-			: task(std::move(task)), move(std::move(move)) {}
-	};
-
-	int alpha = VALUE_MIN;
-	Move bestMove = validMoves.front();
-	std::vector<Future> futures;
+	std::vector<ThreadPool::TaskFuture<void>> futures;
 	futures.reserve(jobCount);
 
-	const auto addWork = [&](const Move &move) {
-		futures.emplace_back(NegaMaxThreadPool::submitJob<int>(negaMax, move.board, depth, VALUE_MIN, -alpha, !isWhite, false), move);
+	std::mutex mutex;
+	Move bestMove = validMoves.front();
+	int alpha = VALUE_MIN;
+
+	const auto doWork = [&] {
+		mutex.lock();
+		while (!validMoves.empty())
+		{
+			const int bestScore = alpha;
+			const auto move = validMoves.front();
+			validMoves.pop_front();
+			mutex.unlock();
+
+			const int result = -negaMax(move.board, depth, VALUE_MIN, -bestScore, isWhite, false);
+			mutex.lock();
+			if (result > alpha)
+			{
+				alpha = result;
+				bestMove = move;
+			}
+		}
+		mutex.unlock();
 	};
 
-	while (futures.size() != jobCount)
-	{
-		addWork(validMoves.front());
-		validMoves.pop_front();
-	}
+	for (auto i = 0u; i != jobCount; i++)
+		futures.emplace_back(NegaMaxThreadPool::submitJob<void>(doWork));
 
-	while (!futures.empty())
-	{
-		auto iter = futures.begin();
-		while (iter != futures.end())
-		{
-			auto &future = *iter;
-			if (future.task.ready(10))
-			{
-				const int moveScore = -future.task.get();
-				if (moveScore > alpha)
-				{
-					bestMove = future.move;
-					alpha = moveScore;
-				}
-
-				// Remove the Future
-				futures.erase(iter);
-
-				// Add more work if possible
-				if (!validMoves.empty())
-				{
-					addWork(validMoves.front());
-					validMoves.pop_front();
-				}
-			}
-			else
-				++iter;
-		}
-	}
+	for (auto &future : futures)
+		future.get();
 
 	return bestMove;
 }
@@ -117,7 +98,7 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 			//return quiescence(board, 1, alpha, beta, isWhite);
 	}
 
-	auto cache = BoardManager::searchCache.get(board.key);
+	auto cache = searchCache.get(board.key);
 	if (board.key == cache.key && board.score == cache.score && cache.depth == depth)
 	    return cache.bestMove;
 
@@ -146,10 +127,10 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 	}
 
 	cache.key = board.key;
-	cache.depth = static_cast<byte>(depth);
+	cache.depth = depth;
 	cache.score = board.score;
 	cache.bestMove = bestScore;
-	BoardManager::searchCache.insert(cache);
+	searchCache.insert(cache);
 
 	return bestScore;
 }
@@ -162,7 +143,7 @@ int NegaMax::quiescence(const Board &board, const short depth, int alpha, const 
 	const auto validMoves = board.listValidCaptures(isWhite);
 	if (validMoves.empty())
 		return isWhite ? board.score : -board.score;
-	int bestValue = VALUE_MIN;
+	int bestScore = VALUE_MIN;
 
 	if (Stats::enabled())
 		++Stats::nodesSearched;
@@ -174,9 +155,9 @@ int NegaMax::quiescence(const Board &board, const short depth, int alpha, const 
 
 		const int moveScore = -quiescence(move, depth - 1, -beta, -alpha, !isWhite);
 
-		if (moveScore > bestValue)
+		if (moveScore > bestScore)
 		{
-			bestValue = moveScore;
+			bestScore = moveScore;
 			if (moveScore > alpha)
 				alpha = moveScore;
 		}
@@ -185,5 +166,5 @@ int NegaMax::quiescence(const Board &board, const short depth, int alpha, const 
 			break;
 	}
 
-	return bestValue;
+	return bestScore;
 }
