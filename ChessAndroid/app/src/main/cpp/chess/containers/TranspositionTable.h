@@ -15,7 +15,7 @@ struct SearchCache
 };
 
 template<class T>
-class TranspositionTable final
+class TranspositionTable
 {
     const std::size_t m_Size;
 	T *m_Values = new T[m_Size];
@@ -41,7 +41,7 @@ public:
 
     void insert(const T &value) noexcept
     {
-        std::unique_lock lock(m_Mutex);
+        std::lock_guard lock(m_Mutex);
 
 		auto &ref = m_Values[value.key % m_Size];
 		if (ref.depth <= value.depth)
@@ -50,7 +50,7 @@ public:
 
 	void clear() noexcept
 	{
-		std::unique_lock lock(m_Mutex);
+		std::lock_guard lock(m_Mutex);
 		std::memset(m_Values, 0, sizeof(T) * m_Size);
 	}
 };

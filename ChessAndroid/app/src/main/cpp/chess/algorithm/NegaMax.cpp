@@ -56,29 +56,32 @@ Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobC
 
 	const auto doWork = [&] {
 		mutex.lock();
+
 		while (!validMoves.empty())
 		{
+			// Make a copy of the needed variables while locked
 			const int bestScore = alpha;
 			const auto move = validMoves.front();
 			validMoves.pop_front();
-			mutex.unlock();
 
+			mutex.unlock(); // Process the result "asynchronously"
 			const int result = -negaMax(move.board, depth, VALUE_MIN, -bestScore, isWhite, false);
 			mutex.lock();
+
 			if (result > alpha)
 			{
 				alpha = result;
 				bestMove = move;
 			}
 		}
+
 		mutex.unlock();
 	};
 
 	for (auto i = 0u; i != jobCount; i++)
 		futures.emplace_back(NegaMaxThreadPool::submitJob<void>(doWork));
 
-	for (auto &future : futures)
-		future.get();
+	// This thread will wait for the execution of the Worker Threads to finish
 
 	return bestMove;
 }

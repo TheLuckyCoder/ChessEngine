@@ -140,6 +140,15 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         }
     }
 
+    private fun setKingInChess(white: Boolean) {
+        val drawable = if (white) R.drawable.w_king else R.drawable.b_king
+
+        pieces.forEach {
+            if (it.value.res == drawable)
+                it.value.isInChess = true
+        }
+    }
+
     private fun movePiece(view: TileView) {
         if (!selectedPos.isValid || !canMove) return
 
@@ -234,9 +243,14 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         }
 
         if (state == 1 || state == 4) {
-            // TODO: Mark the White King with red
+            setKingInChess(true)
+        } else if (state == 2 || state == 5) {
+            setKingInChess(false)
         } else {
-            // TODO: Mark the Black King with red
+            pieces.forEach {
+                if (it.value.isInChess)
+                    it.value.isInChess = false
+            }
         }
     }
 

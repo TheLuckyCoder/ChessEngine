@@ -4,7 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import net.theluckycoder.chess.ChessActivity
 import net.theluckycoder.chess.Native
 
@@ -12,7 +15,7 @@ import net.theluckycoder.chess.Native
 class PieceView(
     context: Context,
     isWhite: Boolean,
-    res: Int,
+    val res: Int,
     private val listener: ClickListener
 ) : CustomView(context) {
 
@@ -30,8 +33,9 @@ class PieceView(
         }
     }
 
-    private val blurPaint = Paint().apply {
-        maskFilter = BlurMaskFilter(8, BlurMaskFilter.Blur.OUTER)
+    private val redBlurPaint = Paint().apply {
+        color = Color.parseColor("#aadd0000")
+        maskFilter = BlurMaskFilter(9f, BlurMaskFilter.Blur.NORMAL)
     }
     var isInChess = false
         set(value) {
@@ -40,8 +44,8 @@ class PieceView(
         }
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawBitmap(bitmap, 0f, 0f, null)
         if (isInChess)
-            canvas.drawCircle(width / 2f, height / 2f, width / 3f, blurPaint)
+            canvas.drawCircle(width / 2f, height / 2f, width / 2.2f, redBlurPaint)
+        canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }

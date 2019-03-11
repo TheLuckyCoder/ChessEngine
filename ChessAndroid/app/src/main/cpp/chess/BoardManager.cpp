@@ -115,10 +115,16 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	board.whiteToMove = !board.whiteToMove;
 	auto &selectedPiece = board[selectedPos];
 	auto &destPiece = board[destPos];
-	bool recalculateHash = false;
+	bool hashHandled = false;
 
 	if (selectedPiece.type == Piece::Type::PAWN)
-		recalculateHash = movePawn(selectedPiece, destPos);
+	{
+		if (movePawn(selectedPiece, destPos))
+		{
+			Hash::promotePawn(board.key, selectedPos, destPos, selectedPiece.isWhite);
+			hashHandled = true;
+		}
+	}
 	else if (selectedPiece.type == Piece::Type::KING)
 	{
 		if (selectedPiece.isWhite)
@@ -126,32 +132,24 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		else
 			board.blackKingPos = destPos.toBitboard();
 
-		if (!selectedPiece.moved && moveKing(selectedPiece, selectedPos, destPos, board).first.isValid())
+		if (!selectedPiece.moved)
 		{
-			recalculateHash = true;
-			if (selectedPiece.isWhite)
-				board.whiteCastled = true;
-			else
-				board.blackCastled = true;
+			if (const auto posPair = moveKing(selectedPiece, selectedPos, destPos, board); posPair.first.isValid())
+			{
+				if (selectedPiece.isWhite)
+					board.whiteCastled = true;
+				else
+					board.blackCastled = true;
+
+				Hash::makeMove(board.key, posPair.first, posPair.second,
+						Piece(Piece::Type::ROOK, selectedPiece.isWhite), Piece());
+			}
 		}
 	}
 
-	//recalculateHash = true;
-
-	if (!recalculateHash)
-	{
-		// Remove Selected Piece
-		board.key ^= Hash::getHash(selectedPos, selectedPiece);
-
-		if (destPiece) // Remove Destination Piece if any
-			board.key ^= Hash::getHash(destPos, destPiece);
-
-		// Add Selected Piece to Destination
-		board.key ^= Hash::getHash(destPos, selectedPiece);
-
-		// Flip the Side
-		board.key ^= Hash::whiteToMove;
-	}
+	Hash::flipSide(board.key);
+	if (!hashHandled)
+		Hash::makeMove(board.key, selectedPos, destPos, selectedPiece, destPiece);
 
 	board.npm -= Evaluation::getPieceValue(destPiece.type);
 
@@ -161,9 +159,6 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 	if (checkValid)
 	{
-		if (recalculateHash)
-			board.key = Hash::compute(board);
-
 		board.updateState();
 
 		switch (board.state)
