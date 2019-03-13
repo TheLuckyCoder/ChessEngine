@@ -59,11 +59,17 @@
             android:summary="Worker Threads to be created"
             android:title="Thread Count" />
 
-    </PreferenceCategory>
+        <EditTextPreference
+            android:inputType="number"
+            android:key="key_cache_size"
+            android:summary="Specify the Size of the Transposition Table in Megabytes"
+            android:title="Cache Size" />
 
-    <SwitchPreference
-        android:defaultValue="false"
-        android:key="key_debug_info"
-        android:title="Enable Debug Info" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="key_debug_info"
+            android:title="Enable Debug Info" />
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

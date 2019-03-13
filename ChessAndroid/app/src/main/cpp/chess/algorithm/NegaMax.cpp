@@ -9,7 +9,9 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings, const bool firstMove)
+TranspositionTable<SearchCache> NegaMax::searchCache(200);
+
+PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<Move>(isWhite);
 
@@ -20,10 +22,11 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
 	auto depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
 
+	searchCache.setSize(settings.getCacheTableSizeMb());
 	NegaMaxThreadPool::createThreadPool(threadCount);
 
 	if (validMoves.size() <= 15)
-		depth += 2;
+		++depth;
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
@@ -31,17 +34,6 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
 
 	searchCache.clear();
 
-	/*if (firstMove)
-	{
-        std::random_device rd;
-        std::mt19937 mt(rd());
-        std::uniform_int_distribution<int> dist(1, std::min(4, static_cast<int>(bestMoves.size())));
-
-        int i = dist(mt);
-        const auto &best = bestMoves[bestMoves.size() - i];
-        return PosPair(best.start, best.dest);
-	}
-	return PosPair(bestMoves.back().start, bestMoves.back().dest);*/
     return PosPair(bestMove.start, bestMove.dest);
 }
 
@@ -81,7 +73,8 @@ Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobC
 	for (auto i = 0u; i != jobCount; i++)
 		futures.emplace_back(NegaMaxThreadPool::submitJob<void>(doWork));
 
-	// This thread will wait for the execution of the Worker Threads to finish
+	for (auto &future : futures)
+		future.get(); // Wait for the Search to finish
 
 	return bestMove;
 }
@@ -101,7 +94,7 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 			//return quiescence(board, 1, alpha, beta, isWhite);
 	}
 
-	auto cache = searchCache.get(board.key);
+	auto cache = searchCache[board.key];
 	if (board.key == cache.key && board.score == cache.score && cache.depth == depth)
 	    return cache.bestMove;
 

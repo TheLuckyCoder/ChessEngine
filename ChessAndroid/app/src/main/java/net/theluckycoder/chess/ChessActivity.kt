@@ -7,8 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Point
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -32,7 +30,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     private lateinit var frameLayout: FrameLayout
     private lateinit var pbLoading: ProgressBar
     private lateinit var tvDebug: TextView
-    private lateinit var tvState: TextView
     private val cells = HashMap<Pos, TileView>(64)
     val preferences = Preferences(this)
     val pieces = HashMap<Pos, PieceView>(32)
@@ -55,7 +52,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         frameLayout.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
         pbLoading = findViewById(R.id.pb_loading)
         tvDebug = findViewById(R.id.tv_debug)
-        tvState = findViewById(R.id.tv_state)
 
         findViewById<ImageView>(R.id.iv_settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -70,6 +66,12 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
                 }
                 .setNegativeButton(android.R.string.no, null)
                 .show()
+        }
+
+        if (preferences.firstStart) {
+            preferences.firstStart = false
+            // Set Default Settings
+            preferences.settings = Settings(4, Runtime.getRuntime().availableProcessors() - 1, 200)
         }
 
         val isPlayerWhite = Native.isPlayerWhite()
@@ -114,20 +116,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         } else if (view is TileView && view.state == TileView.State.POSSIBLE) {
             movePiece(view)
         }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Disable the Menu for now
-        //menuInflater.inflate(R.menu.main_menu, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.action_load_moves -> loadMoves()
-            R.id.action_save_moves -> saveMoves()
-        }
-        return super.onOptionsItemSelected(item)
     }
 
     //------------------------------------------------------------------------
@@ -222,23 +210,21 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             tvDebug.visibility = View.GONE
         }
 
-        tvState.text = when (state) {
-            1 -> "White has won!"
-            2 -> "Black has won!"
-            3 -> "Draw"
-            4 -> "White is in Chess!"
-            5 -> "Black is in Chess!"
-            else -> null
-        }
-
         pbLoading.visibility = if (Native.isWorking()) View.VISIBLE else View.INVISIBLE
 
         if (state in 1..3) {
             canMove = false
+            val message = when (state) {
+                1 -> "White has won!"
+                2 -> "Black has won!"
+                3 -> "Draw"
+                else -> null
+            }
 
             AlertDialog.Builder(this)
                 .setTitle("Game Over!")
                 .setPositiveButton(android.R.string.ok, null)
+                .setMessage(message)
                 .show()
         }
 

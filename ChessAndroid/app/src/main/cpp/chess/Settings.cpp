@@ -2,10 +2,12 @@
 
 #include <thread>
 
-Settings::Settings(const short baseSearchDepth, const unsigned int threadCount) noexcept
-    : baseSearchDepth(baseSearchDepth)
+Settings::Settings(const short baseSearchDepth,
+				   const unsigned int threadCount,
+				   const unsigned int cacheTableSizeMb) noexcept
+		: cacheTableSizeMb(cacheTableSizeMb)
 {
-    const auto maxThreads = std::thread::hardware_concurrency();
+	const auto maxThreads = std::thread::hardware_concurrency();
 
 	if (threadCount > maxThreads)
 		this->threadCount = maxThreads;
@@ -13,14 +15,21 @@ Settings::Settings(const short baseSearchDepth, const unsigned int threadCount) 
 		this->threadCount = 1u;
 	else
 		this->threadCount = threadCount;
+
+	this->baseSearchDepth = baseSearchDepth < 1 ? true : baseSearchDepth;
 }
 
 short Settings::getBaseSearchDepth() const noexcept
 {
-    return baseSearchDepth;
+	return baseSearchDepth;
 }
 
 unsigned int Settings::getThreadCount() const noexcept
 {
-    return threadCount;
+	return threadCount;
+}
+
+unsigned int Settings::getCacheTableSizeMb() const noexcept
+{
+	return cacheTableSizeMb;
 }

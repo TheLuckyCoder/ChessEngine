@@ -1,11 +1,14 @@
 package net.theluckycoder.chess
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.preference.PreferenceManager
 
 class Preferences(private val context: Context) {
 
     companion object {
+        const val KEY_FIRST_START = "key_first_start"
+
         const val KEY_TILE_WHITE = "key_tile_white"
         const val KEY_TILE_BLACK = "key_tile_black"
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
@@ -15,11 +18,16 @@ class Preferences(private val context: Context) {
 
         const val KEY_DEPTH = "key_depth"
         const val KEY_THREADS = "key_threads"
+        const val KEY_CACHE_SIZE = "key_cache_size"
         const val KEY_DEBUG_INFO = "key_debug_info"
     }
 
     private val manager
-        get() = PreferenceManager.getDefaultSharedPreferences(context)!!
+        get(): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+
+    var firstStart
+        get() = manager.getBoolean(KEY_FIRST_START, true)
+        set(value) = manager.edit().putBoolean(KEY_FIRST_START, value).apply()
 
     var whiteTileColor
         get() = manager.getInt(KEY_TILE_WHITE, getColor(context, R.color.tile_white))
@@ -43,13 +51,16 @@ class Preferences(private val context: Context) {
 
     var settings
         get() = Settings(
-            manager.getString(KEY_DEPTH, null)?.toIntOrNull() ?: 0,
-            manager.getString(KEY_THREADS, null)?.toIntOrNull() ?: 0
+            manager.getString(KEY_DEPTH, null)?.toIntOrNull() ?: 4,
+            manager.getString(KEY_THREADS, null)?.toIntOrNull()
+                ?: Runtime.getRuntime().availableProcessors() - 1,
+            manager.getString(KEY_CACHE_SIZE, null)?.toIntOrNull() ?: 200
         )
         set(value) {
             manager.edit()
                 .putString(KEY_DEPTH, value.baseSearchDepth.toString())
                 .putString(KEY_THREADS, value.threadCount.toString())
+                .putString(KEY_CACHE_SIZE, value.cacheSize.toString())
                 .apply()
         }
 

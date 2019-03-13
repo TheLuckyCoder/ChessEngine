@@ -11,12 +11,12 @@ class Settings;
 
 class NegaMax final
 {
-	inline static TranspositionTable<SearchCache> searchCache{ 10000000 };
+	static TranspositionTable<SearchCache> searchCache;
 
 public:
 	NegaMax() = delete;
 
-	static PosPair getBestMove(const Board &board, bool isWhite, const Settings &settings, bool firstMove);
+	static PosPair getBestMove(const Board &board, bool isWhite, const Settings &settings);
 
 private:
 	static Move negaMaxRoot(StackVector<Move, 150> validMoves, unsigned int jobCount, short depth, bool isWhite);

@@ -188,8 +188,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const bool firstMove = m_MovesHistory.empty() || m_MovesHistory.size() == 1;
-	const auto pair = NegaMax::getBestMove(m_Board, !isPlayerWhite, settings, firstMove);
+	const auto pair = NegaMax::getBestMove(m_Board, !isPlayerWhite, settings);
 
 	Stats::stopTimer();
 	movePiece(pair.first, pair.second, false);

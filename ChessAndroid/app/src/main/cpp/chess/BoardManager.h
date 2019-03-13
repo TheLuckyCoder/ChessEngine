@@ -16,7 +16,7 @@ public:
 	using PieceChangeListener = std::function<void(State state, bool shouldRedraw, const StackVector<PosPair, 2> &moved)>;
 
 private:
-	inline static Settings m_Settings = Settings(4u, std::thread::hardware_concurrency() - 1u);
+	inline static Settings m_Settings = Settings(4u, std::thread::hardware_concurrency() - 1u, 200);
 	inline static std::thread m_WorkerThread;
 	inline static bool m_IsWorking = false;
 	static PieceChangeListener m_Listener;

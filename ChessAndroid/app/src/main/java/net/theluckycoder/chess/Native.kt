@@ -26,13 +26,14 @@ object Native {
     external fun movePiece(selectedX: Byte, selectedY: Byte, destX: Byte, destY: Byte): Boolean
 
     @JvmStatic
-    fun setSettings(settings: Settings) = Native.setSettings(settings.baseSearchDepth, settings.threadCount)
-
-    @JvmStatic
     external fun enableStats(enabled: Boolean)
 
     @JvmStatic
-    external fun setSettings(baseSearchDepth: Int, threadCount: Int)
+    fun setSettings(settings: Settings) =
+        Native.setSettings(settings.baseSearchDepth, settings.threadCount, settings.cacheSize)
+
+    @JvmStatic
+    external fun setSettings(baseSearchDepth: Int, threadCount: Int, cacheSizeInMb: Int)
 
     @JvmStatic
     external fun loadMoves(moves: String)

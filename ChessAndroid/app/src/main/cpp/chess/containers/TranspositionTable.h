@@ -5,7 +5,6 @@
 #include <shared_mutex>
 
 using U64 = std::uint64_t;
-using byte = unsigned char;
 
 struct SearchCache
 {
@@ -14,26 +13,28 @@ struct SearchCache
     short depth = 0;
 };
 
-template<class T>
+template <class T>
 class TranspositionTable
 {
-    const std::size_t m_Size;
-	T *m_Values = new T[m_Size];
+    std::size_t m_Size;
+	T *m_Values = new T[m_Size]();
     mutable std::shared_mutex m_Mutex;
 
 public:
-    explicit TranspositionTable(const std::size_t size) noexcept
-        : m_Size(size)
-    {
-		std::memset(m_Values, 0, sizeof(T) * m_Size);
-    }
+    explicit TranspositionTable(const std::size_t sizeMb) noexcept
+        : m_Size((sizeMb << 20u) / sizeof(T)) {}
+
+	TranspositionTable(const TranspositionTable&) = delete;
+	TranspositionTable &operator=(const TranspositionTable&) = delete;
+	TranspositionTable(TranspositionTable&&) = delete;
+	TranspositionTable &operator=(TranspositionTable&&) = delete;
 
 	~TranspositionTable() noexcept
     {
 		delete[] m_Values;
     }
 
-    T get(const U64 key) const noexcept
+    T operator[](const U64 key) const noexcept
     {
         std::shared_lock lock(m_Mutex);
         return m_Values[key % m_Size];
@@ -47,6 +48,18 @@ public:
 		if (ref.depth <= value.depth)
 			ref = value;
     }
+
+	void setSize(const std::size_t sizeMb) noexcept(false)
+	{
+		const auto newSize = (sizeMb << 20u) / sizeof(T);
+
+		if (newSize == 0 || m_Size == newSize) return;
+
+		std::lock_guard lock(m_Mutex);
+		m_Size = newSize;
+		delete[] m_Values;
+		m_Values = new T[m_Size]();
+	}
 
 	void clear() noexcept
 	{

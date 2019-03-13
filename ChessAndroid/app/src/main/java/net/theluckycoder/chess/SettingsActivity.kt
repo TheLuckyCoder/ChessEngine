@@ -2,6 +2,7 @@ package net.theluckycoder.chess
 
 import android.os.Bundle
 import android.preference.PreferenceFragment
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 
 class SettingsActivity : AppCompatActivity() {
@@ -29,5 +30,12 @@ class SettingsActivity : AppCompatActivity() {
                 true
             }
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return if (item.itemId == android.R.id.home) {
+            onBackPressed()
+            true
+        } else super.onOptionsItemSelected(item)
     }
 }

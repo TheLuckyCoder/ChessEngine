@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/layout_board"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="18dp"
         android:indeterminateOnly="true"
         android:visibility="invisible" />
 
@@ -28,17 +28,6 @@
         android:textColor="@android:color/black"
         android:textSize="16sp"
         tools:text="Stats " />
-
-    <TextView
-        android:id="@+id/tv_state"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_below="@id/tv_debug"
-        android:gravity="center_horizontal"
-        android:textColor="@android:color/black"
-        android:textSize="17sp"
-        tools:text="Winner" />
 
     <Button
         android:id="@+id/btn_restart_game"
