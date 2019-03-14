@@ -35,7 +35,7 @@ class PieceView(
 
     private val redBlurPaint = Paint().apply {
         color = Color.parseColor("#aadd0000")
-        maskFilter = BlurMaskFilter(9f, BlurMaskFilter.Blur.NORMAL)
+        maskFilter = BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL)
     }
     var isInChess = false
         set(value) {
@@ -45,7 +45,7 @@ class PieceView(
 
     override fun onDraw(canvas: Canvas) {
         if (isInChess)
-            canvas.drawCircle(width / 2f, height / 2f, width / 2.2f, redBlurPaint)
+            canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, redBlurPaint)
         canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }

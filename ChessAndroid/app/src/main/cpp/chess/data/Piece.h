@@ -49,3 +49,8 @@ public:
 		return type != Type::NONE;
 	}
 };
+
+constexpr byte toByte(Piece::Type type)
+{
+	return static_cast<byte>(type);
+}

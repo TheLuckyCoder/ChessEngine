@@ -36,6 +36,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     private var selectedPos = Pos()
     private var showDebugInfo = false
     private var canMove = true
+    private var restarting = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -214,6 +215,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
         if (state in 1..3) {
             canMove = false
+            pbLoading.visibility = View.GONE
+
             val message = when (state) {
                 1 -> "White has won!"
                 2 -> "Black has won!"
@@ -276,18 +279,26 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     }
 
     private fun restartGame() {
-        thread {
-            while (Native.isWorking()) {
-                Thread.sleep(200)
-            }
-            runOnUiThread {
-                initBoard(true)
-                updatePieces()
-                clearCells(true)
-                updateState(0)
-                canMove = true
-            }
+        if (restarting) return
+        restarting = true
+
+        val restart = {
+            initBoard(true)
+            updatePieces()
+            clearCells(true)
+            updateState(0)
+            canMove = true
+            restarting = false
         }
+
+        if (Native.isWorking()) {
+            thread {
+                while (Native.isWorking()) {
+                    Thread.sleep(200)
+                }
+                runOnUiThread(restart)
+            }
+        } else restart()
     }
 
     // Saving/Loading

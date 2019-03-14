@@ -438,9 +438,9 @@ Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &b
 }
 
 template<GenType T>
-PosMap MoveGen<T>::getAttacksPerColorMap(const bool white, const Board &board)
+Attacks MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
 {
-	PosMap allMoves;
+	Attacks attacks{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -475,9 +475,14 @@ PosMap MoveGen<T>::getAttacksPerColorMap(const bool white, const Board &board)
 					break;
 				}
 				for (const auto &move : moves)
-					allMoves[move]++;
+				{
+					const byte square = move.toSquare();
+
+					attacks.map[square]++;
+					attacks.board[piece.isWhite][toByte(piece.type) - 1u] |= (1ull << square);
+				}
 			}
 		}
 
-	return allMoves;
+	return attacks;
 }

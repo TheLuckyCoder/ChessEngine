@@ -15,12 +15,12 @@ constexpr S QUEEN(2529, 2687);
 
 constexpr S PAWN_DOUBLED(11, 56);
 constexpr S PAWN_ISOLATED(5, 15);
-
 constexpr S ROOK_ON_PAWN(10, 28);
 constexpr S ROOK_ON_FILE[] =
 {
 	S(0, 0), S(18, 7), S(44, 20)
 };
+constexpr S THREAT_SAFE_PAWN(169, 99);
 
 constexpr S WEAK_QUEEN(51, 10);
 
@@ -59,36 +59,36 @@ constexpr S BISHOP_SQUARE[][4] =
 };
 constexpr S ROOK_SQUARE[][4] =
 {
-   { S(-24, -2),  S(-13, -6), S(-7, -3),  S(2,-2)  },
-   { S(-18, -10), S(-10, -7), S(-5, 1),   S(9, 0)  },
-   { S(-21, 10),  S(-7,  -4), S(3,  2),   S(-1,-2) },
-   { S(-13, -5),  S(-5,  2),  S(-4, -8),  S(-6, 8) },
-   { S(-24, -8),  S(-12, 5),  S(-1, 4),   S(6, -9) },
-   { S(-24, 3),   S(-4,  -2), S(4,  -10), S(10, 7) },
-   { S(-8,  1),   S(6,   2),  S(10, 17),  S(12,-8) },
-   { S(-22, 12),  S(-24, -6), S(-6, 13),  S(4, 7)  }
+	{ S(-24, -2),  S(-13, -6), S(-7, -3),  S(2,-2)  },
+	{ S(-18, -10), S(-10, -7), S(-5, 1),   S(9, 0)  },
+	{ S(-21, 10),  S(-7,  -4), S(3,  2),   S(-1,-2) },
+	{ S(-13, -5),  S(-5,  2),  S(-4, -8),  S(-6, 8) },
+	{ S(-24, -8),  S(-12, 5),  S(-1, 4),   S(6, -9) },
+	{ S(-24, 3),   S(-4,  -2), S(4,  -10), S(10, 7) },
+	{ S(-8,  1),   S(6,   2),  S(10, 17),  S(12,-8) },
+	{ S(-22, 12),  S(-24, -6), S(-6, 13),  S(4, 7)  }
 };
 constexpr S QUEEN_SQUARE[][4] =
 {
-   { S(3,  -69), S(-5, -57), S(-5, -47), S(4,  -26) },
-   { S(-3, -55), S(5,  -31), S(8,  -22), S(12, -4)  },
-   { S(-3, -39), S(6,  -18), S(13, -9),  S(7,  3)   },
-   { S(4,  -23), S(5,  -3),  S(9,  13),  S(8,  24)  },
-   { S(0,  -29), S(14, -6),  S(12, 9),   S(5,  21)  },
-   { S(-4, -38), S(10, -18), S(6,  -12), S(8,  1)   },
-   { S(-5, -50), S(6,  -27), S(10, -24), S(8,  -8)  },
-   { S(-2, -75), S(-2, -52), S(1,  -43), S(-2, -36) }
+	{ S(3,  -69), S(-5, -57), S(-5, -47), S(4,  -26) },
+	{ S(-3, -55), S(5,  -31), S(8,  -22), S(12, -4)  },
+	{ S(-3, -39), S(6,  -18), S(13, -9),  S(7,  3)   },
+	{ S(4,  -23), S(5,  -3),  S(9,  13),  S(8,  24)  },
+	{ S(0,  -29), S(14, -6),  S(12, 9),   S(5,  21)  },
+	{ S(-4, -38), S(10, -18), S(6,  -12), S(8,  1)   },
+	{ S(-5, -50), S(6,  -27), S(10, -24), S(8,  -8)  },
+	{ S(-2, -75), S(-2, -52), S(1,  -43), S(-2, -36) }
 };
 constexpr S KING_SQUARE[][4] =
 {
-   { S(272, 0),   S(325, 41),  S(273, 80),  S(190, 93)  },
-   { S(277, 57),  S(305, 98),  S(241, 138), S(183, 131) },
-   { S(198, 86),  S(253, 138), S(168, 165), S(120, 173) },
-   { S(169, 103), S(191, 152), S(136, 168), S(108, 169) },
-   { S(145, 98),  S(176, 166), S(112, 197), S(69,  194) },
-   { S(122, 87),  S(159, 164), S(85,  174), S(36,  189) },
-   { S(87,  40),  S(120, 99),  S(64,  128), S(25,  141) },
-   { S(64,  5),   S(87,  60),  S(49,  75),  S(0,   75)  }
+	{ S(272, 0),   S(325, 41),  S(273, 80),  S(190, 93)  },
+	{ S(277, 57),  S(305, 98),  S(241, 138), S(183, 131) },
+	{ S(198, 86),  S(253, 138), S(168, 165), S(120, 173) },
+	{ S(169, 103), S(191, 152), S(136, 168), S(108, 169) },
+	{ S(145, 98),  S(176, 166), S(112, 197), S(69,  194) },
+	{ S(122, 87),  S(159, 164), S(85,  174), S(36,  189) },
+	{ S(87,  40),  S(120, 99),  S(64,  128), S(25,  141) },
+	{ S(64,  5),   S(87,  60),  S(49,  75),  S(0,   75)  }
 };
 
 constexpr S KNIGHT_MOBILITY[] =
@@ -128,23 +128,24 @@ int Evaluation::evaluate(const Board &board) noexcept
 
 	std::pair<short, short> bishopCount;
 
-	const auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColorMap(true, board);
-	const auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColorMap(false, board);
+	const auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(true, board);
+	const auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(false, board);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			if (const auto &piece = board.data[x][y]; piece && piece.type != Piece::Type::KING)
+			if (const auto &piece = board.data[x][y];
+				piece && piece.type != Piece::Type::PAWN && piece.type != Piece::Type::KING)
 			{
 				if (piece.type == Piece::Type::BISHOP)
 				{
 					if (piece.isWhite) bishopCount.first++; else bishopCount.second++;
 				}
 				const Pos pos(x, y);
-				const auto defendedValue = piece.isWhite ? whiteMoves[pos] : blackMoves[pos];
-				const auto attackedValue = piece.isWhite ? blackMoves[pos] : whiteMoves[pos];
+				const auto defendedValue = piece.isWhite ? whiteMoves.map[pos] : blackMoves.map[pos];
+				const auto attackedValue = piece.isWhite ? blackMoves.map[pos] : whiteMoves.map[pos];
 
 				if (defendedValue < attackedValue)
-					score -= (attackedValue - defendedValue) * 10;
+					score -= (attackedValue - defendedValue) * 12;
 			}
 
 	// 2 Bishops receive a bonus
@@ -158,12 +159,12 @@ int Evaluation::evaluate(const Board &board) noexcept
 			if (const auto &piece = board.data[x][y]; piece)
 			{
 				const Score points = [&] {
-					auto &opponentsAttacks = piece.isWhite ? blackMoves : whiteMoves;
 					const Pos pos(x, y);
 					switch (piece.type)
 					{
 					case Piece::Type::PAWN:
-						return evaluatePawn(piece, pos, board, opponentsAttacks);
+						return evaluatePawn(piece, pos, board, piece.isWhite ? whiteMoves : blackMoves,
+								piece.isWhite ? blackMoves : whiteMoves);
 					case Piece::Type::KNIGHT:
 						return evaluateKnight(piece, pos, board);
 					case Piece::Type::BISHOP:
@@ -204,7 +205,7 @@ int Evaluation::evaluate(const Board &board) noexcept
 	return board.getPhase() == Phase::MIDDLE ? score.mg : score.eg;
 }
 
-inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const PosMap &opponentsAttacks) noexcept
+inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const Attacks &ourAttacks, const Attacks &theirAttacks) noexcept
 {
 	Score value = PAWN;
 	value += PAWN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
@@ -242,8 +243,26 @@ inline Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const 
 	if (isolated)
 		value -= PAWN_ISOLATED;
 
-	if (((piece.isWhite && pos.y == 6) || (!piece.isWhite && pos.y == 1)) && opponentsAttacks[pos] == 0)
+	if (((piece.isWhite && pos.y == 6) || (!piece.isWhite && pos.y == 1)) && theirAttacks.map[pos] == 0)
 		value += 100;
+
+	// Threat Safe Pawn
+	if (ourAttacks.map[pos] && theirAttacks.map[pos] == 0) // check if the pawn is safe
+	{
+		const auto isEnemyPiece = [&] (const Pos &newPos) {
+			if (!newPos.isValid()) return false;
+
+			const Piece &other = board[newPos];
+			const byte type = toByte(other.type);
+			return other.isWhite != piece.isWhite && type > toByte(Piece::Type::PAWN) && type < toByte(Piece::Type::KING);
+		};
+
+		byte i = 0;
+		if (isEnemyPiece(Pos(pos, -1, 1))) i++;
+		if (isEnemyPiece(Pos(pos, 1, 1 ))) i++;
+
+		value += THREAT_SAFE_PAWN * i;
+	}
 
 	return value;
 }

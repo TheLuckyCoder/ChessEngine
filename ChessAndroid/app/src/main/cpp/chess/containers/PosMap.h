@@ -1,5 +1,7 @@
 #pragma once
 
+using byte = unsigned char;
+
 class Pos;
 
 class PosMap
@@ -7,6 +9,15 @@ class PosMap
     unsigned char _array[64]{};
 
 public:
+    constexpr unsigned char &operator[](const byte square) noexcept
+    {
+        return _array[square];
+    }
+
+    constexpr const unsigned char &operator[](const byte square) const noexcept
+    {
+        return _array[square];
+    }
 
     constexpr unsigned char &operator[](const Pos &pos) noexcept
     {
@@ -17,4 +28,11 @@ public:
     {
         return _array[pos.toSquare()];
     }
+};
+
+class Attacks
+{
+public:
+    Bitboard board[2][6]{}; // COLOR and PIECE TYPES
+    PosMap map;
 };
