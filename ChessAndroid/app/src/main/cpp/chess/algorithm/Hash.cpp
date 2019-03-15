@@ -70,10 +70,10 @@ void Hash::makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const 
 void Hash::promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, const bool isWhite)
 {
 	// Remove the Pawn
-	key ^= array[startPos.x][startPos.y][indexOf(Piece(Piece::Type::PAWN, isWhite))];
+	key ^= array[startPos.x][startPos.y][indexOf(Piece(Type::PAWN, isWhite))];
 
 	// Add Queen
-	key ^= array[destPos.x][destPos.y][indexOf(Piece(Piece::Type::QUEEN, isWhite))];
+	key ^= array[destPos.x][destPos.y][indexOf(Piece(Type::QUEEN, isWhite))];
 }
 
 void Hash::flipSide(U64 &key)

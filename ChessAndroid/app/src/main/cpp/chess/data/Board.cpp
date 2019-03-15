@@ -31,8 +31,6 @@ bool Board::operator>(const Board& other) const noexcept
 
 void Board::initDefaultBoard() noexcept
 {
-	using Type = Piece::Type;
-
 	std::memset(&data, 0, sizeof(data));
 	npm = 0;
 
@@ -145,7 +143,7 @@ StackVector<Board, 50> Board::listValidCaptures(const bool isWhite) const noexce
 
 		for (const auto &destPos : possibleMoves)
 		{
-			if (const auto &piece = (*this)[destPos]; !piece || piece.type == Piece::Type::KING)
+			if (const auto &piece = (*this)[destPos]; !piece || piece.type == Type::KING)
 				continue;
 
 			Board board = *this;

@@ -29,10 +29,3 @@ public:
         return _array[pos.toSquare()];
     }
 };
-
-class Attacks
-{
-public:
-    Bitboard board[2][6]{}; // COLOR and PIECE TYPES
-    PosMap map;
-};

@@ -5,21 +5,21 @@
 
 class Board;
 
+enum Type : unsigned char
+{
+	NONE = 0,
+	PAWN = 1,
+	KNIGHT = 2,
+	BISHOP = 3,
+	ROOK = 4,
+	QUEEN = 5,
+	KING = 6
+};
+
 class Piece final
 {
 public:
 	using MaxMovesVector = StackVector<Pos, 27>;
-
-	enum class Type : unsigned char
-	{
-		NONE = 0,
-		PAWN = 1,
-		KNIGHT = 2,
-		BISHOP = 3,
-		ROOK = 4,
-		QUEEN = 5,
-		KING = 6
-	};
 
 	Type type;
 	bool isWhite;
@@ -49,8 +49,3 @@ public:
 		return type != Type::NONE;
 	}
 };
-
-constexpr byte toByte(Piece::Type type)
-{
-	return static_cast<byte>(type);
-}

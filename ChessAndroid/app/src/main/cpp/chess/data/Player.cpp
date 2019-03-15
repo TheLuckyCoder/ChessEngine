@@ -13,7 +13,7 @@ namespace Player
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
 				if (const auto &piece = board.data[x][y];
-					piece && piece.type != Piece::Type::KING)
+					piece && piece.type != Type::KING)
 					return false;
 
 		return true;
@@ -31,7 +31,7 @@ namespace Player
 
 			for (const auto &destPos : possibleMoves)
 			{
-				if (board[destPos].type == Piece::Type::KING)
+				if (board[destPos].type == Type::KING)
 					continue;
 
 				Board newBoard = board;

@@ -138,7 +138,7 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 				if (!piece.hasSameColor(other))
 				{
 					moves.push_back(newPos);
-					if (other.type != Piece::Type::KING)
+					if (other.type != Type::KING)
 						return true;
 				} else
 					return true;
@@ -235,7 +235,7 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 				if (!piece.hasSameColor(other))
 				{
 					moves.push_back(newPos);
-					if (other.type != Piece::Type::KING)
+					if (other.type != Type::KING)
 						return true;
 				}
 				else
@@ -380,12 +380,12 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 
 		if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
 			if (const auto &other = board.data[7][y];
-				other.type == Piece::Type::ROOK && piece.hasSameColor(other) && !other.moved)
+				other.type == Type::ROOK && piece.hasSameColor(other) && !other.moved)
 				moves.emplace_back(6, pos.y);
 
 		if (isEmptyAndChessFree(3) && isEmptyAndChessFree(2) && !board.data[1][y])
 			if (const auto &other = board.data[0][y];
-				other.type == Piece::Type::ROOK && piece.hasSameColor(other) && !other.moved)
+				other.type == Type::ROOK && piece.hasSameColor(other) && !other.moved)
 				moves.emplace_back(2, pos.y);
 	}
 
@@ -407,25 +407,25 @@ Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &b
 				Piece::MaxMovesVector moves;
 				switch (piece.type)
 				{
-				case Piece::Type::PAWN:
+				case Type::PAWN:
 					moves = MoveGen<CAPTURES>::generatePawnMoves(piece, pos, board);
 					break;
-				case Piece::Type::KNIGHT:
+				case Type::KNIGHT:
 					moves = generateKnightMoves(piece, pos, board);
 					break;
-				case Piece::Type::BISHOP:
+				case Type::BISHOP:
 					moves = generateBishopMoves(piece, pos, board);
 					break;
-				case Piece::Type::ROOK:
+				case Type::ROOK:
 					moves = generateRookMoves(piece, pos, board);
 					break;
-				case Piece::Type::QUEEN:
+				case Type::QUEEN:
 					moves = generateQueenMoves(piece, pos, board);
 					break;
-				case Piece::Type::KING:
+				case Type::KING:
 					moves = MoveGen<KING_DANGER>::generateKingMoves(piece, pos, board);
 					break;
-				case Piece::Type::NONE:
+				case Type::NONE:
 					break;
 				}
 
@@ -440,7 +440,7 @@ Bitboard MoveGen<T>::getAttacksPerColorBitboard(const bool white, const Board &b
 template<GenType T>
 Attacks MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
 {
-	Attacks attacks{};
+	Attacks attacks;
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -453,33 +453,34 @@ Attacks MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
 				Piece::MaxMovesVector moves;
 				switch (piece.type)
 				{
-				case Piece::Type::PAWN:
+				case Type::PAWN:
 					moves = MoveGen<CAPTURES>::generatePawnMoves(piece, pos, board);
 					break;
-				case Piece::Type::KNIGHT:
+				case Type::KNIGHT:
 					moves = generateKnightMoves(piece, pos, board);
 					break;
-				case Piece::Type::BISHOP:
+				case Type::BISHOP:
 					moves = generateBishopMoves(piece, pos, board);
 					break;
-				case Piece::Type::ROOK:
+				case Type::ROOK:
 					moves = generateRookMoves(piece, pos, board);
 					break;
-				case Piece::Type::QUEEN:
+				case Type::QUEEN:
 					moves = generateQueenMoves(piece, pos, board);
 					break;
-				case Piece::Type::KING:
+				case Type::KING:
 					moves = MoveGen<KING_DANGER>::generateKingMoves(piece, pos, board);
 					break;
-				case Piece::Type::NONE:
+				case Type::NONE:
 					break;
 				}
+
 				for (const auto &move : moves)
 				{
 					const byte square = move.toSquare();
 
 					attacks.map[square]++;
-					attacks.board[piece.isWhite][toByte(piece.type) - 1u] |= (1ull << square);
+					attacks.board[piece.isWhite][piece.type - 1u] |= (1ull << square);
 				}
 			}
 		}

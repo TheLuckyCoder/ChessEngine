@@ -14,13 +14,13 @@ public:
 	Evaluation() = delete;
 
 	static int evaluate(const Board &board) noexcept;
-	static short getPieceValue(Piece::Type type) noexcept
+	static short getPieceValue(Type type) noexcept
 	{
-		return PIECE_VALUE[toByte(type)];
+		return PIECE_VALUE[type];
 	}
 
 private:
-	inline static Score evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const Attacks &ourAttacks, const Attacks &theirAttacks) noexcept;
+	static Score evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const Attacks &ourAttacks, const Attacks &theirAttacks) noexcept;
 	inline static Score evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept;
 	inline static Score evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept;
 	inline static Score evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept;

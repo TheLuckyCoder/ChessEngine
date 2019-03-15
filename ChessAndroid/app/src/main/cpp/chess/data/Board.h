@@ -81,7 +81,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 		for (const auto &destPos : possibleMoves)
 		{
-			if ((*this)[destPos].type == Piece::Type::KING)
+			if ((*this)[destPos].type == Type::KING)
 				continue;
 
 			Board board = *this;

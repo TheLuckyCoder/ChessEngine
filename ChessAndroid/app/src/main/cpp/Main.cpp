@@ -155,7 +155,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jclass __unused type
 	for (const auto &it : pieces)
 	{
 		const Pos &pos = it.first;
-		auto pieceType = static_cast<jbyte>(to_underlying(it.second.type));
+		auto pieceType = static_cast<jbyte>(it.second.type);
 		if (!it.second.isWhite)
 			pieceType += 6;
 

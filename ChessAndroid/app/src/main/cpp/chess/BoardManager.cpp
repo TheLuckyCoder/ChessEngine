@@ -70,9 +70,9 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	auto &selectedPiece = m_Board[selectedPos];
 	bool shouldRedraw = false;
 
-	if (selectedPiece.type == Piece::Type::PAWN)
+	if (selectedPiece.type == Type::PAWN)
 		shouldRedraw = movePawn(selectedPiece, destPos);
-	else if (selectedPiece.type == Piece::Type::KING)
+	else if (selectedPiece.type == Type::KING)
 	{
 		if (selectedPiece.isWhite)
 			m_Board.whiteKingPos = destPos.toBitboard();
@@ -117,7 +117,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	auto &destPiece = board[destPos];
 	bool hashHandled = false;
 
-	if (selectedPiece.type == Piece::Type::PAWN)
+	if (selectedPiece.type == Type::PAWN)
 	{
 		if (movePawn(selectedPiece, destPos))
 		{
@@ -125,7 +125,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 			hashHandled = true;
 		}
 	}
-	else if (selectedPiece.type == Piece::Type::KING)
+	else if (selectedPiece.type == Type::KING)
 	{
 		if (selectedPiece.isWhite)
 			board.whiteKingPos = destPos.toBitboard();
@@ -142,7 +142,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 					board.blackCastled = true;
 
 				Hash::makeMove(board.key, posPair.first, posPair.second,
-						Piece(Piece::Type::ROOK, selectedPiece.isWhite), Piece());
+						Piece(Type::ROOK, selectedPiece.isWhite), Piece());
 			}
 		}
 	}
@@ -203,7 +203,7 @@ bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)
 	{
 		if (destPos.y == 0 || destPos.y == 7)
 		{
-			selectedPiece.type = Piece::Type::QUEEN;
+			selectedPiece.type = Type::QUEEN;
 			return true;
 		}
 	}
@@ -219,7 +219,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		const auto y = selectedPos.y;
 
 		auto &rook = board.data[startX][y];
-		if (rook.type == Piece::Type::ROOK && king.hasSameColor(rook) && !rook.moved)
+		if (rook.type == Type::ROOK && king.hasSameColor(rook) && !rook.moved)
 		{
 			rook.moved = true;
 
@@ -236,7 +236,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		const auto y = selectedPos.y;
 
 		auto &rook = board.data[startX][y];
-		if (rook.type == Piece::Type::ROOK && king.hasSameColor(rook) && !rook.moved)
+		if (rook.type == Type::ROOK && king.hasSameColor(rook) && !rook.moved)
 		{
 			rook.moved = true;
 
