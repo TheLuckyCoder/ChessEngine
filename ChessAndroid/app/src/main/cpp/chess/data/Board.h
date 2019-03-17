@@ -34,6 +34,8 @@ public:
 	bool operator<(const Board &other) const noexcept;
 	bool operator>(const Board &other) const noexcept;
 
+	const Piece &getPieceSafely(byte x, byte y) const noexcept;
+
 	void initDefaultBoard() noexcept;
 	void updateState() noexcept;
 	Phase getPhase() const noexcept;

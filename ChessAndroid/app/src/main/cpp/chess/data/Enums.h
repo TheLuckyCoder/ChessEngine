@@ -26,7 +26,7 @@ enum class Phase
 	MIDDLE = 128
 };
 
-enum Value : int
+enum Value
 {
 	VALUE_MAX = 2000000000,
 	VALUE_MIN = -VALUE_MAX,

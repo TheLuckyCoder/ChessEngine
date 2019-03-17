@@ -12,5 +12,4 @@ public:
     short getBaseSearchDepth() const noexcept;
     unsigned int getThreadCount() const noexcept;
     unsigned int getCacheTableSizeMb() const noexcept;
-
 };

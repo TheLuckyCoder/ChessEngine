@@ -27,8 +27,8 @@ public:
 
 	constexpr Piece() noexcept
 		: type(Type::NONE), isWhite(false), moved(false) {}
-	constexpr Piece(const Type type, const bool isWhite, const bool hasBeenMoved = false) noexcept
-		: type(type), isWhite(isWhite), moved(hasBeenMoved) {}
+	constexpr Piece(const Type type, const bool isWhite, const bool moved = false) noexcept
+		: type(type), isWhite(isWhite), moved(moved) {}
 	Piece(Piece&&) = default;
 	Piece(const Piece&) = default;
 	~Piece() = default;
@@ -39,7 +39,15 @@ public:
 	MaxMovesVector getPossibleMoves(const Pos &pos, const Board &board) const noexcept;
 	MaxMovesVector getPossibleCaptures(const Pos &pos, const Board &board) const noexcept;
 
-	constexpr bool hasSameColor(const Piece &other) const noexcept
+	/*
+	 * Checks if the type and color match
+	 */
+	constexpr bool isSameType(const Piece &other) const noexcept
+	{
+		return type == other.type && isWhite == other.isWhite;
+	}
+
+	constexpr bool isSameColor(const Piece &other) const noexcept
 	{
 		return isWhite == other.isWhite;
 	}

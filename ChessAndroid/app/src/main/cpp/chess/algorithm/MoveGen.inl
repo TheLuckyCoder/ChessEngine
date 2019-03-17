@@ -26,10 +26,11 @@ PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 		}
 	}
 
-	const auto handleCapture = [&piece, &moves](const Piece &other, const Pos &pos) {
+	const auto handleCapture = [&] {
+		const auto &other = board[pos];
 		if constexpr (T == ALL || T == CAPTURES || T == KING_DANGER)
 		{
-			if (other && !piece.hasSameColor(other))
+			if (other && !piece.isSameColor(other))
 				moves.push_back(pos);
 		}
 		else if (T == ATTACKS_DEFENSES)
@@ -41,11 +42,11 @@ PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 
 	piece.isWhite ? pos.x-- : pos.x++;
 	if (pos.isValid())
-		handleCapture(board[pos], pos);
+		handleCapture();
 
 	pos.x += piece.isWhite ? 2 : -2;
 	if (pos.isValid())
-		handleCapture(board[pos], pos);
+		handleCapture();
 
 	return moves;
 }
@@ -64,12 +65,12 @@ PosVector<8> MoveGen<T>::generateKnightMoves(const Piece &piece, const Pos &pos,
 
 			if constexpr (T == ALL || T == KING_DANGER)
 			{
-				if (!other || !piece.hasSameColor(other))
+				if (!other || !piece.isSameColor(other))
 					moves.push_back(newPos);
 			}
 			else if (T == CAPTURES)
 			{
-				if (other && !piece.hasSameColor(other))
+				if (other && !piece.isSameColor(other))
 					moves.push_back(newPos);
 			}
 			else if (T == ATTACKS_DEFENSES)
@@ -108,7 +109,7 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 					moves.push_back(newPos);
 				return true;
 			}
@@ -118,7 +119,7 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 					moves.push_back(newPos);
 				return true;
 			}
@@ -135,7 +136,7 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 				{
 					moves.push_back(newPos);
 					if (other.type != Type::KING)
@@ -205,7 +206,7 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 					moves.push_back(newPos);
 				return true;
 			}
@@ -215,7 +216,7 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 					moves.push_back(newPos);
 				return true;
 			}
@@ -232,7 +233,7 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 				{
 					moves.push_back(newPos);
 					if (other.type != Type::KING)
@@ -309,14 +310,14 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 		{
 			if (other)
 			{
-				if (!piece.hasSameColor(other))
+				if (!piece.isSameColor(other))
 					moves.push_back(newPos);
 			} else
 				moves.push_back(newPos);
 		}
 		else if (T == CAPTURES)
 		{
-			if (other && !piece.hasSameColor(other))
+			if (other && !piece.isSameColor(other))
 				moves.push_back(newPos);
 		}
 		else if (T == ATTACKS_DEFENSES)
@@ -380,12 +381,12 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 
 		if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
 			if (const auto &other = board.data[7][y];
-				other.type == Type::ROOK && piece.hasSameColor(other) && !other.moved)
+				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
 				moves.emplace_back(6, pos.y);
 
 		if (isEmptyAndChessFree(3) && isEmptyAndChessFree(2) && !board.data[1][y])
 			if (const auto &other = board.data[0][y];
-				other.type == Type::ROOK && piece.hasSameColor(other) && !other.moved)
+				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
 				moves.emplace_back(2, pos.y);
 	}
 

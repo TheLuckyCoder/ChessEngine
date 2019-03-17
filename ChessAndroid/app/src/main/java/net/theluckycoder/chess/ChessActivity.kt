@@ -231,9 +231,9 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
                 .show()
         }
 
-        if (state == 1 || state == 5) {
+        if (state == 2 || state == 4) {
             setKingInChess(true)
-        } else if (state == 2 || state == 4) {
+        } else if (state == 1 || state == 5) {
             setKingInChess(false)
         } else {
             pieces.forEach {

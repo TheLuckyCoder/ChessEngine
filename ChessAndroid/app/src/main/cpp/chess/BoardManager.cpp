@@ -219,7 +219,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		const auto y = selectedPos.y;
 
 		auto &rook = board.data[startX][y];
-		if (rook.type == Type::ROOK && king.hasSameColor(rook) && !rook.moved)
+		if (rook.type == Type::ROOK && king.isSameColor(rook) && !rook.moved)
 		{
 			rook.moved = true;
 
@@ -236,7 +236,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		const auto y = selectedPos.y;
 
 		auto &rook = board.data[startX][y];
-		if (rook.type == Type::ROOK && king.hasSameColor(rook) && !rook.moved)
+		if (rook.type == Type::ROOK && king.isSameColor(rook) && !rook.moved)
 		{
 			rook.moved = true;
 

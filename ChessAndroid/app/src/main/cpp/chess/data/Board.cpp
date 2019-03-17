@@ -29,6 +29,13 @@ bool Board::operator>(const Board& other) const noexcept
 	return score > other.score;
 }
 
+const Piece &Board::getPieceSafely(const byte x, const byte y) const noexcept
+{
+	if (x < 8 && y < 8)
+		return data[x][y];
+	return Piece();
+}
+
 void Board::initDefaultBoard() noexcept
 {
 	std::memset(&data, 0, sizeof(data));

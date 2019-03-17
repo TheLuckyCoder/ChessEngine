@@ -13,12 +13,20 @@ constexpr S BISHOP_SCORE(830, 918);
 constexpr S ROOK_SCORE(1289, 1378);
 constexpr S QUEEN_SCORE(2529, 2687);
 
-constexpr S OVERLOAD(12, 6);
-constexpr S PAWN_DOUBLED(11, 56);
-constexpr S PAWN_ISOLATED(5, 15);
 constexpr S MINOR_THREATS[] =
 {
 	S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120), S(0, 0)
+};
+constexpr S OVERLOAD(12, 6);
+constexpr S PAWN_DOUBLED(11, 56);
+constexpr S PAWN_ISOLATED(5, 15);
+constexpr S PASSED_PAWN_FILE[] =
+{
+	S(0, 0), S(-1, 7), S(0, 9), S(-9, -8), S(-30, -14)
+};
+constexpr S PASSED_PAWN_RANK[] =
+{
+	S(0, 0), S(5, 18), S(12, 23), S(10, 31), S(57, 62), S(163, 167), S(271, 250)
 };
 constexpr S ROOK_ON_PAWN(10, 28);
 constexpr S ROOK_ON_FILE[] =
@@ -222,6 +230,9 @@ int Evaluation::evaluate(const Board &board) noexcept
 		totalScore.eg -= 40;
 	}
 
+	// Tempo
+	totalScore += board.whiteToMove ? 20 : -20;
+
 	return board.getPhase() == Phase::MIDDLE ? totalScore.mg : totalScore.eg;
 }
 
@@ -233,7 +244,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	bool isolated = true;
 
 	if (const auto &pieceBelow = board.data[pos.x][pos.y - 1];
-		piece.hasSameColor(pieceBelow) && pieceBelow.type == Type::PAWN)
+		piece.isSameColor(pieceBelow) && pieceBelow.type == Type::PAWN)
 	{
 		value -= PAWN_DOUBLED;
 		isolated = false;
@@ -263,11 +274,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	if (isolated)
 		value -= PAWN_ISOLATED;
 
-	if (((piece.isWhite && pos.y == 6) || (!piece.isWhite && pos.y == 1)) && theirAttacks.map[pos] == 0)
-		value += 100;
-
 	// Threat Safe Pawn
-	if (ourAttacks.map[pos] && theirAttacks.map[pos] == 0) // check if the pawn is safe
+	if (ourAttacks.map[pos] || theirAttacks.map[pos] == 0) // check if the pawn is safe
 	{
 		const auto isEnemyPiece = [&] (const Pos &newPos) {
 			if (!newPos.isValid()) return false;
@@ -283,6 +291,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 
 		value += THREAT_SAFE_PAWN * i;
 	}
+
+	// TODO: Check for passed pawns
 
 	return value;
 }
@@ -337,29 +347,35 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 
 	const auto rookOnPawn = [&] {
 		if ((piece.isWhite && pos.y < 5) || (!piece.isWhite && pos.y > 4)) return 0;
+
+		const Piece enemyPawn(PAWN, !piece.isWhite);
 		int count = 0;
+
 		for (byte x = 0; x < 8; x++)
-			if (const auto &other = board.data[x][pos.y];
-				other.type == Type::PAWN && !piece.hasSameColor(other)) count++;
+			if (board.data[x][pos.y].isSameType(enemyPawn))
+				count++;
 		for (byte y = 0; y < 8; y++)
-			if (const auto &other = board.data[pos.x][y];
-				other.type == Type::PAWN && !piece.hasSameColor(other)) count++;
+			if (board.data[pos.x][y].isSameType(enemyPawn))
+				count++;
+
 		return count;
 	}();
 	value += ROOK_ON_PAWN * rookOnPawn;
 
 	const auto rookOnFile = [&] {
-		byte open = 1;
+		int open = 1;
+
 		for (byte y = 0; y < 8; y++)
 		{
 			const auto &other = board.data[pos.x][y];
-			if (other.type == Type::PAWN)
+			if (other.type == PAWN)
 			{
-				if (piece.hasSameColor(other))
+				if (piece.isSameColor(other))
 					return 0;
 				open = 0;
 			}
 		}
+
 		return open + 1;
 	}();
 	value += ROOK_ON_FILE[rookOnFile];
@@ -377,28 +393,28 @@ inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const
 	if (piece.moved)
 		value.mg -= 30;
 
-	const auto weakQueen = [&] {
+	const auto weak = [&] {
 		for (byte i = 0; i < 8; i++) {
-			const byte ix = (i + (i > 3)) % 3 - 1;
-			const byte iy = (((i + (i > 3)) / 3) << 0) - 1;
+			const byte ix = (i + (i > 3u)) % 3u - 1u;
+			const byte iy = (i + (i > 3u)) / 3u - 1u;
 			byte count = 0;
 			for (byte d = 1; d < 8; d++) {
 				Pos dPos(pos, d * ix, d * iy);
 				if (dPos.isValid())
 				{
 					const auto &other = board[dPos];
-					if (other.type == Type::ROOK && (ix == 0 || iy == 0) && count == 1) return 1;
-					if (other.type == Type::BISHOP && (ix != 0 && iy != 0) && count == 1) return 1;
+					if (other.type == Type::ROOK && (ix == 0 || iy == 0) && count == 1) return true;
+					if (other.type == Type::BISHOP && (ix != 0 && iy != 0) && count == 1) return true;
 					if (other) count++;
 				}
 				else
 					count++;
 			}
 		}
-		return 0;
+		return false;
 	}();
 
-	value -= WEAK_QUEEN * weakQueen;
+	value -= WEAK_QUEEN * weak;
 
 	return value;
 }
