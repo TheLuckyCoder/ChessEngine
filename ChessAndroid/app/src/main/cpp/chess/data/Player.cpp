@@ -49,9 +49,20 @@ namespace Player
 
 	bool isInChess(const bool isWhite, const Board &board)
 	{
-		const Bitboard bitboard = MoveGen<CAPTURES>::getAttacksPerColorBitboard(!isWhite, board);
+		using Captures = MoveGen<CAPTURES>;
 		const Bitboard kingPos = isWhite ? board.whiteKingPos : board.blackKingPos;
-		return static_cast<bool>(bitboard & kingPos);
+		bool check = false;
+
+		MoveGen<CAPTURES>::forEachAttack(!isWhite, board, [&] (const Piece &piece, const Pos &move) -> bool {
+			if (kingPos == move.toBitboard())
+			{
+				check = true;
+				return true;
+			}
+			return false;
+		});
+
+		return check;
 	}
 
 	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(const bool isWhite, const Board &board)
@@ -65,5 +76,4 @@ namespace Player
 
 		return pieces;
 	}
-
 }

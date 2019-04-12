@@ -24,7 +24,8 @@ public:
 	static PosVector<27> generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board);
 	static PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 
-	static Bitboard getAttacksPerColorBitboard(bool white, const Board &board);
+	template <class Func>
+	static void forEachAttack(bool white, const Board &board, Func &&func);
 	static Attacks getAttacksPerColor(bool white, const Board &board);
 };
 
