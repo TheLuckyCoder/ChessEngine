@@ -9,7 +9,7 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-TranspositionTable<SearchCache> NegaMax::searchCache(200);
+TranspositionTable<SearchCache> NegaMax::searchCache(1);
 
 PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
 {
@@ -19,6 +19,7 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
 			return PosPair(move.start, move.dest);
 
+	// Apply Settings
 	auto depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
 
@@ -56,7 +57,7 @@ Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobC
 			const auto move = validMoves.front();
 			validMoves.pop_front();
 
-			mutex.unlock(); // Process the result "asynchronously"
+			mutex.unlock(); // Process the result asynchronously
 			const int result = -negaMax(move.board, depth, VALUE_MIN, -bestScore, isWhite, false);
 			mutex.lock();
 
@@ -79,7 +80,7 @@ Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobC
 	return bestMove;
 }
 
-int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta, const bool isWhite, bool extended)
+int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const bool isWhite, bool extended)
 {
 	if (depth == 0)
 	{
@@ -94,9 +95,20 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 			//return quiescence(board, 1, alpha, beta, isWhite);
 	}
 
-	auto cache = searchCache[board.key];
-	if (board.key == cache.key && board.score == cache.score && cache.depth == depth)
-	    return cache.bestMove;
+	const int originalAlpha = alpha;
+	if (const SearchCache cache = searchCache[board.key];
+		board.key == cache.key && board.score == cache.boardScore && cache.depth >= depth)
+	{
+		if (cache.flag == Flag::EXACT)
+			return cache.value;
+		else if (cache.flag == Flag::ALPHA)
+			alpha = std::max(alpha, cache.value);
+		else if (cache.flag == Flag::BETA)
+			beta = std::min(beta, cache.value);
+
+		if (alpha >= beta)
+			return cache.value;
+	}
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
 	int bestScore = VALUE_MIN;
@@ -107,7 +119,10 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 	for (const auto &move : validMoves)
 	{
 		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
-			return VALUE_WINNER_WHITE;
+		{
+			bestScore = VALUE_WINNER_WHITE;
+			break;
+		}
 
 		const int moveScore = -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended);
 
@@ -122,11 +137,16 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, const int beta,
 			break;
 	}
 
-	cache.key = board.key;
-	cache.depth = depth;
-	cache.score = board.score;
-	cache.bestMove = bestScore;
-	searchCache.insert(cache);
+	if (!extended)
+	{
+		Flag flag = Flag::EXACT;
+		if (bestScore < originalAlpha)
+			flag = Flag::ALPHA;
+		else if (bestScore > beta)
+			flag = Flag::BETA;
+
+		searchCache.insert({ board.key, board.score, bestScore, depth, flag });
+	}
 
 	return bestScore;
 }

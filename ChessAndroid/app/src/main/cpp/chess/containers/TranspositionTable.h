@@ -9,16 +9,19 @@ using U64 = std::uint64_t;
 struct SearchCache
 {
     U64 key = 0;
-    int score = 0, bestMove = 0;
+    int boardScore = 0, value = 0;
     short depth = 0;
+    Flag flag = Flag::EXACT;
 };
 
 template <class T>
 class TranspositionTable
 {
+	constexpr static int MUTEX_SIZE = 1000;
+
     std::size_t m_Size;
 	T *m_Values = new T[m_Size]();
-    mutable std::shared_mutex m_Mutex;
+	mutable std::shared_mutex m_Mutexes[MUTEX_SIZE];
 
 public:
     explicit TranspositionTable(const std::size_t sizeMb) noexcept
@@ -36,15 +39,17 @@ public:
 
     T operator[](const U64 key) const noexcept
     {
-        std::shared_lock lock(m_Mutex);
-        return m_Values[key % m_Size];
+		const auto index = key % m_Size;
+        std::shared_lock lock(m_Mutexes[index % MUTEX_SIZE]);
+        return m_Values[index];
     }
 
     void insert(const T &value) noexcept
     {
-        std::lock_guard lock(m_Mutex);
+		const auto index = value.key % m_Size;
+        std::lock_guard lock(m_Mutexes[index % MUTEX_SIZE]);
 
-		auto &ref = m_Values[value.key % m_Size];
+		auto &ref = m_Values[index];
 		if (ref.depth <= value.depth)
 			ref = value;
     }
@@ -55,7 +60,6 @@ public:
 
 		if (newSize == 0 || m_Size == newSize) return;
 
-		std::lock_guard lock(m_Mutex);
 		m_Size = newSize;
 		delete[] m_Values;
 		m_Values = new T[m_Size]();
@@ -63,7 +67,6 @@ public:
 
 	void clear() noexcept
 	{
-		std::lock_guard lock(m_Mutex);
 		std::memset(m_Values, 0, sizeof(T) * m_Size);
 	}
 };

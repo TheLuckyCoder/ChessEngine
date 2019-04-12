@@ -56,7 +56,7 @@
         <EditTextPreference
             android:inputType="number"
             android:key="key_threads"
-            android:summary="Worker Threads to be created"
+            android:summary="Number of Search Threads to be used"
             android:title="Thread Count" />
 
         <EditTextPreference

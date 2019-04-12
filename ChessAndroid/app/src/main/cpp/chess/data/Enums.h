@@ -33,3 +33,10 @@ enum Value
 	VALUE_WINNER_WHITE = 32767,
 	VALUE_WINNER_BLACK = -VALUE_WINNER_WHITE
 };
+
+enum class Flag : unsigned char
+{
+	EXACT,
+	ALPHA,
+	BETA
+};
