@@ -67,13 +67,13 @@ void Hash::makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const 
 	key ^= Hash::getHash(destPos, selectedPiece);
 }
 
-void Hash::promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, const bool isWhite)
+void Hash::promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, const bool isWhite, const Type promotedType)
 {
 	// Remove the Pawn
 	key ^= array[startPos.x][startPos.y][indexOf(Piece(Type::PAWN, isWhite))];
 
-	// Add Queen
-	key ^= array[destPos.x][destPos.y][indexOf(Piece(Type::QUEEN, isWhite))];
+	// Add Promoted Piece
+	key ^= array[destPos.x][destPos.y][indexOf(Piece(promotedType, isWhite))];
 }
 
 void Hash::flipSide(U64 &key)

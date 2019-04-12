@@ -3,12 +3,6 @@
 #include "../algorithm/Hash.h"
 #include "../algorithm/Evaluation.h"
 
-Board &Board::operator=(const Board &other) noexcept
-{
-	std::memcpy(this, &other, sizeof(Board));
-	return *this;
-}
-
 Piece &Board::operator[](const Pos &pos) noexcept
 {
 	return data[pos.x][pos.y];

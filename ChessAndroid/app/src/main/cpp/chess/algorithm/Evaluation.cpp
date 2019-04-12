@@ -241,29 +241,20 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	Score value = PAWN_SCORE;
 	value += PAWN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 
-	bool isolated = true;
+	const byte behind = piece.isWhite ? -1 : 1;
+	const int supported = (piece.isSameType(board.getPieceSafely(pos.x - 1u, pos.y + behind)) +
+							piece.isSameType(board.getPieceSafely(pos.x + 1u, pos.y + behind)));
 
-	if (const auto &pieceBelow = board.data[pos.x][pos.y - 1];
-		piece.isSameColor(pieceBelow) && pieceBelow.type == Type::PAWN)
-	{
+	bool isolated = !static_cast<bool>(supported);
+
+	if (piece.isSameType(board.data[pos.x][pos.y + behind]))
 		value -= PAWN_DOUBLED;
-		isolated = false;
-	}
-
-	const Pos nearby[6] {
-		Pos(pos, 0, 1),
-		Pos(pos, 1, 1),
-		Pos(pos, 1, -1),
-		Pos(pos, -1, -1),
-		Pos(pos, 0, -1),
-		Pos(pos, -1, 1)
-	};
 
 	if (isolated)
 	{
-		for (const auto &p : nearby)
-		{
-			if (p.isValid() && board[p].type == Type::PAWN)
+		for (int y = 0 ; y < 8; y++) {
+			if (piece.isSameType(board.getPieceSafely(pos.x - 1u, y)) ||
+				piece.isSameType(board.getPieceSafely(pos.x + 1u, y)))
 			{
 				isolated = false;
 				break;
@@ -325,7 +316,7 @@ inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, cons
 			if (y1 < 4) y1++; else y1--;
 		}
 	}
-	
+
 	value.mg += 44;
 
 	return value;
@@ -345,7 +336,7 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 			value.mg -= 10;
 	}
 
-	const auto rookOnPawn = [&] {
+	const int rookOnPawn = [&] {
 		if ((piece.isWhite && pos.y < 5) || (!piece.isWhite && pos.y > 4)) return 0;
 
 		const Piece enemyPawn(PAWN, !piece.isWhite);

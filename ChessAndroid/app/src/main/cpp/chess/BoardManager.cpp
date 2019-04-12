@@ -8,6 +8,7 @@
 #include "algorithm/Hash.h"
 #include "algorithm/NegaMax.h"
 
+Settings BoardManager::m_Settings(4u, std::thread::hardware_concurrency() - 1u, 200);
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
 std::vector<PosPair> BoardManager::m_MovesHistory;
@@ -121,7 +122,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	{
 		if (movePawn(selectedPiece, destPos))
 		{
-			Hash::promotePawn(board.key, selectedPos, destPos, selectedPiece.isWhite);
+			Hash::promotePawn(board.key, selectedPos, destPos, selectedPiece.isWhite, Type::QUEEN);
 			hashHandled = true;
 		}
 	}

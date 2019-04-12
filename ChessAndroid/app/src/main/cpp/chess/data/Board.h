@@ -26,7 +26,7 @@ public:
 	~Board() = default;
 
 	Board &operator=(Board&&) = default;
-	Board &operator=(const Board &other) noexcept;
+	Board &operator=(const Board &other) = default;
 
 	Piece &operator[](const Pos &pos) noexcept;
 	const Piece &operator[](const Pos &pos) const noexcept;
@@ -55,8 +55,8 @@ public:
 
 	Move() = default;
 
-	Move(const Pos start, const Pos dest, Board &&board)
-		: start(start), dest(dest), board(std::move(board)) {}
+	Move(const Pos start, const Pos dest, const Board &board)
+		: start(start), dest(dest), board(board) {}
 
 	bool operator<(const Move &other) const
 	{
@@ -97,7 +97,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 				continue;
 
 			if constexpr (std::is_same_v<T, Move>)
-				moves.emplace_back(startPos, destPos, std::move(board));
+				moves.emplace_back(startPos, destPos, board);
 			else if (std::is_same_v<T, Board>)
 				moves.push_back(board);
 		}
