@@ -19,6 +19,8 @@ enum Type : unsigned char
 class Piece final
 {
 public:
+	const static Piece EMPTY;
+
 	using MaxMovesVector = StackVector<Pos, 27>;
 
 	Type type;

@@ -1,6 +1,7 @@
 #include "NegaMax.h"
 
 #include <algorithm>
+#include <mutex>
 #include <utility>
 
 #include "../Stats.h"
@@ -53,12 +54,12 @@ Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobC
 		while (!validMoves.empty())
 		{
 			// Make a copy of the needed variables while locked
-			const int bestScore = alpha;
-			const auto move = validMoves.front();
+			const int beta = -alpha;
+			const Move move = validMoves.front();
 			validMoves.pop_front();
 
 			mutex.unlock(); // Process the result asynchronously
-			const int result = -negaMax(move.board, depth, VALUE_MIN, -bestScore, isWhite, false);
+			const int result = -negaMax(move.board, depth, VALUE_MIN, beta, isWhite, false);
 			mutex.lock();
 
 			if (result > alpha)
@@ -71,7 +72,7 @@ Move NegaMax::negaMaxRoot(StackVector<Move, 150> validMoves, const unsigned jobC
 		mutex.unlock();
 	};
 
-	for (auto i = 0u; i != jobCount; i++)
+	for (auto i = 0u; i < jobCount; ++i)
 		futures.emplace_back(NegaMaxThreadPool::submitJob<void>(doWork));
 
 	for (auto &future : futures)

@@ -13,12 +13,12 @@ const Piece &Board::operator[](const Pos &pos) const noexcept
 	return data[pos.x][pos.y];
 }
 
-bool Board::operator<(const Board& other) const noexcept
+bool Board::operator<(const Board &other) const noexcept
 {
 	return score < other.score;
 }
 
-bool Board::operator>(const Board& other) const noexcept
+bool Board::operator>(const Board &other) const noexcept
 {
 	return score > other.score;
 }
@@ -27,7 +27,7 @@ const Piece &Board::getPieceSafely(const byte x, const byte y) const noexcept
 {
 	if (x < 8 && y < 8)
 		return data[x][y];
-	return Piece();
+	return Piece::EMPTY;
 }
 
 void Board::initDefaultBoard() noexcept
@@ -35,11 +35,11 @@ void Board::initDefaultBoard() noexcept
 	std::memset(&data, 0, sizeof(data));
 	npm = 0;
 
-	for (byte x = 0; x < 8; x++)
-		data[x][1] = Piece(Type::PAWN, true);
+	for (auto &x : data)
+		x[1] = Piece(Type::PAWN, true);
 
-	for (byte x = 0; x < 8; x++)
-		data[x][6] = Piece(Type::PAWN, false);
+	for (auto &x : data)
+		x[6] = Piece(Type::PAWN, false);
 
 	npm += 16 * Evaluation::getPieceValue(Type::PAWN);
 
@@ -71,8 +71,8 @@ void Board::initDefaultBoard() noexcept
 	key = Hash::compute(*this);
 	whiteCastled = false;
 	blackCastled = false;
-	whiteKingPos = Pos(4, 0).toBitboard();
-	blackKingPos = Pos(4, 7).toBitboard();
+	whiteKingSquare = Pos(4, 0).toSquare();
+	blackKingSquare = Pos(4, 7).toSquare();
 	whiteToMove = true;
 	state = State::NONE;
 	score = 0;

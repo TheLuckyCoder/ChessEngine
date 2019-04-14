@@ -298,6 +298,14 @@ private:
 
 	CPP14_CONSTEXPR void destroyAll(iterator first, iterator last)
 	{
+		if constexpr (!std::is_trivially_destructible_v<T>)
+		{
+			while (first != last)
+			{
+				first->~T();
+				++first;
+			}
+		}
 	}
 
 	static CPP14_CONSTEXPR void throwLengthException() noexcept(false)

@@ -1,20 +1,22 @@
 #pragma once
 
-#include <array>
+#include <cstdint>
 
 #include "Player.h"
 #include "Piece.h"
 #include "../BoardManager.h"
 
+using U64 = std::uint64_t;
+
 class Board final
 {
 public:
-	std::array<std::array<Piece, 8>, 8> data;
-	std::uint64_t key = 0;
+	Piece data[8][8];
+	U64 key = 0;
 	bool whiteCastled = false;
 	bool blackCastled = false;
-	Bitboard whiteKingPos = 0;
-	Bitboard blackKingPos = 0;
+	byte whiteKingSquare = 0;
+	byte blackKingSquare = 0;
 	State state = State::NONE;
 	bool whiteToMove = true;
 	int score = 0;

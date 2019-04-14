@@ -76,9 +76,9 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	else if (selectedPiece.type == Type::KING)
 	{
 		if (selectedPiece.isWhite)
-			m_Board.whiteKingPos = destPos.toBitboard();
+			m_Board.whiteKingSquare = destPos.toSquare();
 		else
-			m_Board.blackKingPos = destPos.toBitboard();
+			m_Board.blackKingSquare = destPos.toSquare();
 
 		if (!selectedPiece.moved)
 		{
@@ -129,9 +129,9 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	else if (selectedPiece.type == Type::KING)
 	{
 		if (selectedPiece.isWhite)
-			board.whiteKingPos = destPos.toBitboard();
+			board.whiteKingSquare = destPos.toSquare();
 		else
-			board.blackKingPos = destPos.toBitboard();
+			board.blackKingSquare = destPos.toSquare();
 
 		if (!selectedPiece.moved)
 		{
@@ -183,8 +183,11 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	}
 }
 
+// This function should only be called through the Worker Thread
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
+	assert(std::this_thread::get_id() == m_WorkerThread.get_id());
+
     m_IsWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();

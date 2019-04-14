@@ -128,12 +128,12 @@ public:
 	/**
 	 * Non-copyable.
 	 */
-	ThreadPool(const ThreadPool &rhs) = delete;
+	ThreadPool(const ThreadPool&) = delete;
 
 	/**
 	 * Non-assignable.
 	 */
-	ThreadPool& operator=(const ThreadPool &rhs) = delete;
+	ThreadPool& operator=(const ThreadPool&) = delete;
 
 	/**
 	 * Destructor.

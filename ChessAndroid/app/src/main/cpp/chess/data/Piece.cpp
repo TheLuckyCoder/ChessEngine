@@ -2,6 +2,8 @@
 
 #include "../algorithm/MoveGen.h"
 
+const Piece Piece::EMPTY{};
+
 Piece::MaxMovesVector Piece::getPossibleMoves(const Pos &pos, const Board &board) const noexcept
 {
 	MaxMovesVector result;

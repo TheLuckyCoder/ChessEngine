@@ -49,12 +49,11 @@ namespace Player
 
 	bool isInChess(const bool isWhite, const Board &board)
 	{
-		using Captures = MoveGen<CAPTURES>;
-		const Bitboard kingPos = isWhite ? board.whiteKingPos : board.blackKingPos;
+		const byte kingSquare = isWhite ? board.whiteKingSquare : board.blackKingSquare;
 		bool check = false;
 
 		MoveGen<CAPTURES>::forEachAttack(!isWhite, board, [&] (const Piece &piece, const Pos &move) -> bool {
-			if (kingPos == move.toBitboard())
+			if (kingSquare == move.toSquare())
 			{
 				check = true;
 				return true;

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <mutex>
-
 #include "../data/Pos.h"
 #include "../data/Board.h"
 #include "../containers/TranspositionTable.h"
