@@ -98,7 +98,7 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void __unused *reserved)
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_ChessActivity_initBoard(JNIEnv *pEnv, jobject instance, jboolean restartGame)
+Java_net_theluckycoder_chess_ChessActivity_initBoard(JNIEnv *pEnv, jobject instance, jboolean restartGame, jboolean isPlayerWhite)
 {
 	pEnv->ExceptionClear();
 	if (!boardManagerInitialized)
@@ -112,14 +112,14 @@ Java_net_theluckycoder_chess_ChessActivity_initBoard(JNIEnv *pEnv, jobject insta
 	}
 
 	if (restartGame)
-		BoardManager::initBoardManager(listener);
+		BoardManager::initBoardManager(listener, isPlayerWhite);
 }
 
 // Native Class
 external JNIEXPORT jboolean JNICALL
 Java_net_theluckycoder_chess_Native_isPlayerWhite(JNIEnv  __unused *pEnv, __unused jclass type)
 {
-	return static_cast<jboolean>(BoardManager::isPlayerWhite);
+	return static_cast<jboolean>(BoardManager::isPlayerWhite());
 }
 
 external JNIEXPORT jboolean JNICALL

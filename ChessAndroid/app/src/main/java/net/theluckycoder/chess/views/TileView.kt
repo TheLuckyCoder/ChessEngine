@@ -11,7 +11,7 @@ class TileView(
     private val activity: ChessActivity,
     private val isWhiteBackground: Boolean,
     val pos: Pos,
-    private val listener: CustomView.ClickListener
+    private val listener: ClickListener
 ) : CustomView(activity) {
 
     init {

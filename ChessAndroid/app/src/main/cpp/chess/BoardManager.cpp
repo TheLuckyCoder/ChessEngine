@@ -13,7 +13,7 @@ BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
 std::vector<PosPair> BoardManager::m_MovesHistory;
 
-void BoardManager::initBoardManager(const PieceChangeListener &listener)
+void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
     Hash::init();
 
@@ -24,9 +24,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener)
 	m_MovesHistory.clear();
 	Stats::resetStats();
 
-	// TODO: Support both sides again
-	//srand(static_cast<unsigned int>(time(nullptr)));
-	//isPlayerWhite = rand() % 2 == 0;
+	m_IsPlayerWhite = isPlayerWhite;
 
 	if (!isPlayerWhite)
 	    m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
@@ -192,7 +190,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const auto pair = NegaMax::getBestMove(m_Board, !isPlayerWhite, settings);
+	const auto pair = NegaMax::getBestMove(m_Board, !m_IsPlayerWhite, settings);
 
 	Stats::stopTimer();
 	movePiece(pair.first, pair.second, false);

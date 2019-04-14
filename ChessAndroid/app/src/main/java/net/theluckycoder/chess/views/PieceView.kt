@@ -8,7 +8,6 @@ import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import net.theluckycoder.chess.ChessActivity
 import net.theluckycoder.chess.Native
 
 @SuppressLint("ViewConstructor")
@@ -16,6 +15,7 @@ class PieceView(
     context: Context,
     isWhite: Boolean,
     val res: Int,
+    viewSize: Int,
     private val listener: ClickListener
 ) : CustomView(context) {
 
@@ -23,7 +23,7 @@ class PieceView(
 
     init {
         val decodedBitmap = BitmapFactory.decodeResource(context.resources, res)
-        bitmap = Bitmap.createScaledBitmap(decodedBitmap, ChessActivity.viewSize, ChessActivity.viewSize, true)
+        bitmap = Bitmap.createScaledBitmap(decodedBitmap, viewSize, viewSize, true)
         decodedBitmap.recycle()
 
         if (isWhite == Native.isPlayerWhite()) {

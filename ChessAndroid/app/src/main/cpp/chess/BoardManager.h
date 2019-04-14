@@ -19,19 +19,20 @@ private:
 	static Settings m_Settings;
 	inline static std::thread m_WorkerThread;
 	inline static bool m_IsWorking = false;
+	inline static bool m_IsPlayerWhite;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
 	static std::vector<PosPair> m_MovesHistory;
-
+	
 public:
-	inline static bool isPlayerWhite = true;
 
-	static void initBoardManager(const PieceChangeListener &listener);
+	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
 	static void loadGame(std::vector<PosPair> &&moves);
 
 	static Board &getBoard() { return m_Board; }
 	static const auto &getMovesHistory() { return m_MovesHistory; }
 	static bool isWorking() { return m_IsWorking; }
+	static bool isPlayerWhite() { return m_IsPlayerWhite; }
 	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
 	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);

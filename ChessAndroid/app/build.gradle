@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 28
@@ -9,7 +10,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 28
         versionCode 1
-        versionName "0.18"
+        versionName "0.19"
     }
 
     /*signingConfigs {
@@ -39,6 +40,6 @@ android {
 }
 
 dependencies {
-    implementation 'com.jaredrummler:colorpicker:1.1.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'com.jaredrummler:colorpicker:1.1.0'
 }

@@ -30,7 +30,7 @@ object Native {
 
     @JvmStatic
     fun setSettings(settings: Settings) =
-        Native.setSettings(settings.baseSearchDepth, settings.threadCount, settings.cacheSize)
+        setSettings(settings.baseSearchDepth, settings.threadCount, settings.cacheSize)
 
     @JvmStatic
     external fun setSettings(baseSearchDepth: Int, threadCount: Int, cacheSizeInMb: Int)

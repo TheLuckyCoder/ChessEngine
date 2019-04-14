@@ -1,4 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chess</string>
     <string name="stats">%sCurrent Board is evaluated at: %d</string>
+    <string name="restart_game">Restart Game</string>
+    <string name="side">Side:</string>
+    <string name="action_restart">Restart</string>
+    <string name="settings">Settings</string>
 </resources>

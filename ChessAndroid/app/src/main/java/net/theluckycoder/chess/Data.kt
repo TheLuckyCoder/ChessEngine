@@ -7,7 +7,17 @@ data class Piece(
     val y: Byte,
     @JvmField
     val type: Byte
-)
+) {
+
+    fun getScore() = when (type.toInt()) {
+        1 -> 1 // Pawn
+        2 -> 3 // Knight
+        3 -> 3 // Bishop
+        4 -> 5 // Rook
+        5 -> 9 // Queen
+        else -> 0
+    }
+}
 
 data class Pos(
     @JvmField
