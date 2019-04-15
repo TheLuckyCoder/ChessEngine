@@ -34,7 +34,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     }
 
     val preferences = Preferences(this)
-    // UI
     private val cells = HashMap<Pos, TileView>(64)
     private val capturedPieces = CapturedPieces()
     val pieces = HashMap<Pos, PieceView>(32)
@@ -71,7 +70,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
                     val playerWhite = when (view.sp_color.selectedItemPosition) {
                         0 -> true
                         1 -> false
-                        else -> Random.nextInt() % 2 == 0
+                        else -> Random.nextBoolean()
                     }
 
                     restartGame(playerWhite)
@@ -87,7 +86,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         }
 
         drawBoard()
-
         updatePieces()
     }
 
@@ -119,12 +117,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
         for (i in 0..7) {
             for (j in 0..7) {
-                val pos = Pos(i, if (isPlayerWhite) 7 - j else j)
-                val isWhite = (i + j) % 2 != isPlayerWhite.toInt()
-                // TODO: Fix cell color when player is black
+                val pos = Pos(invertIf(!isPlayerWhite, i), invertIf(isPlayerWhite, j))
+                val isWhite = (i + j) % 2 == 0
 
-                val xSize = pos.x * viewSize
-                val ySize = (if (isPlayerWhite) 7 - pos.y else pos.y.toInt()) * viewSize
+                val xSize = invertIf(!isPlayerWhite, pos.x.toInt()) * viewSize
+                val ySize = invertIf(isPlayerWhite, pos.y.toInt()) * viewSize
 
                 val cellView = TileView(this, isWhite, pos, this).apply {
                     layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
@@ -172,10 +169,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     private fun selectPiece(view: PieceView) {
         clearCells()
 
+        val isPlayerWhite = Native.isPlayerWhite()
         val x = view.x.toInt() / viewSize
         val y = view.y.toInt() / viewSize
 
-        selectedPos = Pos(x, if (Native.isPlayerWhite()) 7 - y else y)
+        selectedPos = Pos(invertIf(!isPlayerWhite, x), invertIf(isPlayerWhite, y))
         cells[selectedPos]?.state = TileView.State.SELECTED
         updatePossibleMoves(selectedPos)
     }
@@ -193,8 +191,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             val isWhite = it.type in 1..6
             val resource = pieceResources[it.type.toInt()]
 
-            val xSize = it.x * viewSize
-            val ySize = (if (isPlayerWhite) 7 - it.y else it.y.toInt()) * viewSize
+            val xSize = invertIf(!isPlayerWhite, it.x.toInt()) * viewSize
+            val ySize = invertIf(isPlayerWhite, it.y.toInt()) * viewSize
 
             val pieceView = PieceView(this, isWhite, resource, viewSize, this).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
@@ -229,7 +227,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
         if (state in 1..3) {
             canMove = false
-            pb_loading.visibility = View.GONE
+            pb_loading.visibility = View.INVISIBLE
 
             val message = when (state) {
                 1 -> "White has won!"
@@ -239,9 +237,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             }
 
             AlertDialog.Builder(this)
-                .setTitle("Game Over!")
+                .setTitle(message)
                 .setPositiveButton(android.R.string.ok, null)
-                .setMessage(message)
                 .show()
         }
 
@@ -270,12 +267,12 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             if (startPos.isValid && destPos.isValid) {
                 val pieceView = pieces.remove(startPos)!!
 
-                val xx = it.destX * viewSize
-                val yy = (if (isPlayerWhite) 7 - it.destY else it.destY.toInt()) * viewSize
+                val xPos = invertIf(!isPlayerWhite, it.destX.toInt()) * viewSize
+                val yPos = invertIf(isPlayerWhite, it.destY.toInt()) * viewSize
 
                 pieceView.animate()
-                    .x(xx.toFloat())
-                    .y(yy.toFloat())
+                    .x(xPos.toFloat())
+                    .y(yPos.toFloat())
                     .start()
 
                 pieces[destPos]?.let { destView ->
@@ -351,6 +348,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             }
             .show()
     }
+
+    private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
 
     private external fun initBoard(restartGame: Boolean, isPlayerWhite: Boolean = true)
 }

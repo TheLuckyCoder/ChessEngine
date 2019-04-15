@@ -308,12 +308,12 @@ inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, cons
 	// Long Diagonal Bishop
 	if (pos.y - pos.x == 0 || pos.y - (7 - pos.x) == 0)
 	{
-		byte x1 = pos.x, y1 = pos.y;
-		if (std::min<byte>(x1, 7u - x1) > 2) return value;
-		for (byte i = std::min<byte>(x1, 7u - x1); i < 4; i++) {
-			if (board.data[x1][y1].type == Type::PAWN) return value;
-			if (x1 < 4) x1++; else x1--;
-			if (y1 < 4) y1++; else y1--;
+		byte x = pos.x, y = pos.y;
+		if (std::min<byte>(x, 7u - x) > 2) return value;
+		for (byte i = std::min<byte>(x, 7u - x); i < 4; i++) {
+			if (board.data[x][y].type == Type::PAWN) return value;
+			if (x < 4) x++; else x--;
+			if (y < 4) y++; else y--;
 		}
 	}
 

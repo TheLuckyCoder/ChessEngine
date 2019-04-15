@@ -125,7 +125,7 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const
 			break;
 		}
 
-		const int moveScore = -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended);
+		const int moveScore = move.state != State::DRAW ? -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended) : 0;
 
 		if (moveScore > bestScore)
 		{

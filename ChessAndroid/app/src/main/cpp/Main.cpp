@@ -40,7 +40,7 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 
 	jobjectArray result = env->NewObjectArray(static_cast<jsize>(moved.size()), posPairClass, nullptr);
 	{
-		const static jmethodID constructorId = env->GetMethodID(posPairClass, "<init>", "(BBBB)V");
+		const static auto constructorId = env->GetMethodID(posPairClass, "<init>", "(BBBB)V");
 
 		for (unsigned i = 0; i < moved.size(); ++i)
 		{
@@ -52,8 +52,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 		}
 	}
 
-	const static jmethodID callbackId = env->GetMethodID(chessActivityClass, "callback",
-														 "(IZ[Lnet/theluckycoder/chess/PosPair;)V");
+	const static auto callbackId = env->GetMethodID(chessActivityClass, "callback",
+													"(IZ[Lnet/theluckycoder/chess/PosPair;)V");
 	env->CallVoidMethod(chessActivityInstance, callbackId, static_cast<jint>(to_underlying(state)), shouldRedraw,
 						result);
 
@@ -146,7 +146,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jclass __unused type
 {
 	pEnv->ExceptionClear();
 
-	const static jmethodID constructorId = pEnv->GetMethodID(pieceClass, "<init>", "(BBB)V");
+	const static auto constructorId = pEnv->GetMethodID(pieceClass, "<init>", "(BBB)V");
 
 	const auto pieces = BoardManager::getBoard().getAllPieces();
 	auto *array = pEnv->NewObjectArray(static_cast<jsize>(pieces.size()), pieceClass, nullptr);
@@ -173,7 +173,7 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jclass __unus
 {
 	pEnv->ExceptionClear();
 
-	const static jmethodID constructorId = pEnv->GetMethodID(posClass, "<init>", "(BB)V");
+	const static auto constructorId = pEnv->GetMethodID(posClass, "<init>", "(BB)V");
 
 	const Pos pos(getByte(pEnv, posClass, dest, "x"), getByte(pEnv, posClass, dest, "y"));
 	const auto possibleMoves = BoardManager::getPossibleMoves(pos);

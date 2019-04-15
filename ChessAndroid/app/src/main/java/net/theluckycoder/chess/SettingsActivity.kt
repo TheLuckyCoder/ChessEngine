@@ -19,14 +19,16 @@ class SettingsActivity : AppCompatActivity() {
             super.onCreate(savedInstanceState)
             addPreferencesFromResource(R.xml.preferences)
 
-            val preferences = Preferences(activity)
-
             findPreference(Preferences.KEY_RESET_TILE_COLORS).setOnPreferenceClickListener {
-                preferences.whiteTileColor = getColor(activity, R.color.tile_white)
-                preferences.blackTileColor = getColor(activity, R.color.tile_black)
-                preferences.possibleTileColor = getColor(activity, R.color.tile_possible)
-                preferences.selectedTileColor = getColor(activity, R.color.tile_selected)
-                preferences.lastMovedTileColor = getColor(activity, R.color.tile_last_moved)
+                val activity = activity ?: return@setOnPreferenceClickListener false
+
+                Preferences(activity).apply {
+                    whiteTileColor = getColor(activity, R.color.tile_white)
+                    blackTileColor = getColor(activity, R.color.tile_black)
+                    possibleTileColor = getColor(activity, R.color.tile_possible)
+                    selectedTileColor = getColor(activity, R.color.tile_selected)
+                    lastMovedTileColor = getColor(activity, R.color.tile_last_moved)
+                }
                 true
             }
         }
