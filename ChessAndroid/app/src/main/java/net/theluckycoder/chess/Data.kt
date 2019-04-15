@@ -47,7 +47,8 @@ data class PosPair(
 class Settings(
     baseSearchDepth: Int,
     threadCount: Int,
-    val cacheSize: Int
+    val cacheSize: Int,
+    val performQuiescenceSearch: Boolean
 ) {
 
     val baseSearchDepth = if (baseSearchDepth < 0) 1 else baseSearchDepth

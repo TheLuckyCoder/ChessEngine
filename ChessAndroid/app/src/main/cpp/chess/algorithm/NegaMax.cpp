@@ -10,6 +10,7 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
+bool NegaMax::quiescenceSearchEnabled;
 TranspositionTable<SearchCache> NegaMax::searchCache(1);
 
 PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
@@ -23,6 +24,7 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
 	// Apply Settings
 	auto depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
+	quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
 	searchCache.setSize(settings.getCacheTableSizeMb());
 	NegaMaxThreadPool::createThreadPool(threadCount);
@@ -90,10 +92,10 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const
 			depth++;
 			extended = true;
 		}
+		else if (quiescenceSearchEnabled) // Switch to Quiescence Search if enabled
+			return quiescence(board, alpha, beta, isWhite);
 		else
 			return isWhite ? board.score : -board.score;
-			// Switch to Quiescence Search
-			//return quiescence(board, 1, alpha, beta, isWhite);
 	}
 
 	const int originalAlpha = alpha;
@@ -152,15 +154,16 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const
 	return bestScore;
 }
 
-int NegaMax::quiescence(const Board &board, const short depth, int alpha, const int beta, const bool isWhite)
+int NegaMax::quiescence(const Board &board, int alpha, const int beta, const bool isWhite)
 {
-	if (depth == 0)
-		return isWhite ? board.score : -board.score;
+	const int standPat = isWhite ? board.score : -board.score;
+
+	if (standPat >= beta)
+		return standPat;
+	if (standPat > alpha)
+		alpha = standPat;
 
 	const auto validMoves = board.listValidCaptures(isWhite);
-	if (validMoves.empty())
-		return isWhite ? board.score : -board.score;
-	int bestScore = VALUE_MIN;
 
 	if (Stats::enabled())
 		++Stats::nodesSearched;
@@ -170,18 +173,13 @@ int NegaMax::quiescence(const Board &board, const short depth, int alpha, const 
 		if (move.score == VALUE_WINNER_WHITE || move.score == VALUE_WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
 
-		const int moveScore = -quiescence(move, depth - 1, -beta, -alpha, !isWhite);
+		const int moveScore = move.state != State::DRAW ? -quiescence(move, -beta, -alpha, !isWhite) : 0;
 
-		if (moveScore > bestScore)
-		{
-			bestScore = moveScore;
-			if (moveScore > alpha)
-				alpha = moveScore;
-		}
-
-		if (alpha >= beta)
-			break;
+		if (moveScore >= beta)
+			return moveScore;
+		if (moveScore > alpha)
+			alpha = moveScore;
 	}
 
-	return bestScore;
+	return alpha;
 }

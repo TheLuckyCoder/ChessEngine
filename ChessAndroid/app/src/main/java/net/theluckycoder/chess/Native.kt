@@ -29,11 +29,20 @@ object Native {
     external fun enableStats(enabled: Boolean)
 
     @JvmStatic
-    fun setSettings(settings: Settings) =
-        setSettings(settings.baseSearchDepth, settings.threadCount, settings.cacheSize)
+    fun setSettings(settings: Settings) = setSettings(
+        settings.baseSearchDepth,
+        settings.threadCount,
+        settings.cacheSize,
+        settings.performQuiescenceSearch
+    )
 
     @JvmStatic
-    external fun setSettings(baseSearchDepth: Int, threadCount: Int, cacheSizeInMb: Int)
+    external fun setSettings(
+        baseSearchDepth: Int,
+        threadCount: Int,
+        cacheSizeInMb: Int,
+        performQuiescenceSearch: Boolean
+    )
 
     @JvmStatic
     external fun loadMoves(moves: String)

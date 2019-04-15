@@ -4,8 +4,9 @@
 
 Settings::Settings(const short baseSearchDepth,
 				   const unsigned int threadCount,
-				   const unsigned int cacheTableSizeMb) noexcept
-		: cacheTableSizeMb(cacheTableSizeMb)
+				   const unsigned int cacheTableSizeMb,
+				   const bool performQuiescenceSearch) noexcept
+		: cacheTableSizeMb(cacheTableSizeMb), quiescenceSearch(performQuiescenceSearch)
 {
 	const auto maxThreads = std::thread::hardware_concurrency();
 
@@ -32,4 +33,9 @@ unsigned int Settings::getThreadCount() const noexcept
 unsigned int Settings::getCacheTableSizeMb() const noexcept
 {
 	return cacheTableSizeMb;
+}
+
+bool Settings::performQuiescenceSearch() const noexcept
+{
+	return quiescenceSearch;
 }

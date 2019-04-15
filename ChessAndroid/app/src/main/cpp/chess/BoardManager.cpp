@@ -8,7 +8,7 @@
 #include "algorithm/Hash.h"
 #include "algorithm/NegaMax.h"
 
-Settings BoardManager::m_Settings(4u, std::thread::hardware_concurrency() - 1u, 200);
+Settings BoardManager::m_Settings(4u, std::thread::hardware_concurrency() - 1u, 200, true);
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
 std::vector<PosPair> BoardManager::m_MovesHistory;

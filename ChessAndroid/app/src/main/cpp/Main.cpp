@@ -197,11 +197,13 @@ Java_net_theluckycoder_chess_Native_enableStats(JNIEnv __unused *pEnv, __unused 
 
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_setSettings(JNIEnv __unused *pEnv, __unused jclass type,
-												jint baseSearchDepth, jint threadCount, jint cacheSizeMb)
+												jint baseSearchDepth, jint threadCount, jint cacheSizeMb,
+												jboolean performQuiescenceSearch)
 {
 	BoardManager::setSettings(Settings(static_cast<short>(baseSearchDepth),
 									   static_cast<unsigned int>(threadCount),
-									   static_cast<unsigned int>(cacheSizeMb)));
+									   static_cast<unsigned int>(cacheSizeMb),
+									   static_cast<bool>(performQuiescenceSearch)));
 }
 
 

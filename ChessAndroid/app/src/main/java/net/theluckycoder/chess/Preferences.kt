@@ -19,6 +19,7 @@ class Preferences(private val context: Context) {
         const val KEY_DEPTH = "key_depth"
         const val KEY_THREADS = "key_threads"
         const val KEY_CACHE_SIZE = "key_cache_size"
+        const val KEY_QUIET_SEARCH = "key_quiet_search"
         const val KEY_DEBUG_INFO = "key_debug_info"
     }
 
@@ -51,16 +52,18 @@ class Preferences(private val context: Context) {
 
     var settings
         get() = Settings(
-            manager.getString(KEY_DEPTH, null)?.toIntOrNull() ?: 4,
-            manager.getString(KEY_THREADS, null)?.toIntOrNull()
+            baseSearchDepth = manager.getString(KEY_DEPTH, null)?.toIntOrNull() ?: 4,
+            threadCount = manager.getString(KEY_THREADS, null)?.toIntOrNull()
                 ?: Runtime.getRuntime().availableProcessors() - 1,
-            manager.getString(KEY_CACHE_SIZE, null)?.toIntOrNull() ?: 200
+            cacheSize = manager.getString(KEY_CACHE_SIZE, null)?.toIntOrNull() ?: 200,
+            performQuiescenceSearch = manager.getBoolean(KEY_QUIET_SEARCH, true)
         )
         set(value) {
             manager.edit()
                 .putString(KEY_DEPTH, value.baseSearchDepth.toString())
                 .putString(KEY_THREADS, value.threadCount.toString())
                 .putString(KEY_CACHE_SIZE, value.cacheSize.toString())
+                .putBoolean(KEY_QUIET_SEARCH, value.performQuiescenceSearch)
                 .apply()
         }
 

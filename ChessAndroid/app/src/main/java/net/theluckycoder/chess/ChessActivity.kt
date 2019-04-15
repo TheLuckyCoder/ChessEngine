@@ -82,7 +82,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         if (preferences.firstStart) {
             preferences.firstStart = false
             // Set Default Settings
-            preferences.settings = Settings(4, Runtime.getRuntime().availableProcessors() - 1, 200)
+            preferences.settings = Settings(4, Runtime.getRuntime().availableProcessors() - 1, 200, true)
         }
 
         drawBoard()

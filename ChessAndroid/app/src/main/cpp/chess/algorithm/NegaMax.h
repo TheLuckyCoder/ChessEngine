@@ -9,6 +9,7 @@ class Settings;
 
 class NegaMax final
 {
+	static bool quiescenceSearchEnabled;
 	static TranspositionTable<SearchCache> searchCache;
 
 public:
@@ -19,5 +20,5 @@ public:
 private:
 	static Move negaMaxRoot(StackVector<Move, 150> validMoves, unsigned int jobCount, short depth, bool isWhite);
 	static int negaMax(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
-	static int quiescence(const Board &board, short depth, int alpha, int beta, bool isWhite);
+	static int quiescence(const Board &board, int alpha, int beta, bool isWhite);
 };
