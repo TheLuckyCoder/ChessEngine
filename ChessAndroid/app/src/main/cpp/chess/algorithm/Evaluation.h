@@ -13,6 +13,7 @@ public:
 
 	Evaluation() = delete;
 
+	static short simpleEvaluation(const Board &board) noexcept;
 	static int evaluate(const Board &board) noexcept;
 	static short getPieceValue(Type type) noexcept
 	{

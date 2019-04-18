@@ -7,6 +7,7 @@
 #include "algorithm/Evaluation.h"
 #include "algorithm/Hash.h"
 #include "algorithm/NegaMax.h"
+#include "algorithm/MoveOrdering.h"
 
 Settings BoardManager::m_Settings(4u, std::thread::hardware_concurrency() - 1u, 200, true);
 BoardManager::PieceChangeListener BoardManager::m_Listener;

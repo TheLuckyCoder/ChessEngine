@@ -135,14 +135,55 @@ constexpr S QUEEN_MOBILITY[] =
 
 #undef S
 
+short Evaluation::simpleEvaluation(const Board &board) noexcept
+{
+	short score = 0;
+
+	for (byte x = 0; x < 8; x++)
+		for (byte y = 0; y < 8; y++)
+			if (const auto &piece = board.data[x][y]; piece)
+			{
+				const int points = [&]() -> short {
+					switch (piece.type)
+					{
+						case Type::PAWN:
+							return PAWN_SCORE.mg + PAWN_SQUARE[7u - x][std::min<byte>(y, 7u - y)].mg;
+						case Type::KNIGHT:
+							return KNIGHT_SCORE.mg + KNIGHT_SQUARE[7u - x][std::min<byte>(y, 7u - y)].mg;
+						case Type::BISHOP:
+							return BISHOP_SCORE.mg + BISHOP_SQUARE[7u - x][std::min<byte>(y, 7u - y)].mg;
+						case Type::ROOK:
+							return ROOK_SCORE.mg + ROOK_SQUARE[7u - x][std::min<byte>(y, 7u - y)].mg;
+						case Type::QUEEN:
+							return QUEEN_SCORE.mg + QUEEN_SQUARE[7u - x][std::min<byte>(y, 7u - y)].mg;
+						case Type::KING:
+							return KING_SQUARE[7u - x][std::min<byte>(y, 7u - y)].mg;
+						default:
+							return 0;
+					}
+				}();
+
+				if (piece.isWhite) score += points; else score -= points;
+			}
+
+	return score;
+}
+
 int Evaluation::evaluate(const Board &board) noexcept
 {
+	if (board.state == State::DRAW)
+		return 0;
+	if (board.state == State::WINNER_WHITE)
+		return VALUE_WINNER_WHITE;
+	if (board.state == State::WINNER_BLACK)
+		return VALUE_WINNER_BLACK;
+
 	if (Stats::enabled())
 		++Stats::boardsEvaluated;
 
 	Score totalScore;
 
-	std::pair<short, short> bishopCount;
+	std::pair<byte, byte> bishopCount;
 
 	const auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(true, board);
 	const auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(false, board);
