@@ -359,7 +359,7 @@ PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	if (moves.empty()) return moves;
 
 	Bitboard opponentsMoves{};
-	MoveGen<KING_DANGER>::forEachAttack(!piece.isWhite, board, [&] (const Piece &piece, const Pos &move) -> bool {
+	MoveGen<KING_DANGER>::forEachAttack(!piece.isWhite, board, [&] (const Piece &/*piece*/, const Pos &move) -> bool {
 		opponentsMoves |= move.toBitboard();
 		return false;
 	});

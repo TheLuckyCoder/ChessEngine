@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "Piece.h"
 #include "../BoardManager.h"
+#include "../algorithm/Evaluation.h"
 
 using U64 = std::uint64_t;
 
@@ -43,31 +44,31 @@ public:
 	Phase getPhase() const noexcept;
 	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const noexcept;
 
-	template<class T> // Move or Board
+	template<class T> // RootMove or Board
 	StackVector<T, 150> listValidMoves(bool isWhite) const noexcept;
 	StackVector<Board, 50> listValidCaptures(bool isWhite) const noexcept;
 };
 
-class Move final
+class RootMove final
 {
 public:
 	Pos start;
 	Pos dest;
 	Board board;
 
-	Move() = default;
+	RootMove() = default;
 
-	Move(const Pos start, const Pos dest, const Board &board)
+	RootMove(const Pos start, const Pos dest, const Board &board)
 		: start(start), dest(dest), board(board) {}
 
-	bool operator<(const Move &other) const
+	bool operator<(const RootMove &other) const
 	{
-		return board.score < other.board.score;
+		return board < other.board;
 	}
 
-	bool operator>(const Move &other) const
+	bool operator>(const RootMove &other) const
 	{
-		return board.score > other.board.score;
+		return board > other.board;
 	}
 };
 
@@ -98,8 +99,29 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
 				continue;
 
-			if constexpr (std::is_same_v<T, Move>)
+			board.score = Evaluation::evaluate(board);
+
+			if constexpr (std::is_same_v<T, RootMove>)
+			{
+				int count = 0;
+
+				for (const auto &game : BoardManager::getMovesHistory()) {
+					if (board.whiteToMove == game.board.whiteToMove &&
+						board.state == game.board.state &&
+						board.key == game.board.key) {
+						count++;
+					}
+
+					if (count == 3)
+					{
+						board.score = 0;
+						board.state = State::DRAW;
+						break;
+					}
+				}
+
 				moves.emplace_back(startPos, destPos, board);
+			}
 			else if (std::is_same_v<T, Board>)
 				moves.push_back(board);
 		}

@@ -39,6 +39,13 @@
             app:cpv_colorShape="square"
             app:cpv_showAlphaSlider="true" />
 
+        <com.jaredrummler.android.colorpicker.ColorPreference
+            android:defaultValue="@color/king_in_chess"
+            android:key="key_king_in_chess"
+            android:title="King In Chess Color"
+            app:cpv_colorShape="circle"
+            app:cpv_showAlphaSlider="true" />
+
         <Preference
             android:key="key_reset_tile_colors"
             android:title="Reset Tile Colors" />

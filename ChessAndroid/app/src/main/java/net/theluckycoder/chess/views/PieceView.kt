@@ -1,31 +1,25 @@
 package net.theluckycoder.chess.views
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
+import net.theluckycoder.chess.ChessActivity
 import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.PieceResourceManager
 
 @SuppressLint("ViewConstructor")
 class PieceView(
-    context: Context,
+    private val activity: ChessActivity,
     isWhite: Boolean,
     val res: Int,
-    viewSize: Int,
     private val listener: ClickListener
-) : CustomView(context) {
+) : CustomView(activity) {
 
-    private val bitmap: Bitmap
+    private val bitmap: Bitmap = PieceResourceManager.getBitmap(res)
 
     init {
-        val decodedBitmap = BitmapFactory.decodeResource(context.resources, res)
-        bitmap = Bitmap.createScaledBitmap(decodedBitmap, viewSize, viewSize, true)
-        decodedBitmap.recycle()
-
         if (isWhite == Native.isPlayerWhite()) {
             setOnClickListener {
                 listener.onClick(this)
@@ -34,7 +28,6 @@ class PieceView(
     }
 
     private val redBlurPaint = Paint().apply {
-        color = Color.parseColor("#aadd0000")
         maskFilter = BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL)
     }
     var isInChess = false
@@ -44,8 +37,10 @@ class PieceView(
         }
 
     override fun onDraw(canvas: Canvas) {
-        if (isInChess)
+        if (isInChess) {
+            redBlurPaint.color = activity.preferences.kingInChessColor
             canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, redBlurPaint)
+        }
         canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }

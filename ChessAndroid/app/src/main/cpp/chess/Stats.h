@@ -16,7 +16,6 @@ public:
 	static std::atomic_size_t boardsEvaluated;
 	static std::atomic_size_t nodesSearched;
 	static std::atomic_size_t allocationsCount;
-	static std::atomic_size_t allocatedMemory;
 
 	static bool enabled() noexcept { return _statsEnabled;  }
 	static void setEnabled(bool enabled) noexcept;

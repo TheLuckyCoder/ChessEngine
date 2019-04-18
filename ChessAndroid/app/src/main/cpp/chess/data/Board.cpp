@@ -157,6 +157,8 @@ StackVector<Board, 50> Board::listValidCaptures(const bool isWhite) const noexce
 			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
 				continue;
 
+			board.score = Evaluation::evaluate(board);
+
 			moves.push_back(board);
 		}
 	}

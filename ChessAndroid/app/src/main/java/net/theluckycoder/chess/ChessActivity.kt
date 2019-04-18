@@ -1,13 +1,9 @@
 package net.theluckycoder.chess
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.graphics.Point
 import android.os.Bundle
 import android.view.View
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
@@ -22,19 +18,8 @@ import kotlin.random.Random
 
 class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
-    companion object {
-        private val pieceResources = arrayOf(
-            0, R.drawable.w_pawn, R.drawable.w_knight,
-            R.drawable.w_bishop, R.drawable.w_rook,
-            R.drawable.w_queen, R.drawable.w_king,
-            R.drawable.b_pawn, R.drawable.b_knight,
-            R.drawable.b_bishop, R.drawable.b_rook,
-            R.drawable.b_queen, R.drawable.b_king
-        )
-    }
-
     val preferences = Preferences(this)
-    private val cells = HashMap<Pos, TileView>(64)
+    private val tiles = HashMap<Pos, TileView>(64)
     private val capturedPieces = CapturedPieces()
     val pieces = HashMap<Pos, PieceView>(32)
     private var viewSize = 0
@@ -53,6 +38,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
         windowManager.defaultDisplay.getSize(point)
 
         viewSize = point.x / 8
+        PieceResourceManager.init(this, viewSize)
 
         layout_board.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
 
@@ -85,6 +71,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             preferences.settings = Settings(4, Runtime.getRuntime().availableProcessors() - 1, 200, true)
         }
 
+        SaveManager.loadFromFile(this)
+
         drawBoard()
         updatePieces()
     }
@@ -92,7 +80,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     override fun onStart() {
         super.onStart()
 
-        cells.forEach {
+        tiles.forEach {
             it.value.invalidate()
         }
         showDebugInfo = preferences.debugInfo
@@ -110,8 +98,10 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     }
 
     private fun drawBoard() {
-        layout_board.removeAllViews()
-        cells.clear()
+        tiles.forEach {
+            layout_board.removeView(it.value)
+        }
+        tiles.clear()
 
         val isPlayerWhite = Native.isPlayerWhite()
 
@@ -123,20 +113,20 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
                 val xSize = invertIf(!isPlayerWhite, pos.x.toInt()) * viewSize
                 val ySize = invertIf(isPlayerWhite, pos.y.toInt()) * viewSize
 
-                val cellView = TileView(this, isWhite, pos, this).apply {
+                val tileView = TileView(this, isWhite, pos, this).apply {
                     layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                     x = xSize.toFloat()
                     y = ySize.toFloat()
                 }
 
-                cells[pos] = cellView
-                layout_board.addView(cellView)
+                tiles[pos] = tileView
+                layout_board.addView(tileView)
             }
         }
     }
 
-    private fun clearCells(clearMoved: Boolean = false) {
-        cells.forEach {
+    private fun clearTiles(clearMoved: Boolean = false) {
+        tiles.forEach {
             if (clearMoved && it.value.lastMoved)
                 it.value.lastMoved = false
             it.value.state = TileView.State.NONE
@@ -157,24 +147,24 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
         val startPos = selectedPos
         Native.movePiece(selectedPos, view.pos)
-        clearCells(true)
+        clearTiles(true)
         selectedPos = Pos()
 
-        cells[startPos]?.lastMoved = true
-        cells[view.pos]?.lastMoved = true
+        tiles[startPos]?.lastMoved = true
+        tiles[view.pos]?.lastMoved = true
 
         pb_loading.visibility = View.VISIBLE
     }
 
     private fun selectPiece(view: PieceView) {
-        clearCells()
+        clearTiles()
 
         val isPlayerWhite = Native.isPlayerWhite()
         val x = view.x.toInt() / viewSize
         val y = view.y.toInt() / viewSize
 
         selectedPos = Pos(invertIf(!isPlayerWhite, x), invertIf(isPlayerWhite, y))
-        cells[selectedPos]?.state = TileView.State.SELECTED
+        tiles[selectedPos]?.state = TileView.State.SELECTED
         updatePossibleMoves(selectedPos)
     }
 
@@ -189,12 +179,12 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
         newPieces.forEach {
             val isWhite = it.type in 1..6
-            val resource = pieceResources[it.type.toInt()]
+            val resource = PieceResourceManager.piecesResources[it.type.toInt() - 1]
 
             val xSize = invertIf(!isPlayerWhite, it.x.toInt()) * viewSize
             val ySize = invertIf(isPlayerWhite, it.y.toInt()) * viewSize
 
-            val pieceView = PieceView(this, isWhite, resource, viewSize, this).apply {
+            val pieceView = PieceView(this, isWhite, resource, this).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xSize.toFloat()
                 y = ySize.toFloat()
@@ -206,11 +196,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
     }
 
     private fun updatePossibleMoves(pos: Pos) {
-        cells[pos]?.state = TileView.State.SELECTED
+        tiles[pos]?.state = TileView.State.SELECTED
         val possibleMoves = Native.getPossibleMoves(pos)
 
         possibleMoves?.forEach {
-            cells[it]?.state = TileView.State.POSSIBLE
+            tiles[it]?.state = TileView.State.POSSIBLE
         }
     }
 
@@ -256,7 +246,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
     @Suppress("unused")
     private fun callback(gameState: Int, shouldRedraw: Boolean, moves: Array<PosPair>) = runOnUiThread {
-        clearCells(true)
+        clearTiles(true)
 
         val isPlayerWhite = Native.isPlayerWhite()
 
@@ -267,6 +257,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             if (startPos.isValid && destPos.isValid) {
                 val pieceView = pieces.remove(startPos)!!
 
+                // Calculate View Position
                 val xPos = invertIf(!isPlayerWhite, it.destX.toInt()) * viewSize
                 val yPos = invertIf(isPlayerWhite, it.destY.toInt()) * viewSize
 
@@ -282,8 +273,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
 
                 pieces[destPos] = pieceView
 
-                cells[startPos]?.lastMoved = true
-                cells[destPos]?.lastMoved = true
+                tiles[startPos]?.lastMoved = true
+                tiles[destPos]?.lastMoved = true
             }
         }
 
@@ -291,6 +282,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             updatePieces()
 
         updateState(gameState)
+
+        SaveManager.saveToFile(this)
     }
 
     private fun restartGame(isPlayerWhite: Boolean) {
@@ -301,7 +294,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
             initBoard(true, isPlayerWhite)
             drawBoard()
             updatePieces()
-            clearCells(true)
+            clearTiles(true)
             updateState(0)
             capturedPieces.reset()
             canMove = true
@@ -317,36 +310,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener {
                 runOnUiThread(restart)
             }
         } else restart()
-    }
-
-    // Saving/Loading
-
-    private fun loadMoves() {
-        val editText = EditText(this)
-
-        AlertDialog.Builder(this)
-            .setTitle("Load Moves")
-            .setView(editText)
-            .setPositiveButton("Load") { _, _ ->
-                Native.loadMoves(editText.text?.toString().orEmpty())
-            }
-            .show()
-    }
-
-    private fun saveMoves() {
-        val moves = Native.saveMoves()
-
-        AlertDialog.Builder(this)
-            .setTitle("Moves")
-            .setMessage(moves)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton("Copy") { _, _ ->
-                val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                val clip = ClipData.newPlainText("label", moves)
-                clipboardManager.primaryClip = clip
-            }
-            .show()
     }
 
     private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i

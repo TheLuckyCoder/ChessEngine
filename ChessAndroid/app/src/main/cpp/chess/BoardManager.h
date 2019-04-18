@@ -10,6 +10,8 @@
 #include "data/Player.h"
 #include "data/Piece.h"
 
+class RootMove;
+
 class BoardManager final
 {
 public:
@@ -22,12 +24,11 @@ private:
 	inline static bool m_IsPlayerWhite;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
-	static std::vector<PosPair> m_MovesHistory;
+	static std::vector<RootMove> m_MovesHistory;
 	
 public:
-
 	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
-	static void loadGame(std::vector<PosPair> &&moves);
+	static void loadGame(const std::vector<PosPair> &moves);
 
 	static Board &getBoard() { return m_Board; }
 	static const auto &getMovesHistory() { return m_MovesHistory; }
@@ -35,7 +36,7 @@ public:
 	static bool isPlayerWhite() { return m_IsPlayerWhite; }
 	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
-	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool checkValid = true);
+	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool updateState = true);
 	static void setSettings(const Settings &settings) { m_Settings = settings; }
 
 private:

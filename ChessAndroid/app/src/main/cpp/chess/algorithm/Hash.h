@@ -24,7 +24,7 @@ public:
 	static U64 getHash(const Pos &pos, const Piece &piece);
 	static U64 compute(const Board &board);
 
-	static void makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece);
+	static void makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece = Piece::EMPTY);
 	static void promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, bool isWhite, Type promotedType);
 	static void flipSide(U64 &key);
 

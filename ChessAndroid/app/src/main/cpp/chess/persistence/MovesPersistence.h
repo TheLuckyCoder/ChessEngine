@@ -6,6 +6,7 @@
 
 #include "../data/Pos.h"
 
+class RootMove;
 class Board;
 class Piece;
 
@@ -14,7 +15,7 @@ public:
 	MovesPersistence() = delete;
 
 	static std::vector<PosPair> load(std::string str);
-	static std::string save(const std::vector<PosPair> &movesHistory);
+	static std::string save(const std::vector<RootMove> &movesHistory);
 
 private:
 	static Pos getPos(std::string_view str);

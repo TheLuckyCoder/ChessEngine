@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cctype>
 
+#include "../data/Board.h"
+
 std::vector<PosPair> MovesPersistence::load(std::string str)
 {
 	str.erase(std::remove_if(str.begin(), str.end(),
@@ -25,22 +27,22 @@ std::vector<PosPair> MovesPersistence::load(std::string str)
 	return moves;
 }
 
-std::string MovesPersistence::save(const std::vector<PosPair> &movesHistory)
+std::string MovesPersistence::save(const std::vector<RootMove> &movesHistory)
 {
 	std::ostringstream stream;
 
-	for (const auto &pair : movesHistory)
-		savePosPair(stream, pair);
+	for (const auto &moves : movesHistory)
+		savePosPair(stream, std::make_pair(moves.start, moves.dest));
 
 	return stream.str();
 }
 
 Pos MovesPersistence::getPos(const std::string_view str)
 {
-	const auto x = static_cast<short>(str[0]);
-	const auto y = static_cast<short>(str[2]);
+	const byte x = static_cast<byte>(str[0] - 48);
+	const byte y = static_cast<byte>(str[2] - 48);
 
-	return Pos(static_cast<byte>(x), static_cast<byte>(y));
+	return Pos(x, y);
 }
 
 void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_view str)

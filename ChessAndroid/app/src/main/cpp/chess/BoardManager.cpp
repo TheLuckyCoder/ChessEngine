@@ -11,11 +11,12 @@
 Settings BoardManager::m_Settings(4u, std::thread::hardware_concurrency() - 1u, 200, true);
 BoardManager::PieceChangeListener BoardManager::m_Listener;
 Board BoardManager::m_Board;
-std::vector<PosPair> BoardManager::m_MovesHistory;
+std::vector<RootMove> BoardManager::m_MovesHistory;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
     Hash::init();
+    MoveOrdering::init();
 
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
@@ -30,17 +31,21 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 	    m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
 }
 
-void BoardManager::loadGame(std::vector<PosPair> &&moves)
+void BoardManager::loadGame(const std::vector<PosPair> &moves)
 {
 	m_Board.initDefaultBoard();
 	m_Board.key = Hash::compute(m_Board);
 
 	for (const auto &move : moves)
+	{
 		movePieceInternal(move.first, move.second, m_Board, false);
+		m_Board.updateState();
+		m_Board.score = Evaluation::evaluate(m_Board);
+		m_MovesHistory.emplace_back(move.first, move.second, m_Board);
+	}
 
 	m_Board.updateState();
-
-	m_MovesHistory = std::move(moves);
+	m_Board.score = Evaluation::evaluate(m_Board);
 	m_Listener(m_Board.state, true, {});
 }
 
@@ -99,17 +104,17 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board[selectedPos] = Piece();
 
 	m_Board.updateState();
-
-	m_MovesHistory.emplace_back(selectedPos, destPos);
-	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
-
 	m_Board.key = Hash::compute(m_Board);
+	m_Board.score = Evaluation::evaluate(m_Board);
+
+	m_MovesHistory.emplace_back(selectedPos, destPos, m_Board);
+	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
 
 	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
 		m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
 }
 
-void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool checkValid)
+void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool updateState)
 {
 	board.whiteToMove = !board.whiteToMove;
 	auto &selectedPiece = board[selectedPos];
@@ -140,8 +145,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 				else
 					board.blackCastled = true;
 
-				Hash::makeMove(board.key, posPair.first, posPair.second,
-						Piece(Type::ROOK, selectedPiece.isWhite), Piece());
+				Hash::makeMove(board.key, posPair.first, posPair.second, Piece(Type::ROOK, selectedPiece.isWhite));
 			}
 		}
 	}
@@ -156,29 +160,8 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	destPiece = selectedPiece;
 	board[selectedPos] = Piece();
 
-	if (checkValid)
-	{
+	if (updateState)
 		board.updateState();
-
-		switch (board.state)
-		{
-		case State::NONE:
-		case State::WHITE_IN_CHESS:
-		case State::BLACK_IN_CHESS:
-			board.score = Evaluation::evaluate(board);
-			break;
-		case State::WINNER_WHITE:
-			board.score = VALUE_WINNER_WHITE;
-			break;
-		case State::WINNER_BLACK:
-			board.score = VALUE_WINNER_BLACK;
-			break;
-		case State::DRAW:
-		case State::INVALID:
-			board.score = 0;
-			break;
-		}
-	}
 }
 
 // This function should only be called through the Worker Thread

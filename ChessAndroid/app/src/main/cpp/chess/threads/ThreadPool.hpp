@@ -109,7 +109,7 @@ public:
 	/**
 	 * Constructor.
 	 */
-	explicit ThreadPool(const std::uint32_t numThreads)
+	explicit ThreadPool(const std::size_t numThreads)
 		: m_done{ false }
 	{
 		m_threads.reserve(numThreads);
@@ -143,9 +143,44 @@ public:
 		destroy();
 	}
 
-	std::size_t threadCount() const
+	std::size_t threadCount() const noexcept
 	{
 		return m_threads.size();
+	}
+
+	void updateThreadCount(const std::size_t numThreads) noexcept(false)
+	{
+		const std::size_t currentThreadCount = threadCount();
+
+		if (numThreads < currentThreadCount)
+		{
+			m_done = true;
+			for (auto &thread : m_threads)
+				if (thread.joinable())
+					thread.join();
+
+			m_threads.reserve(numThreads);
+
+			try
+			{
+				for (auto i = 0u; i < numThreads; ++i)
+					m_threads.emplace_back(&ThreadPool::worker, this);
+			}
+			catch (...)
+			{
+				destroy();
+				throw;
+			}
+
+			m_done = false;
+		} else if (numThreads > currentThreadCount) {
+			m_threads.reserve(numThreads);
+
+			for (auto i = currentThreadCount; i < numThreads; ++i)
+				m_threads.emplace_back(&ThreadPool::worker, this);
+		}
+
+		// Else the size should be the same
 	}
 
 	/**

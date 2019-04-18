@@ -14,6 +14,7 @@ class Preferences(private val context: Context) {
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
         const val KEY_TILE_SELECTED = "key_tile_selected"
         const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
+        const val KEY_KING_IN_CHESS = "key_king_in_chess"
         const val KEY_RESET_TILE_COLORS = "key_reset_tile_colors"
 
         const val KEY_DEPTH = "key_depth"
@@ -49,6 +50,10 @@ class Preferences(private val context: Context) {
     var lastMovedTileColor
         get() = manager.getInt(KEY_TILE_LAST_MOVED, getColor(context, R.color.tile_last_moved))
         set(value) = manager.edit().putInt(KEY_TILE_LAST_MOVED, value).apply()
+
+    var kingInChessColor
+        get() = manager.getInt(KEY_KING_IN_CHESS, getColor(context, R.color.king_in_chess))
+        set(value) = manager.edit().putInt(KEY_KING_IN_CHESS, value).apply()
 
     var settings
         get() = Settings(

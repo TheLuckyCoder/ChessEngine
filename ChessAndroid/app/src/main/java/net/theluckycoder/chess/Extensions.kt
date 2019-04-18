@@ -7,5 +7,3 @@ import android.os.Build
 fun getColor(context: Context, color: Int): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
     context.getColor(color)
 } else context.resources.getColor(color)
-
-fun Boolean.toInt() = if (this) 1 else 0
