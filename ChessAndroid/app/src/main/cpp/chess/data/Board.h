@@ -86,7 +86,8 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 		for (const auto &destPos : possibleMoves)
 		{
-			if ((*this)[destPos].type == Type::KING)
+			const auto &destPiece = (*this)[destPos];
+			if (destPiece.type == Type::KING)
 				continue;
 
 			Board board = *this;
@@ -108,9 +109,8 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 				for (const auto &game : BoardManager::getMovesHistory()) {
 					if (board.whiteToMove == game.board.whiteToMove &&
 						board.state == game.board.state &&
-						board.key == game.board.key) {
+						board.key == game.board.key)
 						count++;
-					}
 
 					if (count == 3)
 					{

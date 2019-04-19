@@ -1,7 +1,5 @@
 #include "BoardManager.h"
 
-//#include <ctime>
-
 #include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Evaluation.h"
@@ -69,6 +67,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 {
 	if (!selectedPos.isValid() || !destPos.isValid()) return;
 	m_Board.whiteToMove = !m_Board.whiteToMove;
+	m_Board.promotionOrCapture = false;
 
 	StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
 	
@@ -121,6 +120,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	auto &selectedPiece = board[selectedPos];
 	auto &destPiece = board[destPos];
 	bool hashHandled = false;
+	board.promotionOrCapture = false;
 
 	if (selectedPiece.type == Type::PAWN)
 	{
@@ -128,6 +128,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 		{
 			Hash::promotePawn(board.key, selectedPos, destPos, selectedPiece.isWhite, Type::QUEEN);
 			hashHandled = true;
+			board.promotionOrCapture = true;
 		}
 	}
 	else if (selectedPiece.type == Type::KING)
@@ -155,7 +156,11 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	if (!hashHandled)
 		Hash::makeMove(board.key, selectedPos, destPos, selectedPiece, destPiece);
 
-	board.npm -= Evaluation::getPieceValue(destPiece.type);
+	if (destPiece)
+	{
+		board.npm -= Evaluation::getPieceValue(destPiece.type);
+		board.promotionOrCapture = true;
+	}
 
 	selectedPiece.moved = true;
 	destPiece = selectedPiece;

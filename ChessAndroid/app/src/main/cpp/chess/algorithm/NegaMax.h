@@ -10,7 +10,7 @@ class Settings;
 class NegaMax final
 {
 	static bool quiescenceSearchEnabled;
-	static TranspositionTable<SearchCache> searchCache;
+	static TranspositionTable searchCache;
 
 public:
 	NegaMax() = delete;

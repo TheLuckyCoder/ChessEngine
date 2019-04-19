@@ -11,7 +11,7 @@
 #include "../threads/NegaMaxThreadPool.h"
 
 bool NegaMax::quiescenceSearchEnabled;
-TranspositionTable<SearchCache> NegaMax::searchCache(1);
+TranspositionTable NegaMax::searchCache(1);
 
 PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
 {
