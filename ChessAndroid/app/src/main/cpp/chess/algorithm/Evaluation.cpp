@@ -169,7 +169,7 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 	return score;
 }
 
-int Evaluation::evaluate(const Board &board) noexcept
+short Evaluation::evaluate(const Board &board) noexcept
 {
 	if (board.state == State::DRAW)
 		return 0;
@@ -183,16 +183,23 @@ int Evaluation::evaluate(const Board &board) noexcept
 
 	Score totalScore;
 
-	std::pair<byte, byte> bishopCount;
+	PairColor<byte> pawnCount{};
+	PairColor<byte> bishopCount{};
+	PairColor<short> npm{};
 
 	const auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(true, board);
 	const auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(false, board);
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			if (const auto &piece = board.data[x][y];
-				piece && piece.type != Type::PAWN && piece.type != Type::PAWN && piece.type != Type::KING)
+			if (const auto &piece = board.data[x][y]; piece && piece.type != Type::KING)
 			{
+				if (piece.type == Type::PAWN)
+				{
+					piece.isWhite ? pawnCount.white++ : pawnCount.black++;
+					continue;
+				}
+
 				const bool isWhite = piece.isWhite;
 				const Pos pos(x, y);
 				const auto defendedValue = isWhite ? whiteMoves.map[pos] : blackMoves.map[pos];
@@ -204,7 +211,7 @@ int Evaluation::evaluate(const Board &board) noexcept
 
 				if (piece.type == Type::BISHOP)
 				{
-					if (isWhite) bishopCount.first++; else bishopCount.second++;
+					if (isWhite) bishopCount.white++; else bishopCount.black++;
 				}
 
 				const auto &theirAttacks = isWhite ? whiteMoves.board : blackMoves.board;
@@ -217,13 +224,19 @@ int Evaluation::evaluate(const Board &board) noexcept
 				if (theirAttacks[!isWhite][Type::ROOK] & square)
 					points -= ROOK_THREATS[piece.type];
 
-				if (isWhite) totalScore += points; else totalScore -= points;
+				if (isWhite) {
+					npm.white += getPieceValue(piece.type);
+					totalScore += points;
+				} else {
+					npm.black += getPieceValue(piece.type);
+					totalScore -= points;
+				}
 			}
 
 	// 2 Bishops receive a bonus
-	if (bishopCount.first >= 2)
+	if (bishopCount.white >= 2)
 		totalScore += 10;
-	if (bishopCount.second >= 2)
+	if (bishopCount.black >= 2)
 		totalScore -= 10;
 
 	for (byte x = 0; x < 8; x++)
@@ -271,10 +284,43 @@ int Evaluation::evaluate(const Board &board) noexcept
 		totalScore.eg -= 40;
 	}
 
-	// Tempo
-	totalScore += board.whiteToMove ? 20 : -20;
+	// Scale Factor
+	/*int sf = 64;
+	{
+		if (pawnCount.white == 0 && npm.white - npm.black <= BISHOP_SCORE.mg) sf = npm.white < ROOK_SCORE.mg ? 0 : (npm.black <= BISHOP_SCORE.mg ? 4 : 14);
+		if (sf == 64)
+		{
+			const bool ob = true;// = opposite_bishops(pos);
+			if (ob && npm.white == BISHOP_SCORE.mg && npm.black == BISHOP_SCORE.mg) {
+				int asymmetry = 0;
+				for (const auto &x : board.data)
+				{
+					int open[]{ 0, 0 };
 
-	return board.getPhase() == Phase::MIDDLE ? totalScore.mg : totalScore.eg;
+					for (const Piece &piece : x)
+					{
+						if (piece.type == Type::PAWN) open[!piece.isWhite] = 1;
+					}
+
+					if (open[0] + open[1] == 1) asymmetry++;
+				}
+				//asymmetry += candidate_passed_w + candidate_passed_b;
+				sf = 8 + 4 * asymmetry;
+			} else {
+				sf = std::min(40 + (ob ? 2 : 7) * pawnCount.white, sf);
+			}
+		}
+	}
+	totalScore.eg *= sf / 64;*/
+
+	// Tempo
+	const int tempo = board.whiteToMove ? 20 : -20;
+	totalScore += tempo;
+	const Phase phase = board.getPhase();
+
+	return phase == Phase::MIDDLE ? totalScore.mg : totalScore.eg;
+	//const int p = static_cast<int>(board.getPhase());
+	//return ((totalScore.mg * p + totalScore.eg * (128 - p)) / 128) + tempo;
 }
 
 Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const Attacks &ourAttacks, const Attacks &theirAttacks) noexcept
@@ -294,8 +340,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	if (isolated)
 	{
 		for (int y = 0 ; y < 8; y++) {
-			if (piece.isSameType(board.getPieceSafely(pos.x - 1u, y)) ||
-				piece.isSameType(board.getPieceSafely(pos.x + 1u, y)))
+			if (board.getPieceSafely(pos.x - 1u, y).isSameType(piece) ||
+				board.getPieceSafely(pos.x + 1u, y).isSameType(piece))
 			{
 				isolated = false;
 				break;
@@ -383,8 +429,8 @@ inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const 
 		const Piece enemyPawn(PAWN, !piece.isWhite);
 		int count = 0;
 
-		for (byte x = 0; x < 8; x++)
-			if (board.data[x][pos.y].isSameType(enemyPawn))
+		for (const auto &x : board.data)
+			if (x[pos.y].isSameType(enemyPawn))
 				count++;
 		for (byte y = 0; y < 8; y++)
 			if (board.data[pos.x][y].isSameType(enemyPawn))

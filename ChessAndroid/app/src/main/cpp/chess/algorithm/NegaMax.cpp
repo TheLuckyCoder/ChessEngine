@@ -41,14 +41,14 @@ PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Setti
     return PosPair(bestMove.start, bestMove.dest);
 }
 
-RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short depth, const bool isWhite)
+RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short ply, const bool isWhite)
 {
 	std::vector<ThreadPool::TaskFuture<void>> futures;
 	futures.reserve(jobCount);
 
 	std::mutex mutex;
 	RootMove bestMove = validMoves.front();
-	int alpha = VALUE_MIN;
+	short alpha = VALUE_MIN;
 
 	const auto doWork = [&] {
 		mutex.lock();
@@ -56,12 +56,12 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 		while (!validMoves.empty())
 		{
 			// Make a copy of the needed variables while locked
-			const int beta = -alpha;
+			const short beta = -alpha;
 			const RootMove move = validMoves.front();
 			validMoves.pop_front();
 
 			mutex.unlock(); // Process the result asynchronously
-			const int result = -negaMax(move.board, depth, VALUE_MIN, beta, isWhite, false);
+			const short result = -negaMax(move.board, ply, VALUE_MIN, beta, isWhite, 1, false);
 			mutex.lock();
 
 			if (result > alpha)
@@ -83,26 +83,24 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 	return bestMove;
 }
 
-int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const bool isWhite, bool extended)
+short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth, bool moveCountPruning)
 {
-	if (depth == 0)
+	if (board.state == State::DRAW)
+		return 0;
+	if (ply == -1)
+		return sideToMove(board, isWhite);
+	if (ply == 0)
 	{
-		if (board.state == State::DRAW)
-			return 0;
-		if (!extended && (board.state == State::WHITE_IN_CHESS || board.state == State::BLACK_IN_CHESS))
-		{
-			depth++;
-			extended = true;
-		}
-		else if (quiescenceSearchEnabled) // Switch to Quiescence Search if enabled
-			return quiescence(board, alpha, beta, isWhite);
-		else
-			return sideToMove(board, isWhite);
+		if (board.state != State::WHITE_IN_CHESS || board.state != State::BLACK_IN_CHESS)
+			// Switch to Quiescence Search if enabled
+			return quiescenceSearchEnabled ? quiescence(board, alpha, beta, isWhite) : sideToMove(board, isWhite);
+
+		// Else, allow the search to be extended to ply -1 if in chess
 	}
 
-	const int originalAlpha = alpha;
+	const short originalAlpha = alpha;
 	if (const SearchCache cache = searchCache[board.key];
-		board.key == cache.key && board.score == cache.boardScore && cache.depth >= depth)
+		board.key == cache.key && board.score == cache.boardScore && cache.ply == ply)
 	{
 		if (cache.flag == Flag::EXACT)
 			return cache.value;
@@ -115,11 +113,12 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const
 			return cache.value;
 	}
 
-	const auto validMoves = board.listValidMoves<Board>(isWhite);
-	int bestScore = VALUE_MIN;
-
 	if (Stats::enabled())
 		++Stats::nodesSearched;
+
+	const auto validMoves = board.listValidMoves<Board>(isWhite);
+	short bestScore = VALUE_MIN;
+	short movesCount = 0;
 
 	for (const auto &move : validMoves)
 	{
@@ -129,7 +128,19 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const
 			break;
 		}
 
-		const int moveScore = -negaMax(move, depth - 1, -beta, -alpha, !isWhite, extended);
+		short moveScore = alpha + 1;
+
+		if (!moveCountPruning &&
+			movesCount > 3 &&
+			depth >= 3 &&
+			ply >= 3 &&
+			move.state != State::WHITE_IN_CHESS &&
+			move.state != State::BLACK_IN_CHESS &&
+			!move.promotionOrCapture)
+			moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, !isWhite, depth + 1, true);
+
+		if (moveScore > alpha)
+			moveScore = -negaMax(move, ply - 1, -beta, -alpha, !isWhite, depth + 1, false);
 
 		if (moveScore > bestScore)
 		{
@@ -140,28 +151,27 @@ int NegaMax::negaMax(const Board &board, short depth, int alpha, int beta, const
 
 		if (alpha >= beta)
 			break;
+
+		++movesCount;
 	}
 
-	if (!extended)
-	{
-		Flag flag = Flag::EXACT;
-		if (bestScore < originalAlpha)
-			flag = Flag::ALPHA;
-		else if (bestScore > beta)
-			flag = Flag::BETA;
+	Flag flag = Flag::EXACT;
+	if (bestScore < originalAlpha)
+		flag = Flag::ALPHA;
+	else if (bestScore > beta)
+		flag = Flag::BETA;
 
-		searchCache.insert({ board.key, board.score, bestScore, depth, flag });
-	}
+	searchCache.insert({ board.key, board.score, bestScore, ply, flag });
 
 	return bestScore;
 }
 
-int NegaMax::quiescence(const Board &board, int alpha, const int beta, const bool isWhite)
+short NegaMax::quiescence(const Board &board, short alpha, short beta, bool isWhite)
 {
 	if (board.state == State::DRAW)
 		return 0;
 
-	const int standPat = sideToMove(board, isWhite);
+	const short standPat = sideToMove(board, isWhite);
 
 	if (standPat >= beta)
 		return standPat;
@@ -178,7 +188,7 @@ int NegaMax::quiescence(const Board &board, int alpha, const int beta, const boo
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
 
-		const int moveScore = -quiescence(move, -beta, -alpha, !isWhite);
+		const short moveScore = -quiescence(move, -beta, -alpha, !isWhite);
 
 		if (moveScore >= beta)
 			return moveScore;
@@ -189,11 +199,11 @@ int NegaMax::quiescence(const Board &board, int alpha, const int beta, const boo
 	return alpha;
 }
 
-int NegaMax::negaScout(const Board &board, short depth, int alpha, int beta, bool isWhite)
+short NegaMax::negaScout(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth)
 {
 	if (board.state == State::DRAW)
 		return 0;
-	if (depth == 0)
+	if (ply == 0)
 	{
 		if (quiescenceSearchEnabled)
 			return quiescence(board, alpha, beta, isWhite);
@@ -201,20 +211,18 @@ int NegaMax::negaScout(const Board &board, short depth, int alpha, int beta, boo
 	}
 
 	const auto validMoves = board.listValidMoves<Board>(isWhite);
-	int bestScore = VALUE_MIN;
-	int n = beta;
+	short bestScore = VALUE_MIN;
+	short n = beta;
 
 	for (const auto &move : validMoves)
 	{
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
 
-		const int moveScore = -negaScout(move, depth -1, -n, -alpha, !isWhite);
+		const short moveScore = -negaScout(move, ply -1, -n, -alpha, !isWhite, depth + 1);
 
 		if (moveScore > bestScore)
-		{
-			bestScore = (n == beta || depth <= 2) ? moveScore : -negaScout(move, depth - 1, -beta, -bestScore, !isWhite);
-		}
+			bestScore = (n == beta || ply <= 2) ? moveScore : -negaScout(move, ply - 1, -beta, -bestScore, !isWhite, depth + 1);
 
 		if (bestScore > alpha)
 			alpha = bestScore;
@@ -228,7 +236,7 @@ int NegaMax::negaScout(const Board &board, short depth, int alpha, int beta, boo
 	return bestScore;
 }
 
-inline int NegaMax::sideToMove(const Board &board, const bool isWhite)
+inline short NegaMax::sideToMove(const Board &board, const bool isWhite)
 {
 	return isWhite ? board.score : -board.score;
 }

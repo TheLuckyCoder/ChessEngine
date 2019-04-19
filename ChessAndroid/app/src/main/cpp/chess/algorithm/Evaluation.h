@@ -6,6 +6,12 @@
 
 class Board;
 
+template <class T>
+struct PairColor
+{
+	T white, black{};
+};
+
 class Evaluation final
 {
 public:
@@ -14,7 +20,7 @@ public:
 	Evaluation() = delete;
 
 	static short simpleEvaluation(const Board &board) noexcept;
-	static int evaluate(const Board &board) noexcept;
+	static short evaluate(const Board &board) noexcept;
 	static short getPieceValue(Type type) noexcept
 	{
 		return PIECE_VALUE[type];

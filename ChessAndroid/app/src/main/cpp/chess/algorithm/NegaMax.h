@@ -18,10 +18,10 @@ public:
 	static PosPair getBestMove(const Board &board, bool isWhite, const Settings &settings);
 
 private:
-	static RootMove negaMaxRoot(StackVector<RootMove, 150> validMoves, unsigned int jobCount, short depth, bool isWhite);
-	static int negaMax(const Board &board, short depth, int alpha, int beta, bool isWhite, bool extended);
-	static int quiescence(const Board &board, int alpha, int beta, bool isWhite);
-	static int negaScout(const Board &board, short depth, int alpha, int beta, bool isWhite);
+	static RootMove negaMaxRoot(StackVector<RootMove, 150> validMoves, unsigned int jobCount, short ply, bool isWhite);
+	static short negaMax(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth, bool moveCountPruning);
+	static short quiescence(const Board &board, short alpha, short beta, bool isWhite);
+	static short negaScout(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth);
 
-	inline static int sideToMove(const Board &board, bool isWhite);
+	inline static short sideToMove(const Board &board, bool isWhite);
 };

@@ -20,8 +20,9 @@ public:
 	byte blackKingSquare = 0;
 	State state = State::NONE;
 	bool whiteToMove = true;
-	int score = 0;
-	int npm = 0;
+	short score = 0;
+	short npm = 0;
+	bool promotionOrCapture = false;
 
 	Board() = default;
 	Board(Board&&) = default;
