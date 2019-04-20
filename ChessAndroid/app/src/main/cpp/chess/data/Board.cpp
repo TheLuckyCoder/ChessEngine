@@ -114,7 +114,7 @@ void Board::updateState() noexcept
 
 Phase Board::getPhase() const noexcept
 {
-	constexpr int midGameLimit = 15258, endGameLimit = 3915;
+	constexpr short midGameLimit = 15258, endGameLimit = 3915;
 
 	const int limit = std::max(endGameLimit, std::min(npm, midGameLimit));
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));

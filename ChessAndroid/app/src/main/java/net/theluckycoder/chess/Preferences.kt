@@ -3,6 +3,7 @@ package net.theluckycoder.chess
 import android.content.Context
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
+import net.theluckycoder.chess.utils.getColor
 
 class Preferences(private val context: Context) {
 

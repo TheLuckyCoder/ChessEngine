@@ -122,7 +122,7 @@ Java_net_theluckycoder_chess_Native_getStats(JNIEnv *pEnv, jclass /*type*/)
 external JNIEXPORT jint JNICALL
 Java_net_theluckycoder_chess_Native_getBoardValue(JNIEnv */*pEnv*/, jclass /*type*/)
 {
-	return static_cast<jint>(Evaluation::evaluate(BoardManager::getBoard()));
+	return static_cast<jint>(BoardManager::getBoard().score);
 }
 
 external JNIEXPORT _jobjectArray *JNICALL

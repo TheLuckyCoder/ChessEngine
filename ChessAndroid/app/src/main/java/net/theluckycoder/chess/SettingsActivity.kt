@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.preference.PreferenceFragment
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import net.theluckycoder.chess.utils.getColor
 
 class SettingsActivity : AppCompatActivity() {
 

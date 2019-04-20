@@ -20,7 +20,7 @@ enum class CastlingRights : unsigned char
 	CASTLED
 };
 
-enum class Phase
+enum class Phase : short
 {
 	ENDING,
 	MIDDLE = 128

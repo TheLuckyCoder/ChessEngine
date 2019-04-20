@@ -31,7 +31,6 @@ public:
 	TranspositionTable &operator=(const TranspositionTable&) = delete;
 	TranspositionTable(TranspositionTable&&) = delete;
 	TranspositionTable &operator=(TranspositionTable&&) = delete;
-
 	~TranspositionTable() noexcept;
 
 	SearchCache operator[](const U64 key) const noexcept;

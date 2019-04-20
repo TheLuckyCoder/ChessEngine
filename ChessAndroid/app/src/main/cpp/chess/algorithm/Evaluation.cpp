@@ -314,12 +314,12 @@ short Evaluation::evaluate(const Board &board) noexcept
 	totalScore.eg *= sf / 64;*/
 
 	// Tempo
-	const int tempo = board.whiteToMove ? 20 : -20;
+	const short tempo = board.whiteToMove ? 20 : -20;
 	totalScore += tempo;
 	const Phase phase = board.getPhase();
 
 	return phase == Phase::MIDDLE ? totalScore.mg : totalScore.eg;
-	//const int p = static_cast<int>(board.getPhase());
+	//const short p = static_cast<int>(board.getPhase());
 	//return ((totalScore.mg * p + totalScore.eg * (128 - p)) / 128) + tempo;
 }
 
@@ -329,8 +329,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	value += PAWN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 
 	const byte behind = piece.isWhite ? -1 : 1;
-	const int supported = (piece.isSameType(board.getPieceSafely(pos.x - 1u, pos.y + behind)) +
-							piece.isSameType(board.getPieceSafely(pos.x + 1u, pos.y + behind)));
+	const int supported = (board.getPieceSafely(pos.x - 1u, pos.y + behind).isSameType(piece) +
+							board.getPieceSafely(pos.x + 1u, pos.y + behind).isSameType(piece));
 
 	bool isolated = !static_cast<bool>(supported);
 
@@ -409,7 +409,7 @@ inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, cons
 	return value;
 }
 
-inline Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept
+Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = ROOK_SCORE;
 

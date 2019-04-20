@@ -1,4 +1,4 @@
-package net.theluckycoder.chess
+package net.theluckycoder.chess.utils
 
 import android.content.Context
 import android.os.Build

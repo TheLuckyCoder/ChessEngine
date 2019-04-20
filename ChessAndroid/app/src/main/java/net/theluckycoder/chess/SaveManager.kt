@@ -16,16 +16,12 @@ object SaveManager {
     }
 
     fun loadFromFile(context: Context) {
-        var moves = ""
-
         try {
             context.openFileInput(SAVE_FILE_NAME).reader().use {
-                moves = it.readText()
+                Native.loadMoves(it.readText())
             }
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
         }
-
-        Native.loadMoves(moves)
     }
 }

@@ -1,4 +1,6 @@
-package net.theluckycoder.chess
+package net.theluckycoder.chess.utils
+
+import net.theluckycoder.chess.Piece
 
 class CapturedPieces {
 
@@ -15,7 +17,7 @@ class CapturedPieces {
     }
 
     fun addBlackPiece(piece: Piece) {
-        blackPieces.add(piece.type.toInt())
+        blackPieces.add(piece.type.toInt() - 6)
         blackScore += piece.getScore()
     }
 
@@ -38,6 +40,9 @@ class CapturedPieces {
                 second.removeAt(index)
             }
         }
+
+        first.sortDescending()
+        second.sortDescending()
 
         return Pair(first.toIntArray(), second.toIntArray())
     }

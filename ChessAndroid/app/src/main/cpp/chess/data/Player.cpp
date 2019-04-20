@@ -52,7 +52,7 @@ namespace Player
 		const byte kingSquare = isWhite ? board.whiteKingSquare : board.blackKingSquare;
 		bool check = false;
 
-		MoveGen<CAPTURES>::forEachAttack(!isWhite, board, [&] (const Piece &piece, const Pos &move) -> bool {
+		MoveGen<CAPTURES>::forEachAttack(!isWhite, board, [&] (const Piece &/*piece*/, const Pos &move) -> bool {
 			if (kingSquare == move.toSquare())
 			{
 				check = true;

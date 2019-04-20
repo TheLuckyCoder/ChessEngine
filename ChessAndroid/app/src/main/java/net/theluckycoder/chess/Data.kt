@@ -1,5 +1,14 @@
 package net.theluckycoder.chess
 
+enum class State {
+    NONE,
+    WINNER_WHITE,
+    WINNER_BLACK,
+    DRAW,
+    WHITE_IN_CHESS,
+    BLACK_IN_CHESS,
+}
+
 data class Piece(
     @JvmField
     val x: Byte,
