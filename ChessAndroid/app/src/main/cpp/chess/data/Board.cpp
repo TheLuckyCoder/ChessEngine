@@ -76,6 +76,7 @@ void Board::initDefaultBoard() noexcept
 	whiteToMove = true;
 	state = State::NONE;
 	score = 0;
+	isPromotion = isPromotion = false;
 }
 
 void Board::updateState() noexcept

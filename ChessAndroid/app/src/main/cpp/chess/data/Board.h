@@ -22,7 +22,8 @@ public:
 	bool whiteToMove = true;
 	short score = 0;
 	short npm = 0;
-	bool promotionOrCapture = false;
+	bool isPromotion = false;
+	bool isCapture = false;
 
 	Board() = default;
 	Board(Board&&) = default;

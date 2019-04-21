@@ -136,7 +136,8 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 			ply >= 3 &&
 			move.state != State::WHITE_IN_CHESS &&
 			move.state != State::BLACK_IN_CHESS &&
-			!move.promotionOrCapture)
+			!move.isCapture &&
+			!move.isCapture)
 			moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, !isWhite, depth + 1, true);
 
 		if (moveScore > alpha)
@@ -177,6 +178,15 @@ short NegaMax::quiescence(const Board &board, short alpha, short beta, bool isWh
 		return standPat;
 	if (standPat > alpha)
 		alpha = standPat;
+
+	// Delta Pruning
+	constexpr short QUEEN_VALUE = 2529;
+	constexpr short PAWN_VALUE = 136;
+	short bigDelta = QUEEN_VALUE;
+	if (board.isPromotion) bigDelta += QUEEN_VALUE - PAWN_VALUE;
+
+	if (standPat < alpha - bigDelta)
+		return alpha; // TODO: Turn off Delta Pruning in the Endgame
 
 	const auto validMoves = board.listValidCaptures(isWhite);
 

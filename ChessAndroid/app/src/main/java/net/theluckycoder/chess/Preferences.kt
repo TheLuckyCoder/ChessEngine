@@ -16,7 +16,7 @@ class Preferences(private val context: Context) {
         const val KEY_TILE_SELECTED = "key_tile_selected"
         const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
         const val KEY_KING_IN_CHESS = "key_king_in_chess"
-        const val KEY_RESET_TILE_COLORS = "key_reset_tile_colors"
+        const val KEY_RESET_COLORS = "key_reset_colors"
 
         const val KEY_DEPTH = "key_depth"
         const val KEY_THREADS = "key_threads"

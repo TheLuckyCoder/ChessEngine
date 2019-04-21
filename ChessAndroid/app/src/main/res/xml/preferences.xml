@@ -47,8 +47,8 @@
             app:cpv_showAlphaSlider="true" />
 
         <Preference
-            android:key="key_reset_tile_colors"
-            android:title="Reset Tile Colors" />
+            android:key="key_reset_colors"
+            android:title="Reset Colors" />
 
     </PreferenceCategory>
 
