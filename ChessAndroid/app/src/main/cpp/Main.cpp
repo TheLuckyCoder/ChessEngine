@@ -12,7 +12,7 @@
 
 JavaVM *jvm = nullptr;
 bool boardManagerInitialized = false;
-jobject chessActivityInstance;
+jobject gameManagerInstance;
 
 const BoardManager::PieceChangeListener listener = [](State state, bool shouldRedraw,
 													  const StackVector<PosPair, 2> &moved)
@@ -40,9 +40,9 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 		env->SetObjectArrayElement(result, i, obj);
 	}
 
-	const static auto callbackId = env->GetMethodID(Cache::chessActivityClass, "callback",
+	const static auto callbackId = env->GetMethodID(Cache::gameManagerClass, "callback",
 													"(IZ[Lnet/theluckycoder/chess/PosPair;)V");
-	env->CallVoidMethod(chessActivityInstance, callbackId, static_cast<jint>(state), shouldRedraw, result);
+	env->CallVoidMethod(gameManagerInstance, callbackId, static_cast<jint>(state), shouldRedraw, result);
 
 	if (getEnvStat == JNI_EDETACHED)
 	{
@@ -74,22 +74,22 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void */*reserved*/)
 	vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
 	// Clean the caches
-	env->DeleteGlobalRef(chessActivityInstance);
+	env->DeleteGlobalRef(gameManagerInstance);
 	Cache::cleanCaches(env);
 
 	jvm = nullptr;
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_ChessActivity_initBoard(JNIEnv *pEnv, jobject instance,
-													 jboolean restartGame, jboolean isPlayerWhite)
+Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject instance,
+														 jboolean restartGame, jboolean isPlayerWhite)
 {
 	pEnv->ExceptionClear();
 	if (!boardManagerInitialized)
 	{
-		pEnv->DeleteGlobalRef(chessActivityInstance);
-		chessActivityInstance = pEnv->NewGlobalRef(instance);
-		Cache::chessActivityClass = Cache::cacheClass(pEnv, pEnv->GetObjectClass(chessActivityInstance));
+		pEnv->DeleteGlobalRef(gameManagerInstance);
+		gameManagerInstance = pEnv->NewGlobalRef(instance);
+		Cache::gameManagerClass = Cache::cacheClass(pEnv, pEnv->GetObjectClass(gameManagerInstance));
 
 		boardManagerInitialized = true;
 		BoardManager::initBoardManager(listener);

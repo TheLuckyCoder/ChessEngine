@@ -20,21 +20,10 @@ object Native {
     external fun getPossibleMoves(selected: Pos): Array<Pos>?
 
     @JvmStatic
-    fun movePiece(selected: Pos, dest: Pos): Boolean = movePiece(selected.x, selected.y, dest.x, dest.y)
-
-    @JvmStatic
     external fun movePiece(selectedX: Byte, selectedY: Byte, destX: Byte, destY: Byte): Boolean
 
     @JvmStatic
     external fun enableStats(enabled: Boolean)
-
-    @JvmStatic
-    fun setSettings(settings: Settings) = setSettings(
-        settings.baseSearchDepth,
-        settings.threadCount,
-        settings.cacheSize,
-        settings.performQuiescenceSearch
-    )
 
     @JvmStatic
     external fun setSettings(

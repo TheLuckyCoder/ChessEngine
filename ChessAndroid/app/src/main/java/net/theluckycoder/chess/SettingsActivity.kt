@@ -20,7 +20,7 @@ class SettingsActivity : AppCompatActivity() {
             super.onCreate(savedInstanceState)
             addPreferencesFromResource(R.xml.preferences)
 
-            findPreference(Preferences.KEY_RESET_TILE_COLORS).setOnPreferenceClickListener {
+            findPreference(Preferences.KEY_RESET_COLORS).setOnPreferenceClickListener {
                 val activity = activity ?: return@setOnPreferenceClickListener false
 
                 Preferences(activity).apply {

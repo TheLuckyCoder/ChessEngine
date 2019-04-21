@@ -5,7 +5,7 @@
 // JVM Cached Classes
 namespace Cache
 {
-	jclass chessActivityClass;
+	jclass gameManagerClass;
 	jclass posClass;
 	jclass posPairClass;
 	jclass pieceClass;
@@ -24,7 +24,7 @@ namespace Cache
 
 	void cleanCaches(JNIEnv *env)
 	{
-		env->DeleteGlobalRef(chessActivityClass);
+		env->DeleteGlobalRef(gameManagerClass);
 		env->DeleteGlobalRef(posClass);
 		env->DeleteGlobalRef(posPairClass);
 		env->DeleteGlobalRef(pieceClass);
