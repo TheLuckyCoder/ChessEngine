@@ -133,7 +133,7 @@ StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
 	return pieces;
 }
 
-StackVector<Board, 50> Board::listValidCaptures(const bool isWhite) const noexcept
+StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noexcept
 {
 	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
 	StackVector<Board, 50> moves;
@@ -145,6 +145,9 @@ StackVector<Board, 50> Board::listValidCaptures(const bool isWhite) const noexce
 
 		for (const auto &destPos : possibleMoves)
 		{
+			if (moves.size() == 50)
+				break; // Just to make sure this won't cause any problems
+
 			if (const auto &piece = (*this)[destPos]; !piece || piece.type == Type::KING)
 				continue;
 

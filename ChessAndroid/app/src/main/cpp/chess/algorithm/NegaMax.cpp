@@ -124,15 +124,18 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 	{
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 		{
+			// Mate Pruning
 			const short mateValue = VALUE_WINNER_WHITE - depth;
 			if (mateValue < beta) {
 				beta = mateValue;
 				if (alpha >= mateValue) return mateValue;
 			}
+
 			if (mateValue > alpha) {
 				alpha = mateValue;
 				if (beta <= mateValue) return mateValue;
 			}
+
 			if (bestScore > mateValue)
 				bestScore = mateValue;
 			continue;
@@ -140,6 +143,7 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 
 		short moveScore = alpha + 1;
 
+		// Late Move Reductions
 		if (!moveCountPruning &&
 			movesCount > 4 &&
 			depth >= 3 &&
@@ -154,18 +158,18 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 			moveScore = -negaMax(move, ply - 1, -beta, -alpha, !isWhite, depth + 1, false);
 
 		if (moveScore > bestScore)
-		{
 			bestScore = moveScore;
-			if (moveScore > alpha)
-				alpha = moveScore;
-		}
 
-		if (alpha >= beta)
+		// Alpha-Beta Pruning
+		if (bestScore > alpha)
+			alpha = bestScore;
+		if (bestScore >= beta)
 			break;
 
 		++movesCount;
 	}
 
+	// Store the result in the transposition table
 	Flag flag = Flag::EXACT;
 	if (bestScore < originalAlpha)
 		flag = Flag::ALPHA;
@@ -174,7 +178,7 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 
 	searchCache.insert({ board.key, board.score, bestScore, ply, flag });
 
-	return bestScore;
+	return alpha;
 }
 
 short NegaMax::quiescence(const Board &board, short alpha, short beta, bool isWhite)
@@ -200,7 +204,7 @@ short NegaMax::quiescence(const Board &board, short alpha, short beta, bool isWh
 		return alpha; // TODO: Turn off Delta Pruning in the Endgame
 
 
-	const auto validMoves = board.listValidCaptures(isWhite);
+	const auto validMoves = board.listQuiescenceMoves(isWhite);
 
 	if (Stats::enabled())
 		++Stats::nodesSearched;

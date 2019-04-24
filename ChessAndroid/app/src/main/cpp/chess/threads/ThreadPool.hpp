@@ -160,6 +160,7 @@ public:
 					thread.join();
 
 			m_threads.reserve(numThreads);
+			m_threads.clear();
 
 			try
 			{

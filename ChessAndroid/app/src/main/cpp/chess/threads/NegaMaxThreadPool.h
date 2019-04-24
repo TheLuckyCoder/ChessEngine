@@ -18,7 +18,6 @@ public:
 				pool.updateThreadCount(threadCount);
 			} catch (...)
 			{
-
 			}
 		}
 	}

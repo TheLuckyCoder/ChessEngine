@@ -48,7 +48,7 @@ public:
 
 	template<class T> // RootMove or Board
 	StackVector<T, 150> listValidMoves(bool isWhite) const noexcept;
-	StackVector<Board, 50> listValidCaptures(bool isWhite) const noexcept;
+	StackVector<Board, 50> listQuiescenceMoves(bool isWhite) const noexcept;
 };
 
 class RootMove final
