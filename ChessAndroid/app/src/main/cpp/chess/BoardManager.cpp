@@ -19,9 +19,11 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
-	m_MovesHistory.reserve(100);
 
 	m_MovesHistory.clear();
+	m_MovesHistory.reserve(100);
+	m_MovesHistory.emplace_back(Pos(), Pos(), m_Board);
+
 	Stats::resetStats();
 
 	m_IsPlayerWhite = isPlayerWhite;
@@ -70,18 +72,14 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board.isPromotion = m_Board.isCapture = false;
 
 	StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
-	
+
 	auto &selectedPiece = m_Board[selectedPos];
-	bool shouldRedraw = false;
 
 	if (selectedPiece.type == Type::PAWN)
-		shouldRedraw = movePawn(selectedPiece, destPos);
+		m_Board.isPromotion = movePawn(selectedPiece, destPos);
 	else if (selectedPiece.type == Type::KING)
 	{
-		if (selectedPiece.isWhite)
-			m_Board.whiteKingSquare = destPos.toSquare();
-		else
-			m_Board.blackKingSquare = destPos.toSquare();
+		m_Board.kingSquare[selectedPiece.isWhite] = destPos.toSquare();
 
 		if (!selectedPiece.moved)
 		{
@@ -98,7 +96,11 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 	selectedPiece.moved = true;
 
-	m_Board.npm -= Evaluation::getPieceValue(m_Board[destPos].type);
+	if (const auto &destPiece = m_Board[destPos]; destPiece)
+	{
+		m_Board.isCapture = true;
+		m_Board.npm -= Evaluation::getPieceValue(destPiece.type);
+	}
 
 	m_Board[destPos] = selectedPiece;
 	m_Board[selectedPos] = Piece();
@@ -108,7 +110,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board.score = Evaluation::evaluate(m_Board);
 
 	m_MovesHistory.emplace_back(selectedPos, destPos, m_Board);
-	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
+	m_Listener(m_Board.state, m_Board.isPromotion, piecesMoved); // Redraw the pieces if there is a promotion
 
 	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
 		m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
@@ -133,10 +135,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 	}
 	else if (selectedPiece.type == Type::KING)
 	{
-		if (selectedPiece.isWhite)
-			board.whiteKingSquare = destPos.toSquare();
-		else
-			board.blackKingSquare = destPos.toSquare();
+		board.kingSquare[selectedPiece.isWhite] = destPos.toSquare();
 
 		if (!selectedPiece.moved)
 		{
@@ -182,10 +181,10 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	const auto pair = NegaMax::getBestMove(m_Board, !m_IsPlayerWhite, settings);
 
 	Stats::stopTimer();
+	m_IsWorking = false;
 	movePiece(pair.first, pair.second, false);
 
 	m_WorkerThread.detach();
-	m_IsWorking = false;
 }
 
 bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)
@@ -240,4 +239,28 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 	}
 
 	return std::make_pair(Pos(), Pos());
+}
+
+void BoardManager::undoLastMoves()
+{
+	if (isWorking() || m_MovesHistory.size() < 3) return;
+
+	const auto end = m_MovesHistory.end();
+	const RootMove &lastMove = m_MovesHistory.back();
+	const RootMove &preLastMove = *(end - 2);
+	const RootMove &prePreLastMove = *(end - 3);
+
+	// Undo the last move, which should have been made by the engine
+	m_Board = preLastMove.board;
+	m_Listener(preLastMove.board.state, lastMove.board.isPromotion || lastMove.board.isCapture,
+			   { std::make_pair(lastMove.dest, lastMove.start) });
+
+	// Undo the move before the last move so that it is the player's turn again
+	m_Board = prePreLastMove.board;
+	m_Listener(prePreLastMove.board.state, preLastMove.board.isPromotion || preLastMove.board.isCapture,
+			   { std::make_pair(preLastMove.dest, preLastMove.start) });
+
+	// Remove the last two moves
+	m_MovesHistory.pop_back();
+	m_MovesHistory.pop_back();
 }

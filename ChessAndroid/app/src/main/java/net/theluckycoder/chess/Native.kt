@@ -34,6 +34,9 @@ object Native {
     )
 
     @JvmStatic
+    external fun undoMoves()
+
+    @JvmStatic
     external fun loadMoves(moves: String)
 
     @JvmStatic

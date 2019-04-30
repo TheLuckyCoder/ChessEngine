@@ -4,7 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.*
 
 class GameManager(
-    private val appContext: Context,
+    private val context: Context,
     private val listener: OnEventListener
 ) {
 
@@ -23,15 +23,14 @@ class GameManager(
     private var isPlayerWhite = true
 
     var statsEnabled = false
-    var isWorking = false
-        private set
+    val isWorking
+        get() = Native.isWorking()
 
     fun selectPiece(pos: Pos) = Native.getPossibleMoves(pos) ?: emptyArray()
 
     fun initBoard(restartGame: Boolean, isPlayerWhite: Boolean = true) {
         val isOldPlayerWhite = this.isPlayerWhite
         this.isPlayerWhite = isPlayerWhite
-        isWorking = !isPlayerWhite
 
         initBoardNative(restartGame, isPlayerWhite)
 
@@ -41,11 +40,10 @@ class GameManager(
         } else {
             initialized = true
             listener.redrawBoard(isPlayerWhite)
-            //SaveManager.loadFromFile(appContext)
+            SaveManager.loadFromFile(context)
         }
 
-        val pieces = Native.getPieces().filter { it.type.toInt() != 0 }
-        listener.redrawPieces(pieces, isPlayerWhite)
+        listener.redrawPieces(getPiecesList(), isPlayerWhite)
     }
 
     fun updateSettings(settings: Settings) {
@@ -62,6 +60,8 @@ class GameManager(
         Native.movePiece(startPos.x, startPos.y, destPos.x, destPos.y)
     }
 
+    private fun getPiecesList() = Native.getPieces().filter { it.type.toInt() != 0 }
+
     @Suppress("unused") // Called by native code
     private fun callback(gameState: Int, shouldRedrawPieces: Boolean, moves: Array<PosPair>) {
         val state = when (gameState) {
@@ -73,14 +73,9 @@ class GameManager(
             else -> State.NONE
         }
 
-        isWorking = !isWorking
+        GlobalScope.launch(Dispatchers.Default) { SaveManager.saveToFile(context) }
 
-        GlobalScope.launch(Dispatchers.Default) { SaveManager.saveToFile(appContext) }
-
-        GlobalScope.launch(Dispatchers.Main) {
-            if (shouldRedrawPieces)
-                listener.redrawBoard(isPlayerWhite)
-
+        GlobalScope.launch(Dispatchers.Main.immediate) {
             listener.onMove(state)
 
             moves.forEach {
@@ -89,6 +84,11 @@ class GameManager(
                     Pos(it.destX, it.destY),
                     isPlayerWhite
                 )
+            }
+
+            if (shouldRedrawPieces) {
+                delay(260L)
+                listener.redrawPieces(getPiecesList(), isPlayerWhite)
             }
         }
     }

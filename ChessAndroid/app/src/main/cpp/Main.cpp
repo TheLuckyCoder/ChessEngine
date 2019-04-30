@@ -42,7 +42,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 
 	const static auto callbackId = env->GetMethodID(Cache::gameManagerClass, "callback",
 													"(IZ[Lnet/theluckycoder/chess/PosPair;)V");
-	env->CallVoidMethod(gameManagerInstance, callbackId, static_cast<jint>(state), shouldRedraw, result);
+	env->CallVoidMethod(gameManagerInstance, callbackId,
+			static_cast<jint>(state), static_cast<jboolean>(shouldRedraw), result);
 
 	if (getEnvStat == JNI_EDETACHED)
 	{
@@ -198,6 +199,12 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 							Pos(static_cast<byte>(destX), static_cast<byte>(destY)));
 }
 
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_undoMoves(JNIEnv */*pEnv*/, jclass /*type*/)
+{
+	BoardManager::undoLastMoves();
+}
 
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jclass /*type*/, jstring moves)

@@ -71,12 +71,12 @@ void Board::initDefaultBoard() noexcept
 	key = Hash::compute(*this);
 	whiteCastled = false;
 	blackCastled = false;
-	whiteKingSquare = Pos(4, 0).toSquare();
-	blackKingSquare = Pos(4, 7).toSquare();
+	kingSquare[1] = Pos(4, 0).toSquare();
+	kingSquare[0] = Pos(4, 7).toSquare();
 	whiteToMove = true;
 	state = State::NONE;
 	score = 0;
-	isPromotion = isPromotion = false;
+	isPromotion = isCapture = false;
 }
 
 void Board::updateState() noexcept

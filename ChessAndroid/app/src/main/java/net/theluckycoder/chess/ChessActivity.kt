@@ -19,7 +19,7 @@ import kotlin.random.Random
 
 class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager.OnEventListener {
 
-    private val gameManager by lazy(LazyThreadSafetyMode.NONE) { GameManager(this.applicationContext, this) }
+    private val gameManager by lazy(LazyThreadSafetyMode.NONE) { GameManager(this, this) }
     private val tiles = HashMap<Pos, TileView>(64)
     private val capturedPieces = CapturedPieces()
     private var viewSize = 0
@@ -43,6 +43,10 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         layout_board.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
 
+        iv_undo.setOnClickListener {
+            Native.undoMoves()
+        }
+
         iv_settings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -54,7 +58,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 .setTitle(R.string.restart_game)
                 .setView(view)
                 .setPositiveButton(R.string.action_restart) { _, _ ->
-                    val playerWhite = when (view.sp_color.selectedItemPosition) {
+                    val playerWhite = when (view.sp_side.selectedItemPosition) {
                         0 -> true
                         1 -> false
                         else -> Random.nextBoolean()
@@ -192,9 +196,9 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         if (gameManager.isWorking) {
             thread {
-                while (gameManager.isWorking) {
+                while (gameManager.isWorking)
                     Thread.sleep(200)
-                }
+
                 runOnUiThread(restart)
             }
         } else restart()
@@ -259,17 +263,21 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
     override fun onPieceMoved(startPos: Pos, destPos: Pos, isPlayerWhite: Boolean) {
         if (startPos.isValid && destPos.isValid) {
-            val pieceView = pieces.remove(startPos)!!
-            pieceView.pos = destPos
+            val pieceView = pieces.remove(startPos)
 
-            // Calculate View Position
-            val xPos = invertIf(!isPlayerWhite, destPos.x.toInt()) * viewSize
-            val yPos = invertIf(isPlayerWhite, destPos.y.toInt()) * viewSize
+            pieceView?.let {
+                it.pos = destPos
 
-            pieceView.animate()
-                .x(xPos.toFloat())
-                .y(yPos.toFloat())
-                .start()
+                // Calculate the new View Position
+                val xPos = invertIf(!isPlayerWhite, destPos.x.toInt()) * viewSize
+                val yPos = invertIf(isPlayerWhite, destPos.y.toInt()) * viewSize
+
+                it.animate()
+                    .x(xPos.toFloat())
+                    .y(yPos.toFloat())
+                    .setDuration(250L)
+                    .start()
+            }
 
             pieces[destPos]?.let { destView ->
                 // Remove the Destination Piece
@@ -281,7 +289,9 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 if (isPlayerWhite) capturedPieces.addBlackPiece(piece) else capturedPieces.addWhitePiece(piece)
             }
 
-            pieces[destPos] = pieceView
+            pieceView?.let {
+                pieces[destPos] = it
+            }
 
             tiles[startPos]?.lastMoved = true
             tiles[destPos]?.lastMoved = true

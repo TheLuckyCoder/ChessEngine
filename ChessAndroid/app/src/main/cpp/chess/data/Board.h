@@ -16,12 +16,13 @@ public:
 	U64 key = 0;
 	bool whiteCastled = false;
 	bool blackCastled = false;
-	byte whiteKingSquare = 0;
-	byte blackKingSquare = 0;
 	State state = State::NONE;
 	bool whiteToMove = true;
 	short score = 0;
 	short npm = 0;
+	// Index 0 -> black, index 1 -> white
+	byte kingSquare[2]{};
+
 	bool isPromotion = false;
 	bool isCapture = false;
 

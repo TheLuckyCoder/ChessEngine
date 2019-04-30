@@ -10,6 +10,9 @@ namespace Player
 
 	bool onlyKingsLeft(const Board &board)
 	{
+		if (board.npm != 0)
+			return false;
+
 		for (byte x = 0; x < 8; x++)
 			for (byte y = 0; y < 8; y++)
 				if (const auto &piece = board.data[x][y];
@@ -49,7 +52,7 @@ namespace Player
 
 	bool isInChess(const bool isWhite, const Board &board)
 	{
-		const byte kingSquare = isWhite ? board.whiteKingSquare : board.blackKingSquare;
+		const byte kingSquare = board.kingSquare[isWhite];
 		bool check = false;
 
 		MoveGen<CAPTURES>::forEachAttack(!isWhite, board, [&] (const Piece &/*piece*/, const Pos &move) -> bool {

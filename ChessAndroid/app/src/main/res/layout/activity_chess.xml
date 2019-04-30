@@ -27,15 +27,29 @@
         android:gravity="center_horizontal"
         android:textColor="@android:color/black"
         android:textSize="16sp"
-        tools:text="Stats " />
+        tools:text="Stats:" />
+
+    <ImageView
+        android:id="@+id/iv_undo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:padding="8dp"
+        android:src="@drawable/ic_undo" />
 
     <Button
         android:id="@+id/btn_restart_game"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
+        android:layout_marginStart="85dp"
+        android:layout_marginEnd="85dp"
         android:layout_marginBottom="8dp"
+        android:layout_toStartOf="@+id/iv_settings"
+        android:layout_toEndOf="@+id/iv_undo"
         android:text="@string/restart_game" />
 
     <ImageView
@@ -43,12 +57,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:contentDescription="@string/settings"
+        android:padding="8dp"
         android:src="@drawable/ic_settings" />
 
 </RelativeLayout>

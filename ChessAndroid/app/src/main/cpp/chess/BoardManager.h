@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <thread>
 #include <vector>
@@ -20,7 +21,7 @@ public:
 private:
 	static Settings m_Settings;
 	inline static std::thread m_WorkerThread;
-	inline static bool m_IsWorking = false;
+	inline static std::atomic_bool m_IsWorking{ false };
 	inline static bool m_IsPlayerWhite;
 	static PieceChangeListener m_Listener;
 	static Board m_Board;
@@ -29,6 +30,7 @@ private:
 public:
 	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
 	static void loadGame(const std::vector<PosPair> &moves);
+	static void undoLastMoves();
 
 	static Board &getBoard() { return m_Board; }
 	static const auto &getMovesHistory() { return m_MovesHistory; }
