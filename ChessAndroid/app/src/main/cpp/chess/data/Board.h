@@ -40,6 +40,14 @@ public:
 	bool operator<(const Board &other) const noexcept;
 	bool operator>(const Board &other) const noexcept;
 
+	inline Piece &getPiece(const byte x, const byte y) noexcept
+	{
+		return data[x][y];
+	}
+	inline const Piece &getPiece(const byte x, const byte y) const noexcept
+	{
+		return data[x][y];
+	}
 	const Piece &getPieceSafely(byte x, byte y) const noexcept;
 
 	void initDefaultBoard() noexcept;
@@ -107,7 +115,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 			if constexpr (std::is_same_v<T, RootMove>)
 			{
-				int count = 0;
+				int count = 1;
 
 				for (const auto &game : BoardManager::getMovesHistory()) {
 					if (board.whiteToMove == game.board.whiteToMove &&

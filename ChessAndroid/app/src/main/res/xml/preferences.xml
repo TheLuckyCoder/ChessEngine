@@ -69,7 +69,7 @@
         <EditTextPreference
             android:inputType="number"
             android:key="key_cache_size"
-            android:summary="Specify the Size of the Transposition Table in Megabytes"
+            android:summary="Specify the size of the Transposition Table in Megabytes"
             android:title="Cache Size" />
 
         <SwitchPreference

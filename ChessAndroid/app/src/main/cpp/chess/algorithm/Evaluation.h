@@ -6,12 +6,6 @@
 
 class Board;
 
-template <class T>
-struct PairColor
-{
-	T white, black{};
-};
-
 class Evaluation final
 {
 public:

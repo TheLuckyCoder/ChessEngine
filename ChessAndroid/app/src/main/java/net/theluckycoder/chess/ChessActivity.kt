@@ -142,6 +142,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     }
 
     private fun updateState(state: State) {
+        canMove = true
+
         if (gameManager.statsEnabled) {
             tv_debug.visibility = View.VISIBLE
             tv_debug.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue())

@@ -37,6 +37,8 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves)
 	m_Board.initDefaultBoard();
 	m_Board.key = Hash::compute(m_Board);
 
+	m_MovesHistory.emplace_back(Pos(), Pos(), m_Board);
+
 	for (const auto &move : moves)
 	{
 		movePieceInternal(move.first, move.second, m_Board, false);
@@ -172,8 +174,6 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 // This function should only be called through the Worker Thread
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
-	assert(std::this_thread::get_id() == m_WorkerThread.get_id());
-
     m_IsWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();
@@ -246,21 +246,19 @@ void BoardManager::undoLastMoves()
 	if (isWorking() || m_MovesHistory.size() < 3) return;
 
 	const auto end = m_MovesHistory.end();
-	const RootMove &lastMove = m_MovesHistory.back();
-	const RootMove &preLastMove = *(end - 2);
-	const RootMove &prePreLastMove = *(end - 3);
-
 	// Undo the last move, which should have been made by the engine
-	m_Board = preLastMove.board;
-	m_Listener(preLastMove.board.state, lastMove.board.isPromotion || lastMove.board.isCapture,
-			   { std::make_pair(lastMove.dest, lastMove.start) });
-
+	const RootMove &engineMove = m_MovesHistory.back();
 	// Undo the move before the last move so that it is the player's turn again
-	m_Board = prePreLastMove.board;
-	m_Listener(prePreLastMove.board.state, preLastMove.board.isPromotion || preLastMove.board.isCapture,
-			   { std::make_pair(preLastMove.dest, preLastMove.start) });
+	const RootMove &playerMove = *(end - 2);
 
-	// Remove the last two moves
+	const RootMove &previousMove = *(end - 3);
+	const bool shouldRedraw = engineMove.board.isPromotion || engineMove.board.isCapture ||
+			playerMove.board.isPromotion || playerMove.board.isCapture;
+
+	m_Board = previousMove.board;
+	m_Listener(previousMove.board.state, shouldRedraw,
+			{ { engineMove.dest, engineMove.start }, { playerMove.dest, playerMove.start } });
+
 	m_MovesHistory.pop_back();
 	m_MovesHistory.pop_back();
 }
