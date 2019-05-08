@@ -5,7 +5,7 @@
 #include "algorithm/Evaluation.h"
 #include "algorithm/Hash.h"
 #include "algorithm/NegaMax.h"
-#include "algorithm/MoveOrdering.h"
+#include "algorithm/PieceAttacks.h"
 
 Settings BoardManager::m_Settings(4u, std::thread::hardware_concurrency() - 1u, 200, true);
 BoardManager::PieceChangeListener BoardManager::m_Listener;
@@ -15,7 +15,7 @@ std::vector<RootMove> BoardManager::m_MovesHistory;
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
     Hash::init();
-    MoveOrdering::init();
+    PieceAttacks::init();
 
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
@@ -85,23 +85,31 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 		if (!selectedPiece.moved)
 		{
-			const auto &pair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
-			if (pair.first.isValid())
+			const auto &posPair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
+			if (posPair.first.isValid())
 			{
 				if (selectedPiece.isWhite)
 					m_Board.whiteCastled = true;
 				else
 					m_Board.blackCastled = true;
+
+				U64 &pieces = m_Board.pieces[selectedPiece.isWhite];
+				pieces &= ~posPair.first.toBitboard();
+				pieces |= posPair.second.toBitboard();
 			}
 		}
 	}
+
+	m_Board.pieces[selectedPiece.isWhite] &= ~selectedPos.toBitboard(); // Remove selected Piece
+	m_Board.pieces[selectedPiece.isWhite] |= destPos.toBitboard(); // Add the selected Piece to destination
 
 	selectedPiece.moved = true;
 
 	if (const auto &destPiece = m_Board[destPos]; destPiece)
 	{
-		m_Board.isCapture = true;
+		m_Board.pieces[destPiece.isWhite] &= ~destPos.toBitboard(); // Remove destination Piece
 		m_Board.npm -= Evaluation::getPieceValue(destPiece.type);
+		m_Board.isCapture = true;
 	}
 
 	m_Board[destPos] = selectedPiece;
@@ -149,9 +157,16 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 					board.blackCastled = true;
 
 				Hash::makeMove(board.key, posPair.first, posPair.second, Piece(Type::ROOK, selectedPiece.isWhite));
+
+				U64 &pieces = board.pieces[selectedPiece.isWhite];
+				pieces &= ~posPair.first.toBitboard();
+				pieces |= posPair.second.toBitboard();
 			}
 		}
 	}
+
+	board.pieces[selectedPiece.isWhite] &= ~selectedPos.toBitboard(); // Remove selected Piece
+	board.pieces[selectedPiece.isWhite] |= destPos.toBitboard(); // Add the selected Piece to destination
 
 	Hash::flipSide(board.key);
 	if (!hashHandled)
@@ -159,6 +174,7 @@ void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos,
 
 	if (destPiece)
 	{
+		board.pieces[destPiece.isWhite] &= ~destPos.toBitboard(); // Remove destination Piece
 		board.npm -= Evaluation::getPieceValue(destPiece.type);
 		board.isCapture = true;
 	}

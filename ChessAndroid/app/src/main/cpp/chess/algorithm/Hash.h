@@ -19,6 +19,8 @@ public:
 	static std::array<U64, 4> castlingRights;
 
 	Hash() = delete;
+	Hash(const Hash&) = delete;
+	Hash(Hash&&) = delete;
 
 	static void init();
 	static U64 getHash(const Pos &pos, const Piece &piece);

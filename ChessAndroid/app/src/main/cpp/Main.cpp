@@ -101,11 +101,6 @@ Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject i
 }
 
 // Native Class
-external JNIEXPORT jboolean JNICALL
-Java_net_theluckycoder_chess_Native_isPlayerWhite(JNIEnv */*pEnv*/, jclass /*type*/)
-{
-	return static_cast<jboolean>(BoardManager::isPlayerWhite());
-}
 
 external JNIEXPORT jboolean JNICALL
 Java_net_theluckycoder_chess_Native_isWorking(JNIEnv */*pEnv*/, jclass /*type*/)

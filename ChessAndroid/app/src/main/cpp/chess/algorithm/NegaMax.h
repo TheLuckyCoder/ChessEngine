@@ -14,6 +14,8 @@ class NegaMax final
 
 public:
 	NegaMax() = delete;
+	NegaMax(const NegaMax&) = delete;
+	NegaMax(NegaMax&&) = delete;
 
 	static PosPair getBestMove(const Board &board, bool isWhite, const Settings &settings);
 

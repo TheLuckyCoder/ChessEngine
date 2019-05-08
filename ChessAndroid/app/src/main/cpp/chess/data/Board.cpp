@@ -69,14 +69,28 @@ void Board::initDefaultBoard() noexcept
 	data[4][7] = Piece(Type::KING, false);
 
 	key = Hash::compute(*this);
-	whiteCastled = false;
-	blackCastled = false;
-	kingSquare[1] = Pos(4, 0).toSquare();
-	kingSquare[0] = Pos(4, 7).toSquare();
+	whiteCastled = blackCastled = false;
 	whiteToMove = true;
 	state = State::NONE;
 	score = 0;
 	isPromotion = isCapture = false;
+
+	constexpr auto whiteKingLocation = Pos(4, 0).toSquare();
+	constexpr auto blackKingLocation = Pos(4, 7).toSquare();
+	kingSquare[1] = whiteKingLocation;
+	kingSquare[0] = blackKingLocation;
+
+	memset(pieces, 0, sizeof(U64) * 2);
+
+	for (byte x = 0u; x < 8u; x++)
+	{
+		for (byte y = 0u; y < 8u; y++)
+		{
+			const Piece &piece = getPiece(x, y);
+			if (piece)
+				pieces[piece.isWhite] |= Pos(x, y).toBitboard();
+		}
+	}
 }
 
 void Board::updateState() noexcept

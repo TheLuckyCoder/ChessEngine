@@ -21,11 +21,6 @@ public:
 	constexpr Pos(const Pos pos, const byte x, const byte y) noexcept
 		: x(pos.x + x), y(pos.y + y) {}
 
-	constexpr friend Pos operator+(Pos left, const Pos &right) noexcept;
-	constexpr friend Pos operator-(Pos left, const Pos &right) noexcept;
-	constexpr friend Pos operator*(Pos left, const Pos &right) noexcept;
-	constexpr friend Pos operator/(Pos left, const Pos &right) noexcept;
-
 	constexpr bool operator==(const Pos &other) const noexcept
 	{
 		return x == other.x && y == other.y;
@@ -74,30 +69,10 @@ public:
 		return x * 8u + y;
 	}
 
-	constexpr Bitboard toBitboard() const noexcept
+	constexpr U64 toBitboard() const noexcept
 	{
-		return 1ull << toSquare();
+		return Bitboard::positions[toSquare()];
 	}
 };
-
-constexpr Pos operator+(Pos left, const Pos &right) noexcept
-{
-	return left += right;
-}
-
-constexpr Pos operator-(Pos left, const Pos &right) noexcept
-{
-	return left -= right;
-}
-
-constexpr Pos operator*(Pos left, const Pos &right) noexcept
-{
-	return left *= right;
-}
-
-constexpr Pos operator/(Pos left, const Pos &right) noexcept
-{
-	return left /= right;
-}
 
 using PosPair = std::pair<Pos, Pos>;

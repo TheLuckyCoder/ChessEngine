@@ -2,10 +2,22 @@
 
 #include "MoveGen.h"
 
+#include "PieceAttacks.h"
 #include "../data/Board.h"
 
-template <GenType T>
-PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Board &board)
+template <std::size_t N>
+static void bitboardAttacksToMoves(PosVector<N> &moves, U64 attacks)
+{
+	for (byte i = 0; attacks && i < 64; i++)
+	{
+		if (attacks & 1ull)
+			moves.emplace_back(i / 8, i % 8);
+		attacks >>= 1;
+	}
+}
+
+template <GenType T, bool ToList>
+auto MoveGen<T, ToList>::generatePawnMoves(const Piece &piece, Pos pos, const Board &board)
 {
 	PosVector<4> moves;
 
@@ -51,53 +63,31 @@ PosVector<4> MoveGen<T>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 	return moves;
 }
 
-template <GenType T>
-PosVector<8> MoveGen<T>::generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board)
+template <GenType T, bool ToList>
+auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<8> moves;
 
-	const auto addPosIfValid = [&](const byte x, const byte y) {
-		Pos newPos(pos, x, y);
+	U64 attacks = PieceAttacks::getKnightAttacks(pos.toSquare());
 
-		if (newPos.isValid())
-		{
-			const auto &other = board[newPos];
+	if constexpr (T == ALL | T == KING_DANGER)
+		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+	else if (T == CAPTURES)
+		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+	else if (T == ATTACKS_DEFENSES)
+		attacks &= (board.pieces[0] | board.pieces[1]); // Keep only the pieces
 
-			if constexpr (T == ALL || T == KING_DANGER)
-			{
-				if (!other || !piece.isSameColor(other))
-					moves.push_back(newPos);
-			}
-			else if (T == CAPTURES)
-			{
-				if (other && !piece.isSameColor(other))
-					moves.push_back(newPos);
-			}
-			else if (T == ATTACKS_DEFENSES)
-			{
-				if (other)
-					moves.push_back(newPos);
-			}
-		}
-	};
-
-	addPosIfValid(-1, 2);
-	addPosIfValid(1, 2);
-
-	addPosIfValid(-1, -2);
-	addPosIfValid(1, -2);
-
-	addPosIfValid(2, 1);
-	addPosIfValid(2, -1);
-
-	addPosIfValid(-2, 1);
-	addPosIfValid(-2, -1);
-
-	return moves;
+	if constexpr (ToList)
+	{
+		bitboardAttacksToMoves(moves, attacks);
+		return moves;
+	}
+	else
+		return attacks;
 }
 
-template <GenType T>
-PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board)
+template <GenType T, bool ToList>
+auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<13> moves;
 	Pos posCopy = pos;
@@ -193,8 +183,8 @@ PosVector<13> MoveGen<T>::generateBishopMoves(const Piece &piece, const Pos &pos
 	return moves;
 }
 
-template <GenType T>
-PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, const Board &board)
+template <GenType T, bool ToList>
+auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<14> moves;
 	Pos posCopy = pos;
@@ -287,8 +277,8 @@ PosVector<14> MoveGen<T>::generateRookMoves(const Piece &piece, const Pos &pos, 
 	return moves;
 }
 
-template <GenType T>
-PosVector<27> MoveGen<T>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
+template <GenType T, bool ToList>
+auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<27> moves;
 	moves += generateRookMoves(piece, pos, board);
@@ -296,110 +286,79 @@ PosVector<27> MoveGen<T>::generateQueenMoves(const Piece &piece, const Pos &pos,
 	return moves;
 }
 
-template <GenType T>
-PosVector<8> MoveGen<T>::generateKingMoves(const Piece &piece, const Pos &pos, const Board &board)
+template <GenType T, bool ToList>
+auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
-	PosVector<8> moves;
+	PosVector<10> moves;
 
-	const auto handleCase = [&](const byte x, const byte y) {
+	U64 attacks = PieceAttacks::getKingAttacks(pos.toSquare());
 
-		const Pos newPos(x, y);
-		const auto &other = board[newPos];
+	if constexpr (T == ALL)
+		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+	else if (T == KING_DANGER) {
+		// Do Nothing
+	} else if (T == CAPTURES)
+		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+	else if (T == ATTACKS_DEFENSES)
+		attacks &= (board.pieces[0] | board.pieces[1]); // Keep only the pieces
 
-		if constexpr (T == ALL)
+	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER)
+	{
+		if constexpr (ToList)
 		{
-			if (other)
-			{
-				if (!piece.isSameColor(other))
-					moves.push_back(newPos);
-			} else
-				moves.push_back(newPos);
+			bitboardAttacksToMoves(moves, attacks);
+			return moves;
 		}
-		else if (T == CAPTURES)
-		{
-			if (other && !piece.isSameColor(other))
-				moves.push_back(newPos);
-		}
-		else if (T == ATTACKS_DEFENSES)
-		{
-			if (other)
-				moves.push_back(newPos);
-		}
-		else if (T == KING_DANGER)
-			moves.emplace_back(x, y);
-	};
+		else
+			return attacks;
+	}
+	if (attacks == 0ull)
+	{
+		if constexpr (ToList)
+			return moves;
+		else
+			return 0ull;
+	}
 
-	// Vertical and Horizontal
-	if (pos.x > 0)
-		handleCase(pos.x - 1u, pos.y);
-
-	if (pos.x < 7)
-		handleCase(pos.x + 1u, pos.y);
-
-	if (pos.y > 0)
-		handleCase(pos.x, pos.y - 1u);
-
-	if (pos.y < 7)
-		handleCase(pos.x, pos.y + 1u);
-
-	// Diagonal
-	if (pos.x < 7 && pos.y > 0)
-		handleCase(pos.x + 1u, pos.y - 1u);
-
-	if (pos.x < 7 && pos.y < 7)
-		handleCase(pos.x + 1u, pos.y + 1u);
-
-	if (pos.x > 0 && pos.y > 0)
-		handleCase(pos.x - 1u, pos.y - 1u);
-
-	if (pos.x > 0 && pos.y < 7)
-		handleCase(pos.x - 1u, pos.y + 1u);
-
-	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER) return moves;
-	if (moves.empty()) return moves;
-
-	Bitboard opponentsMoves{};
-	MoveGen<KING_DANGER>::forEachAttack(!piece.isWhite, board, [&] (const Piece &/*piece*/, const Pos &move) -> bool {
+	U64 opponentsMoves{};
+	MoveGen<KING_DANGER, ToList>::forEachAttack(!piece.isWhite, board, [&] (const Piece &/*piece*/, const Pos &move) -> bool {
 		opponentsMoves |= move.toBitboard();
 		return false;
 	});
 
-	// Remove Attacked Positions
-	for (unsigned int i = 0; i < moves.size(); i++)
-	{
-		if (opponentsMoves & moves[i].toBitboard())
-		{
-			moves[i] = moves.back();
-			moves.pop_back();
-			i--;
-		}
-	}
+	attacks &= ~opponentsMoves; // Remove Attacked Positions
 
 	// Castling
 	if (!piece.moved && !(opponentsMoves & pos.toBitboard()))
 	{
 		const auto y = pos.y;
-		const auto isEmptyAndChessFree = [&, y](const byte x) {
+		const auto isEmptyAndCheckFree = [&, y](const byte x) {
 			return !board.data[x][y] && !(opponentsMoves & Pos(x, y).toBitboard());
 		};
 
-		if (isEmptyAndChessFree(5) && isEmptyAndChessFree(6))
+		if (isEmptyAndCheckFree(5) && isEmptyAndCheckFree(6))
 			if (const auto &other = board.data[7][y];
 				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
-				moves.emplace_back(6, pos.y);
+				attacks |= Pos(6, pos.y).toBitboard();
 
-		if (isEmptyAndChessFree(3) && isEmptyAndChessFree(2) && !board.data[1][y])
+		if (isEmptyAndCheckFree(3) && isEmptyAndCheckFree(2) && !board.data[1][y])
 			if (const auto &other = board.data[0][y];
 				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
-				moves.emplace_back(2, pos.y);
+				attacks |= Pos(2, pos.y).toBitboard();
 	}
 
-	return moves;
+	if constexpr (ToList)
+	{
+		bitboardAttacksToMoves(moves, attacks);
+		return moves;
+	}
+	else
+		return attacks;
 }
 
-template <GenType T>
-template <class Func>
-void MoveGen<T>::forEachAttack(const bool white, const Board &board, Func &&func)
+template <GenType T, bool ToList> // Class Template
+template <class Func> // Function Template
+void MoveGen<T, ToList>::forEachAttack(const bool white, const Board &board, Func &&func)
 {
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
@@ -412,7 +371,7 @@ void MoveGen<T>::forEachAttack(const bool white, const Board &board, Func &&func
 				switch (piece.type)
 				{
 				case Type::PAWN:
-					moves = MoveGen<CAPTURES>::generatePawnMoves(piece, pos, board);
+					moves = MoveGen<KING_DANGER, ToList>::generatePawnMoves(piece, pos, board);
 					break;
 				case Type::KNIGHT:
 					moves = generateKnightMoves(piece, pos, board);
@@ -427,7 +386,7 @@ void MoveGen<T>::forEachAttack(const bool white, const Board &board, Func &&func
 					moves = generateQueenMoves(piece, pos, board);
 					break;
 				case Type::KING:
-					moves = MoveGen<KING_DANGER>::generateKingMoves(piece, pos, board);
+					moves = MoveGen<KING_DANGER, ToList>::generateKingMoves(piece, pos, board);
 					break;
 				case Type::NONE:
 					break;
@@ -441,8 +400,8 @@ void MoveGen<T>::forEachAttack(const bool white, const Board &board, Func &&func
 		}
 }
 
-template<GenType T>
-Attacks MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
+template<GenType T, bool ToList>
+Attacks MoveGen<T, ToList>::getAttacksPerColor(const bool white, const Board &board)
 {
 	Attacks attacks{};
 

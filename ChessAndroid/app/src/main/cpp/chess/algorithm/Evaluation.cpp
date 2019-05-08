@@ -214,7 +214,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 					bishopCount[isWhite]++;
 
 				const auto &theirAttacks = isWhite ? whiteMoves.board : blackMoves.board;
-				const Bitboard square = pos.toBitboard();
+				const U64 square = pos.toBitboard();
 
 				for (byte i = Type::KNIGHT; i < Type::BISHOP; i++)
 					if (theirAttacks[!isWhite][i] & square)

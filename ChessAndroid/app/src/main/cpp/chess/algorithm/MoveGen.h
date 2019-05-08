@@ -11,18 +11,20 @@ enum GenType : unsigned char
 	KING_DANGER
 };
 
-template<GenType T>
+template<GenType T, bool ToList = true>
 class MoveGen final
 {
 public:
 	MoveGen() = delete;
+	MoveGen(const MoveGen&) = delete;
+	MoveGen(MoveGen&&) = delete;
 
-	static PosVector<4> generatePawnMoves(const Piece &piece, Pos pos, const Board &board);
-	static PosVector<8> generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static PosVector<13> generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static PosVector<14> generateRookMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static PosVector<27> generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static PosVector<8> generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
+	static auto generatePawnMoves(const Piece &piece, Pos pos, const Board &board);
+	static auto generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board);
+	static auto generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board);
+	static auto generateRookMoves(const Piece &piece, const Pos &pos, const Board &board);
+	static auto generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board);
+	static auto generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
 
 	template <class Func>
 	static void forEachAttack(bool white, const Board &board, Func &&func);

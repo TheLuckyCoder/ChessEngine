@@ -10,11 +10,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
-        versionName "0.20"
-    }
-
-    packagingOptions {
-        exclude 'META-INF/atomicfu.kotlin_module'
+        versionName "0.21"
     }
 
     /*signingConfigs {
@@ -45,6 +41,6 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
     implementation 'com.jaredrummler:colorpicker:1.1.0'
 }
