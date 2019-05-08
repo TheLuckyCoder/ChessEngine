@@ -9,6 +9,7 @@
 #include "chess/data/Board.h"
 #include "chess/algorithm/Evaluation.h"
 #include "chess/persistence/MovesPersistence.h"
+#include "chess/algorithm/NegaMax.h"
 
 JavaVM *jvm = nullptr;
 bool boardManagerInitialized = false;
@@ -192,6 +193,12 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 {
 	BoardManager::movePiece(Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)),
 							Pos(static_cast<byte>(destX), static_cast<byte>(destY)));
+}
+
+external JNIEXPORT jint JNICALL
+Java_net_theluckycoder_chess_Native_getBestMoveFound(JNIEnv */*pEnv*/, jclass /*type*/)
+{
+	return static_cast<jint>(NegaMax::bestMoveFound);
 }
 
 

@@ -146,7 +146,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         if (gameManager.statsEnabled) {
             tv_debug.visibility = View.VISIBLE
-            tv_debug.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue())
+            tv_debug.text = getString(R.string.stats, Native.getStats(), Native.getBoardValue(), Native.getBestMoveFound())
         } else {
             tv_debug.visibility = View.GONE
         }

@@ -31,6 +31,9 @@ object Native {
     )
 
     @JvmStatic
+    external fun getBestMoveFound(): Int
+
+    @JvmStatic
     external fun undoMoves()
 
     @JvmStatic

@@ -36,6 +36,6 @@ public:
 	SearchCache operator[](const U64 key) const noexcept;
 
     void insert(const SearchCache &value) noexcept;
-	void setSize(const std::size_t sizeMb) noexcept(false);
+	bool setSize(const std::size_t sizeMb) noexcept(false);
 	void clear() noexcept;
 };

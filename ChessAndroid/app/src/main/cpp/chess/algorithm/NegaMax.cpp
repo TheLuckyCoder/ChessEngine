@@ -10,35 +10,32 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-bool NegaMax::quiescenceSearchEnabled;
+bool NegaMax::quiescenceSearchEnabled{};
 TranspositionTable NegaMax::searchCache(1);
+short NegaMax::bestMoveFound{};
 
-PosPair NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
+RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<RootMove>(isWhite);
 
 	for (const auto &move : validMoves)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
-			return PosPair(move.start, move.dest);
+			return move;
 
 	// Apply Settings
 	auto depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
 	quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
-	searchCache.setSize(settings.getCacheTableSizeMb());
+	// If the Transposition Table wasn't resized, clean it
+	if (!searchCache.setSize(settings.getCacheTableSizeMb()))
+		searchCache.clear();
 	NegaMaxThreadPool::updateThreadCount(threadCount);
 
-	if (validMoves.size() <= 15)
-		++depth;
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
-	const RootMove bestMove = negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, !isWhite);
-
-	searchCache.clear();
-
-    return PosPair(bestMove.start, bestMove.dest);
+	return negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, !isWhite);
 }
 
 RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short ply, const bool isWhite)
@@ -79,6 +76,8 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 
 	for (auto &future : futures)
 		future.get(); // Wait for the Search to finish
+
+	bestMoveFound = alpha;
 
 	return bestMove;
 }

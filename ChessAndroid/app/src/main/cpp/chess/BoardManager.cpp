@@ -198,7 +198,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 
 	Stats::stopTimer();
 	m_IsWorking = false;
-	movePiece(pair.first, pair.second, false);
+	movePiece(pair.start, pair.dest, false);
 
 	m_WorkerThread.detach();
 }

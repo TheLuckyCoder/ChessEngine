@@ -25,15 +25,17 @@ void TranspositionTable::insert(const SearchCache &value) noexcept
 		ref = value;
 }
 
-void TranspositionTable::setSize(const std::size_t sizeMb) noexcept(false)
+bool TranspositionTable::setSize(const std::size_t sizeMb) noexcept(false)
 {
 	const auto newSize = (sizeMb << 20u) / sizeof(SearchCache);
 
-	if (newSize == 0 || m_Size == newSize) return;
+	if (newSize == 0 || m_Size == newSize) return false;
 
 	m_Size = newSize;
 	delete[] m_Values;
 	m_Values = new SearchCache[m_Size]();
+
+	return true;
 }
 
 void TranspositionTable::clear() noexcept

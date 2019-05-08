@@ -13,11 +13,13 @@ class NegaMax final
 	static TranspositionTable searchCache;
 
 public:
+	static short bestMoveFound;
+
 	NegaMax() = delete;
 	NegaMax(const NegaMax&) = delete;
 	NegaMax(NegaMax&&) = delete;
 
-	static PosPair getBestMove(const Board &board, bool isWhite, const Settings &settings);
+	static RootMove getBestMove(const Board &board, bool isWhite, const Settings &settings);
 
 private:
 	static RootMove negaMaxRoot(StackVector<RootMove, 150> validMoves, unsigned int jobCount, short ply, bool isWhite);
