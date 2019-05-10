@@ -6,13 +6,14 @@
 #include "../data/Board.h"
 
 template <std::size_t N>
-static void bitboardAttacksToMoves(PosVector<N> &moves, U64 attacks)
+static void convertBitboardToMoves(PosVector<N> &moves, U64 attacks)
 {
-	for (byte i = 0; attacks && i < 64; i++)
+	while (attacks)
 	{
-		if (attacks & 1ull)
-			moves.emplace_back(i / 8, i % 8);
-		attacks >>= 1;
+		const int index = Bitboard::bitScanForward(attacks);
+		attacks &= ~Bitboard::indexedPos[index];
+
+		moves.emplace_back(index / 8, index % 8);
 	}
 }
 
@@ -60,7 +61,16 @@ auto MoveGen<T, ToList>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 	if (pos.isValid())
 		handleCapture();
 
-	return moves;
+	if constexpr (ToList)
+		return moves;
+	else {
+		U64 attacks{};
+
+		for (const Pos &move : moves)
+			attacks |= move.toBitboard();
+
+		return attacks;
+	}
 }
 
 template <GenType T, bool ToList>
@@ -79,7 +89,7 @@ auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos,
 
 	if constexpr (ToList)
 	{
-		bitboardAttacksToMoves(moves, attacks);
+		convertBitboardToMoves(moves, attacks);
 		return moves;
 	}
 	else
@@ -180,7 +190,16 @@ auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos,
 			break;
 	}
 
-	return moves;
+	if constexpr (ToList)
+		return moves;
+	else {
+		U64 attacks{};
+
+		for (const Pos &move : moves)
+			attacks |= move.toBitboard();
+
+		return attacks;
+	}
 }
 
 template <GenType T, bool ToList>
@@ -274,16 +293,30 @@ auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, c
 			break;
 	}
 
-	return moves;
+	if constexpr (ToList)
+		return moves;
+	else {
+		U64 attacks{};
+
+		for (const Pos &move : moves)
+			attacks |= move.toBitboard();
+
+		return attacks;
+	}
 }
 
 template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
-	PosVector<27> moves;
-	moves += generateRookMoves(piece, pos, board);
-	moves += generateBishopMoves(piece, pos, board);
-	return moves;
+	if constexpr (ToList)
+	{
+		PosVector<27> moves;
+		moves += generateRookMoves(piece, pos, board);
+		moves += generateBishopMoves(piece, pos, board);
+		return moves;
+	} else {
+		return generateRookMoves(piece, pos, board) | generateBishopMoves(piece, pos, board);
+	}
 }
 
 template <GenType T, bool ToList>
@@ -306,7 +339,7 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	{
 		if constexpr (ToList)
 		{
-			bitboardAttacksToMoves(moves, attacks);
+			convertBitboardToMoves(moves, attacks);
 			return moves;
 		}
 		else
@@ -317,12 +350,12 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 		if constexpr (ToList)
 			return moves;
 		else
-			return 0ull;
+			return attacks;
 	}
 
 	U64 opponentsMoves{};
-	MoveGen<KING_DANGER, ToList>::forEachAttack(!piece.isWhite, board, [&] (const Piece &/*piece*/, const Pos &move) -> bool {
-		opponentsMoves |= move.toBitboard();
+	MoveGen<KING_DANGER, false>::forEachAttack(!piece.isWhite, board, [&] (const U64 attack) -> bool {
+		opponentsMoves |= attack;
 		return false;
 	});
 
@@ -349,7 +382,7 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 
 	if constexpr (ToList)
 	{
-		bitboardAttacksToMoves(moves, attacks);
+		convertBitboardToMoves(moves, attacks);
 		return moves;
 	}
 	else
@@ -367,7 +400,9 @@ void MoveGen<T, ToList>::forEachAttack(const bool white, const Board &board, Fun
 			const auto &piece = board[pos];
 			if (piece && piece.isWhite == white)
 			{
-				Piece::MaxMovesVector moves;
+				using MoveTypes = std::conditional_t<ToList, Piece::MaxMovesVector, U64>;
+
+				MoveTypes moves{};
 				switch (piece.type)
 				{
 				case Type::PAWN:
@@ -393,9 +428,17 @@ void MoveGen<T, ToList>::forEachAttack(const bool white, const Board &board, Fun
 				}
 
 				// The function should return true in order to stop the loop
-				for (const auto &move : moves)
-					if (func(piece, move))
+				if constexpr (ToList)
+				{
+					for (const auto &move : moves)
+					{
+						if (func(piece, move))
+							return;
+					}
+				} else {
+					if (func(moves))
 						return;
+				}
 			}
 		}
 }

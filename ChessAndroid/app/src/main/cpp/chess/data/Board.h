@@ -13,7 +13,7 @@ class Board final
 {
 public:
 	Piece data[8][8];
-	U64 key = 0;
+	U64 key = 0u;
 	bool whiteCastled = false;
 	bool blackCastled = false;
 	State state = State::NONE;

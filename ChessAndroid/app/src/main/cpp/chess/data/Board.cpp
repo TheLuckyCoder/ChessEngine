@@ -75,8 +75,8 @@ void Board::initDefaultBoard() noexcept
 	score = 0;
 	isPromotion = isCapture = false;
 
-	constexpr auto whiteKingLocation = Pos(4, 0).toSquare();
-	constexpr auto blackKingLocation = Pos(4, 7).toSquare();
+	constexpr byte whiteKingLocation = Pos(4, 0).toSquare();
+	constexpr byte blackKingLocation = Pos(4, 7).toSquare();
 	kingSquare[1] = whiteKingLocation;
 	kingSquare[0] = blackKingLocation;
 
@@ -154,7 +154,7 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 
 	for (const auto &pair : pieces)
 	{
-		const auto &startPos = pair.first;
+		const Pos &startPos = pair.first;
 		const auto possibleMoves = pair.second.getPossibleCaptures(startPos, *this);
 
 		for (const auto &destPos : possibleMoves)
@@ -162,7 +162,7 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 			if (moves.size() == 50)
 				break; // Just to make sure this won't cause any problems
 
-			if (const auto &piece = (*this)[destPos]; !piece || piece.type == Type::KING)
+			if (const Piece &piece = (*this)[destPos]; !piece || piece.type == Type::KING)
 				continue;
 
 			Board board = *this;

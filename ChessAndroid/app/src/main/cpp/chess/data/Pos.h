@@ -71,7 +71,7 @@ public:
 
 	constexpr U64 toBitboard() const noexcept
 	{
-		return Bitboard::positions[toSquare()];
+		return Bitboard::indexedPos[toSquare()];
 	}
 };
 

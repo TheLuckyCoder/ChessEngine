@@ -10,6 +10,7 @@ U64 Hash::whiteToMove;
 
 void Hash::init()
 {
+	static bool initialized = false;
 	if (initialized) return;
 	initialized = true;
 

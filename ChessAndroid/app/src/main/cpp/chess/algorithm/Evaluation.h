@@ -9,8 +9,8 @@ class Board;
 class Evaluation final
 {
 	constexpr static short PIECE_VALUE[] = { 0, 136, 782, 830, 1289, 2529, 0 };
-public:
 
+public:
 	Evaluation() = delete;
 	Evaluation(const Evaluation&) = delete;
 	Evaluation(Evaluation&&) = delete;

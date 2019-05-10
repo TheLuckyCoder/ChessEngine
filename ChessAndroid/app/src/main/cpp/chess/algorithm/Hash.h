@@ -11,7 +11,6 @@ class Hash final
 {
 private:
 	using HashArray = std::array<std::array<std::array<U64, 12>, 8>, 8>;
-	inline static bool initialized = false;
 
 	static HashArray array;
 	static U64 whiteToMove;

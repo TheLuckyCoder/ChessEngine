@@ -311,7 +311,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 	totalScore.eg *= sf / 64;*/
 
 	// Tempo
-	const short tempo = board.whiteToMove ? 20 : -20;
+	const int tempo = board.whiteToMove ? 20 : -20;
 	totalScore += tempo;
 	const Phase phase = board.getPhase();
 
@@ -325,7 +325,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	Score value = PAWN_SCORE;
 	value += PAWN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 
-	const byte behind = piece.isWhite ? -1 : 1;
+	const byte behind = piece.isWhite ? -1u : 1u;
 	const int supported = (board.getPieceSafely(pos.x - 1u, pos.y + behind).isSameType(piece) +
 							board.getPieceSafely(pos.x + 1u, pos.y + behind).isSameType(piece));
 
@@ -362,8 +362,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 		};
 
 		byte i = 0;
-		if (isEnemyPiece(-1, 1)) i++;
-		if (isEnemyPiece( 1, 1)) i++;
+		if (isEnemyPiece(-1u, 1u)) i++;
+		if (isEnemyPiece( 1u, 1u)) i++;
 
 		value += THREAT_SAFE_PAWN * i;
 	}
@@ -374,13 +374,13 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 		if (piece.isWhite)
 		{
 			byte x = pos.x;
-			for (byte y = pos.y + 1; y < 7; y++)
+			for (byte y = pos.y + 1u; y < 7; y++)
 				if (board.getPiece(x, y).isSameType(enemyPawn))
 					return false;
 			if (x > 0)
 			{
 				--x;
-				for (byte y = pos.y + 1; y < 7; y++)
+				for (byte y = pos.y + 1u; y < 7; y++)
 					if (board.getPiece(x, y).isSameType(enemyPawn))
 						return false;
 			}
@@ -388,20 +388,20 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 			if (x < 7)
 			{
 				++x;
-				for (byte y = pos.y + 1; y < 7; y++)
+				for (byte y = pos.y + 1u; y < 7; y++)
 					if (board.getPiece(x, y).isSameType(enemyPawn))
 						return false;
 			}
 		} else {
 			byte x = pos.x;
-			for (byte y = pos.y - 1; y > 1; y--)
+			for (byte y = pos.y - 1u; y > 1; y--)
 				if (board.getPiece(x, y).isSameType(enemyPawn))
 					return false;
 
 			if (x > 0)
 			{
 				--x;
-				for (byte y = pos.y - 1; y > 1; y--)
+				for (byte y = pos.y - 1u; y > 1; y--)
 					if (board.getPiece(x, y).isSameType(enemyPawn))
 						return false;
 			}
@@ -409,12 +409,11 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 			if (x < 7)
 			{
 				++x;
-				for (byte y = pos.y - 1; y > 1; y--)
+				for (byte y = pos.y - 1u; y > 1; y--)
 					if (board.getPiece(x, y).isSameType(enemyPawn))
 						return false;
 			}
 		}
-
 
 		return true;
 	}();
@@ -435,7 +434,8 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, cons
 	Score value = KNIGHT_SCORE;
 
 	value += KNIGHT_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
-	value += KNIGHT_MOBILITY[MoveGen<ALL>::generateKnightMoves(piece, pos, board).size()];
+	const int mobility = Bitboard::popCount(MoveGen<ALL, false>::generateKnightMoves(piece, pos, board));
+	value += KNIGHT_MOBILITY[mobility];
 
 	return value;
 }

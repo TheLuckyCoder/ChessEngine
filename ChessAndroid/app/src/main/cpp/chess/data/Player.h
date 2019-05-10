@@ -6,12 +6,16 @@
 class Piece;
 class Board;
 
-namespace Player
+class Player
 {
+public:
 
-	bool onlyKingsLeft(const Board &board);
-	bool hasNoValidMoves(bool isWhite, const Board &board);
-	bool isInChess(bool isWhite, const Board &board);
-	StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(bool isWhite, const Board &board);
+	Player() = delete;
+	Player(const Player&) = delete;
+	Player(Player&&) = delete;
 
-}
+	static bool onlyKingsLeft(const Board &board);
+	static bool hasNoValidMoves(bool isWhite, const Board &board);
+	static bool isInChess(bool isWhite, const Board &board);
+	static StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(bool isWhite, const Board &board);
+};
