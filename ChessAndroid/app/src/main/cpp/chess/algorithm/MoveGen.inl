@@ -40,10 +40,10 @@ auto MoveGen<T, ToList>::generatePawnMoves(const Piece &piece, Pos pos, const Bo
 	}
 
 	const auto handleCapture = [&] {
-		const auto &other = board[pos];
+		const Piece &other = board[pos];
 		if constexpr (T == ALL || T == CAPTURES || T == KING_DANGER)
 		{
-			if (other && !piece.isSameColor(other))
+			if ((other && !piece.isSameColor(other)) || board.enPassantPos == pos)
 				moves.push_back(pos);
 		}
 		else if (T == ATTACKS_DEFENSES)
@@ -366,16 +366,16 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	{
 		const auto y = pos.y;
 		const auto isEmptyAndCheckFree = [&, y](const byte x) {
-			return !board.data[x][y] && !(opponentsMoves & Pos(x, y).toBitboard());
+			return !board.getPiece(x, y) && !(opponentsMoves & Pos(x, y).toBitboard());
 		};
 
 		if (isEmptyAndCheckFree(5) && isEmptyAndCheckFree(6))
-			if (const auto &other = board.data[7][y];
+			if (const auto &other = board.getPiece(7, y);
 				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
 				attacks |= Pos(6, pos.y).toBitboard();
 
-		if (isEmptyAndCheckFree(3) && isEmptyAndCheckFree(2) && !board.data[1][y])
-			if (const auto &other = board.data[0][y];
+		if (isEmptyAndCheckFree(3) && isEmptyAndCheckFree(2) && !board.getPiece(1, y))
+			if (const auto &other = board.getPiece(0, y);
 				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
 				attacks |= Pos(2, pos.y).toBitboard();
 	}

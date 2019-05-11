@@ -21,7 +21,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 	m_Listener = listener;
 
 	m_MovesHistory.clear();
-	m_MovesHistory.reserve(100);
+	m_MovesHistory.reserve(200);
 	m_MovesHistory.emplace_back(Pos(), Pos(), m_Board);
 
 	Stats::resetStats();
@@ -39,7 +39,7 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves)
 
 	m_MovesHistory.emplace_back(Pos(), Pos(), m_Board);
 
-	for (const auto &move : moves)
+	for (const PosPair &move : moves)
 	{
 		movePieceInternal(move.first, move.second, m_Board, false);
 		m_Board.updateState();
@@ -54,7 +54,7 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves)
 
 Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 {
-	const auto &piece = m_Board[selectedPos];
+	const Piece &piece = m_Board[selectedPos];
 	auto moves = piece.getPossibleMoves(selectedPos, m_Board);
 
 	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
@@ -69,23 +69,27 @@ Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 
 void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const bool movedByPlayer)
 {
-	if (!selectedPos.isValid() || !destPos.isValid()) return;
+	assert(selectedPos.isValid() && destPos.isValid());
 	m_Board.whiteToMove = !m_Board.whiteToMove;
 	m_Board.isPromotion = m_Board.isCapture = false;
+	bool shouldRedraw = false;
+
+	const Pos enPassantPos = m_Board.enPassantPos;
+	m_Board.enPassantPos = Pos();
 
 	StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
 
-	auto &selectedPiece = m_Board[selectedPos];
+	Piece &selectedPiece = m_Board[selectedPos];
 
 	if (selectedPiece.type == Type::PAWN)
-		m_Board.isPromotion = movePawn(selectedPiece, destPos);
+		shouldRedraw = movePawn(m_Board, selectedPos, destPos, enPassantPos);
 	else if (selectedPiece.type == Type::KING)
 	{
 		m_Board.kingSquare[selectedPiece.isWhite] = destPos.toSquare();
 
 		if (!selectedPiece.moved)
 		{
-			const auto &posPair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
+			const PosPair &posPair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, m_Board));
 			if (posPair.first.isValid())
 			{
 				if (selectedPiece.isWhite)
@@ -105,7 +109,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 
 	selectedPiece.moved = true;
 
-	if (const auto &destPiece = m_Board[destPos]; destPiece)
+	if (const Piece &destPiece = m_Board[destPos]; destPiece)
 	{
 		m_Board.pieces[destPiece.isWhite] &= ~destPos.toBitboard(); // Remove destination Piece
 		m_Board.npm -= Evaluation::getPieceValue(destPiece.type);
@@ -120,7 +124,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board.score = Evaluation::evaluate(m_Board);
 
 	m_MovesHistory.emplace_back(selectedPos, destPos, m_Board);
-	m_Listener(m_Board.state, m_Board.isPromotion, piecesMoved); // Redraw the pieces if there is a promotion
+	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
 
 	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
 		m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
@@ -129,27 +133,24 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool updateState)
 {
 	board.whiteToMove = !board.whiteToMove;
-	auto &selectedPiece = board[selectedPos];
-	auto &destPiece = board[destPos];
+	Piece &selectedPiece = board[selectedPos];
+	Piece &destPiece = board[destPos];
 	bool hashHandled = false;
 	board.isPromotion = board.isCapture = false;
 
+	const Pos enPassantPos = board.enPassantPos;
+	board.enPassantPos = Pos();
+
 	if (selectedPiece.type == Type::PAWN)
-	{
-		if (movePawn(selectedPiece, destPos))
-		{
-			Hash::promotePawn(board.key, selectedPos, destPos, selectedPiece.isWhite, Type::QUEEN);
-			hashHandled = true;
-			board.isPromotion = true;
-		}
-	}
+		hashHandled = movePawn(board, selectedPos, destPos, enPassantPos);
 	else if (selectedPiece.type == Type::KING)
 	{
 		board.kingSquare[selectedPiece.isWhite] = destPos.toSquare();
 
 		if (!selectedPiece.moved)
 		{
-			if (const auto posPair = moveKing(selectedPiece, selectedPos, destPos, board); posPair.first.isValid())
+			const PosPair posPair = moveKing(selectedPiece, selectedPos, destPos, board);
+			if (posPair.first.isValid())
 			{
 				if (selectedPiece.isWhite)
 					board.whiteCastled = true;
@@ -194,24 +195,43 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const auto pair = NegaMax::getBestMove(m_Board, !m_IsPlayerWhite, settings);
+	const RootMove bestMove = NegaMax::getBestMove(m_Board, !m_IsPlayerWhite, settings);
 
 	Stats::stopTimer();
 	m_IsWorking = false;
-	movePiece(pair.start, pair.dest, false);
+	movePiece(bestMove.start, bestMove.dest, false);
 
 	m_WorkerThread.detach();
 }
 
-bool BoardManager::movePawn(Piece &selectedPiece, const Pos &destPos)
+bool BoardManager::movePawn(Board &board, const Pos &startPos, const Pos &destPos, const Pos &enPassantPos)
 {
-	if (selectedPiece.moved)
-	{
+	Piece &pawn = board[startPos];
+
+	if (pawn.moved) {
 		if (destPos.y == 0 || destPos.y == 7)
 		{
-			selectedPiece.type = Type::QUEEN;
+			pawn.type = Type::QUEEN;
+			board.isPromotion = true;
+
+			Hash::promotePawn(board.key, startPos, destPos, pawn.isWhite, Type::QUEEN);
+			return true;
+		} else if (destPos == enPassantPos) {
+			board.isCapture = true;
+
+			Pos capturedPos(enPassantPos.x, enPassantPos.y + static_cast<byte>(pawn.isWhite ? -1u : 1u));
+			Piece &capturedPiece = board[capturedPos];
+
+			// Remove the captured Pawn
+			Hash::xorPiece(board.key, capturedPos, capturedPiece);
+			board.pieces[!pawn.isWhite] = ~capturedPos.toBitboard();
+			capturedPiece = Piece();
 			return true;
 		}
+	} else {
+		const int distance = static_cast<int>(destPos.y) - static_cast<int>(startPos.y);
+		if (distance == 2 || distance == -2)
+			board.enPassantPos = Pos(destPos.x, destPos.y - static_cast<byte>(distance / 2));
 	}
 
 	return false;
@@ -222,16 +242,16 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 	if (destPos.x == 6)
 	{
 		constexpr byte startX = 7;
-		const auto y = selectedPos.y;
+		const byte y = selectedPos.y;
 
-		auto &rook = board.data[startX][y];
+		Piece &rook = board.getPiece(startX, y);
 		if (rook.type == Type::ROOK && king.isSameColor(rook) && !rook.moved)
 		{
 			rook.moved = true;
 
 			const byte destX = 5;
-			board.data[destX][y] = rook;
-			board.data[startX][y] = Piece();
+			board.getPiece(destX, y) = rook;
+			board.getPiece(startX, y) = Piece::EMPTY;
 
 			return std::make_pair(Pos(startX, y), Pos(destX, y));
 		}
@@ -239,16 +259,16 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 	else if (destPos.x == 2)
 	{
 		constexpr byte startX = 0;
-		const auto y = selectedPos.y;
+		const byte y = selectedPos.y;
 
-		auto &rook = board.data[startX][y];
+		Piece &rook = board.getPiece(startX, y);
 		if (rook.type == Type::ROOK && king.isSameColor(rook) && !rook.moved)
 		{
 			rook.moved = true;
 
 			const byte destX = 3;
-			board.data[destX][y] = rook;
-			board.data[startX][y] = Piece();
+			board.getPiece(destX, y) = rook;
+			board.getPiece(startX, y) = Piece::EMPTY;
 
 			return std::make_pair(Pos(startX, y), Pos(destX, y));
 		}
@@ -275,6 +295,7 @@ void BoardManager::undoLastMoves()
 	m_Listener(previousMove.board.state, shouldRedraw,
 			{ { engineMove.dest, engineMove.start }, { playerMove.dest, playerMove.start } });
 
+	// Remove the last two moves from the vector
 	m_MovesHistory.pop_back();
 	m_MovesHistory.pop_back();
 }

@@ -36,11 +36,11 @@ U64 Hash::getHash(const Pos &pos, const Piece &piece)
 
 U64 Hash::compute(const Board &board)
 {
-	U64 hash = 0;
+	U64 hash{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			if (const auto &piece = board.data[x][y]; piece)
+			if (const Piece &piece = board.getPiece(x, y); piece)
 				hash ^= array[x][y][indexOf(piece)];
 
 	if (board.whiteToMove)
@@ -75,6 +75,11 @@ void Hash::promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, const 
 
 	// Add Promoted Piece
 	key ^= array[destPos.x][destPos.y][indexOf(Piece(promotedType, isWhite))];
+}
+
+void Hash::xorPiece(U64 &key, const Pos &pos, const Piece &piece)
+{
+	key ^= array[pos.x][pos.y][indexOf(piece)];
 }
 
 void Hash::flipSide(U64 &key)

@@ -440,7 +440,7 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, cons
 	return value;
 }
 
-inline Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept
+Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = BISHOP_SCORE;
 
@@ -520,7 +520,7 @@ Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &
 	return value;
 }
 
-inline Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept
+Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
 	Score value = QUEEN_SCORE;
 

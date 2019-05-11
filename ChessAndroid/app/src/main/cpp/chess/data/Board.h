@@ -20,10 +20,10 @@ public:
 	bool whiteToMove = true;
 	short score = 0;
 	short npm = 0;
+	Pos enPassantPos{};
 	// Index 0 -> black, index 1 -> white
 	byte kingSquare[2]{};
 	U64 pieces[2]{};
-
 	bool isPromotion = false;
 	bool isCapture = false;
 

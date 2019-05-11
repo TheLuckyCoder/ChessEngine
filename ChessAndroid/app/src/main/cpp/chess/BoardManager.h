@@ -43,6 +43,6 @@ public:
 
 private:
 	static void moveComputerPlayer(const Settings &settings);
-	static bool movePawn(Piece &selectedPiece, const Pos &destPos);
+	static bool movePawn(Board &board, const Pos &startPos, const Pos &destPos, const Pos &enPassantPos);
 	static PosPair moveKing(Piece &king, const Pos &selectedPos, const Pos &destPos, Board &board);
 };

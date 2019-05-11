@@ -74,6 +74,7 @@ void Board::initDefaultBoard() noexcept
 	state = State::NONE;
 	score = 0;
 	isPromotion = isCapture = false;
+	enPassantPos = Pos();
 
 	constexpr byte whiteKingLocation = Pos(4, 0).toSquare();
 	constexpr byte blackKingLocation = Pos(4, 7).toSquare();
@@ -141,8 +142,8 @@ StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			if (data[x][y])
-				pieces.emplace_back(Pos(x, y), data[x][y]);
+			if (const Piece &piece = getPiece(x, y))
+				pieces.emplace_back(Pos(x, y), piece);
 
 	return pieces;
 }
@@ -157,7 +158,7 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 		const Pos &startPos = pair.first;
 		const auto possibleMoves = pair.second.getPossibleCaptures(startPos, *this);
 
-		for (const auto &destPos : possibleMoves)
+		for (const Pos &destPos : possibleMoves)
 		{
 			if (moves.size() == 50)
 				break; // Just to make sure this won't cause any problems

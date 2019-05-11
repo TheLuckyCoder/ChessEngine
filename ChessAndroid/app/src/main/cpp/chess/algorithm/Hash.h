@@ -14,6 +14,7 @@ private:
 
 	static HashArray array;
 	static U64 whiteToMove;
+
 public:
 	static std::array<U64, 4> castlingRights;
 
@@ -27,6 +28,7 @@ public:
 
 	static void makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece = Piece::EMPTY);
 	static void promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, bool isWhite, Type promotedType);
+	static void xorPiece(U64 &key, const Pos &pos, const Piece &piece);
 	static void flipSide(U64 &key);
 
 private:
