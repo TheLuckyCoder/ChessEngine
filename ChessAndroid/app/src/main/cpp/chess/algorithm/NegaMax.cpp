@@ -2,11 +2,8 @@
 
 #include <algorithm>
 #include <mutex>
-#include <utility>
 
 #include "../Stats.h"
-#include "../BoardManager.h"
-#include "../data/Enums.h"
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
@@ -23,7 +20,7 @@ RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Sett
 			return move;
 
 	// Apply Settings
-	auto depth = settings.getBaseSearchDepth() - 1;
+	short depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
 	quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
@@ -82,19 +79,17 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 	return bestMove;
 }
 
-short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth, bool moveCountPruning)
+short NegaMax::negaMax(const Board &board, const short ply, short alpha, short beta, const bool isWhite, const short depth, const bool moveCountPruning)
 {
 	if (board.state == State::DRAW)
 		return 0;
-	if (ply == -1)
-		return sideToMove(board, isWhite);
-	if (ply == 0)
+	if (ply <= 0)
 	{
-		if (board.state != State::WHITE_IN_CHESS || board.state != State::BLACK_IN_CHESS)
+		if (ply == -1 || board.state != State::WHITE_IN_CHESS || board.state != State::BLACK_IN_CHESS)
 			// Switch to Quiescence Search if enabled
 			return quiescenceSearchEnabled ? quiescence(board, alpha, beta, isWhite) : sideToMove(board, isWhite);
 
-		// Else, allow the search to be extended to ply -1 if in chess
+		// Else, allow the search to be extended to ply -1 if in check
 	}
 
 	const short originalAlpha = alpha;
@@ -119,18 +114,20 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 	short bestScore = VALUE_MIN;
 	short movesCount = 0;
 
-	for (const auto &move : validMoves)
+	for (const Board &move : validMoves)
 	{
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 		{
 			// Mate Pruning
 			const short mateValue = VALUE_WINNER_WHITE - depth;
-			if (mateValue < beta) {
+			if (mateValue < beta)
+			{
 				beta = mateValue;
 				if (alpha >= mateValue) return mateValue;
 			}
 
-			if (mateValue > alpha) {
+			if (mateValue > alpha)
+			{
 				alpha = mateValue;
 				if (beta <= mateValue) return mateValue;
 			}
@@ -180,7 +177,7 @@ short NegaMax::negaMax(const Board &board, short ply, short alpha, short beta, b
 	return alpha;
 }
 
-short NegaMax::quiescence(const Board &board, short alpha, short beta, bool isWhite)
+short NegaMax::quiescence(const Board &board, short alpha, const short beta, const bool isWhite)
 {
 	if (board.state == State::DRAW)
 		return 0;
@@ -193,22 +190,25 @@ short NegaMax::quiescence(const Board &board, short alpha, short beta, bool isWh
 		alpha = standPat;
 
 	// Delta Pruning
-	constexpr short QUEEN_VALUE = 2529;
-	constexpr short PAWN_VALUE = 136;
+	if (board.getPhase() != Phase::ENDING) // Turn it off in the Endgame
+	{
+		constexpr short QUEEN_VALUE = 2529;
+		constexpr short PAWN_VALUE = 136;
 
-	short bigDelta = QUEEN_VALUE;
-	if (board.isPromotion) bigDelta += QUEEN_VALUE - PAWN_VALUE;
+		short bigDelta = QUEEN_VALUE;
+		if (board.isPromotion)
+			bigDelta += QUEEN_VALUE - PAWN_VALUE;
 
-	if (standPat < alpha - bigDelta)
-		return alpha; // TODO: Turn off Delta Pruning in the Endgame
-
+		if (standPat < alpha - bigDelta)
+			return alpha;
+	}
 
 	const auto validMoves = board.listQuiescenceMoves(isWhite);
 
 	if (Stats::enabled())
 		++Stats::nodesSearched;
 
-	for (const auto &move : validMoves)
+	for (const Board &move : validMoves)
 	{
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
@@ -244,7 +244,7 @@ short NegaMax::negaScout(const Board &board, short ply, short alpha, short beta,
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
 
-		const short moveScore = -negaScout(move, ply -1, -n, -alpha, !isWhite, depth + 1);
+		const short moveScore = -negaScout(move, ply - 1, -n, -alpha, !isWhite, depth + 1);
 
 		if (moveScore > bestScore)
 			bestScore = (n == beta || ply <= 2) ? moveScore : -negaScout(move, ply - 1, -beta, -bestScore, !isWhite, depth + 1);

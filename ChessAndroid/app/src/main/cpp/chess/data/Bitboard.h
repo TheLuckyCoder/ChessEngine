@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 
 using U64 = std::uint64_t;
@@ -43,7 +44,7 @@ namespace Bitboard
 		};
 
 		constexpr U64 debruijn64(0x03f79d71b4cb0a89);
-		return index64[((bb & -bb) * debruijn64) >> 58];
+		return index64[((bb & -static_cast<long long>(bb)) * debruijn64) >> 58];
 	}
 
 	/**

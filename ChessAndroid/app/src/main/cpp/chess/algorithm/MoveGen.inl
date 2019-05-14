@@ -4,6 +4,7 @@
 
 #include "PieceAttacks.h"
 #include "../data/Board.h"
+#include "../data/Bitboard.h"
 
 template <std::size_t N>
 static void convertBitboardToMoves(PosVector<N> &moves, U64 attacks)

@@ -17,7 +17,7 @@ public:
 
 	static short simpleEvaluation(const Board &board) noexcept;
 	static short evaluate(const Board &board) noexcept;
-	static short getPieceValue(Type type) noexcept
+	static short getPieceValue(const Type type) noexcept
 	{
 		return PIECE_VALUE[type];
 	}

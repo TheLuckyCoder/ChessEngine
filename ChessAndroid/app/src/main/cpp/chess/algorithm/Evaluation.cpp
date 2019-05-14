@@ -20,10 +20,6 @@ constexpr S MINOR_THREATS[] =
 constexpr S OVERLOAD(12, 6);
 constexpr S PAWN_DOUBLED(11, 56);
 constexpr S PAWN_ISOLATED(5, 15);
-constexpr S PASSED_PAWN_FILE[] =
-{
-	S(0, 0), S(-1, 7), S(0, 9), S(-9, -8), S(-30, -14)
-};
 constexpr S PASSED_PAWN_RANK[] =
 {
 	S(0, 0), S(5, 18), S(12, 23), S(10, 31), S(57, 62), S(163, 167), S(271, 250)
@@ -137,6 +133,13 @@ constexpr S QUEEN_MOBILITY[] =
 
 short Evaluation::simpleEvaluation(const Board &board) noexcept
 {
+	if (board.state == State::DRAW)
+		return 0;
+	if (board.state == State::WINNER_WHITE)
+		return VALUE_WINNER_WHITE;
+	if (board.state == State::WINNER_BLACK)
+		return VALUE_WINNER_BLACK;
+
 	short score = 0;
 
 	for (byte x = 0; x < 8; x++)
@@ -325,7 +328,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	Score value = PAWN_SCORE;
 	value += PAWN_SQUARE[7u - pos.x][std::min<byte>(pos.y, 7u - pos.y)];
 
-	const byte behind = piece.isWhite ? -1u : 1u;
+	const byte behind = piece.isWhite ? -1 : 1;
 	const int supported = (board.getPieceSafely(pos.x - 1u, pos.y + behind).isSameType(piece) +
 							board.getPieceSafely(pos.x + 1u, pos.y + behind).isSameType(piece));
 
@@ -362,8 +365,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 		};
 
 		byte i = 0;
-		if (isEnemyPiece(-1u, 1u)) i++;
-		if (isEnemyPiece( 1u, 1u)) i++;
+		if (isEnemyPiece(-1, 1u)) i++;
+		if (isEnemyPiece(1u, 1u)) i++;
 
 		value += THREAT_SAFE_PAWN * i;
 	}
@@ -422,8 +425,6 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	{
 		const auto rank = (piece.isWhite ? pos.y : 7u - pos.y) - 1u;
 		value += PASSED_PAWN_RANK[rank];
-		const byte file = std::min<byte>(pos.x, 8u - pos.x);
-		value += PASSED_PAWN_FILE[file];
 	}
 
 	return value;

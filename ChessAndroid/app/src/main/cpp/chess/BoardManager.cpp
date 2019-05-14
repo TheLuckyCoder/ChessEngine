@@ -1,5 +1,7 @@
 #include "BoardManager.h"
 
+#include <cassert>
+
 #include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Evaluation.h"
@@ -47,8 +49,6 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves)
 		m_MovesHistory.emplace_back(move.first, move.second, m_Board);
 	}
 
-	m_Board.updateState();
-	m_Board.score = Evaluation::evaluate(m_Board);
 	m_Listener(m_Board.state, true, {});
 }
 
@@ -119,8 +119,8 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_Board[destPos] = selectedPiece;
 	m_Board[selectedPos] = Piece();
 
-	m_Board.updateState();
 	m_Board.key = Hash::compute(m_Board);
+	m_Board.updateState();
 	m_Board.score = Evaluation::evaluate(m_Board);
 
 	m_MovesHistory.emplace_back(selectedPos, destPos, m_Board);
@@ -219,7 +219,7 @@ bool BoardManager::movePawn(Board &board, const Pos &startPos, const Pos &destPo
 		} else if (destPos == enPassantPos) {
 			board.isCapture = true;
 
-			Pos capturedPos(enPassantPos.x, enPassantPos.y + static_cast<byte>(pawn.isWhite ? -1u : 1u));
+			const Pos capturedPos(enPassantPos.x, enPassantPos.y + static_cast<byte>(pawn.isWhite ? -1 : 1));
 			Piece &capturedPiece = board[capturedPos];
 
 			// Remove the captured Pawn
@@ -239,9 +239,9 @@ bool BoardManager::movePawn(Board &board, const Pos &startPos, const Pos &destPo
 
 PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &destPos, Board &board)
 {
-	if (destPos.x == 6)
+	if (destPos.x == 6u)
 	{
-		constexpr byte startX = 7;
+		constexpr byte startX = 7u;
 		const byte y = selectedPos.y;
 
 		Piece &rook = board.getPiece(startX, y);
@@ -256,9 +256,9 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 			return std::make_pair(Pos(startX, y), Pos(destX, y));
 		}
 	}
-	else if (destPos.x == 2)
+	else if (destPos.x == 2u)
 	{
-		constexpr byte startX = 0;
+		constexpr byte startX = 0u;
 		const byte y = selectedPos.y;
 
 		Piece &rook = board.getPiece(startX, y);
@@ -266,7 +266,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		{
 			rook.moved = true;
 
-			const byte destX = 3;
+			const byte destX = 3u;
 			board.getPiece(destX, y) = rook;
 			board.getPiece(startX, y) = Piece::EMPTY;
 

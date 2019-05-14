@@ -1,10 +1,12 @@
 #pragma once
 
+#include "../data/Enums.h"
 #include "../data/Pos.h"
-#include "../data/Board.h"
+#include "../containers/StackVector.h"
 #include "../containers/TranspositionTable.h"
 
 class Board;
+class RootMove;
 class Settings;
 
 class NegaMax final

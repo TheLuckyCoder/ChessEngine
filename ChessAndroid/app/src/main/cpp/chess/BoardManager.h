@@ -8,7 +8,6 @@
 #include "Settings.h"
 #include "containers/StackVector.h"
 #include "data/Enums.h"
-#include "data/Player.h"
 #include "data/Piece.h"
 
 class RootMove;

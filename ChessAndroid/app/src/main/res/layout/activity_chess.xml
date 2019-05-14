@@ -26,7 +26,9 @@
         android:layout_below="@id/pb_loading"
         android:gravity="center_horizontal"
         android:textColor="@android:color/black"
-        android:textSize="16sp"
+        android:textSize="15.5sp"
+        android:scrollbars="vertical"
+        android:layout_above="@id/btn_restart_game"
         tools:text="Stats:" />
 
     <ImageView
@@ -46,8 +48,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="80dp"
-        android:layout_marginEnd="80dp"
+        android:layout_marginStart="70dp"
+        android:layout_marginEnd="70dp"
         android:layout_marginBottom="8dp"
         android:layout_toStartOf="@+id/iv_settings"
         android:layout_toEndOf="@+id/iv_undo"

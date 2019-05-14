@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../containers/Containers.h"
-#include "../data/Bitboard.h"
 
 enum GenType : unsigned char
 {
