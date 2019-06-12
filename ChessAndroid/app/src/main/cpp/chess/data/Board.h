@@ -112,7 +112,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
 				continue;
 
-			board.score = Evaluation::evaluate(board);
+			board.score = Evaluation::simpleEvaluation(board);
 
 			if constexpr (std::is_same_v<T, RootMove>)
 			{

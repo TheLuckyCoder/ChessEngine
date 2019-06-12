@@ -225,6 +225,7 @@ bool BoardManager::movePawn(Board &board, const Pos &startPos, const Pos &destPo
 			// Remove the captured Pawn
 			Hash::xorPiece(board.key, capturedPos, capturedPiece);
 			board.pieces[!pawn.isWhite] = ~capturedPos.toBitboard();
+			board.npm -= Evaluation::getPieceValue(Type::PAWN);
 			capturedPiece = Piece();
 			return true;
 		}
@@ -249,7 +250,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		{
 			rook.moved = true;
 
-			const byte destX = 5;
+			constexpr byte destX = 5;
 			board.getPiece(destX, y) = rook;
 			board.getPiece(startX, y) = Piece::EMPTY;
 
@@ -266,7 +267,7 @@ PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &d
 		{
 			rook.moved = true;
 
-			const byte destX = 3u;
+			constexpr byte destX = 3u;
 			board.getPiece(destX, y) = rook;
 			board.getPiece(startX, y) = Piece::EMPTY;
 
@@ -284,15 +285,23 @@ void BoardManager::undoLastMoves()
 	const auto end = m_MovesHistory.end();
 	// Undo the last move, which should have been made by the engine
 	const RootMove &engineMove = m_MovesHistory.back();
+	const Board &engineBoard = engineMove.board;
+
 	// Undo the move before the last move so that it is the player's turn again
 	const RootMove &playerMove = *(end - 2);
+	const Board &playerBoard = playerMove.board;
 
+	// Restore the move before the last two moves
 	const RootMove &previousMove = *(end - 3);
-	const bool shouldRedraw = engineMove.board.isPromotion || engineMove.board.isCapture ||
-			playerMove.board.isPromotion || playerMove.board.isCapture;
+	const Board &previousBoard = previousMove.board;
 
-	m_Board = previousMove.board;
-	m_Listener(previousMove.board.state, shouldRedraw,
+	const bool shouldRedraw = engineBoard.isPromotion || engineBoard.isCapture ||
+			playerBoard.isPromotion || playerBoard.isCapture ||
+			engineBoard.whiteCastled != previousBoard.whiteCastled ||
+			engineBoard.blackCastled != previousBoard.whiteCastled;
+
+	m_Board = previousBoard;
+	m_Listener(previousBoard.state, shouldRedraw,
 			{ { engineMove.dest, engineMove.start }, { playerMove.dest, playerMove.start } });
 
 	// Remove the last two moves from the vector

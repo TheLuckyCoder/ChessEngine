@@ -263,5 +263,6 @@ short NegaMax::negaScout(const Board &board, short ply, short alpha, short beta,
 
 inline short NegaMax::sideToMove(const Board &board, const bool isWhite)
 {
-	return isWhite ? board.score : -board.score;
+	const short value = Evaluation::evaluate(board);
+	return isWhite ? value : -value;
 }

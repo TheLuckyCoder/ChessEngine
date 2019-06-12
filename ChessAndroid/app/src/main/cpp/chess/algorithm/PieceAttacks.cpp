@@ -1,10 +1,8 @@
 #include "PieceAttacks.h"
 
-#include <array>
-
 #include "../data/Pos.h"
 
-constexpr static std::array<U64, 64> knightMoves = [] {
+const std::array<U64, 64> PieceAttacks::s_KnightMoves = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
@@ -32,7 +30,7 @@ constexpr static std::array<U64, 64> knightMoves = [] {
 	return moves;
 }();
 
-constexpr std::array<U64, 64> kingMoves = [] {
+const std::array<U64, 64> PieceAttacks::s_KingMoves = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
@@ -71,10 +69,10 @@ void PieceAttacks::init() noexcept
 
 U64 PieceAttacks::getKnightAttacks(const byte square) noexcept
 {
-	return knightMoves[square];
+	return s_KnightMoves[square];
 }
 
 U64 PieceAttacks::getKingAttacks(const byte square) noexcept
 {
-	return kingMoves[square];
+	return s_KingMoves[square];
 }

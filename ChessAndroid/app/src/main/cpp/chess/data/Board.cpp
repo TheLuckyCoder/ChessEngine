@@ -176,7 +176,7 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
 				continue;
 
-			board.score = Evaluation::evaluate(board);
+			board.score = Evaluation::simpleEvaluation(board);
 
 			moves.push_back(board);
 		}
