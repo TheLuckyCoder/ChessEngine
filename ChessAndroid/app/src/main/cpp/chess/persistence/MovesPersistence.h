@@ -10,12 +10,17 @@ class RootMove;
 class Board;
 class Piece;
 
-class MovesPersistence final {
-public:
-	MovesPersistence() = delete;
+class MovesPersistence final
+{
+	std::string m_Content;
 
-	static std::vector<PosPair> load(std::string str);
-	static std::string save(const std::vector<RootMove> &movesHistory);
+public:
+	MovesPersistence(std::string content);
+
+	bool isPlayerWhite() const;
+	std::vector<PosPair> getMoves() const;
+
+	static std::string saveToString(const std::vector<RootMove> &movesHistory, bool isPlayerWhite);
 
 private:
 	static Pos getPos(std::string_view str);

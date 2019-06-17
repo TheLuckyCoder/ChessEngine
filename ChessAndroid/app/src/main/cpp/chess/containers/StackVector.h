@@ -223,7 +223,8 @@ public:
 		std::move(_array + pos, _array + _size - 1, _array + pos + 1);
 
 		reference ref = _array[_size - 1];
-		ref.~T();
+		if constexpr (!std::is_trivially_destructible_v<T>)
+			ref.~T();
 
 		new (&ref) T(std::forward<Args>(args)...);
 
@@ -284,7 +285,8 @@ public:
 		if (_size > 0)
 		{
 			--_size;
-			_array[_size].~T();
+			if constexpr (!std::is_trivially_destructible_v<T>)
+				_array[_size].~T();
 		}
 	}
 

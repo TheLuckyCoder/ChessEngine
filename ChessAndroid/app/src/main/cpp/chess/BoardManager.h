@@ -28,7 +28,7 @@ private:
 	
 public:
 	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
-	static void loadGame(const std::vector<PosPair> &moves);
+	static void loadGame(const std::vector<PosPair> &moves, bool isPlayerWhite);
 	static void undoLastMoves();
 
 	static Board &getBoard() { return m_Board; }

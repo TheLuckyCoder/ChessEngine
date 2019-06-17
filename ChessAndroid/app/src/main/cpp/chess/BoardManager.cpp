@@ -34,8 +34,10 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 	    m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
 }
 
-void BoardManager::loadGame(const std::vector<PosPair> &moves)
+void BoardManager::loadGame(const std::vector<PosPair> &moves, const bool isPlayerWhite)
 {
+	m_IsPlayerWhite = isPlayerWhite;
+
 	m_Board.initDefaultBoard();
 	m_Board.key = Hash::compute(m_Board);
 

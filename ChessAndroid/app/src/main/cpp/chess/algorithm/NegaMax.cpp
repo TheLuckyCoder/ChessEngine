@@ -15,7 +15,7 @@ RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Sett
 {
 	const auto validMoves = board.listValidMoves<RootMove>(isWhite);
 
-	for (const auto &move : validMoves)
+	for (const RootMove &move : validMoves)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
 			return move;
 

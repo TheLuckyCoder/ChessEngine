@@ -5,21 +5,32 @@
 
 #include "../data/Board.h"
 
-std::vector<PosPair> MovesPersistence::load(std::string str)
+MovesPersistence::MovesPersistence(std::string content)
+	: m_Content(std::move(content))
 {
-	str.erase(std::remove_if(str.begin(), str.end(),
-		[](const char c) { return std::isspace(c); }), str.end());
-	std::vector<PosPair> moves;
+	m_Content.erase(std::remove_if(m_Content.begin(), m_Content.end(),
+			[](const char c) { return std::isspace(c); }), m_Content.end());
+}
 
-	size_t prefix = 0;
+bool MovesPersistence::isPlayerWhite() const
+{
+	return m_Content[0] == 'W';
+}
+
+std::vector<PosPair> MovesPersistence::getMoves() const
+{
+	std::vector<PosPair> moves;
+	moves.reserve(10);
+
+	size_t prefix = 1;
 	while (true)
 	{
-		const auto end = str.find(')', prefix);
+		const auto end = m_Content.find(')', prefix);
 
 		if (end == std::string_view::npos)
 			break;
 
-		parsePosPair(moves, str.substr(prefix + 1, end - prefix));
+		parsePosPair(moves, m_Content.substr(prefix + 1, end - prefix));
 
 		prefix = end + 1;
 	}
@@ -27,11 +38,12 @@ std::vector<PosPair> MovesPersistence::load(std::string str)
 	return moves;
 }
 
-std::string MovesPersistence::save(const std::vector<RootMove> &movesHistory)
+std::string MovesPersistence::saveToString(const std::vector<RootMove> &movesHistory, const bool isPlayerWhite)
 {
 	std::ostringstream stream;
+	stream << (isPlayerWhite ? 'W' : 'B');
 
-	for (const auto &moves : movesHistory)
+	for (const RootMove &moves : movesHistory)
 		savePosPair(stream, std::make_pair(moves.start, moves.dest));
 
 	return stream.str();
@@ -60,5 +72,6 @@ void MovesPersistence::savePosPair(std::ostringstream &stream, const PosPair &pa
 {
 	stream << '('
 		<< static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
-		<< static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y) << ')';
+		<< static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y)
+		<< ')';
 }

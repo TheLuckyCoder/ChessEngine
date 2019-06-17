@@ -212,8 +212,9 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jclass /*type*/, jstring moves)
 {
 	const char *nativeString = pEnv->GetStringUTFChars(moves, nullptr);
+	const MovesPersistence savedMoves = MovesPersistence(nativeString);
 
-	BoardManager::loadGame(MovesPersistence::load(nativeString));
+	BoardManager::loadGame(savedMoves.getMoves(), savedMoves.isPlayerWhite());
 
 	pEnv->ReleaseStringUTFChars(moves, nativeString);
 }
@@ -221,5 +222,6 @@ Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jclass /*type*/, jst
 external JNIEXPORT jstring JNICALL
 Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jclass /*type*/)
 {
-	return pEnv->NewStringUTF(MovesPersistence::save(BoardManager::getMovesHistory()).c_str());
+	const std::string string = MovesPersistence::saveToString(BoardManager::getMovesHistory(), BoardManager::isPlayerWhite());
+	return pEnv->NewStringUTF(string.c_str());
 }
