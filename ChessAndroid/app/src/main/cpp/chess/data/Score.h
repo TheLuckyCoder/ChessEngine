@@ -33,6 +33,22 @@ public:
 		mg -= score;
 		eg -= score;
 	}
+
+	constexpr Score operator+(const Score &rhs) const noexcept
+	{
+		Score lhs = *this;
+		lhs.mg += rhs.mg;
+		lhs.eg += rhs.eg;
+		return lhs;
+	}
+
+	constexpr Score operator-(const Score &rhs) const noexcept
+	{
+		Score lhs = *this;
+		lhs.mg -= rhs.mg;
+		lhs.eg -= rhs.eg;
+		return lhs;
+	}
 };
 
 constexpr Score operator*(Score score, const int rhs) noexcept

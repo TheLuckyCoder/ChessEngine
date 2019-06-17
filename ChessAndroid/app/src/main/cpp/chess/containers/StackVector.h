@@ -43,7 +43,7 @@ public:
 		CPP14_CONSTEXPR void operator+=(const iterator &other) noexcept { _ptr += other._ptr; }
 		CPP14_CONSTEXPR iterator operator+(const size_type n) const noexcept
 		{
-			iterator temp(*this);
+			iterator temp = *this;
 			temp += n;
 			return temp;
 		}
@@ -53,7 +53,7 @@ public:
 		CPP14_CONSTEXPR void operator-=(const iterator &other) noexcept { _ptr -= other._ptr; }
 		CPP14_CONSTEXPR iterator operator-(const size_type n) const noexcept
 		{
-			iterator temp(*this);
+			iterator temp = *this;
 			temp._ptr -= n;
 			return temp;
 		}
@@ -217,7 +217,7 @@ public:
 	}
 
 	template<class... Args >
-	CPP14_CONSTEXPR reference emplace(size_type pos, Args&&... args) noexcept(false)
+	CPP14_CONSTEXPR reference emplace(const size_type pos, Args&&... args) noexcept(false)
 	{
 		if (++_size > N) throwLengthException();
 		std::move(_array + pos, _array + _size - 1, _array + pos + 1);
