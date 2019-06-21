@@ -7,9 +7,9 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-bool NegaMax::quiescenceSearchEnabled{};
-TranspositionTable NegaMax::searchCache(1);
-short NegaMax::bestMoveFound{};
+bool NegaMax::s_QuiescenceSearchEnabled{};
+TranspositionTable NegaMax::s_SearchCache(1);
+short NegaMax::s_BestMoveFound{};
 
 RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
 {
@@ -22,17 +22,22 @@ RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Sett
 	// Apply Settings
 	short depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
-	quiescenceSearchEnabled = settings.performQuiescenceSearch();
+	s_QuiescenceSearchEnabled = settings.performQuiescenceSearch();
 
 	// If the Transposition Table wasn't resized, clean it
-	if (!searchCache.setSize(settings.getCacheTableSizeMb()))
-		searchCache.clear();
+	if (!s_SearchCache.setSize(settings.getCacheTableSizeMb()))
+		s_SearchCache.clear();
 	NegaMaxThreadPool::updateThreadCount(threadCount);
 
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
 	return negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, !isWhite);
+}
+
+short NegaMax::getBestMoveFound()
+{
+	return s_BestMoveFound;
 }
 
 RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short ply, const bool isWhite)
@@ -68,13 +73,21 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 		mutex.unlock();
 	};
 
-	for (auto i = 0u; i < jobCount; ++i)
-		futures.emplace_back(NegaMaxThreadPool::submitJob<void>(doWork));
+	futures.emplace_back(NegaMaxThreadPool::submitJob(doWork));
+
+	if (jobCount != 1) {
+		// Wait until an alpha bound has been found
+		while (alpha == VALUE_MIN)
+			std::this_thread::yield();
+
+		for (unsigned i = 1u; i < jobCount; ++i)
+			futures.emplace_back(NegaMaxThreadPool::submitJob(doWork));
+	}
 
 	for (auto &future : futures)
 		future.get(); // Wait for the Search to finish
 
-	bestMoveFound = alpha;
+	s_BestMoveFound = alpha;
 
 	return bestMove;
 }
@@ -86,14 +99,16 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	if (ply <= 0)
 	{
 		if (ply == -1 || board.state != State::WHITE_IN_CHESS || board.state != State::BLACK_IN_CHESS)
+		{
 			// Switch to Quiescence Search if enabled
-			return quiescenceSearchEnabled ? quiescence(board, alpha, beta, isWhite) : sideToMove(board, isWhite);
+			return s_QuiescenceSearchEnabled ? quiescence(board, alpha, beta, isWhite) : sideToMove(board, isWhite);
+		}
 
-		// Else, allow the search to be extended to ply -1 if in check
+		// Otherwise, allow the search to be extended to ply -1 if in check
 	}
 
 	const short originalAlpha = alpha;
-	if (const SearchCache cache = searchCache[board.key];
+	if (const SearchCache cache = s_SearchCache[board.key];
 		board.key == cache.key && board.score == cache.boardScore && cache.ply == ply)
 	{
 		if (cache.flag == Flag::EXACT)
@@ -172,7 +187,7 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	else if (bestScore > beta)
 		flag = Flag::BETA;
 
-	searchCache.insert({ board.key, board.score, bestScore, ply, flag });
+	s_SearchCache.insert({ board.key, board.score, bestScore, ply, flag });
 
 	return alpha;
 }
@@ -230,7 +245,7 @@ short NegaMax::negaScout(const Board &board, short ply, short alpha, short beta,
 		return 0;
 	if (ply == 0)
 	{
-		if (quiescenceSearchEnabled)
+		if (s_QuiescenceSearchEnabled)
 			return quiescence(board, alpha, beta, isWhite);
 		return sideToMove(board, isWhite);
 	}

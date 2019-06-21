@@ -8,7 +8,7 @@ constexpr S BISHOP_SCORE(830, 918);
 constexpr S ROOK_SCORE(1289, 1378);
 constexpr S QUEEN_SCORE(2529, 2687);
 
-constexpr S PAWN_SQ[][4] =
+constexpr S PAWN_SQUARE[][4] =
 {
 	{ S(0,   0),  S(0,   0),   S(0,   0),  S(0,  0)  },
 	{ S(-11, -3), S(7,   -1),  S(7,   7),  S(17, 2)  },
@@ -19,7 +19,7 @@ constexpr S PAWN_SQ[][4] =
 	{ S(-2,  1),  S(20,  -12), S(-10, 6),  S(-2, 25) },
 	{ S(0,   0),  S(0,   0),   S(0,   0),  S(0,  0)  }
 };
-constexpr S KNIGHT_SQ[][4] =
+constexpr S KNIGHT_SQUARE[][4] =
 {
 	{ S(-169, -105), S(-96, -74), S(-80, -46), S(-79, -18) },
 	{ S(-79,  -70),  S(-39, -56), S(-24, -15), S(-9,  6)   },
@@ -30,7 +30,7 @@ constexpr S KNIGHT_SQ[][4] =
 	{ S(-67,  -64),  S(-21, -45), S(6,   -37), S(37,  16)  },
 	{ S(-200, -98),  S(-80, -89), S(-53, -53), S(-32, -16) }
 };
-constexpr S BISHOP_SQ[][4] =
+constexpr S BISHOP_SQUARE[][4] =
 {
 	{ S(-44, -63), S(-4,  -30), S(-11, -35), S(-28, -8)  },
 	{ S(-18, -38), S(7,   -13), S(14,  -14), S(3,   0)   },
@@ -41,7 +41,7 @@ constexpr S BISHOP_SQ[][4] =
 	{ S(-21, -34), S(-19, -18), S(10,  -7),  S(-6,  9)   },
 	{ S(-48, -51), S(-3,  -40), S(-12, -39), S(-25, -20) }
 };
-constexpr S ROOK_SQ[][4] =
+constexpr S ROOK_SQUARE[][4] =
 {
 	{ S(-24, -2),  S(-13, -6), S(-7, -3),  S(2,-2)  },
 	{ S(-18, -10), S(-10, -7), S(-5, 1),   S(9, 0)  },
@@ -52,7 +52,7 @@ constexpr S ROOK_SQ[][4] =
 	{ S(-8,  1),   S(6,   2),  S(10, 17),  S(12,-8) },
 	{ S(-22, 12),  S(-24, -6), S(-6, 13),  S(4, 7)  }
 };
-constexpr S QUEEN_SQ[][4] =
+constexpr S QUEEN_SQUARE[][4] =
 {
 	{ S(3,  -69), S(-5, -57), S(-5, -47), S(4,  -26) },
 	{ S(-3, -55), S(5,  -31), S(8,  -22), S(12, -4)  },
@@ -63,7 +63,7 @@ constexpr S QUEEN_SQ[][4] =
 	{ S(-5, -50), S(6,  -27), S(10, -24), S(8,  -8)  },
 	{ S(-2, -75), S(-2, -52), S(1,  -43), S(-2, -36) }
 };
-constexpr S KING_SQ[][4] =
+constexpr S KING_SQUARE[][4] =
 {
 	{ S(272, 0),   S(325, 41),  S(273, 80),  S(190, 93)  },
 	{ S(277, 57),  S(305, 98),  S(241, 138), S(183, 131) },
@@ -79,62 +79,62 @@ constexpr S KING_SQ[][4] =
 
 using byte = unsigned char;
 
-const Psqt::ScoreArray Psqt::PAWN_SQUARE = [] {
+const Psqt::ScoreArray Psqt::s_PawnSquares = [] {
 	ScoreArray array{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			array[x][y] = PAWN_SCORE + PAWN_SQ[7u - x][std::min<byte>(y, 7u - y)];
+			array[x][y] = PAWN_SCORE + PAWN_SQUARE[7u - x][std::min<byte>(y, 7u - y)];
 
 	return array;
 }();
 
-const Psqt::ScoreArray Psqt::KNIGHT_SQUARE = [] {
+const Psqt::ScoreArray Psqt::s_KnightSquares = [] {
 	ScoreArray array{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			array[x][y] = KNIGHT_SCORE + KNIGHT_SQ[7u - x][std::min<byte>(y, 7u - y)];
+			array[x][y] = KNIGHT_SCORE + KNIGHT_SQUARE[7u - x][std::min<byte>(y, 7u - y)];
 
 	return array;
 }();
 
-const Psqt::ScoreArray Psqt::BISHOP_SQUARE = [] {
+const Psqt::ScoreArray Psqt::s_BishopSquares = [] {
 	ScoreArray array{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			array[x][y] = BISHOP_SCORE + BISHOP_SQ[7u - x][std::min<byte>(y, 7u - y)];
+			array[x][y] = BISHOP_SCORE + BISHOP_SQUARE[7u - x][std::min<byte>(y, 7u - y)];
 
 	return array;
 }();
 
-const Psqt::ScoreArray Psqt::ROOK_SQUARE = [] {
+const Psqt::ScoreArray Psqt::s_RookSquares = [] {
 	ScoreArray array{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			array[x][y] = ROOK_SCORE + ROOK_SQ[7u - x][std::min<byte>(y, 7u - y)];
+			array[x][y] = ROOK_SCORE + ROOK_SQUARE[7u - x][std::min<byte>(y, 7u - y)];
 
 	return array;
 }();
 
-const Psqt::ScoreArray Psqt::QUEEN_SQUARE = [] {
+const Psqt::ScoreArray Psqt::s_QueenSquares = [] {
 	ScoreArray array{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			array[x][y] = QUEEN_SCORE + QUEEN_SQ[7u - x][std::min<byte>(y, 7u - y)];
+			array[x][y] = QUEEN_SCORE + QUEEN_SQUARE[7u - x][std::min<byte>(y, 7u - y)];
 
 	return array;
 }();
 
-const Psqt::ScoreArray Psqt::KING_SQUARE = [] {
+const Psqt::ScoreArray Psqt::s_KingSquares = [] {
 	ScoreArray array{};
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			array[x][y] = KING_SQ[7u - x][std::min<byte>(y, 7u - y)];
+			array[x][y] = KING_SQUARE[7u - x][std::min<byte>(y, 7u - y)];
 
 	return array;
 }();

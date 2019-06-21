@@ -13,10 +13,10 @@ public:
 	Psqt(const Psqt&) = delete;
 	Psqt(Psqt&&) = delete;
 
-	const static ScoreArray PAWN_SQUARE;
-	const static ScoreArray KNIGHT_SQUARE;
-	const static ScoreArray BISHOP_SQUARE;
-	const static ScoreArray ROOK_SQUARE;
-	const static ScoreArray QUEEN_SQUARE;
-	const static ScoreArray KING_SQUARE;
+	const static ScoreArray s_PawnSquares;
+	const static ScoreArray s_KnightSquares;
+	const static ScoreArray s_BishopSquares;
+	const static ScoreArray s_RookSquares;
+	const static ScoreArray s_QueenSquares;
+	const static ScoreArray s_KingSquares;
 };

@@ -78,17 +78,17 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 					switch (piece.type)
 					{
 						case Type::PAWN:
-							return Psqt::PAWN_SQUARE[x][y].mg;
+							return Psqt::s_PawnSquares[x][y].mg;
 						case Type::KNIGHT:
-							return Psqt::KNIGHT_SQUARE[x][y].mg;
+							return Psqt::s_KnightSquares[x][y].mg;
 						case Type::BISHOP:
-							return Psqt::BISHOP_SQUARE[x][y].mg;
+							return Psqt::s_BishopSquares[x][y].mg;
 						case Type::ROOK:
-							return Psqt::ROOK_SQUARE[x][y].mg;
+							return Psqt::s_RookSquares[x][y].mg;
 						case Type::QUEEN:
-							return Psqt::QUEEN_SQUARE[x][y].mg;
+							return Psqt::s_QueenSquares[x][y].mg;
 						case Type::KING:
-							return Psqt::KING_SQUARE[x][y].mg;
+							return Psqt::s_KingSquares[x][y].mg;
 						default:
 							return 0;
 					}
@@ -253,7 +253,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 
 Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const Attacks &ourAttacks, const Attacks &theirAttacks) noexcept
 {
-	Score value = Psqt::PAWN_SQUARE[pos.x][pos.y];
+	Score value = Psqt::s_PawnSquares[pos.x][pos.y];
 
 	const byte behind = piece.isWhite ? -1 : 1;
 	const int supported = (board.getPieceSafely(pos.x - 1u, pos.y + behind).isSameType(piece) +
@@ -359,7 +359,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 
 inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::KNIGHT_SQUARE[pos.x][pos.y];
+	Score value = Psqt::s_KnightSquares[pos.x][pos.y];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL, false>::generateKnightMoves(piece, pos, board));
 	value += KNIGHT_MOBILITY[mobility];
@@ -369,7 +369,7 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, cons
 
 Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::BISHOP_SQUARE[pos.x][pos.y];
+	Score value = Psqt::s_BishopSquares[pos.x][pos.y];
 
 	value += BISHOP_MOBILITY[MoveGen<ALL>::generateBishopMoves(piece, pos, board).size()];
 
@@ -396,7 +396,7 @@ Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board
 
 Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::ROOK_SQUARE[pos.x][pos.y];
+	Score value = Psqt::s_RookSquares[pos.x][pos.y];
 
 	value += ROOK_MOBILITY[MoveGen<ALL>::generateRookMoves(piece, pos, board).size()];
 
@@ -447,7 +447,7 @@ Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &
 
 Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::QUEEN_SQUARE[pos.x][pos.y];
+	Score value = Psqt::s_QueenSquares[pos.x][pos.y];
 
 	value += QUEEN_MOBILITY[MoveGen<ALL>::generateQueenMoves(piece, pos, board).size()];
 
@@ -482,7 +482,7 @@ Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board 
 
 inline Score Evaluation::evaluateKing(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::KING_SQUARE[pos.x][pos.y];
+	Score value = Psqt::s_KingSquares[pos.x][pos.y];
 
 	if (piece.moved)
 	{

@@ -22,9 +22,9 @@ public:
 		}
 	}
 
-	template <typename ResultType, typename Func, typename... Args>
-	static ThreadPool::TaskFuture<ResultType> submitJob(Func &&func, Args &&... args)
+	template <typename Func, typename... Args>
+	static ThreadPool::TaskFuture<void> submitJob(Func &&func, Args &&... args)
 	{
-		return pool.submit<ResultType>(std::forward<Func>(func), std::forward<Args>(args)...);
+		return pool.submit<void>(std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 };

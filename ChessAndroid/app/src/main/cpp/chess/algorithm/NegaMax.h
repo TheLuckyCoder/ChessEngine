@@ -11,17 +11,17 @@ class Settings;
 
 class NegaMax final
 {
-	static bool quiescenceSearchEnabled;
-	static TranspositionTable searchCache;
+	static bool s_QuiescenceSearchEnabled;
+	static TranspositionTable s_SearchCache;
+	static short s_BestMoveFound;
 
 public:
-	static short bestMoveFound;
-
 	NegaMax() = delete;
 	NegaMax(const NegaMax&) = delete;
 	NegaMax(NegaMax&&) = delete;
 
 	static RootMove getBestMove(const Board &board, bool isWhite, const Settings &settings);
+	static short getBestMoveFound();
 
 private:
 	static RootMove negaMaxRoot(StackVector<RootMove, 150> validMoves, unsigned int jobCount, short ply, bool isWhite);

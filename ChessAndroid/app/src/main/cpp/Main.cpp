@@ -58,7 +58,7 @@ external JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void */*reserved*/)
 	LOGI("ChessCpp", "JNI_OnLoad");
 
 	JNIEnv *env;
-	if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK)
+	if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK)
 		return -1;
 
 	jvm = vm;
@@ -198,7 +198,7 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 external JNIEXPORT jint JNICALL
 Java_net_theluckycoder_chess_Native_getBestMoveFound(JNIEnv */*pEnv*/, jclass /*type*/)
 {
-	return static_cast<jint>(NegaMax::bestMoveFound);
+	return static_cast<jint>(NegaMax::getBestMoveFound());
 }
 
 
