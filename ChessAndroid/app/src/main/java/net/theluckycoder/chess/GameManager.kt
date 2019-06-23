@@ -1,7 +1,10 @@
 package net.theluckycoder.chess
 
 import android.content.Context
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class GameManager(
     private val context: Context,
@@ -28,22 +31,23 @@ class GameManager(
 
     fun selectPiece(pos: Pos) = Native.getPossibleMoves(pos) ?: emptyArray()
 
-    fun initBoard(restartGame: Boolean, isPlayerWhite: Boolean = true) {
-        val isOldPlayerWhite = this.isPlayerWhite
-        this.isPlayerWhite = isPlayerWhite
-
-        initBoardNative(restartGame, isPlayerWhite)
+    fun initBoard(restartGame: Boolean, playerWhite: Boolean = true) {
+        initBoardNative(restartGame, playerWhite)
 
         if (initialized) {
-            if (isOldPlayerWhite != isPlayerWhite)
-                listener.redrawBoard(isPlayerWhite)
+            if (isPlayerWhite != playerWhite) {
+                isPlayerWhite = playerWhite
+                listener.redrawBoard(playerWhite)
+            }
+
+            listener.redrawPieces(getPiecesList(), playerWhite)
         } else {
             initialized = true
-            listener.redrawBoard(isPlayerWhite)
             SaveManager.loadFromFile(context)
-        }
 
-        listener.redrawPieces(getPiecesList(), isPlayerWhite)
+            isPlayerWhite = Native.isPlayerWhite()
+            listener.redrawBoard(isPlayerWhite)
+        }
     }
 
     fun updateSettings(settings: Settings) {

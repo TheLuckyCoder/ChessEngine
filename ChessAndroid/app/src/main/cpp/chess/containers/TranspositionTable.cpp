@@ -20,7 +20,7 @@ void TranspositionTable::insert(const SearchCache &value) noexcept
 	const auto index = value.key % m_Size;
 	std::lock_guard lock(m_Mutexes[index % MUTEX_SIZE]);
 
-	auto &ref = m_Values[index];
+	SearchCache &ref = m_Values[index];
 	if (ref.ply <= value.ply)
 		ref = value;
 }

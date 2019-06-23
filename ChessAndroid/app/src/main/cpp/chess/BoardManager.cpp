@@ -39,14 +39,12 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves, const bool isPlay
 	m_IsPlayerWhite = isPlayerWhite;
 
 	m_Board.initDefaultBoard();
-	m_Board.key = Hash::compute(m_Board);
 
 	m_MovesHistory.emplace_back(Pos(), Pos(), m_Board);
 
 	for (const PosPair &move : moves)
 	{
-		movePieceInternal(move.first, move.second, m_Board, false);
-		m_Board.updateState();
+		movePieceInternal(move.first, move.second, m_Board);
 		m_Board.score = Evaluation::evaluate(m_Board);
 		m_MovesHistory.emplace_back(move.first, move.second, m_Board);
 	}

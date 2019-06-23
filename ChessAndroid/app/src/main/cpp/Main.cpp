@@ -109,6 +109,12 @@ Java_net_theluckycoder_chess_Native_isWorking(JNIEnv */*pEnv*/, jclass /*type*/)
 	return static_cast<jboolean>(BoardManager::isWorking());
 }
 
+external JNIEXPORT jboolean JNICALL
+Java_net_theluckycoder_chess_Native_isPlayerWhite(JNIEnv */*pEnv*/, jclass /*type*/)
+{
+	return static_cast<jboolean>(BoardManager::isPlayerWhite());
+}
+
 
 external JNIEXPORT jstring JNICALL
 Java_net_theluckycoder_chess_Native_getStats(JNIEnv *pEnv, jclass /*type*/)

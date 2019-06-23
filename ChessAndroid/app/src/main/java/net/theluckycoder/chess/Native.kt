@@ -5,6 +5,9 @@ object Native {
     external fun isWorking(): Boolean
 
     @JvmStatic
+    external fun isPlayerWhite(): Boolean
+
+    @JvmStatic
     external fun getStats(): String
 
     @JvmStatic

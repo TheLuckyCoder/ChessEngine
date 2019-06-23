@@ -20,7 +20,7 @@ bool MovesPersistence::isPlayerWhite() const
 std::vector<PosPair> MovesPersistence::getMoves() const
 {
 	std::vector<PosPair> moves;
-	moves.reserve(10);
+	moves.reserve(20);
 
 	size_t prefix = 1;
 	while (true)

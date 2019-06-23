@@ -28,10 +28,11 @@ public:
     explicit TranspositionTable(const std::size_t sizeMb) noexcept;
 
 	TranspositionTable(const TranspositionTable&) = delete;
-	TranspositionTable &operator=(const TranspositionTable&) = delete;
 	TranspositionTable(TranspositionTable&&) = delete;
-	TranspositionTable &operator=(TranspositionTable&&) = delete;
 	~TranspositionTable() noexcept;
+
+	TranspositionTable &operator=(const TranspositionTable&) = delete;
+	TranspositionTable &operator=(TranspositionTable&&) = delete;
 
 	SearchCache operator[](const U64 key) const noexcept;
 

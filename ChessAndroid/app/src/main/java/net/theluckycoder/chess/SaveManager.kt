@@ -18,7 +18,9 @@ object SaveManager {
     fun loadFromFile(context: Context) {
         try {
             context.openFileInput(SAVE_FILE_NAME).reader().use {
-                Native.loadMoves(it.readText())
+                val content = it.readText()
+                if (content.isNotEmpty())
+                    Native.loadMoves(it.readText())
             }
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
