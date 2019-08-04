@@ -58,9 +58,9 @@ Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 	auto moves = piece.getPossibleMoves(selectedPos, m_Board);
 
 	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
-		Board newBoard = m_Board;
-		movePieceInternal(selectedPos, destPos, newBoard, false);
-		return Player::isInChess(piece.isWhite, newBoard);
+		Board board = m_Board;
+		movePieceInternal(selectedPos, destPos, board, false);
+		return Player::isInChess(piece.isWhite, board);
 	});
 	moves.erase(iterator, moves.end());
 
@@ -295,6 +295,7 @@ void BoardManager::undoLastMoves()
 	const RootMove &previousMove = *(end - 3);
 	const Board &previousBoard = previousMove.board;
 
+	// Redraw if a Promotion or castling happened in the last three moves
 	const bool shouldRedraw = engineBoard.isPromotion || engineBoard.isCapture ||
 			playerBoard.isPromotion || playerBoard.isCapture ||
 			engineBoard.whiteCastled != previousBoard.whiteCastled ||

@@ -15,15 +15,19 @@ object SaveManager {
         }
     }
 
-    fun loadFromFile(context: Context) {
+    fun loadFromFile(context: Context): Boolean {
         try {
             context.openFileInput(SAVE_FILE_NAME).reader().use {
                 val content = it.readText()
-                if (content.isNotEmpty())
-                    Native.loadMoves(it.readText())
+
+                return if (content.isNotBlank()) {
+                    Native.loadMoves(content)
+                    true
+                } else false
             }
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
+            return false
         }
     }
 }

@@ -19,6 +19,7 @@ class GameManager(
         fun onPieceMoved(startPos: Pos, destPos: Pos, isPlayerWhite: Boolean)
 
         fun redrawBoard(isPlayerWhite: Boolean)
+
         fun redrawPieces(newPieces: List<Piece>, isPlayerWhite: Boolean)
     }
 
@@ -43,10 +44,16 @@ class GameManager(
             listener.redrawPieces(getPiecesList(), playerWhite)
         } else {
             initialized = true
-            SaveManager.loadFromFile(context)
 
-            isPlayerWhite = Native.isPlayerWhite()
             listener.redrawBoard(isPlayerWhite)
+
+            isPlayerWhite = if (SaveManager.loadFromFile(context)) {
+                Native.isPlayerWhite()
+            } else {
+                initBoardNative(true, playerWhite)
+                listener.redrawPieces(getPiecesList(), playerWhite)
+                playerWhite
+            }
         }
     }
 

@@ -12,7 +12,6 @@
 #include "chess/algorithm/NegaMax.h"
 
 JavaVM *jvm = nullptr;
-bool boardManagerInitialized = false;
 jobject gameManagerInstance;
 
 const BoardManager::PieceChangeListener listener = [](State state, bool shouldRedraw,
@@ -86,7 +85,9 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject instance,
 														 jboolean restartGame, jboolean isPlayerWhite)
 {
+	static bool boardManagerInitialized = false;
 	pEnv->ExceptionClear();
+
 	if (!boardManagerInitialized)
 	{
 		pEnv->DeleteGlobalRef(gameManagerInstance);

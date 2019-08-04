@@ -14,7 +14,7 @@ MovesPersistence::MovesPersistence(std::string content)
 
 bool MovesPersistence::isPlayerWhite() const
 {
-	return m_Content[0] == 'W';
+	return m_Content[0] != 'B';
 }
 
 std::vector<PosPair> MovesPersistence::getMoves() const
@@ -70,8 +70,11 @@ void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_vie
 
 void MovesPersistence::savePosPair(std::ostringstream &stream, const PosPair &pair)
 {
-	stream << '('
-		<< static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
-		<< static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y)
-		<< ')';
+	if (pair.first.isValid() && pair.second.isValid())
+	{
+		stream << '('
+			   << static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
+			   << static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y)
+			   << ')';
+	}
 }

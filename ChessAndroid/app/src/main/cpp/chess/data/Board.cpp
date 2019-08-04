@@ -156,14 +156,16 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 	for (const auto &pair : pieces)
 	{
 		const Pos &startPos = pair.first;
-		const auto possibleMoves = pair.second.getPossibleCaptures(startPos, *this);
+		const Piece &selectedPiece = pair.second;
+		const auto possibleMoves = selectedPiece.getPossibleCaptures(startPos, *this);
 
 		for (const Pos &destPos : possibleMoves)
 		{
 			if (moves.size() == 50)
 				break; // Just to make sure this won't cause any problems
 
-			if (const Piece &piece = (*this)[destPos]; !piece || piece.type == Type::KING)
+			const auto &destPiece = (*this)[destPos];
+			if (!destPiece || destPiece.type == Type::KING)
 				continue;
 
 			Board board = *this;
