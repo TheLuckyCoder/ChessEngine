@@ -8,6 +8,9 @@
 
 #define S Score
 
+/*
+ * These values were imported from the Stockfish Chess Engine
+ */
 constexpr S MINOR_THREATS[] =
 {
 	S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120), S(0, 0)
@@ -266,7 +269,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 
 	if (isolated)
 	{
-		for (int y = 0 ; y < 8; y++) {
+		for (int y = 0 ; y < 8; y++)
+		{
 			if (board.getPieceSafely(pos.x - 1u, y).isSameType(piece) ||
 				board.getPieceSafely(pos.x + 1u, y).isSameType(piece))
 			{
