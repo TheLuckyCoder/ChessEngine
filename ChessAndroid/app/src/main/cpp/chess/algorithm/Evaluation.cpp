@@ -206,12 +206,12 @@ short Evaluation::evaluate(const Board &board) noexcept
 	if (board.blackCastled)
 		totalScore.mg -= 60;
 
-	if (board.state == State::BLACK_IN_CHESS)
+	if (board.state == State::BLACK_IN_CHECK)
 	{
 		totalScore.mg += 30;
 		totalScore.eg += 40;
 	}
-	else if (board.state == State::WHITE_IN_CHESS)
+	else if (board.state == State::WHITE_IN_CHECK)
 	{
 		totalScore.mg -= 30;
 		totalScore.eg -= 40;
@@ -259,8 +259,8 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	Score value = Psqt::s_PawnSquares[pos.x][pos.y];
 
 	const byte behind = piece.isWhite ? -1 : 1;
-	const int supported = (board.getPieceSafely(pos.x - 1u, pos.y + behind).isSameType(piece) +
-							board.getPieceSafely(pos.x + 1u, pos.y + behind).isSameType(piece));
+	const int supported = (board.at(pos.x - 1u, pos.y + behind).isSameType(piece) +
+		board.at(pos.x + 1u, pos.y + behind).isSameType(piece));
 
 	bool isolated = !static_cast<bool>(supported);
 
@@ -269,10 +269,9 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 
 	if (isolated)
 	{
-		for (int y = 0 ; y < 8; y++)
-		{
-			if (board.getPieceSafely(pos.x - 1u, y).isSameType(piece) ||
-				board.getPieceSafely(pos.x + 1u, y).isSameType(piece))
+		for (int y = 0 ; y < 8; y++) {
+			if (board.at(pos.x - 1u, y).isSameType(piece) ||
+				board.at(pos.x + 1u, y).isSameType(piece))
 			{
 				isolated = false;
 				break;

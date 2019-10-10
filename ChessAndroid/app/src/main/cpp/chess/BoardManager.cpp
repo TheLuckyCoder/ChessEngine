@@ -126,7 +126,7 @@ void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const b
 	m_MovesHistory.emplace_back(selectedPos, destPos, m_Board);
 	m_Listener(m_Board.state, shouldRedraw, piecesMoved);
 
-	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHESS || m_Board.state == State::BLACK_IN_CHESS))
+	if (movedByPlayer && (m_Board.state == State::NONE || m_Board.state == State::WHITE_IN_CHECK || m_Board.state == State::BLACK_IN_CHECK))
 		m_WorkerThread = std::thread(moveComputerPlayer, m_Settings);
 }
 

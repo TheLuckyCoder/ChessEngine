@@ -36,7 +36,7 @@ bool Player::hasNoValidMoves(const bool isWhite, const Board &board)
 			Board newBoard = board;
 			BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
 
-			if (isInChess(isWhite, newBoard))
+			if (isInCheck(isWhite, newBoard))
 				continue;
 
 			return false;
@@ -46,7 +46,7 @@ bool Player::hasNoValidMoves(const bool isWhite, const Board &board)
 	return true;
 }
 
-bool Player::isInChess(const bool isWhite, const Board &board)
+bool Player::isInCheck(bool isWhite, const Board &board)
 {
 	const U64 king = Bitboard::indexedPos[board.kingSquare[isWhite]];
 	bool check = false;

@@ -1,5 +1,7 @@
 #include <jni.h>
 
+#include <chrono>
+
 #include "Log.h"
 #include "Cache.h"
 #include "external.h"
@@ -231,4 +233,36 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jclass /*type*/)
 {
 	const std::string string = MovesPersistence::saveToString(BoardManager::getMovesHistory(), BoardManager::isPlayerWhite());
 	return pEnv->NewStringUTF(string.c_str());
+}
+
+static U64 perft(const Board &board, int depth)
+{
+	if (depth == 0) return 1;
+
+	const auto validMoves = board.listValidMoves<Board>(true);
+
+	if (depth == 1) return validMoves.size();
+
+	U64 nodes{};
+
+	for (auto &move : validMoves)
+		nodes += perft(board, depth - 1);
+
+	return nodes;
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jint depth)
+{
+	Board board;
+	board.initDefaultBoard();
+
+	const auto startTime = std::chrono::high_resolution_clock::now();
+	const auto nodes = perft(board, static_cast<int>(depth));
+
+	const auto currentTime = std::chrono::high_resolution_clock::now();
+	const double timeNeeded = std::chrono::duration<double, std::milli>(currentTime - startTime).count();
+
+	LOGV("Perft", "Nodes count: %llu", nodes);
+	LOGV("Perft", "Time needed: %lf", timeNeeded);
 }

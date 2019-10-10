@@ -44,4 +44,7 @@ object Native {
 
     @JvmStatic
     external fun saveMoves(): String
+
+    @JvmStatic
+    external fun perft(depth: Int)
 }

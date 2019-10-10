@@ -98,13 +98,13 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 		return 0;
 	if (ply <= 0)
 	{
-		if (ply == -1 || board.state != State::WHITE_IN_CHESS || board.state != State::BLACK_IN_CHESS)
+		if (ply == -1 || board.state != State::WHITE_IN_CHECK || board.state != State::BLACK_IN_CHECK)
 		{
 			// Switch to Quiescence Search if enabled
 			return s_QuiescenceSearchEnabled ? quiescence(board, alpha, beta, isWhite) : sideToMove(board, isWhite);
 		}
 
-		// Otherwise, allow the search to be extended to ply -1 if in check
+		// If in check, allow the search to be extended to ply -1
 	}
 
 	const short originalAlpha = alpha;
@@ -159,8 +159,8 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 			movesCount > 4 &&
 			depth >= 3 &&
 			ply >= 3 &&
-			move.state != State::WHITE_IN_CHESS &&
-			move.state != State::BLACK_IN_CHESS &&
+			move.state != State::WHITE_IN_CHECK &&
+			move.state != State::BLACK_IN_CHECK &&
 			!move.isCapture &&
 			!move.isPromotion)
 			moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, !isWhite, depth + 1, true);
@@ -239,7 +239,7 @@ short NegaMax::quiescence(const Board &board, short alpha, const short beta, con
 	return alpha;
 }
 
-short NegaMax::negaScout(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth)
+short NegaMax::negaScout(const Board &board, const short ply, short alpha, const short beta, const bool isWhite, const short depth)
 {
 	if (board.state == State::DRAW)
 		return 0;

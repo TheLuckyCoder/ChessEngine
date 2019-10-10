@@ -23,7 +23,10 @@ bool Board::operator>(const Board &other) const noexcept
 	return score > other.score;
 }
 
-const Piece &Board::getPieceSafely(const byte x, const byte y) const noexcept
+/*
+ * Returns Piece::EMPTY if the x or y parameters are wrong
+ */
+const Piece &Board::at(const byte x, const byte y) const noexcept
 {
 	if (x < 8 && y < 8)
 		return data[x][y];
@@ -103,28 +106,29 @@ void Board::updateState() noexcept
 		return;
 	}
 
-	const bool whiteInChess = Player::isInChess(true, *this);
-    const bool blackInChess = Player::isInChess(false, *this);
+	const bool whiteInCheck = Player::isInCheck(true, *this);
+    const bool blackInCheck = Player::isInCheck(false, *this);
 
-	if (whiteInChess && blackInChess)
+	if (whiteInCheck && blackInCheck)
     {
         state = State::INVALID;
         return;
     }
-	if (whiteInChess)
-        state = State::WHITE_IN_CHESS;
-	else if (blackInChess)
-        state = State::BLACK_IN_CHESS;
+
+	if (whiteInCheck)
+        state = State::WHITE_IN_CHECK;
+	else if (blackInCheck)
+        state = State::BLACK_IN_CHECK;
 
 	if (whiteToMove)
 	{
 		if (Player::hasNoValidMoves(true, *this))
-			state = whiteInChess ? State::WINNER_BLACK : State::DRAW;
+			state = whiteInCheck ? State::WINNER_BLACK : State::DRAW;
 	}
 	else
     {
         if (Player::hasNoValidMoves(false, *this))
-            state = blackInChess ? State::WINNER_WHITE : State::DRAW;
+            state = blackInCheck ? State::WINNER_WHITE : State::DRAW;
     }
 }
 
@@ -173,9 +177,9 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 
 			if (board.state == State::INVALID)
                 continue;
-			if (isWhite && (board.state == State::WHITE_IN_CHESS || board.state == State::WINNER_BLACK))
+			if (isWhite && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
 				continue;
-			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
+			if (!isWhite && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
 				continue;
 
 			board.score = Evaluation::simpleEvaluation(board);

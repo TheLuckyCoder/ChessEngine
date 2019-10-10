@@ -1,12 +1,13 @@
 #include "PieceAttacks.h"
 
+#include "../data/Bitboard.h"
 #include "../data/Pos.h"
 
 const std::array<U64, 64> PieceAttacks::s_KnightMoves = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
-		Pos pos(startSquare / 8u + x, startSquare % 8u + y);
+		Pos pos(row(startSquare) + x, col(startSquare) + y);
 
 		if (pos.isValid())
 			moves[startSquare] |= (1ull << pos.toSquare());
@@ -34,7 +35,7 @@ const std::array<U64, 64> PieceAttacks::s_KingMoves = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
-		Pos pos(startSquare / 8u + x, startSquare % 8u + y);
+		Pos pos(row(startSquare) + x, col(startSquare) + y);
 
 		if (pos.isValid())
 			moves[startSquare] |= (1ull << pos.toSquare());

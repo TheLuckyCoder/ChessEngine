@@ -49,7 +49,7 @@ public:
 	{
 		return data[x][y];
 	}
-	const Piece &getPieceSafely(byte x, byte y) const noexcept;
+	const Piece &at(const byte x, const byte y) const noexcept;
 
 	void initDefaultBoard() noexcept;
 	void updateState() noexcept;
@@ -92,8 +92,8 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 	for (const auto &pair : pieces)
 	{
-		const auto &startPos = pair.first;
-		const auto &selectedPiece = pair.second;
+		const Pos &startPos = pair.first;
+		const Piece &selectedPiece = pair.second;
 		const auto possibleMoves = selectedPiece.getPossibleMoves(startPos, *this);
 
 		for (const auto &destPos : possibleMoves)
@@ -107,9 +107,9 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 			if (board.state == State::INVALID)
 				continue;
-			if (isWhite && (board.state == State::WHITE_IN_CHESS || board.state == State::WINNER_BLACK))
+			if (isWhite && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
 				continue;
-			if (!isWhite && (board.state == State::BLACK_IN_CHESS || board.state == State::WINNER_WHITE))
+			if (!isWhite && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
 				continue;
 
 			board.score = Evaluation::simpleEvaluation(board);

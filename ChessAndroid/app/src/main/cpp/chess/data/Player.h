@@ -16,6 +16,6 @@ public:
 
 	static bool onlyKingsLeft(const Board &board);
 	static bool hasNoValidMoves(bool isWhite, const Board &board);
-	static bool isInChess(bool isWhite, const Board &board);
+	static bool isInCheck(bool isWhite, const Board &board);
 	static StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(bool isWhite, const Board &board);
 };

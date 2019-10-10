@@ -81,9 +81,11 @@ auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos,
 
 	U64 attacks = PieceAttacks::getKnightAttacks(pos.toSquare());
 
-	if constexpr (T == ALL | T == KING_DANGER)
+	if constexpr (T == ALL)
 		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
-	else if (T == CAPTURES)
+	else if (T == KING_DANGER){
+		// Do nothing
+	} else if (T == CAPTURES)
 		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= (board.pieces[0] | board.pieces[1]); // Keep only the pieces
@@ -137,12 +139,11 @@ auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos,
 		{
 			if (other)
 			{
-				if (!piece.isSameColor(other))
+				if (piece.isSameColor(other))
 				{
 					moves.push_back(newPos);
-					if (other.type != Type::KING)
-						return true;
-				} else
+					return true;
+				} else if (other.type != Type::KING)
 					return true;
 			}
 			else
@@ -210,7 +211,7 @@ auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, c
 	Pos posCopy = pos;
 
 	const auto handleCase = [&](const Pos &newPos) -> bool {
-		const auto &other = board[newPos];
+		const Piece &other = board[newPos];
 
 		if constexpr (T == ALL)
 		{
@@ -243,13 +244,11 @@ auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, c
 		{
 			if (other)
 			{
-				if (!piece.isSameColor(other))
+				if (piece.isSameColor(other))
 				{
 					moves.push_back(newPos);
-					if (other.type != Type::KING)
-						return true;
-				}
-				else
+					return true;
+				} else if (other.type != Type::KING)
 					return true;
 			}
 			else
