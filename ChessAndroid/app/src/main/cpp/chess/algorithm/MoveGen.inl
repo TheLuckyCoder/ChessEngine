@@ -11,10 +11,10 @@ static void convertBitboardToMoves(PosVector<N> &moves, U64 attacks)
 {
 	while (attacks)
 	{
-		const int index = Bitboard::bitScanForward(attacks);
-		attacks &= ~Bitboard::indexedPos[index];
+		const byte index = Bitboard::bitScanForward(attacks);
+		attacks &= ~Bitboard::shiftedBoards[index];
 
-		moves.emplace_back(index / 8, index % 8);
+		moves.emplace_back(row(index), col(index));
 	}
 }
 
@@ -83,7 +83,7 @@ auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos,
 
 	if constexpr (T == ALL)
 		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
-	else if (T == KING_DANGER){
+	else if (T == KING_DANGER) {
 		// Do nothing
 	} else if (T == CAPTURES)
 		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
@@ -103,220 +103,82 @@ template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<13> moves;
-	Pos posCopy = pos;
+	U64 allPieces = board.pieces[0] | board.pieces[1];
 
-	const auto handleCase = [&](const Pos &newPos) {
-		const auto &other = board[newPos];
+	if constexpr (T == KING_DANGER)
+		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[piece.isWhite]]; // Remove the king
 
-		if constexpr (T == ALL)
-		{
-			if (other)
-			{
-				if (!piece.isSameColor(other))
-					moves.push_back(newPos);
-				return true;
-			}
-			moves.push_back(newPos);
-		}
-		else if (T == CAPTURES)
-		{
-			if (other)
-			{
-				if (!piece.isSameColor(other))
-					moves.push_back(newPos);
-				return true;
-			}
-		}
-		else if (T == ATTACKS_DEFENSES)
-		{
-			if (other)
-			{
-				moves.push_back(newPos);
-				return true;
-			}
-		}
-		else if (T == KING_DANGER)
-		{
-			if (other)
-			{
-				if (piece.isSameColor(other))
-				{
-					moves.push_back(newPos);
-					return true;
-				} else if (other.type != Type::KING)
-					return true;
-			}
-			else
-				moves.push_back(newPos);
-		}
+	U64 attacks = PieceAttacks::getBishopAttacks(pos.toSquare(), allPieces);
 
-		return false;
-	};
-
-	while (posCopy.x < 7 && posCopy.y > 0)
-	{
-		posCopy.x++;
-		posCopy.y--;
-
-		if (handleCase(posCopy))
-			break;
-	}
-
-	posCopy = pos;
-	while (posCopy.x < 7 && posCopy.y < 7)
-	{
-		posCopy.x++;
-		posCopy.y++;
-
-		if (handleCase(posCopy))
-			break;
-	}
-
-	posCopy = pos;
-	while (posCopy.x > 0 && posCopy.y > 0)
-	{
-		posCopy.x--;
-		posCopy.y--;
-
-		if (handleCase(posCopy))
-			break;
-	}
-
-	posCopy = pos;
-	while (posCopy.x > 0 && posCopy.y < 7)
-	{
-		posCopy.x--;
-		posCopy.y++;
-
-		if (handleCase(posCopy))
-			break;
-	}
+	if constexpr (T == ALL)
+		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+	else if (T == CAPTURES)
+		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+	else if (T == ATTACKS_DEFENSES)
+		attacks &= allPieces; // Keep only the pieces
 
 	if constexpr (ToList)
+	{
+		convertBitboardToMoves(moves, attacks);
 		return moves;
-	else {
-		U64 attacks{};
-
-		for (const Pos &move : moves)
-			attacks |= move.toBitboard();
-
-		return attacks;
 	}
+	else
+		return attacks;
 }
 
 template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<14> moves;
-	Pos posCopy = pos;
+	U64 allPieces = board.pieces[0] | board.pieces[1];
 
-	const auto handleCase = [&](const Pos &newPos) -> bool {
-		const Piece &other = board[newPos];
+	if constexpr (T == KING_DANGER)
+		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[!piece.isWhite]]; // Remove their king
 
-		if constexpr (T == ALL)
-		{
-			if (other)
-			{
-				if (!piece.isSameColor(other))
-					moves.push_back(newPos);
-				return true;
-			}
-			moves.push_back(newPos);
-		}
-		else if (T == CAPTURES)
-		{
-			if (other)
-			{
-				if (!piece.isSameColor(other))
-					moves.push_back(newPos);
-				return true;
-			}
-		}
-		else if (T == ATTACKS_DEFENSES)
-		{
-			if (other)
-			{
-				moves.push_back(newPos);
-				return true;
-			}
-		}
-		else if (T == KING_DANGER)
-		{
-			if (other)
-			{
-				if (piece.isSameColor(other))
-				{
-					moves.push_back(newPos);
-					return true;
-				} else if (other.type != Type::KING)
-					return true;
-			}
-			else
-				moves.push_back(newPos);
-		}
+	U64 attacks = PieceAttacks::getRookAttacks(pos.toSquare(), allPieces);
 
-		return false;
-	};
-
-	while (posCopy.x > 0)
-	{
-		posCopy.x--;
-
-		if (handleCase(posCopy))
-			break;
-	}
-
-	posCopy = pos;
-	while (posCopy.x < 7)
-	{
-		posCopy.x++;
-
-		if (handleCase(posCopy))
-			break;
-	}
-
-	posCopy = pos;
-	while (posCopy.y > 0)
-	{
-		posCopy.y--;
-
-		if (handleCase(posCopy))
-			break;
-	}
-
-	posCopy = pos;
-	while (posCopy.y < 7)
-	{
-		posCopy.y++;
-
-		if (handleCase(posCopy))
-			break;
-	}
+	if constexpr (T == ALL)
+		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+	else if (T == CAPTURES)
+		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+	else if (T == ATTACKS_DEFENSES)
+		attacks &= allPieces; // Keep only the pieces
 
 	if constexpr (ToList)
+	{
+		convertBitboardToMoves(moves, attacks);
 		return moves;
-	else {
-		U64 attacks{};
-
-		for (const Pos &move : moves)
-			attacks |= move.toBitboard();
-
-		return attacks;
 	}
+	else
+		return attacks;
 }
 
 template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
+	PosVector<27> moves;
+	U64 allPieces = board.pieces[0] | board.pieces[1];
+
+	if constexpr (T == KING_DANGER)
+		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[!piece.isWhite]]; // Remove their king
+
+	U64 attacks = PieceAttacks::getBishopAttacks(pos.toSquare(), allPieces)
+		| PieceAttacks::getRookAttacks(pos.toSquare(), allPieces);
+
+	if constexpr (T == ALL)
+		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+	else if (T == CAPTURES)
+		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+	else if (T == ATTACKS_DEFENSES)
+		attacks &= allPieces; // Keep only the pieces
+
 	if constexpr (ToList)
 	{
-		PosVector<27> moves;
-		moves += generateRookMoves(piece, pos, board);
-		moves += generateBishopMoves(piece, pos, board);
+		convertBitboardToMoves(moves, attacks);
 		return moves;
-	} else {
-		return generateRookMoves(piece, pos, board) | generateBishopMoves(piece, pos, board);
 	}
+	else
+		return attacks;
 }
 
 template <GenType T, bool ToList>

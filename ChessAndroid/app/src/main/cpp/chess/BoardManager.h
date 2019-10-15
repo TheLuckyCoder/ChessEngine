@@ -11,6 +11,7 @@
 #include "data/Piece.h"
 
 class RootMove;
+class Board;
 
 class BoardManager final
 {

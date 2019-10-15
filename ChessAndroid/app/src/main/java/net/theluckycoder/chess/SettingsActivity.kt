@@ -5,13 +5,18 @@ import android.preference.PreferenceFragment
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import net.theluckycoder.chess.utils.getColor
+import kotlin.concurrent.thread
 
 class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        fragmentManager.beginTransaction().replace(android.R.id.content, SettingsFragment()).commit()
+
+        fragmentManager
+            .beginTransaction()
+            .replace(android.R.id.content, SettingsFragment())
+            .commit()
     }
 
     class SettingsFragment : PreferenceFragment() {
@@ -30,6 +35,13 @@ class SettingsActivity : AppCompatActivity() {
                     selectedTileColor = getColor(activity, R.color.tile_selected)
                     lastMovedTileColor = getColor(activity, R.color.tile_last_moved)
                     kingInChessColor = getColor(activity, R.color.king_in_chess)
+                }
+                true
+            }
+
+            findPreference(Preferences.KEY_PERFT_TEST).setOnPreferenceClickListener {
+                thread {
+                    Native.perft(5)
                 }
                 true
             }

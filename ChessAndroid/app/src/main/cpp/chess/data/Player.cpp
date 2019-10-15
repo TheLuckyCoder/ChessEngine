@@ -48,12 +48,11 @@ bool Player::hasNoValidMoves(const bool isWhite, const Board &board)
 
 bool Player::isInCheck(bool isWhite, const Board &board)
 {
-	const U64 king = Bitboard::indexedPos[board.kingSquare[isWhite]];
+	const U64 king = Bitboard::shiftedBoards[board.kingSquare[isWhite]];
 	bool check = false;
 
 	MoveGen<CAPTURES, false>::forEachAttack(!isWhite, board, [&] (const U64 attacks) -> bool {
-		if (king & attacks)
-			check = true;
+		check = static_cast<bool>(king &attacks);
 		return check;
 	});
 
@@ -66,7 +65,7 @@ StackVector<std::pair<Pos, Piece>, 16> Player::getAllOwnedPieces(const bool isWh
 
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
-			if (const auto &piece = board.data[x][y]; piece && piece.isWhite == isWhite)
+			if (const Piece &piece = board.data[x][y]; piece && piece.isWhite == isWhite)
 				pieces.emplace_back(Pos(x, y), piece);
 
 	return pieces;

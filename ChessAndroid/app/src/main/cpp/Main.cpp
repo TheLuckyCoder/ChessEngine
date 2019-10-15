@@ -12,6 +12,7 @@
 #include "chess/algorithm/Evaluation.h"
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/algorithm/NegaMax.h"
+#include "chess/algorithm/PieceAttacks.h"
 
 JavaVM *jvm = nullptr;
 jobject gameManagerInstance;
@@ -37,7 +38,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 	{
 		const Pos &startPos = moved[i].first;
 		const Pos &destPos = moved[i].second;
-		jobject obj = env->NewObject(Cache::posPairClass, constructorId, startPos.x, startPos.y, destPos.x, destPos.y);
+		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
+			startPos.x, startPos.y, destPos.x, destPos.y);
 
 		env->SetObjectArrayElement(result, i, obj);
 	}
@@ -235,18 +237,18 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jclass /*type*/)
 	return pEnv->NewStringUTF(string.c_str());
 }
 
-static U64 perft(const Board &board, int depth)
+static U64 perft(const Board &board, int depth, bool isWhite = true)
 {
 	if (depth == 0) return 1;
 
-	const auto validMoves = board.listValidMoves<Board>(true);
+	const auto validMoves = board.listValidMoves<Board>(isWhite);
 
 	if (depth == 1) return validMoves.size();
 
 	U64 nodes{};
 
-	for (auto &move : validMoves)
-		nodes += perft(board, depth - 1);
+	for (const auto &move : validMoves)
+		nodes += perft(move, depth - 1, !isWhite);
 
 	return nodes;
 }
@@ -257,12 +259,16 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jin
 	Board board;
 	board.initDefaultBoard();
 
-	const auto startTime = std::chrono::high_resolution_clock::now();
-	const auto nodes = perft(board, static_cast<int>(depth));
+	for (int i = 0; i < depth; ++i)
+	{
+		const auto startTime = std::chrono::high_resolution_clock::now();
+		const auto nodes = perft(board, static_cast<int>(depth));
 
-	const auto currentTime = std::chrono::high_resolution_clock::now();
-	const double timeNeeded = std::chrono::duration<double, std::milli>(currentTime - startTime).count();
+		const auto currentTime = std::chrono::high_resolution_clock::now();
+		const double timeNeeded = std::chrono::duration<double, std::milli>(currentTime - startTime).count();
 
-	LOGV("Perft", "Nodes count: %llu", nodes);
-	LOGV("Perft", "Time needed: %lf", timeNeeded);
+		LOGV("Perft Test", "Starting Depth %d Test", depth);
+		LOGV("Perft Test", "Nodes count: %llu", nodes);
+		LOGV("Perft Test", "Time needed: %lf", timeNeeded);
+	}
 }

@@ -17,7 +17,6 @@ std::vector<RootMove> BoardManager::m_MovesHistory;
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
     Hash::init();
-    PieceAttacks::init();
 
 	m_Board.initDefaultBoard();
 	m_Listener = listener;
@@ -54,15 +53,45 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves, const bool isPlay
 
 Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 {
-	const Piece &piece = m_Board[selectedPos];
-	auto moves = piece.getPossibleMoves(selectedPos, m_Board);
+	Piece::MaxMovesVector moves;
 
-	const auto iterator = std::remove_if(moves.begin(), moves.end(), [&](const Pos &destPos) {
+	const Piece &piece = m_Board[selectedPos];
+	const auto possibleMoves = piece.getPossibleMoves(selectedPos, m_Board);
+
+	for (const Pos &destPos : possibleMoves)
+	{
+		const Piece &destPiece = m_Board[destPos];
+		if (destPiece.type == Type::KING)
+			continue;
+
 		Board board = m_Board;
-		movePieceInternal(selectedPos, destPos, board, false);
-		return Player::isInChess(piece.isWhite, board);
-	});
-	moves.erase(iterator, moves.end());
+		BoardManager::movePieceInternal(selectedPos, destPos, board);
+
+		if (board.state == State::INVALID)
+			continue;
+		if (piece.isWhite && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
+			continue;
+		if (!piece.isWhite && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
+			continue;
+
+		int count = 1;
+
+		for (const auto &game : BoardManager::getMovesHistory()) {
+			if (board.whiteToMove == game.board.whiteToMove &&
+				board.state == game.board.state &&
+				board.key == game.board.key)
+				count++;
+
+			if (count == 3)
+			{
+				board.score = 0;
+				board.state = State::DRAW;
+				break;
+			}
+		}
+
+		moves.emplace_back(destPos);
+	}
 
 	return moves;
 }

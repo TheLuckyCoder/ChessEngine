@@ -78,10 +78,18 @@
             android:summary="Perform a Quiescence Search at the end of each normal search"
             android:title="Quiet Search" />
 
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Debugging">
+
         <SwitchPreference
             android:defaultValue="false"
             android:key="key_debug_info"
             android:title="Enable Debug Info" />
+
+        <Preference
+            android:key="key_perft_test"
+            android:title="Execute Perft Test" />
 
     </PreferenceCategory>
 

@@ -23,6 +23,7 @@ class Preferences(private val context: Context) {
         const val KEY_CACHE_SIZE = "key_cache_size"
         const val KEY_QUIET_SEARCH = "key_quiet_search"
         const val KEY_DEBUG_INFO = "key_debug_info"
+        const val KEY_PERFT_TEST = "key_perft_test"
     }
 
     private val manager
