@@ -15,6 +15,9 @@ public:
 	constexpr Pos() noexcept
 		: x(8), y(8) {}
 
+	constexpr explicit Pos(const byte square) noexcept
+		: x(row(square)), y(col(square)) {}
+
 	constexpr Pos(const byte x, const byte y) noexcept
 		: x(x), y(y) {}
 
@@ -66,7 +69,7 @@ public:
 
 	constexpr byte toSquare() const noexcept
 	{
-		return x * 8u + y;
+		return static_cast<byte>(x * 8u + y);
 	}
 
 	constexpr U64 toBitboard() const noexcept

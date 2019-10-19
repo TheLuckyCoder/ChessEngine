@@ -256,19 +256,30 @@ static U64 perft(const Board &board, int depth, bool isWhite = true)
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jint depth)
 {
+	constexpr std::array perftResults {
+		1, 20, 400, 8902, 197281, 4865609, 119060324
+	};
+	constexpr int maxSize = static_cast<int>(perftResults.size());
+
+	if (depth > maxSize)
+		depth = maxSize; // Otherwise it will take too long to compute
+
 	Board board;
 	board.initDefaultBoard();
 
-	for (int i = 0; i < depth; ++i)
+	for (int i = 0; i <= depth; ++i)
 	{
+		LOGV("Perft Test", "Starting Depth %d Test", i);
+
 		const auto startTime = std::chrono::high_resolution_clock::now();
-		const auto nodes = perft(board, static_cast<int>(depth));
+		const U64 nodesCount = perft(board, i);
 
 		const auto currentTime = std::chrono::high_resolution_clock::now();
 		const double timeNeeded = std::chrono::duration<double, std::milli>(currentTime - startTime).count();
 
-		LOGV("Perft Test", "Starting Depth %d Test", depth);
-		LOGV("Perft Test", "Nodes count: %llu", nodes);
 		LOGV("Perft Test", "Time needed: %lf", timeNeeded);
+		LOGV("Perft Test", "Nodes count: %llu", nodesCount);
+		if (nodesCount != perftResults[i])
+			LOGE("Perft Test Error", "Nodes count do not match at depth %d", i);
 	}
 }

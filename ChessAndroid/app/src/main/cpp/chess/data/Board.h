@@ -70,15 +70,15 @@ public:
 
 	RootMove() = default;
 
-	RootMove(const Pos start, const Pos dest, const Board &board)
+	RootMove(const Pos start, const Pos dest, const Board &board) noexcept
 		: start(start), dest(dest), board(board) {}
 
-	bool operator<(const RootMove &other) const
+	bool operator<(const RootMove &other) const noexcept
 	{
 		return board < other.board;
 	}
 
-	bool operator>(const RootMove &other) const
+	bool operator>(const RootMove &other) const noexcept
 	{
 		return board > other.board;
 	}
@@ -118,7 +118,8 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 			{
 				int count = 1;
 
-				for (const auto &game : BoardManager::getMovesHistory()) {
+				for (const auto &game : BoardManager::getMovesHistory())
+				{
 					if (board.whiteToMove == game.board.whiteToMove &&
 						board.state == game.board.state &&
 						board.key == game.board.key)

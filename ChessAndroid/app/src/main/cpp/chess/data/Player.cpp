@@ -52,7 +52,7 @@ bool Player::isInCheck(bool isWhite, const Board &board)
 	bool check = false;
 
 	MoveGen<CAPTURES, false>::forEachAttack(!isWhite, board, [&] (const U64 attacks) -> bool {
-		check = static_cast<bool>(king &attacks);
+		check = static_cast<bool>(king & attacks);
 		return check;
 	});
 

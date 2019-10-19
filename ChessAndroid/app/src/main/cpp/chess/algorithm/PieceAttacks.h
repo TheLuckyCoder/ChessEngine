@@ -10,6 +10,8 @@ class PieceAttacks
 {
 	const static std::array<U64, 64> s_PawnAttacks;
 	const static std::array<U64, 64> s_KnightAttacks;
+	static std::array<std::array<U64, 1024>, 64> s_BishopAttacks;
+	static std::array<std::array<U64, 4096>, 64> s_RookAttacks;
 	const static std::array<U64, 64> s_KingAttacks;
 
 public:
@@ -17,6 +19,7 @@ public:
 	PieceAttacks(const PieceAttacks&) = delete;
 	PieceAttacks(PieceAttacks&&) = delete;
 
+	static void init() noexcept;
 	static U64 getKnightAttacks(byte square) noexcept;
 	static U64 getBishopAttacks(byte square, U64 blockers) noexcept;
 	static U64 getRookAttacks(byte square, U64 blockers) noexcept;

@@ -168,7 +168,7 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 			if (moves.size() == 50)
 				break; // Just to make sure this won't cause any problems
 
-			const auto &destPiece = (*this)[destPos];
+			const Piece &destPiece = (*this)[destPos];
 			if (!destPiece || destPiece.type == Type::KING)
 				continue;
 

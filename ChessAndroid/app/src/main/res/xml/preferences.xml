@@ -52,13 +52,23 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Algorithm Settings">
+    <PreferenceCategory android:title="Difficulty">
 
         <EditTextPreference
             android:inputType="number"
             android:key="key_depth"
             android:summary="Search Depth of the Algorithm"
             android:title="Base Search Depth" />
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="key_quiet_search"
+            android:summary="Perform a Quiescence Search at the end of each normal search"
+            android:title="Quiet Search" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Other Algorithm Settings">
 
         <EditTextPreference
             android:inputType="number"
@@ -71,12 +81,6 @@
             android:key="key_cache_size"
             android:summary="Specify the size of the Transposition Table in Megabytes"
             android:title="Cache Size" />
-
-        <SwitchPreference
-            android:defaultValue="true"
-            android:key="key_quiet_search"
-            android:summary="Perform a Quiescence Search at the end of each normal search"
-            android:title="Quiet Search" />
 
     </PreferenceCategory>
 
