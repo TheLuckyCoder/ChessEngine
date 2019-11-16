@@ -8,9 +8,8 @@
 #include "algorithm/Hash.h"
 #include "algorithm/NegaMax.h"
 #include "algorithm/PieceAttacks.h"
-#include "algorithm/MoveOrdering.h"
 
-Settings BoardManager::s_Settings(6u, std::thread::hardware_concurrency() - 1u, 100, false);
+Settings BoardManager::s_Settings(4u, std::thread::hardware_concurrency() - 1u, 100, true);
 BoardManager::PieceChangeListener BoardManager::s_Listener;
 Board BoardManager::s_Board;
 std::vector<RootMove> BoardManager::s_MovesHistory;
@@ -19,7 +18,6 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 {
     Hash::init();
 	PieceAttacks::init();
-	MoveOrdering::init();
 
 	s_Board.initDefaultBoard();
 	s_Listener = listener;

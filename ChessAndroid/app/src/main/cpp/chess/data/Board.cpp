@@ -213,7 +213,6 @@ std::vector<Board> Board::listQuiescenceMoves() const noexcept
 				continue;
 
 			board.score = Evaluation::simpleEvaluation(board);
-			board.moveOrder = MoveOrdering::MvvLvaScore[selectedPiece.type][destPiece.type] * 10000 + score;
 
 			moves.push_back(board);
 		}

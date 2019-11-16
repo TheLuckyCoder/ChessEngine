@@ -7,7 +7,6 @@
 #include "Piece.h"
 #include "../BoardManager.h"
 #include "../algorithm/Evaluation.h"
-#include "../algorithm/MoveOrdering.h"
 
 using U64 = std::uint64_t;
 
@@ -116,7 +115,6 @@ StackVector<T, 150> Board::listValidMoves() const noexcept
 				continue;
 
 			board.score = Evaluation::simpleEvaluation(board);
-			board.moveOrder = MoveOrdering::MvvLvaScore[selectedPiece.type][destPiece.type] * 10000 + score;
 
 			if constexpr (std::is_same_v<T, RootMove>)
 			{

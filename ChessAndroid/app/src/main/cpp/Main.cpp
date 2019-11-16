@@ -237,18 +237,18 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jclass /*type*/)
 	return pEnv->NewStringUTF(string.c_str());
 }
 
-static U64 perft(const Board &board, int depth, bool isWhite = true)
+static U64 perft(const Board &board, int depth)
 {
 	if (depth == 0) return 1;
 
-	const auto validMoves = board.listValidMoves<Board>(isWhite);
+	const auto validMoves = board.listValidMoves<Board>();
 
 	if (depth == 1) return validMoves.size();
 
 	U64 nodes{};
 
 	for (const auto &move : validMoves)
-		nodes += perft(move, depth - 1, !isWhite);
+		nodes += perft(move, depth - 1);
 
 	return nodes;
 }

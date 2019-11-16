@@ -82,8 +82,6 @@ bool Player::isInCheck(const bool isWhite, const Board &board)
 		return check;
 	});
 	return check;
-
-	return check;
 }
 
 StackVector<std::pair<Pos, Piece>, 16> Player::getAllOwnedPieces(const bool isWhite, const Board &board)

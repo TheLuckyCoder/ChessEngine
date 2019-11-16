@@ -82,13 +82,13 @@ auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos,
 	U64 attacks = PieceAttacks::getKnightAttacks(pos.toSquare());
 
 	if constexpr (T == ALL)
-		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == KING_DANGER) {
 		// Do nothing
 	} else if (T == CAPTURES)
-		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= (board.pieces[0] | board.pieces[1]); // Keep only the pieces
+		attacks &= (board.allPieces[0] | board.allPieces[1]); // Keep only the pieces
 
 	if constexpr (ToList)
 	{
@@ -103,7 +103,7 @@ template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<13> moves;
-	U64 allPieces = board.pieces[0] | board.pieces[1];
+	U64 allPieces = board.allPieces[0] | board.allPieces[1];
 
 	if constexpr (T == KING_DANGER)
 		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[piece.isWhite]]; // Remove the king
@@ -111,9 +111,9 @@ auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos,
 	U64 attacks = PieceAttacks::getBishopAttacks(pos.toSquare(), allPieces);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= allPieces; // Keep only the pieces
 
@@ -130,7 +130,7 @@ template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<14> moves;
-	U64 allPieces = board.pieces[0] | board.pieces[1];
+	U64 allPieces = board.allPieces[0] | board.allPieces[1];
 
 	if constexpr (T == KING_DANGER)
 		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[!piece.isWhite]]; // Remove their king
@@ -138,9 +138,9 @@ auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, c
 	U64 attacks = PieceAttacks::getRookAttacks(pos.toSquare(), allPieces);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= allPieces; // Keep only the pieces
 
@@ -157,7 +157,7 @@ template <GenType T, bool ToList>
 auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
 {
 	PosVector<27> moves;
-	U64 allPieces = board.pieces[0] | board.pieces[1];
+	U64 allPieces = board.allPieces[0] | board.allPieces[1];
 
 	if constexpr (T == KING_DANGER)
 		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[!piece.isWhite]]; // Remove their king
@@ -166,9 +166,9 @@ auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const Pos &pos, 
 		| PieceAttacks::getRookAttacks(pos.toSquare(), allPieces);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= allPieces; // Keep only the pieces
 
@@ -189,13 +189,13 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	U64 attacks = PieceAttacks::getKingAttacks(pos.toSquare());
 
 	if constexpr (T == ALL)
-		attacks &= ~board.pieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == KING_DANGER) {
 		// Do Nothing
 	} else if (T == CAPTURES)
-		attacks &= board.pieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= (board.pieces[0] | board.pieces[1]); // Keep only the pieces
+		attacks &= (board.allPieces[0] | board.allPieces[1]); // Keep only the pieces
 
 	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER)
 	{

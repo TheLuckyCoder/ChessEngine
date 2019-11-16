@@ -11,7 +11,7 @@ bool NegaMax::s_QuiescenceSearchEnabled{};
 TranspositionTable NegaMax::s_SearchCache(1);
 short NegaMax::s_BestMoveFound{};
 
-RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
+RootMove NegaMax::getBestMove(const Board &board, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<RootMove>();
 
@@ -60,7 +60,7 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 			validMoves.pop_front();
 
 			mutex.unlock(); // Process the result asynchronously
-			const short result = -negaMax(move.board, ply, VALUE_MIN, beta, isWhite, 1, false);
+			const short result = -negaMax(move.board, ply, VALUE_MIN, beta, 1, false);
 			mutex.lock();
 
 			if (result > alpha)
@@ -125,7 +125,7 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	if (Stats::enabled())
 		++Stats::nodesSearched;
 
-	const auto validMoves = board.listValidMoves<Board>(isWhite);
+	const auto validMoves = board.listValidMoves<Board>();
 	short bestScore = VALUE_MIN;
 	short movesCount = 0;
 
@@ -190,6 +190,7 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	s_SearchCache.insert({ board.key, board.score, bestScore, ply, flag });
 
 	if (bestScore > alpha)
+		alpha = bestScore;
 	return alpha;
 }
 
