@@ -145,6 +145,24 @@ constexpr U64 generateRookAttacks(const byte square, const U64 blockers) noexcep
 
 	return attacks;
 }
+
+const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
+	std::array<std::array<U64, 64>, 2> moves{};
+
+	for (byte i = 0u; i < 64u; i++)
+	{
+	    const U64 start = Bitboard::shiftedBoards[i];
+
+	    const U64 whiteAttackBb = ((start << 9) & ~FILE_A) | ((start << 7) & ~FILE_H);
+	    const U64 blackAttackBb = ((start >> 9) & ~FILE_H) | ((start >> 7) & ~FILE_A);
+
+	    moves[true][i] = whiteAttackBb;
+	    moves[false][i] = blackAttackBb;
+	}
+
+	return moves;
+}();
+
 const std::array<U64, 64> PieceAttacks::s_KnightAttacks = [] {
 	std::array<U64, 64> moves{};
 
@@ -211,9 +229,11 @@ void PieceAttacks::init() noexcept
 	if (initialized) return;
 	initialized = true;
 
+	// Init Bishop Moves
 	for (byte square = 0u; square < 64u; square++)
 	{
 		const int indexBit = bishopIndexBits[square];
+		
 		// For all possible blockers for this square
 		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
 		{
@@ -225,6 +245,7 @@ void PieceAttacks::init() noexcept
 		}
 	}
 
+	// Init Rook Moves
 	for (byte square = 0u; square < 64u; square++)
 	{
 		const int indexBit = rookIndexBits[square];

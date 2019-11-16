@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "Player.h"
 #include "Piece.h"
 #include "../BoardManager.h"
 #include "../algorithm/Evaluation.h"
+#include "../algorithm/MoveOrdering.h"
 
 using U64 = std::uint64_t;
 
@@ -20,12 +22,19 @@ public:
 	bool whiteToMove = true;
 	short score = 0;
 	short npm = 0;
+	int moveOrder = 0;
 	Pos enPassantPos{};
-	// Index 0 -> black, index 1 -> white
-	byte kingSquare[2]{};
-	U64 pieces[2]{};
 	bool isPromotion = false;
 	bool isCapture = false;
+
+	// Index 0 -> black, index 1 -> white
+	U64 allPieces[2]{};
+	U64 pawns[2]{};
+	U64 knights[2]{};
+	U64 bishops[2]{};
+	U64 rooks[2]{};
+	U64 queens[2]{};
+	byte kingSquare[2]{};
 
 	Board() = default;
 	Board(Board&&) = default;
@@ -41,15 +50,9 @@ public:
 	bool operator<(const Board &other) const noexcept;
 	bool operator>(const Board &other) const noexcept;
 
-	inline Piece &getPiece(const byte x, const byte y) noexcept
-	{
-		return data[x][y];
-	}
-	inline const Piece &getPiece(const byte x, const byte y) const noexcept
-	{
-		return data[x][y];
-	}
-	const Piece &at(const byte x, const byte y) const noexcept;
+	Piece &getPiece(byte x, byte y) noexcept;
+	const Piece &getPiece(byte x, byte y) const noexcept;
+	const Piece &at(byte x, byte y) const noexcept;
 
 	void initDefaultBoard() noexcept;
 	void updateState() noexcept;
@@ -57,8 +60,8 @@ public:
 	StackVector<std::pair<Pos, Piece>, 32> getAllPieces() const noexcept;
 
 	template<class T> // RootMove or Board
-	StackVector<T, 150> listValidMoves(bool isWhite) const noexcept;
-	StackVector<Board, 50> listQuiescenceMoves(bool isWhite) const noexcept;
+	StackVector<T, 150> listValidMoves() const noexcept;
+	std::vector<Board> listQuiescenceMoves() const noexcept;
 };
 
 class RootMove final
@@ -85,9 +88,9 @@ public:
 };
 
 template<class T>
-StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
+StackVector<T, 150> Board::listValidMoves() const noexcept
 {
-	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
+	const auto pieces = Player::getAllOwnedPieces(whiteToMove, *this);
 	StackVector<T, 150> moves;
 
 	for (const auto &pair : pieces)
@@ -107,12 +110,13 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 
 			if (board.state == State::INVALID)
 				continue;
-			if (isWhite && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
+			if (whiteToMove && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
 				continue;
-			if (!isWhite && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
+			if (!whiteToMove && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
 				continue;
 
 			board.score = Evaluation::simpleEvaluation(board);
+			board.moveOrder = MoveOrdering::MvvLvaScore[selectedPiece.type][destPiece.type] * 10000 + score;
 
 			if constexpr (std::is_same_v<T, RootMove>)
 			{
@@ -140,7 +144,7 @@ StackVector<T, 150> Board::listValidMoves(const bool isWhite) const noexcept
 		}
 	}
 
-	if (isWhite)
+	if (whiteToMove)
 		std::sort(moves.begin(), moves.end(), std::greater<>());
 	else
 		std::sort(moves.begin(), moves.end());

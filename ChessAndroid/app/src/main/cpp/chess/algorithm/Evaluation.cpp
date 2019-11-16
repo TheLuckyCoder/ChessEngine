@@ -70,9 +70,8 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 		return VALUE_WINNER_WHITE;
 	if (board.state == State::WINNER_BLACK)
 		return VALUE_WINNER_BLACK;
-
-	short score = 0;
-
+	
+	short score{};
 	for (byte x = 0; x < 8; x++)
 		for (byte y = 0; y < 8; y++)
 			if (const Piece &piece = board.getPiece(x, y); piece)

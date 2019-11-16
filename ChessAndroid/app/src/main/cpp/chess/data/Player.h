@@ -9,11 +9,11 @@ class Board;
 class Player
 {
 public:
-
 	Player() = delete;
 	Player(const Player&) = delete;
 	Player(Player&&) = delete;
 
+	static bool isAttacked(bool whiteAttacking, byte targetSquare, const Board &board);
 	static bool onlyKingsLeft(const Board &board);
 	static bool hasNoValidMoves(bool isWhite, const Board &board);
 	static bool isInCheck(bool isWhite, const Board &board);

@@ -11,14 +11,14 @@ TranspositionTable::~TranspositionTable() noexcept
 SearchCache TranspositionTable::operator[](const U64 key) const noexcept
 {
 	const auto index = key % m_Size;
-	std::shared_lock lock(m_Mutexes[index % MUTEX_SIZE]);
+	std::shared_lock lock(m_Mutexes[index % MUTEX_COUNT]);
 	return m_Values[index];
 }
 
 void TranspositionTable::insert(const SearchCache &value) noexcept
 {
 	const auto index = value.key % m_Size;
-	std::lock_guard lock(m_Mutexes[index % MUTEX_SIZE]);
+	std::lock_guard lock(m_Mutexes[index % MUTEX_COUNT]);
 
 	SearchCache &ref = m_Values[index];
 	if (ref.ply <= value.ply)

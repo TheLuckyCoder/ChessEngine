@@ -23,6 +23,16 @@ bool Board::operator>(const Board &other) const noexcept
 	return score > other.score;
 }
 
+Piece &Board::getPiece(const byte x, const byte y) noexcept
+{
+	return data[x][y];
+}
+
+const Piece &Board::getPiece(const byte x, const byte y) const noexcept
+{
+	return data[x][y];
+}
+
 /*
  * Returns Piece::EMPTY if the x or y parameters are wrong
  */
@@ -84,15 +94,37 @@ void Board::initDefaultBoard() noexcept
 	kingSquare[1] = whiteKingLocation;
 	kingSquare[0] = blackKingLocation;
 
-	memset(pieces, 0, sizeof(U64) * 2);
+	memset(allPieces, 0, sizeof(U64) * 2);
 
 	for (byte x = 0u; x < 8u; x++)
 	{
 		for (byte y = 0u; y < 8u; y++)
 		{
 			const Piece &piece = getPiece(x, y);
+			const U64 bitboard = Pos(x, y).toBitboard();
 			if (piece)
-				pieces[piece.isWhite] |= Pos(x, y).toBitboard();
+				allPieces[piece.isWhite] |= bitboard;
+
+			switch (piece.type)
+			{
+				case PAWN:
+					pawns[piece.isWhite] |= bitboard;
+					break;
+				case KNIGHT:
+					knights[piece.isWhite] |= bitboard;
+					break;
+				case BISHOP:
+					bishops[piece.isWhite] |= bitboard;
+					break;
+				case ROOK:
+					rooks[piece.isWhite] |= bitboard;
+					break;
+				case QUEEN:
+					queens[piece.isWhite] |= bitboard;
+					break;
+				default:
+					break;
+			}
 		}
 	}
 }
@@ -152,10 +184,11 @@ StackVector<std::pair<Pos, Piece>, 32> Board::getAllPieces() const noexcept
 	return pieces;
 }
 
-StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noexcept
+std::vector<Board> Board::listQuiescenceMoves() const noexcept
 {
-	const auto pieces = Player::getAllOwnedPieces(isWhite, *this);
-	StackVector<Board, 50> moves;
+	const auto pieces = Player::getAllOwnedPieces(whiteToMove, *this);
+	std::vector<Board> moves;
+	moves.reserve(50);
 
 	for (const auto &pair : pieces)
 	{
@@ -165,9 +198,6 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 
 		for (const Pos &destPos : possibleMoves)
 		{
-			if (moves.size() == 50)
-				break; // Just to make sure this won't cause any problems
-
 			const Piece &destPiece = (*this)[destPos];
 			if (!destPiece || destPiece.type == Type::KING)
 				continue;
@@ -176,19 +206,20 @@ StackVector<Board, 50> Board::listQuiescenceMoves(const bool isWhite) const noex
 			BoardManager::movePieceInternal(startPos, destPos, board);
 
 			if (board.state == State::INVALID)
-                continue;
-			if (isWhite && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
 				continue;
-			if (!isWhite && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
+			if (whiteToMove && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
+				continue;
+			if (!whiteToMove && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
 				continue;
 
 			board.score = Evaluation::simpleEvaluation(board);
+			board.moveOrder = MoveOrdering::MvvLvaScore[selectedPiece.type][destPiece.type] * 10000 + score;
 
 			moves.push_back(board);
 		}
 	}
 
-	if (isWhite)
+	if (whiteToMove)
 		std::sort(moves.begin(), moves.end(), std::greater<>());
 	else
 		std::sort(moves.begin(), moves.end());

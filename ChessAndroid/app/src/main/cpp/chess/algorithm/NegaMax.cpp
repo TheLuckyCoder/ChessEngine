@@ -13,7 +13,7 @@ short NegaMax::s_BestMoveFound{};
 
 RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Settings &settings)
 {
-	const auto validMoves = board.listValidMoves<RootMove>(isWhite);
+	const auto validMoves = board.listValidMoves<RootMove>();
 
 	for (const RootMove &move : validMoves)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
@@ -32,7 +32,7 @@ RootMove NegaMax::getBestMove(const Board &board, const bool isWhite, const Sett
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
-	return negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth, !isWhite);
+	return negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth);
 }
 
 short NegaMax::getBestMoveFound()
@@ -40,7 +40,7 @@ short NegaMax::getBestMoveFound()
 	return s_BestMoveFound;
 }
 
-RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short ply, const bool isWhite)
+RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short ply)
 {
 	std::vector<ThreadPool::TaskFuture<void>> futures;
 	futures.reserve(jobCount);
@@ -92,7 +92,7 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 	return bestMove;
 }
 
-short NegaMax::negaMax(const Board &board, const short ply, short alpha, short beta, const bool isWhite, const short depth, const bool moveCountPruning)
+short NegaMax::negaMax(const Board &board, const short ply, short alpha, short beta, const short depth, const bool moveCountPruning)
 {
 	if (board.state == State::DRAW)
 		return 0;
@@ -101,7 +101,7 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 		if (ply == -1 || board.state != State::WHITE_IN_CHECK || board.state != State::BLACK_IN_CHECK)
 		{
 			// Switch to Quiescence Search if enabled
-			return s_QuiescenceSearchEnabled ? quiescence(board, alpha, beta, isWhite) : sideToMove(board, isWhite);
+			return s_QuiescenceSearchEnabled ? quiescence(board, alpha, beta) : sideToMove(board);
 		}
 
 		// If in check, allow the search to be extended to ply -1
@@ -163,10 +163,10 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 			move.state != State::BLACK_IN_CHECK &&
 			!move.isCapture &&
 			!move.isPromotion)
-			moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, !isWhite, depth + 1, true);
+				moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, depth + 1, true);
 
 		if (moveScore > alpha)
-			moveScore = -negaMax(move, ply - 1, -beta, -alpha, !isWhite, depth + 1, false);
+				moveScore = -negaMax(move, ply - 1, -beta, -alpha, depth + 1, false);
 
 		if (moveScore > bestScore)
 			bestScore = moveScore;
@@ -189,15 +189,16 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 
 	s_SearchCache.insert({ board.key, board.score, bestScore, ply, flag });
 
+	if (bestScore > alpha)
 	return alpha;
 }
 
-short NegaMax::quiescence(const Board &board, short alpha, const short beta, const bool isWhite)
+short NegaMax::quiescence(const Board &board, short alpha, const short beta)
 {
 	if (board.state == State::DRAW)
 		return 0;
 
-	const short standPat = sideToMove(board, isWhite);
+	const short standPat = sideToMove(board);
 
 	if (standPat >= beta)
 		return standPat;
@@ -218,7 +219,7 @@ short NegaMax::quiescence(const Board &board, short alpha, const short beta, con
 			return alpha;
 	}
 
-	const auto validMoves = board.listQuiescenceMoves(isWhite);
+	const auto validMoves = board.listQuiescenceMoves();
 
 	if (Stats::enabled())
 		++Stats::nodesSearched;
@@ -228,7 +229,7 @@ short NegaMax::quiescence(const Board &board, short alpha, const short beta, con
 		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
 			return VALUE_WINNER_WHITE;
 
-		const short moveScore = -quiescence(move, -beta, -alpha, !isWhite);
+		const short moveScore = -quiescence(move, -beta, -alpha);
 
 		if (moveScore >= beta)
 			return moveScore;
@@ -246,11 +247,11 @@ short NegaMax::negaScout(const Board &board, const short ply, short alpha, const
 	if (ply == 0)
 	{
 		if (s_QuiescenceSearchEnabled)
-			return quiescence(board, alpha, beta, isWhite);
-		return sideToMove(board, isWhite);
+			return quiescence(board, alpha, beta);
+		return sideToMove(board);
 	}
 
-	const auto validMoves = board.listValidMoves<Board>(isWhite);
+	const auto validMoves = board.listValidMoves<Board>();
 	short bestScore = VALUE_MIN;
 	short n = beta;
 
@@ -276,8 +277,8 @@ short NegaMax::negaScout(const Board &board, const short ply, short alpha, const
 	return bestScore;
 }
 
-inline short NegaMax::sideToMove(const Board &board, const bool isWhite)
+inline short NegaMax::sideToMove(const Board &board)
 {
 	const short value = Evaluation::evaluate(board);
-	return isWhite ? value : -value;
+	return board.whiteToMove ? value : -value;
 }

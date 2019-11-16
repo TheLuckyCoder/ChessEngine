@@ -62,7 +62,7 @@ public:
 	 * A wrapper around a std::future that adds the behavior of futures returned from std::async.
 	 * Specifically, this object will block and wait for execution to finish before going out of scope.
 	 */
-	template <typename T>
+	template <typename T = void>
 	class TaskFuture
 	{
 	public:

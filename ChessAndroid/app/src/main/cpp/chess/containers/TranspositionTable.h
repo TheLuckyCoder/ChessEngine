@@ -18,14 +18,14 @@ struct SearchCache
 
 class TranspositionTable
 {
-	constexpr static int MUTEX_SIZE = 1000;
+	constexpr static int MUTEX_COUNT = 1024;
 
     std::size_t m_Size;
 	SearchCache *m_Values = new SearchCache[m_Size]();
-	mutable std::shared_mutex m_Mutexes[MUTEX_SIZE];
+	mutable std::shared_mutex m_Mutexes[MUTEX_COUNT];
 
 public:
-    explicit TranspositionTable(const std::size_t sizeMb) noexcept;
+    explicit TranspositionTable(std::size_t sizeMb) noexcept;
 
 	TranspositionTable(const TranspositionTable&) = delete;
 	TranspositionTable(TranspositionTable&&) = delete;
@@ -34,9 +34,9 @@ public:
 	TranspositionTable &operator=(const TranspositionTable&) = delete;
 	TranspositionTable &operator=(TranspositionTable&&) = delete;
 
-	SearchCache operator[](const U64 key) const noexcept;
+	SearchCache operator[](U64 key) const noexcept;
 
     void insert(const SearchCache &value) noexcept;
-	bool setSize(const std::size_t sizeMb) noexcept(false);
+	bool setSize(std::size_t sizeMb) noexcept(false);
 	void clear() noexcept;
 };
