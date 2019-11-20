@@ -44,7 +44,7 @@ void BoardManager::loadGame(const std::vector<PosPair> &moves, const bool isPlay
 
 	for (const PosPair &move : moves)
 	{
-		movePieceInternal(move.first, move.second, s_Board);
+		s_Board.doMove(move.first.toSquare(), move.second.toSquare());
 		s_Board.score = Evaluation::evaluate(s_Board);
 		s_MovesHistory.emplace_back(move.first, move.second, s_Board);
 	}
@@ -57,16 +57,16 @@ Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 	Piece::MaxMovesVector moves;
 
 	const Piece &piece = s_Board[selectedPos];
-	const auto possibleMoves = piece.getPossibleMoves(selectedPos, s_Board);
+	const auto possibleMoves = piece.getPossibleMoves(selectedPos.toSquare(), s_Board);
 
 	for (const Pos &destPos : possibleMoves)
 	{
 		const Piece &destPiece = s_Board[destPos];
-		if (destPiece.type == Type::KING)
+		if (destPiece.type == PieceType::KING)
 			continue;
 
 		Board board = s_Board;
-		BoardManager::movePieceInternal(selectedPos, destPos, board);
+		board.doMove(selectedPos.toSquare(), destPos.toSquare());
 
 		if (board.state == State::INVALID)
 			continue;
@@ -77,12 +77,14 @@ Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 
 		int count = 1;
 
-		for (const auto &game : BoardManager::getMovesHistory()) {
-			if (board.whiteToMove == game.board.whiteToMove &&
+		for (const auto &game : BoardManager::getMovesHistory())
+		{
+			if (board.colorToMove == game.board.colorToMove &&
 				board.state == game.board.state &&
-				board.key == game.board.key)
+				board.zKey == game.board.zKey)
 				count++;
 
+			// TODO: Fix this
 			if (count == 3)
 			{
 				board.score = 0;
@@ -100,179 +102,22 @@ Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
 void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const bool movedByPlayer)
 {
 	assert(selectedPos.isValid() && destPos.isValid());
-	s_Board.whiteToMove = !s_Board.whiteToMove;
-	s_Board.isPromotion = s_Board.isCapture = false;
-	bool shouldRedraw = false;
 
-	const Pos enPassantPos = s_Board.enPassantPos;
-	s_Board.enPassantPos = Pos();
-	Piece &selectedPiece = s_Board[selectedPos];
+	const byte castledBefore = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
+	s_Board.doMove(selectedPos.toSquare(), destPos.toSquare());
+	const byte castledAfter = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
 
-	StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
-
-	const U64 selectedPosBitboard = selectedPos.toBitboard();
-	const U64 destPosBitboard = destPos.toBitboard();
-	const bool selectedPieceColor = selectedPiece.isWhite;
-
-	switch (selectedPiece.type)
-	{
-		case PAWN:
-			shouldRedraw = movePawn(s_Board, selectedPos, destPos, enPassantPos);
-			s_Board.pawns[selectedPieceColor] &= ~selectedPosBitboard;
-			s_Board.pawns[selectedPieceColor] |= destPosBitboard;
-			break;
-		case KNIGHT:
-			s_Board.knights[selectedPieceColor] &= ~selectedPosBitboard;
-			s_Board.knights[selectedPieceColor] |= destPosBitboard;
-			break;
-		case BISHOP:
-			s_Board.bishops[selectedPieceColor] &= ~selectedPosBitboard;
-			s_Board.bishops[selectedPieceColor] |= destPosBitboard;
-			break;
-		case ROOK:
-			s_Board.rooks[selectedPieceColor] &= ~selectedPosBitboard;
-			s_Board.rooks[selectedPieceColor] |= destPosBitboard;
-			break;
-		case QUEEN:
-			s_Board.queens[selectedPieceColor] &= ~selectedPosBitboard;
-			s_Board.queens[selectedPieceColor] |= destPosBitboard;
-			break;
-		case KING:
-		{
-			s_Board.kingSquare[selectedPiece.isWhite] = destPos.toSquare();
-
-			if (!selectedPiece.moved)
-			{
-				const PosPair &posPair = piecesMoved.emplace_back(moveKing(selectedPiece, selectedPos, destPos, s_Board));
-				if (posPair.first.isValid())
-				{
-					if (selectedPiece.isWhite)
-						s_Board.whiteCastled = true;
-					else
-						s_Board.blackCastled = true;
-
-					U64 &pieces = s_Board.allPieces[selectedPiece.isWhite];
-					pieces &= ~posPair.first.toBitboard();
-					pieces |= posPair.second.toBitboard();
-				}
-			}
-			break;
-		}
-		case NONE:
-			break;
-	}
-
-	s_Board.allPieces[selectedPiece.isWhite] &= ~selectedPosBitboard; // Remove selected Piece
-	s_Board.allPieces[selectedPiece.isWhite] |= destPosBitboard; // Add the selected Piece to destination
-
-	selectedPiece.moved = true;
-
-	if (const Piece &destPiece = s_Board[destPos]; destPiece)
-	{
-		s_Board.allPieces[destPiece.isWhite] &= ~destPos.toBitboard(); // Remove destination Piece
-		s_Board.npm -= Evaluation::getPieceValue(destPiece.type);
-		s_Board.isCapture = true;
-	}
-
-	s_Board[destPos] = selectedPiece;
-	s_Board[selectedPos] = Piece();
-
-	s_Board.key = Hash::compute(s_Board);
-	s_Board.updateState();
 	s_Board.score = Evaluation::evaluate(s_Board);
+	s_Board.zKey = Hash::compute(s_Board);
+
+	const StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
+	const bool shouldRedraw = s_Board.isPromotion || (castledBefore != castledAfter);
 
 	s_MovesHistory.emplace_back(selectedPos, destPos, s_Board);
 	s_Listener(s_Board.state, shouldRedraw, piecesMoved);
 
 	if (movedByPlayer && (s_Board.state == State::NONE || s_Board.state == State::WHITE_IN_CHECK || s_Board.state == State::BLACK_IN_CHECK))
 		s_WorkerThread = std::thread(moveComputerPlayer, s_Settings);
-}
-
-void BoardManager::movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, const bool updateState)
-{
-	board.whiteToMove = !board.whiteToMove;
-	Piece &selectedPiece = board[selectedPos];
-	Piece &destPiece = board[destPos];
-	bool hashHandled = false;
-	board.isPromotion = board.isCapture = false;
-
-	const Pos enPassantPos = board.enPassantPos;
-	board.enPassantPos = Pos();
-
-	const U64 selectedPosBitboard = selectedPos.toBitboard();
-	const U64 destPosBitboard = destPos.toBitboard();
-	const bool selectedPieceColor = selectedPiece.isWhite;
-
-	switch (selectedPiece.type)
-	{
-		case PAWN:
-			hashHandled = movePawn(board, selectedPos, destPos, enPassantPos);
-			board.pawns[selectedPieceColor] &= ~selectedPosBitboard;
-			board.pawns[selectedPieceColor] |= destPosBitboard;
-			break;
-		case KNIGHT:
-			board.knights[selectedPieceColor] &= ~selectedPosBitboard;
-			board.knights[selectedPieceColor] |= destPosBitboard;
-			break;
-		case BISHOP:
-			board.bishops[selectedPieceColor] &= ~selectedPosBitboard;
-			board.bishops[selectedPieceColor] |= destPosBitboard;
-			break;
-		case ROOK:
-			board.rooks[selectedPieceColor] &= ~selectedPosBitboard;
-			board.rooks[selectedPieceColor] |= destPosBitboard;
-			break;
-		case QUEEN:
-			board.queens[selectedPieceColor] &= ~selectedPosBitboard;
-			board.queens[selectedPieceColor] |= destPosBitboard;
-			break;
-		case KING:
-		{
-			board.kingSquare[selectedPieceColor] = destPos.toSquare();
-
-			if (!selectedPiece.moved)
-			{
-				const PosPair posPair = moveKing(selectedPiece, selectedPos, destPos, board);
-				if (posPair.first.isValid()) // Castling
-				{
-					if (selectedPiece.isWhite)
-						board.whiteCastled = true;
-					else
-						board.blackCastled = true;
-
-					Hash::makeMove(board.key, posPair.first, posPair.second, Piece(Type::ROOK, selectedPieceColor));
-
-					U64 &pieces = board.allPieces[selectedPieceColor];
-					pieces &= ~posPair.first.toBitboard();
-					pieces |= posPair.second.toBitboard();
-				}
-			}
-			break;
-		}
-		case NONE:
-			break;
-	}
-
-	board.allPieces[selectedPieceColor] &= ~selectedPosBitboard; // Remove selected Piece
-	board.allPieces[selectedPieceColor] |= destPosBitboard; // Add the selected Piece to destination
-
-	Hash::flipSide(board.key);
-	if (!hashHandled)
-		Hash::makeMove(board.key, selectedPos, destPos, selectedPiece, destPiece);
-
-	if (destPiece)
-	{
-		board.allPieces[destPiece.isWhite] &= ~destPos.toBitboard(); // Remove destination Piece
-		board.npm -= Evaluation::getPieceValue(destPiece.type);
-		board.isCapture = true;
-	}
-
-	selectedPiece.moved = true;
-	destPiece = selectedPiece;
-	board[selectedPos] = Piece();
-
-	if (updateState)
-		board.updateState();
 }
 
 // This function should only be called through the Worker Thread
@@ -282,88 +127,14 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	assert(s_Board.whiteToMove != s_IsPlayerWhite);
-	const RootMove bestMove = NegaMax::getBestMove(s_Board, settings);
+	assert(s_Board.colorToMove != toColor(s_IsPlayerWhite));
+	const RootMove bestMove = NegaMax::findBestMove(s_Board, settings);
 
 	Stats::stopTimer();
 	s_IsWorking = false;
 	movePiece(bestMove.start, bestMove.dest, false);
 
 	s_WorkerThread.detach();
-}
-
-bool BoardManager::movePawn(Board &board, const Pos &startPos, const Pos &destPos, const Pos &enPassantPos)
-{
-	Piece &pawn = board[startPos];
-
-	if (pawn.moved) {
-		if (destPos.y == 0 || destPos.y == 7)
-		{
-			pawn.type = Type::QUEEN;
-			board.isPromotion = true;
-
-			Hash::promotePawn(board.key, startPos, destPos, pawn.isWhite, Type::QUEEN);
-			return true;
-		} else if (destPos == enPassantPos) {
-			board.isCapture = true;
-
-			const Pos capturedPos(enPassantPos.x, enPassantPos.y + static_cast<byte>(pawn.isWhite ? -1 : 1));
-			Piece &capturedPiece = board[capturedPos];
-
-			// Remove the captured Pawn
-			Hash::xorPiece(board.key, capturedPos, capturedPiece);
-			board.allPieces[!pawn.isWhite] = ~capturedPos.toBitboard();
-			board.npm -= Evaluation::getPieceValue(Type::PAWN);
-			capturedPiece = Piece();
-			return true;
-		}
-	} else {
-		const int distance = static_cast<int>(destPos.y) - static_cast<int>(startPos.y);
-		if (distance == 2 || distance == -2)
-			board.enPassantPos = Pos(destPos.x, destPos.y - static_cast<byte>(distance / 2));
-	}
-
-	return false;
-}
-
-PosPair BoardManager::moveKing(Piece &king, const Pos &selectedPos, const Pos &destPos, Board &board)
-{
-	if (destPos.x == 6u)
-	{
-		constexpr byte startX = 7u;
-		const byte y = selectedPos.y;
-
-		Piece &rook = board.getPiece(startX, y);
-		if (rook.type == Type::ROOK && king.isSameColor(rook) && !rook.moved)
-		{
-			rook.moved = true;
-
-			constexpr byte destX = 5;
-			board.getPiece(destX, y) = rook;
-			board.getPiece(startX, y) = Piece::EMPTY;
-
-			return std::make_pair(Pos(startX, y), Pos(destX, y));
-		}
-	}
-	else if (destPos.x == 2u)
-	{
-		constexpr byte startX = 0u;
-		const byte y = selectedPos.y;
-
-		Piece &rook = board.getPiece(startX, y);
-		if (rook.type == Type::ROOK && king.isSameColor(rook) && !rook.moved)
-		{
-			rook.moved = true;
-
-			constexpr byte destX = 3u;
-			board.getPiece(destX, y) = rook;
-			board.getPiece(startX, y) = Piece::EMPTY;
-
-			return std::make_pair(Pos(startX, y), Pos(destX, y));
-		}
-	}
-
-	return std::make_pair(Pos(), Pos());
 }
 
 void BoardManager::undoLastMoves()
@@ -386,8 +157,8 @@ void BoardManager::undoLastMoves()
 	// Redraw if a Promotion or castling happened in the last three moves
 	const bool shouldRedraw = engineBoard.isPromotion || engineBoard.isCapture ||
 			playerBoard.isPromotion || playerBoard.isCapture ||
-			engineBoard.whiteCastled != previousBoard.whiteCastled ||
-			engineBoard.blackCastled != previousBoard.whiteCastled;
+			engineBoard.isCastled(WHITE) != previousBoard.isCastled(WHITE) ||
+			engineBoard.isCastled(BLACK) != previousBoard.isCastled(BLACK);
 
 	s_Board = previousBoard;
 	s_Listener(previousBoard.state, shouldRedraw,

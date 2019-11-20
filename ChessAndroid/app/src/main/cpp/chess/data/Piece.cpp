@@ -4,62 +4,62 @@
 
 const Piece Piece::EMPTY{};
 
-Piece::MaxMovesVector Piece::getPossibleMoves(const Pos &pos, const Board &board) const noexcept
+Piece::MaxMovesVector Piece::getPossibleMoves(const byte square, const Board &board) const noexcept
 {
 	MaxMovesVector result;
 
 	switch (type)
 	{
-	case Type::NONE:
+	case PieceType::NONE:
 		break;
-	case Type::PAWN:
-		result = MoveGen<ALL>::generatePawnMoves(*this, pos, board);
+	case PieceType::PAWN:
+		result = MoveGen<ALL>::generatePawnMoves(*this, square, board);
 		break;
-	case Type::KNIGHT:
-		result = MoveGen<ALL>::generateKnightMoves(*this, pos, board);
+	case PieceType::KNIGHT:
+		result = MoveGen<ALL>::generateKnightMoves(*this, square, board);
 		break;
-	case Type::BISHOP:
-		result = MoveGen<ALL>::generateBishopMoves(*this, pos, board);
+	case PieceType::BISHOP:
+		result = MoveGen<ALL>::generateBishopMoves(*this, square, board);
 		break;
-	case Type::ROOK:
-		result = MoveGen<ALL>::generateRookMoves(*this, pos, board);
+	case PieceType::ROOK:
+		result = MoveGen<ALL>::generateRookMoves(*this, square, board);
 		break;
-	case Type::QUEEN:
-		result = MoveGen<ALL>::generateQueenMoves(*this, pos, board);
+	case PieceType::QUEEN:
+		result = MoveGen<ALL>::generateQueenMoves(*this, square, board);
 		break;
-	case Type::KING:
-		result = MoveGen<ALL>::generateKingMoves(*this, pos, board);
+	case PieceType::KING:
+		result = MoveGen<ALL>::generateKingMoves(*this, square, board);
 		break;
 	}
 
 	return result;
 }
 
-Piece::MaxMovesVector Piece::getPossibleCaptures(const Pos &pos, const Board &board) const noexcept
+Piece::MaxMovesVector Piece::getPossibleCaptures(const byte square, const Board &board) const noexcept
 {
 	MaxMovesVector result;
 
 	switch (type)
 	{
-	case Type::NONE:
+	case PieceType::NONE:
 		break;
-	case Type::PAWN:
-		result = MoveGen<CAPTURES>::generatePawnMoves(*this, pos, board);
+	case PieceType::PAWN:
+		result = MoveGen<CAPTURES>::generatePawnMoves(*this, square, board);
 		break;
-	case Type::KNIGHT:
-		result = MoveGen<CAPTURES>::generateKnightMoves(*this, pos, board);
+	case PieceType::KNIGHT:
+		result = MoveGen<CAPTURES>::generateKnightMoves(*this, square, board);
 		break;
-	case Type::BISHOP:
-		result = MoveGen<CAPTURES>::generateBishopMoves(*this, pos, board);
+	case PieceType::BISHOP:
+		result = MoveGen<CAPTURES>::generateBishopMoves(*this, square, board);
 		break;
-	case Type::ROOK:
-		result = MoveGen<CAPTURES>::generateRookMoves(*this, pos, board);
+	case PieceType::ROOK:
+		result = MoveGen<CAPTURES>::generateRookMoves(*this, square, board);
 		break;
-	case Type::QUEEN:
-		result = MoveGen<CAPTURES>::generateQueenMoves(*this, pos, board);
+	case PieceType::QUEEN:
+		result = MoveGen<CAPTURES>::generateQueenMoves(*this, square, board);
 		break;
-	case Type::KING:
-		result = MoveGen<CAPTURES>::generateKingMoves(*this, pos, board);
+	case PieceType::KING:
+		result = MoveGen<CAPTURES>::generateKingMoves(*this, square, board);
 		break;
 	}
 

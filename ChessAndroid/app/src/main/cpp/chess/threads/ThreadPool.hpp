@@ -15,7 +15,6 @@
 
 class ThreadPool
 {
-private:
 	class IThreadTask
 	{
 	public:

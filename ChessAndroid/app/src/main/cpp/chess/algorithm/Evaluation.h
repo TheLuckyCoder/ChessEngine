@@ -17,13 +17,13 @@ public:
 
 	static short simpleEvaluation(const Board &board) noexcept;
 	static short evaluate(const Board &board) noexcept;
-	static short getPieceValue(const Type type) noexcept
+	static short getPieceValue(const PieceType type) noexcept
 	{
 		return PIECE_VALUE[type];
 	}
 
 private:
-	static Score evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const Attacks &ourAttacks, const Attacks &theirAttacks) noexcept;
+	static Score evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept;
 	inline static Score evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept;
 	static Score evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept;
 	static Score evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept;

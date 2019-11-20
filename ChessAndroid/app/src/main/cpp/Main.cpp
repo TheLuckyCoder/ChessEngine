@@ -278,7 +278,7 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jin
 		const double timeNeeded = std::chrono::duration<double, std::milli>(currentTime - startTime).count();
 
 		LOGV("Perft Test", "Time needed: %lf", timeNeeded);
-		LOGV("Perft Test", "Nodes count: %llu", nodesCount);
+		LOGV("Perft Test", "Nodes count: %llu/%llu", nodesCount, perftResults[i]);
 		if (nodesCount != perftResults[i])
 			LOGE("Perft Test Error", "Nodes count do not match at depth %d", i);
 	}

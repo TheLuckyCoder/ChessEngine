@@ -1,6 +1,7 @@
 #include "NegaMax.h"
 
 #include <algorithm>
+#include <atomic>
 #include <mutex>
 
 #include "../Stats.h"
@@ -8,13 +9,14 @@
 #include "../threads/NegaMaxThreadPool.h"
 
 bool NegaMax::s_QuiescenceSearchEnabled{};
+std::size_t NegaMax::s_ThreadCount{};
 TranspositionTable NegaMax::s_SearchCache(1);
 short NegaMax::s_BestMoveFound{};
 
-RootMove NegaMax::getBestMove(const Board &board, const Settings &settings)
+RootMove NegaMax::findBestMove(const Board &board, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<RootMove>();
-
+	
 	for (const RootMove &move : validMoves)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
 			return move;
@@ -22,6 +24,7 @@ RootMove NegaMax::getBestMove(const Board &board, const Settings &settings)
 	// Apply Settings
 	short depth = settings.getBaseSearchDepth() - 1;
 	const auto threadCount = settings.getThreadCount();
+	s_ThreadCount = threadCount;
 	s_QuiescenceSearchEnabled = settings.performQuiescenceSearch();
 
 	// If the Transposition Table wasn't resized, clean it
@@ -40,9 +43,22 @@ short NegaMax::getBestMoveFound()
 	return s_BestMoveFound;
 }
 
-RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsigned jobCount, const short ply)
+RootMove NegaMax::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsigned jobCount, const short ply)
 {
-	std::vector<ThreadPool::TaskFuture<void>> futures;
+	short alpha = VALUE_MIN;
+	RootMove bestMove = validMoves.front();
+	
+	for (const RootMove &move : validMoves)
+	{
+		const short moveScore = -negaMax(move.board, ply, VALUE_MIN, -alpha, 1, false);
+		
+		if (moveScore > alpha)
+		{
+			alpha = moveScore;
+			bestMove = move;
+		}
+	}
+	/*std::vector<ThreadPool::TaskFuture<void>> futures;
 	futures.reserve(jobCount);
 
 	std::mutex mutex;
@@ -85,7 +101,7 @@ RootMove NegaMax::negaMaxRoot(StackVector<RootMove, 150> validMoves, const unsig
 	}
 
 	for (auto &future : futures)
-		future.get(); // Wait for the Search to finish
+		future.get(); // Wait for the Search to finish*/
 
 	s_BestMoveFound = alpha;
 
@@ -108,8 +124,8 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	}
 
 	const short originalAlpha = alpha;
-	if (const SearchCache cache = s_SearchCache[board.key];
-		board.key == cache.key && board.score == cache.boardScore && cache.ply == ply)
+	if (const SearchCache cache = s_SearchCache[board.zKey];
+		board.zKey == cache.key && board.score == cache.boardScore && cache.ply == ply)
 	{
 		if (cache.flag == Flag::EXACT)
 			return cache.value;
@@ -126,58 +142,161 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 		++Stats::nodesSearched;
 
 	const auto validMoves = board.listValidMoves<Board>();
+	auto currentMove = validMoves.begin();
+	const auto lastMove = validMoves.end();
 	short bestScore = VALUE_MIN;
 	short movesCount = 0;
 
-	for (const Board &move : validMoves)
+	if (ply == 4)
 	{
-		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
+		const auto jobCount = std::min<unsigned>(s_ThreadCount, validMoves.size());
+		std::vector<ThreadPool::TaskFuture<>> futures;
+		futures.reserve(jobCount);
+		std::mutex mutex;
+		bool keepSearching = true;
+
+		const auto doWork = [&] {
+			mutex.lock();
+
+			while (keepSearching && currentMove != lastMove)
+			{
+				const Board &move = *currentMove;
+				++currentMove;
+				
+				if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
+				{
+					// Mate Pruning
+					const short mateValue = VALUE_WINNER_WHITE - depth;
+					if (mateValue < beta)
+					{
+						beta = mateValue;
+						if (alpha >= mateValue)
+						{
+							bestScore = mateValue;
+							keepSearching = false;
+							break;
+						}
+					}
+
+					if (mateValue > alpha)
+					{
+						alpha = mateValue;
+						if (beta <= mateValue)
+						{
+							bestScore = mateValue;
+							keepSearching = false;
+							break;
+						}
+					}
+
+					if (bestScore > mateValue)
+						bestScore = mateValue;
+					continue;
+				}
+				
+				// Make a copy of the needed variables while locked
+				const short alphaCopy = alpha;
+				const short betaCopy = beta;
+
+				mutex.unlock(); // Process the result asynchronously
+				const short moveScore = -negaMax(move, ply - 1, -betaCopy, -alphaCopy, depth + 1, false);
+				mutex.lock();
+
+				if (moveScore > bestScore)
+					bestScore = moveScore;
+
+				// Alpha-Beta Pruning
+				if (bestScore >= beta)
+				{
+					keepSearching = false;
+					break;
+				}
+				if (bestScore > alpha)
+					alpha = bestScore;
+
+				++movesCount;
+			}
+
+			mutex.unlock();
+		};
+
+		futures.emplace_back(NegaMaxThreadPool::submitJob(doWork));
+
+		if (jobCount > 1)
 		{
-			// Mate Pruning
-			const short mateValue = VALUE_WINNER_WHITE - depth;
-			if (mateValue < beta)
-			{
-				beta = mateValue;
-				if (alpha >= mateValue) return mateValue;
-			}
+			// Wait until the first move has been searched
+			while (keepSearching && movesCount < 1)
+				std::this_thread::yield();
 
-			if (mateValue > alpha)
+			if (keepSearching) // Don't start the other threads if a cut-off has happened
 			{
-				alpha = mateValue;
-				if (beta <= mateValue) return mateValue;
+				for (unsigned i = 1u; i < jobCount; ++i)
+					futures.emplace_back(NegaMaxThreadPool::submitJob(doWork));
 			}
-
-			if (bestScore > mateValue)
-				bestScore = mateValue;
-			continue;
 		}
 
-		short moveScore = alpha + 1;
+		for (auto &future : futures)
+			future.get(); // Wait for the Search to finish
+		futures.clear();
+	} else {
+		for (const Board &move : validMoves)
+		{
+			if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
+			{
+				// Mate Pruning
+				const short mateValue = VALUE_WINNER_WHITE - depth;
+				if (mateValue < beta)
+				{
+					beta = mateValue;
+					if (alpha >= mateValue)
+					{
+						bestScore = mateValue;
+						break;
+					}
+				}
 
-		// Late Move Reductions
-		if (!moveCountPruning &&
-			movesCount > 4 &&
-			depth >= 3 &&
-			ply >= 3 &&
-			move.state != State::WHITE_IN_CHECK &&
-			move.state != State::BLACK_IN_CHECK &&
-			!move.isCapture &&
-			!move.isPromotion)
+				if (mateValue > alpha)
+				{
+					alpha = mateValue;
+					if (beta <= mateValue)
+					{
+						bestScore = mateValue;
+						break;
+					}
+				}
+
+				if (bestScore > mateValue)
+					bestScore = mateValue;
+				continue;
+			}
+
+			short moveScore = alpha + 1;
+
+			// Late Move Reductions
+			if (!moveCountPruning &&
+				movesCount > 4 &&
+				depth >= 3 &&
+				ply >= 3 &&
+				move.state != State::WHITE_IN_CHECK &&
+				move.state != State::BLACK_IN_CHECK &&
+				!move.isCapture &&
+				!move.isPromotion)
 				moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, depth + 1, true);
 
-		if (moveScore > alpha)
+			if (moveScore > alpha)
 				moveScore = -negaMax(move, ply - 1, -beta, -alpha, depth + 1, false);
 
-		if (moveScore > bestScore)
-			bestScore = moveScore;
+			if (moveScore > bestScore)
+				bestScore = moveScore;
 
-		// Alpha-Beta Pruning
-		if (bestScore > alpha)
-			alpha = bestScore;
-		if (bestScore >= beta)
-			break;
+			// Alpha-Beta Pruning
+			if (bestScore >= beta)
+				break;
+			if (bestScore > alpha)
+				alpha = bestScore;
 
-		++movesCount;
+			++movesCount;
+		}
 	}
 
 	// Store the result in the transposition table
@@ -187,10 +306,11 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	else if (bestScore > beta)
 		flag = Flag::BETA;
 
-	s_SearchCache.insert({ board.key, board.score, bestScore, ply, flag });
+	s_SearchCache.insert({ board.zKey, board.score, bestScore, ply, flag });
 
 	if (bestScore > alpha)
 		alpha = bestScore;
+
 	return alpha;
 }
 
@@ -281,5 +401,5 @@ short NegaMax::negaScout(const Board &board, const short ply, short alpha, const
 inline short NegaMax::sideToMove(const Board &board)
 {
 	const short value = Evaluation::evaluate(board);
-	return board.whiteToMove ? value : -value;
+	return board.colorToMove ? value : -value;
 }

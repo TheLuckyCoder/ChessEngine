@@ -38,11 +38,8 @@ public:
 	static bool isPlayerWhite() { return s_IsPlayerWhite; }
 	static Piece::MaxMovesVector getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(const Pos &selectedPos, const Pos &destPos, bool movedByPlayer = true);
-	static void movePieceInternal(const Pos &selectedPos, const Pos &destPos, Board &board, bool updateState = true);
 	static void setSettings(const Settings &settings) { s_Settings = settings; }
 
 private:
 	static void moveComputerPlayer(const Settings &settings);
-	static bool movePawn(Board &board, const Pos &startPos, const Pos &destPos, const Pos &enPassantPos);
-	static PosPair moveKing(Piece &king, const Pos &selectedPos, const Pos &destPos, Board &board);
 };

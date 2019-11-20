@@ -151,10 +151,29 @@ const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
 
 	for (byte i = 0u; i < 64u; i++)
 	{
-	    const U64 start = Bitboard::shiftedBoards[i];
+		const Pos start(i);
 
-	    const U64 whiteAttackBb = ((start << 9) & ~FILE_A) | ((start << 7) & ~FILE_H);
-	    const U64 blackAttackBb = ((start >> 9) & ~FILE_H) | ((start >> 7) & ~FILE_A);
+		U64 whiteAttackBb{};
+		{
+			const Pos leftPos = start + Pos(-1, 1u);
+			const Pos rightPos = start + Pos(1u, 1u);
+
+			if (leftPos.isValid())
+				whiteAttackBb |= leftPos.toBitboard();
+			if (rightPos.isValid())
+				whiteAttackBb |= rightPos.toBitboard();
+		}
+		
+		U64 blackAttackBb{};
+		{
+			const Pos leftPos = start + Pos(-1, -1);
+			const Pos rightPos = start + Pos(1u, -1);
+
+			if (leftPos.isValid())
+				blackAttackBb |= leftPos.toBitboard();
+			if (rightPos.isValid())
+				blackAttackBb |= rightPos.toBitboard();
+		}
 
 	    moves[true][i] = whiteAttackBb;
 	    moves[false][i] = blackAttackBb;
@@ -167,7 +186,7 @@ const std::array<U64, 64> PieceAttacks::s_KnightAttacks = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
-		const Pos pos(row(startSquare) + x, col(startSquare) + y);
+		const Pos pos(col(startSquare) + x, row(startSquare) + y);
 
 		if (pos.isValid())
 			moves[startSquare] |= pos.toBitboard();
@@ -199,7 +218,7 @@ const std::array<U64, 64> PieceAttacks::s_KingAttacks = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
-		const Pos pos(row(startSquare) + x, col(startSquare) + y);
+		const Pos pos(col(startSquare) + x, row(startSquare) + y);
 
 		if (pos.isValid())
 			moves[startSquare] |= pos.toBitboard();
@@ -275,6 +294,9 @@ U64 PieceAttacks::getKnightAttacks(const byte square) noexcept
 U64 PieceAttacks::getBishopAttacks(const byte square, U64 blockers) noexcept
 {
 	return generateBishopAttacks(square, blockers);
+	blockers &= bishopMasks[square];
+	const U64 key = (blockers * bishopMagics[square]) >> (64u - bishopIndexBits[square]);
+	return s_BishopAttacks[square][key];
 }
 
 U64 PieceAttacks::getRookAttacks(const byte square, U64 blockers) noexcept

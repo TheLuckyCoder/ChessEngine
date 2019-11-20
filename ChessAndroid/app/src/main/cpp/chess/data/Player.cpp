@@ -5,27 +5,23 @@
 #include "../algorithm/MoveGen.h"
 #include "../BoardManager.h"
 
-bool Player::isAttacked(const bool whiteAttacking, const byte targetSquare, const Board &board)
+bool Player::isAttacked(const Color colorAttacking, const byte targetSquare, const Board &board)
 {
-    if (const U64 pawns = board.pawns[whiteAttacking];
-		PieceAttacks::getPawnAttacks(!whiteAttacking, targetSquare) & pawns)
-		return true;
-    
-    if (const U64 knights = board.knights[whiteAttacking];
-		PieceAttacks::getKnightAttacks(targetSquare) & knights)
+    if (board.getType(colorAttacking, PAWN) & PieceAttacks::getPawnAttacks(oppositeColor(colorAttacking), targetSquare))
 		return true;
 
-    if (Bitboard::shiftedBoards[board.kingSquare[whiteAttacking]] & PieceAttacks::getKingAttacks(targetSquare))
+    if (board.getType(colorAttacking, KNIGHT) & PieceAttacks::getKnightAttacks(targetSquare))
 		return true;
 
-    const U64 occupied = board.allPieces[0] | board.allPieces[1];
-
-	if (const U64 bishopsQueens = board.bishops[whiteAttacking] | board.queens[whiteAttacking];
-		PieceAttacks::getBishopAttacks(targetSquare, occupied) & bishopsQueens)
+	if (board.getType(colorAttacking, KING) & PieceAttacks::getKingAttacks(targetSquare))
 		return true;
 
-    if (const U64 rooksQueens = board.rooks[whiteAttacking] | board.queens[whiteAttacking];
-    	PieceAttacks::getRookAttacks(targetSquare, occupied) & rooksQueens)
+	if (const U64 bishopsQueens = board.getType(colorAttacking, BISHOP) | board.getType(colorAttacking, QUEEN);
+		bishopsQueens & PieceAttacks::getBishopAttacks(targetSquare, board.occupied))
+		return true;
+
+    if (const U64 rooksQueens = board.getType(colorAttacking, ROOK) | board.getType(colorAttacking, QUEEN);
+		rooksQueens & PieceAttacks::getRookAttacks(targetSquare, board.occupied))
 		return true;
 
 	return false;
@@ -36,33 +32,32 @@ bool Player::onlyKingsLeft(const Board &board)
 	if (board.npm != 0)
 		return false;
 
-	for (const auto &x : board.data)
-		for (const Piece &piece : x)
-			if (piece && piece.type != Type::KING)
-				return false;
+	for (const Piece &piece : board.data)
+		if (piece && piece.type != PieceType::KING)
+			return false;
 
 	return true;
 }
 
-bool Player::hasNoValidMoves(const bool isWhite, const Board &board)
+bool Player::hasNoValidMoves(const Color color, const Board &board)
 {
-	const auto pieces = getAllOwnedPieces(isWhite, board);
+	const auto pieces = getAllOwnedPieces(color, board);
 
 	for (const auto &pair : pieces)
 	{
-		const Pos &startPos = pair.first;
+		const byte startSq = pair.first;
 		const Piece &selectedPiece = pair.second;
-		const auto possibleMoves = selectedPiece.getPossibleMoves(startPos, board);
+		const auto possibleMoves = selectedPiece.getPossibleMoves(startSq, board);
 
 		for (const Pos &destPos : possibleMoves)
 		{
-			if (board[destPos].type == Type::KING)
+			if (board[destPos].type == PieceType::KING)
 				continue;
 
-			Board newBoard = board;
-			BoardManager::movePieceInternal(startPos, destPos, newBoard, false);
+			Board tempBoard = board;
+			tempBoard.doMove(startSq, destPos.toSquare(), false);
 
-			if (isInCheck(isWhite, newBoard))
+			if (isInCheck(color, tempBoard))
 				continue;
 
 			return false;
@@ -72,26 +67,21 @@ bool Player::hasNoValidMoves(const bool isWhite, const Board &board)
 	return true;
 }
 
-bool Player::isInCheck(const bool isWhite, const Board &board)
+bool Player::isInCheck(const Color color, const Board &board)
 {
-	const U64 king = Bitboard::shiftedBoards[board.kingSquare[isWhite]];
-	bool check = false;
+	const U64 king = board.getType(color, KING);
+	if (!king) return true;
 
-	MoveGen<CAPTURES, false>::forEachAttack(!isWhite, board, [&] (const U64 attacks) -> bool {
-		check = static_cast<bool>(king & attacks);
-		return check;
-	});
-	return check;
+	return isAttacked(oppositeColor(color), Bitboard::bitScanForward(king), board);
 }
 
-StackVector<std::pair<Pos, Piece>, 16> Player::getAllOwnedPieces(const bool isWhite, const Board &board)
+StackVector<std::pair<byte, Piece>, 16> Player::getAllOwnedPieces(const Color color, const Board &board)
 {
-	StackVector<std::pair<Pos, Piece>, 16> pieces;
+	StackVector<std::pair<byte, Piece>, 16> pieces;
 
-	for (byte x = 0; x < 8; x++)
-		for (byte y = 0; y < 8; y++)
-			if (const Piece &piece = board.getPiece(x, y); piece && piece.isWhite == isWhite)
-				pieces.emplace_back(Pos(x, y), piece);
+	for (byte sq = 0u; sq < 64u; ++sq)
+		if (const Piece &piece = board.getPiece(sq); piece && piece.isWhite == color)
+			pieces.emplace_back(sq, piece);
 
 	return pieces;
 }

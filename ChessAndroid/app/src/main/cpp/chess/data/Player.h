@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../containers/StackVector.h"
+#include "../data/Enums.h"
 #include "../data/Pos.h"
 
 class Piece;
@@ -13,9 +14,9 @@ public:
 	Player(const Player&) = delete;
 	Player(Player&&) = delete;
 
-	static bool isAttacked(bool whiteAttacking, byte targetSquare, const Board &board);
+	static bool isAttacked(Color colorAttacking, byte targetSquare, const Board &board);
 	static bool onlyKingsLeft(const Board &board);
-	static bool hasNoValidMoves(bool isWhite, const Board &board);
-	static bool isInCheck(bool isWhite, const Board &board);
-	static StackVector<std::pair<Pos, Piece>, 16> getAllOwnedPieces(bool isWhite, const Board &board);
+	static bool hasNoValidMoves(Color color, const Board &board);
+	static bool isInCheck(Color color, const Board &board);
+	static StackVector<std::pair<byte, Piece>, 16> getAllOwnedPieces(Color color, const Board &board);
 };

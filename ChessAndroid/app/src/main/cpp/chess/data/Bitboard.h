@@ -68,7 +68,7 @@ namespace Bitboard
 	 */
 	constexpr byte bitScanForward(const U64 bb) noexcept
 	{
-		assert (bb != 0ull);
+		assert(bb);
 
 		constexpr U64 debruijn64{ 0x03f79d71b4cb0a89 };
 		constexpr byte index64[64] = {

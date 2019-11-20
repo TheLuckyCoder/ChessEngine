@@ -16,7 +16,7 @@ public:
 		: x(8), y(8) {}
 
 	constexpr explicit Pos(const byte square) noexcept
-		: x(row(square)), y(col(square)) {}
+		: x(col(square)), y(row(square)) {}
 
 	constexpr Pos(const byte x, const byte y) noexcept
 		: x(x), y(y) {}
@@ -28,6 +28,7 @@ public:
 	{
 		return x == other.x && y == other.y;
 	}
+
 	constexpr bool operator!=(const Pos &other) const noexcept
 	{
 		return !(*this == other);
@@ -40,6 +41,7 @@ public:
 
 		return *this;
 	}
+
 	constexpr Pos &operator-=(const Pos &other) noexcept
 	{
 		x -= other.x;
@@ -47,19 +49,21 @@ public:
 
 		return *this;
 	}
-	constexpr Pos &operator*=(const Pos &other) noexcept
-	{
-		x *= other.x;
-		y *= other.y;
 
-		return *this;
+	constexpr Pos operator+(Pos other) const noexcept
+	{
+		other.x += x;
+		other.y += y;
+
+		return other;
 	}
-	constexpr Pos &operator/=(const Pos &other) noexcept
-	{
-		x /= other.x;
-		y /= other.y;
 
-		return *this;
+	constexpr Pos operator-(Pos other) const noexcept
+	{
+		other.x -= x;
+		other.y -= y;
+
+		return other;
 	}
 
 	constexpr bool isValid() const noexcept
@@ -69,7 +73,7 @@ public:
 
 	constexpr byte toSquare() const noexcept
 	{
-		return static_cast<byte>(x * 8u + y);
+		return static_cast<byte>(x + y * 8u);
 	}
 
 	constexpr U64 toBitboard() const noexcept

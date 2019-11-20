@@ -7,79 +7,70 @@
 #include "../data/Bitboard.h"
 
 template <std::size_t N>
-static void convertBitboardToMoves(PosVector<N> &moves, U64 attacks)
+static PosVector<N> convertBitboardToMoves(U64 attacks)
 {
+	PosVector<N> moves;
+
 	while (attacks)
 	{
 		const byte index = Bitboard::bitScanForward(attacks);
 		attacks &= ~Bitboard::shiftedBoards[index];
 
-		moves.emplace_back(row(index), col(index));
+		moves.emplace_back(index);
 	}
+
+	return moves;
 }
 
 template <GenType T, bool ToList>
-auto MoveGen<T, ToList>::generatePawnMoves(const Piece &piece, Pos pos, const Board &board)
+auto MoveGen<T, ToList>::generatePawnMoves(const Piece &piece, byte square, const Board &board)
 {
 	PosVector<4> moves;
+	U64 attacks = PieceAttacks::getPawnAttacks(piece.isWhite, square);
 
+	if constexpr (T == ALL || T == CAPTURES)
+	{
+		U64 captures = attacks & board.allPieces[!piece.isWhite];
+		
+		// Keep the en-passant capture if it intersect with one of our potential attacks
+		captures |= attacks & board.enPassant;
+		attacks = captures;
+	}
+	else if (T == ATTACKS_DEFENSES)
+		attacks &= board.occupied;
+
+	const U64 initialBb = Bitboard::shiftedBoards[square];
+	Pos pos(square);
 	piece.isWhite ? pos.y++ : pos.y--;
+
 	if constexpr (T == ALL)
 	{
 		if (!board[pos])
 		{
-			moves.push_back(pos);
+			attacks |= pos.toBitboard();
 
-			if (!piece.moved) {
-				Pos posCopy = pos;
+			const U64 initialRank = piece.isWhite ? RANK_2 : RANK_7;
+			if (initialRank & initialBb)
+			{
+				byte y = pos.y;
 
-				piece.isWhite ? posCopy.y++ : posCopy.y--;
-				if (posCopy.isValid() && !board[posCopy])
-					moves.push_back(posCopy);
+				piece.isWhite ? y++ : y--;
+				if (y < 8u && !board.getPiece(pos.x, y))
+					attacks |= Pos(pos.x, y).toBitboard();
 			}
 		}
 	}
 
-	const auto handleCapture = [&] {
-		const Piece &other = board[pos];
-		if constexpr (T == ALL || T == CAPTURES || T == KING_DANGER)
-		{
-			if ((other && !piece.isSameColor(other)) || board.enPassantPos == pos)
-				moves.push_back(pos);
-		}
-		else if (T == ATTACKS_DEFENSES)
-		{
-			if (other)
-				moves.push_back(pos);
-		}
-	};
-
-	piece.isWhite ? pos.x-- : pos.x++;
-	if (pos.isValid())
-		handleCapture();
-
-	pos.x += piece.isWhite ? 2 : -2;
-	if (pos.isValid())
-		handleCapture();
-
 	if constexpr (ToList)
-		return moves;
-	else {
-		U64 attacks{};
-
-		for (const Pos &move : moves)
-			attacks |= move.toBitboard();
-
+		return convertBitboardToMoves<4>(attacks);
+	else
 		return attacks;
-	}
 }
 
 template <GenType T, bool ToList>
-auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board)
+auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const byte square, const Board &board)
 {
-	PosVector<8> moves;
-
-	U64 attacks = PieceAttacks::getKnightAttacks(pos.toSquare());
+	U64 attacks = PieceAttacks::getKnightAttacks(square);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
@@ -88,105 +79,90 @@ auto MoveGen<T, ToList>::generateKnightMoves(const Piece &piece, const Pos &pos,
 	} else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= (board.allPieces[0] | board.allPieces[1]); // Keep only the pieces
+		attacks &= board.occupied; // Keep only the pieces
 
 	if constexpr (ToList)
-	{
-		convertBitboardToMoves(moves, attacks);
-		return moves;
-	}
+		return convertBitboardToMoves<8>(attacks);
 	else
 		return attacks;
 }
 
 template <GenType T, bool ToList>
-auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board)
+auto MoveGen<T, ToList>::generateBishopMoves(const Piece &piece, const byte square, const Board &board)
 {
-	PosVector<13> moves;
-	U64 allPieces = board.allPieces[0] | board.allPieces[1];
+	U64 occupancy = board.occupied;
 
 	if constexpr (T == KING_DANGER)
-		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[piece.isWhite]]; // Remove the king
+		occupancy &= ~board.getType(toColor(piece.isWhite), PieceType::KING); // Remove the king
 
-	U64 attacks = PieceAttacks::getBishopAttacks(pos.toSquare(), allPieces);
+	U64 attacks = PieceAttacks::getBishopAttacks(square, occupancy);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= allPieces; // Keep only the pieces
+		attacks &= occupancy; // Keep only the pieces
 
 	if constexpr (ToList)
-	{
-		convertBitboardToMoves(moves, attacks);
-		return moves;
-	}
+		return convertBitboardToMoves<13>(attacks);
 	else
 		return attacks;
 }
 
 template <GenType T, bool ToList>
-auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const Pos &pos, const Board &board)
+auto MoveGen<T, ToList>::generateRookMoves(const Piece &piece, const byte square, const Board &board)
 {
-	PosVector<14> moves;
-	U64 allPieces = board.allPieces[0] | board.allPieces[1];
+	U64 occupancy = board.occupied;
 
 	if constexpr (T == KING_DANGER)
-		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[!piece.isWhite]]; // Remove their king
+		occupancy &= ~board.getType(toColor(piece.isWhite), PieceType::KING); // Remove their king
 
-	U64 attacks = PieceAttacks::getRookAttacks(pos.toSquare(), allPieces);
+	U64 attacks = PieceAttacks::getRookAttacks(square, occupancy);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= allPieces; // Keep only the pieces
+		attacks &= occupancy; // Keep only the pieces
 
 	if constexpr (ToList)
-	{
-		convertBitboardToMoves(moves, attacks);
-		return moves;
-	}
+		return convertBitboardToMoves<14>(attacks);
 	else
 		return attacks;
 }
 
 template <GenType T, bool ToList>
-auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board)
+auto MoveGen<T, ToList>::generateQueenMoves(const Piece &piece, const byte square, const Board &board)
 {
-	PosVector<27> moves;
-	U64 allPieces = board.allPieces[0] | board.allPieces[1];
+	U64 occupancy = board.occupied;
 
 	if constexpr (T == KING_DANGER)
-		allPieces &= ~Bitboard::shiftedBoards[board.kingSquare[!piece.isWhite]]; // Remove their king
+		occupancy &= ~board.getType(toColor(piece.isWhite), PieceType::KING); // Remove their king
 
-	U64 attacks = PieceAttacks::getBishopAttacks(pos.toSquare(), allPieces)
-		| PieceAttacks::getRookAttacks(pos.toSquare(), allPieces);
+	U64 attacks = PieceAttacks::getBishopAttacks(square, occupancy)
+				| PieceAttacks::getRookAttacks(square, occupancy);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= allPieces; // Keep only the pieces
+		attacks &= occupancy; // Keep only the pieces
 
 	if constexpr (ToList)
-	{
-		convertBitboardToMoves(moves, attacks);
-		return moves;
-	}
+		return convertBitboardToMoves<27>(attacks);
 	else
 		return attacks;
 }
 
 template <GenType T, bool ToList>
-auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, const Board &board)
+auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const byte square, const Board &board)
 {
 	PosVector<10> moves;
 
-	U64 attacks = PieceAttacks::getKingAttacks(pos.toSquare());
+	U64 attacks = PieceAttacks::getKingAttacks(square);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
@@ -195,22 +171,19 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	} else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= (board.allPieces[0] | board.allPieces[1]); // Keep only the pieces
+		attacks &= board.occupied; // Keep only the pieces
 
 	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER)
 	{
 		if constexpr (ToList)
-		{
-			convertBitboardToMoves(moves, attacks);
-			return moves;
-		}
+			return convertBitboardToMoves<10>(attacks);
 		else
 			return attacks;
 	}
 	if (attacks == 0ull)
 	{
 		if constexpr (ToList)
-			return moves;
+			return PosVector<10>();
 		else
 			return attacks;
 	}
@@ -224,29 +197,41 @@ auto MoveGen<T, ToList>::generateKingMoves(const Piece &piece, const Pos &pos, c
 	attacks &= ~opponentsMoves; // Remove Attacked Positions
 
 	// Castling
-	if (!piece.moved && !(opponentsMoves & pos.toBitboard()))
+	const Color color = toColor(piece.isWhite);
+	const State checkState = piece.isWhite ? State::WHITE_IN_CHECK : State::BLACK_IN_CHECK;
+	if (board.state != checkState
+		&& board.canCastleAnywhere(color)
+		&& !(opponentsMoves & Bitboard::shiftedBoards[square]))
 	{
-		const auto y = pos.y;
+		const byte y = row(square);
 		const auto isEmptyAndCheckFree = [&, y](const byte x) {
 			return !board.getPiece(x, y) && !(opponentsMoves & Pos(x, y).toBitboard());
 		};
 
-		if (isEmptyAndCheckFree(5) && isEmptyAndCheckFree(6))
+		if (board.canCastleKs(color)
+			&& isEmptyAndCheckFree(5)
+			&& isEmptyAndCheckFree(6))
+		{
 			if (const auto &other = board.getPiece(7, y);
-				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
-				attacks |= Pos(6, pos.y).toBitboard();
+				other.type == PieceType::ROOK
+				&& piece.isSameColor(other))
+				attacks |= Pos(6, y).toBitboard();
+		}
 
-		if (isEmptyAndCheckFree(3) && isEmptyAndCheckFree(2) && !board.getPiece(1, y))
+		if (board.canCastleQs(color)
+			&& isEmptyAndCheckFree(3)
+			&& isEmptyAndCheckFree(2)
+			&& !board.getPiece(1, y))
+		{
 			if (const auto &other = board.getPiece(0, y);
-				other.type == Type::ROOK && piece.isSameColor(other) && !other.moved)
-				attacks |= Pos(2, pos.y).toBitboard();
+				other.type == PieceType::ROOK
+				&& piece.isSameColor(other))
+				attacks |= Pos(2, y).toBitboard();
+		}
 	}
 
 	if constexpr (ToList)
-	{
-		convertBitboardToMoves(moves, attacks);
-		return moves;
-	}
+		return convertBitboardToMoves<10>(attacks);
 	else
 		return attacks;
 }
@@ -255,66 +240,64 @@ template <GenType T, bool ToList> // Class Template
 template <class Func> // Function Template
 void MoveGen<T, ToList>::forEachAttack(const bool white, const Board &board, Func &&func)
 {
-	for (byte x = 0; x < 8; x++)
-		for (byte y = 0; y < 8; y++)
+	for (byte i = 0; i < 8; ++i)
+	{
+		const auto &piece = board.getPiece(i);
+		if (piece && piece.isWhite == white)
 		{
-			const Pos pos(x, y);
-			const auto &piece = board[pos];
-			if (piece && piece.isWhite == white)
+			using MoveTypes = std::conditional_t<ToList, Piece::MaxMovesVector, U64>;
+
+			MoveTypes moves{};
+			switch (piece.type)
 			{
-				using MoveTypes = std::conditional_t<ToList, Piece::MaxMovesVector, U64>;
+			case PieceType::PAWN:
+				moves = MoveGen<KING_DANGER, ToList>::generatePawnMoves(piece, i, board);
+				break;
+			case PieceType::KNIGHT:
+				moves = generateKnightMoves(piece, i, board);
+				break;
+			case PieceType::BISHOP:
+				moves = generateBishopMoves(piece, i, board);
+				break;
+			case PieceType::ROOK:
+				moves = generateRookMoves(piece, i, board);
+				break;
+			case PieceType::QUEEN:
+				moves = generateQueenMoves(piece, i, board);
+				break;
+			case PieceType::KING:
+				moves = MoveGen<KING_DANGER, ToList>::generateKingMoves(piece, i, board);
+				break;
+			case PieceType::NONE:
+				break;
+			}
 
-				MoveTypes moves{};
-				switch (piece.type)
+			// The function should return true in order to stop the loop
+			if constexpr (ToList)
+			{
+				for (const auto &move : moves)
 				{
-				case Type::PAWN:
-					moves = MoveGen<KING_DANGER, ToList>::generatePawnMoves(piece, pos, board);
-					break;
-				case Type::KNIGHT:
-					moves = generateKnightMoves(piece, pos, board);
-					break;
-				case Type::BISHOP:
-					moves = generateBishopMoves(piece, pos, board);
-					break;
-				case Type::ROOK:
-					moves = generateRookMoves(piece, pos, board);
-					break;
-				case Type::QUEEN:
-					moves = generateQueenMoves(piece, pos, board);
-					break;
-				case Type::KING:
-					moves = MoveGen<KING_DANGER, ToList>::generateKingMoves(piece, pos, board);
-					break;
-				case Type::NONE:
-					break;
-				}
-
-				// The function should return true in order to stop the loop
-				if constexpr (ToList)
-				{
-					for (const auto &move : moves)
-					{
-						if (func(piece, move))
-							return;
-					}
-				} else {
-					if (func(moves))
+					if (func(piece, move))
 						return;
 				}
+			} else {
+				if (func(moves))
+					return;
 			}
 		}
+	}
 }
 
 template<GenType T, bool ToList>
-Attacks MoveGen<T, ToList>::getAttacksPerColor(const bool white, const Board &board)
+AttacksMap MoveGen<T, ToList>::getAttacksPerColor(const bool white, const Board &board)
 {
-	Attacks attacks{};
+	AttacksMap attacks{};
 
 	forEachAttack(white, board, [&] (const Piece &piece, const Pos &move) -> bool {
 		const byte square = move.toSquare();
 
 		attacks.map[square]++;
-		attacks.board[piece.isWhite][piece.type - 1u] |= (1ull << square);
+		attacks.board[piece.isWhite][piece.type - 1u] |= Bitboard::shiftedBoards[square];
 		return false;
 	});
 

@@ -5,7 +5,7 @@
 
 class Board;
 
-enum Type : unsigned char
+enum PieceType : unsigned char
 {
 	NONE = 0,
 	PAWN = 1,
@@ -23,14 +23,13 @@ public:
 
 	using MaxMovesVector = StackVector<Pos, 27>;
 
-	Type type;
+	PieceType type;
 	bool isWhite;
-	bool moved;
 
 	constexpr Piece() noexcept
-		: type(Type::NONE), isWhite(false), moved(false) {}
-	constexpr Piece(const Type type, const bool isWhite, const bool moved = false) noexcept
-		: type(type), isWhite(isWhite), moved(moved) {}
+		: type(PieceType::NONE), isWhite(false) {}
+	constexpr Piece(const PieceType type, const bool isWhite) noexcept
+		: type(type), isWhite(isWhite) {}
 	Piece(Piece&&) = default;
 	Piece(const Piece&) = default;
 	~Piece() = default;
@@ -38,8 +37,8 @@ public:
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
-	MaxMovesVector getPossibleMoves(const Pos &pos, const Board &board) const noexcept;
-	MaxMovesVector getPossibleCaptures(const Pos &pos, const Board &board) const noexcept;
+	MaxMovesVector getPossibleMoves(const byte square, const Board &board) const noexcept;
+	MaxMovesVector getPossibleCaptures(const byte square, const Board &board) const noexcept;
 
 	/*
 	 * Checks if the type and color match
@@ -56,6 +55,6 @@ public:
 
 	constexpr operator bool() const noexcept
 	{
-		return type != Type::NONE;
+		return type != PieceType::NONE;
 	}
 };

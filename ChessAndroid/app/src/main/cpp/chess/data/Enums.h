@@ -1,5 +1,21 @@
 #pragma once
 
+enum Color : bool
+{
+	BLACK = false,
+	WHITE = true
+};
+
+constexpr Color toColor(const bool isWhite)
+{
+	return static_cast<Color>(isWhite);
+}
+
+constexpr Color oppositeColor(const Color color)
+{
+	return color == BLACK ? WHITE : BLACK;
+}
+
 enum class State : unsigned char
 {
 	NONE,
@@ -11,13 +27,18 @@ enum class State : unsigned char
 	INVALID = 10
 };
 
-enum class CastlingRights : unsigned char
+enum CastlingRights : unsigned char
 {
-	NONE,
-	CAN_CASTLE_KING,
-	CAN_CASTLE_QUEEN,
-	CAN_CASTLE_BOTH,
-	CASTLED
+	CASTLE_NONE = 0,
+	CASTLE_WHITE_KING = 0b0001,
+	CASTLE_WHITE_QUEEN = 0b0010,
+	CASTLE_WHITE = CASTLE_WHITE_KING | CASTLE_WHITE_QUEEN,
+	CASTLED_WHITE = 0b010000,
+
+	CASTLE_BLACK_KING = 0b0100,
+	CASTLE_BLACK_QUEEN = 0b1000,
+	CASTLE_BLACK = CASTLE_BLACK_KING | CASTLE_BLACK_QUEEN,
+	CASTLED_BLACK = 0b100000
 };
 
 enum class Phase : short

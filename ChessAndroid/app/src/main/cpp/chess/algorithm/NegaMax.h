@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../containers/StackVector.h"
 #include "../containers/TranspositionTable.h"
 
 class Board;
@@ -10,6 +9,7 @@ class Settings;
 class NegaMax final
 {
 	static bool s_QuiescenceSearchEnabled;
+	static std::size_t s_ThreadCount;
 	static TranspositionTable s_SearchCache;
 	static short s_BestMoveFound;
 
@@ -18,11 +18,11 @@ public:
 	NegaMax(const NegaMax&) = delete;
 	NegaMax(NegaMax&&) = delete;
 
-	static RootMove getBestMove(const Board &board, const Settings &settings);
+	static RootMove findBestMove(const Board &board, const Settings &settings);
 	static short getBestMoveFound();
 
 private:
-	static RootMove negaMaxRoot(StackVector<RootMove, 150> validMoves, unsigned int jobCount, short ply);
+	static RootMove negaMaxRoot(const std::vector<RootMove> &validMoves, unsigned int jobCount, short ply);
 	static short negaMax(const Board &board, short ply, short alpha, short beta, short depth, bool moveCountPruning);
 	static short quiescence(const Board &board, short alpha, short beta);
 	static short negaScout(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth);
