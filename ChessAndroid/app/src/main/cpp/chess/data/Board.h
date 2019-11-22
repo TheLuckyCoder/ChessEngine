@@ -62,6 +62,7 @@ public:
 	U64 getType(Color color, PieceType type) const noexcept;
 
 	void updateState() noexcept;
+	bool hasValidState() const noexcept;
 	Phase getPhase() const noexcept;
 	std::vector<std::pair<Pos, Piece>> getAllPieces() const;
 
@@ -82,14 +83,14 @@ private:
 class RootMove final
 {
 public:
-	Pos start;
-	Pos dest;
+	byte startSq;
+	byte destSq;
 	Board board;
 
 	RootMove() = default;
 
-	RootMove(const Pos start, const Pos dest, const Board &board) noexcept
-		: start(start), dest(dest), board(board) {}
+	RootMove(const byte startSq, const byte destSq, const Board &board) noexcept
+		: startSq(startSq), destSq(destSq), board(board) {}
 
 	bool operator<(const RootMove &other) const noexcept
 	{
@@ -113,23 +114,20 @@ std::vector<T> Board::listValidMoves() const noexcept
 	{
 		const byte startSq = pair.first;
 		const Piece &selectedPiece = pair.second;
-		const auto possibleMoves = selectedPiece.getPossibleMoves(startSq, *this);
+		U64 possibleMoves = selectedPiece.getPossibleMoves(startSq, *this);
 
-		for (const auto &destPos : possibleMoves)
+		while (possibleMoves)
 		{
-			const auto &destPiece = (*this)[destPos];
+			const byte destSq = Bitboard::findNextSquare(possibleMoves);
+			const auto &destPiece = getPiece(destSq);
 			if (destPiece.type == PieceType::KING)
 				continue;
 
 			Board board = *this;
-			board.doMove(startSq, destPos.toSquare());
+			board.doMove(startSq, destSq);
 
-			if (board.state == State::INVALID)
-				continue;
-			if (colorToMove && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
-				continue;
-			if (!colorToMove && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
-				continue;
+            if (!board.hasValidState())
+                continue;
 
 			board.score = Evaluation::simpleEvaluation(board);
 
@@ -152,7 +150,7 @@ std::vector<T> Board::listValidMoves() const noexcept
 					}
 				}
 
-				moves.emplace_back(Pos(startSq), destPos, board);
+				moves.emplace_back(startSq, destSq, board);
 			}
 			else if (std::is_same_v<T, Board>)
 				moves.push_back(board);

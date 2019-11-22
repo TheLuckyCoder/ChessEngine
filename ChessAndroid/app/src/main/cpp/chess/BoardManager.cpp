@@ -24,7 +24,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 
 	s_MovesHistory.clear();
 	s_MovesHistory.reserve(200);
-	s_MovesHistory.emplace_back(Pos(), Pos(), s_Board);
+	s_MovesHistory.emplace_back(0u, 0u, s_Board);
 
 	Stats::resetStats();
 
@@ -34,86 +34,67 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 	    s_WorkerThread = std::thread(moveComputerPlayer, s_Settings);
 }
 
-void BoardManager::loadGame(const std::vector<PosPair> &moves, const bool isPlayerWhite)
+void BoardManager::loadGame(const std::vector<std::pair<byte, byte>> &moves, const bool isPlayerWhite)
 {
 	s_IsPlayerWhite = isPlayerWhite;
 
 	s_Board.initDefaultBoard();
 
-	s_MovesHistory.emplace_back(Pos(), Pos(), s_Board);
+	s_MovesHistory.emplace_back(0u, 0u, s_Board);
 
-	for (const PosPair &move : moves)
-	{
-		s_Board.doMove(move.first.toSquare(), move.second.toSquare());
-		s_Board.score = Evaluation::evaluate(s_Board);
-		s_MovesHistory.emplace_back(move.first, move.second, s_Board);
-	}
+    try {
+        for (const auto &move : moves)
+        {
+            s_Board.doMove(move.first, move.second);
+            s_Board.score = Evaluation::evaluate(s_Board);
+            s_MovesHistory.emplace_back(move.first, move.second, s_Board);
+        }
+    } catch (...) {
+        // Couldn't load all moves correctly
+    }
 
 	s_Listener(s_Board.state, true, {});
 }
 
-Piece::MaxMovesVector BoardManager::getPossibleMoves(const Pos &selectedPos)
+StackVector<Pos, 27> BoardManager::getPossibleMoves(const Pos &selectedPos)
 {
-	Piece::MaxMovesVector moves;
+    StackVector<Pos, 27> moves;
 
-	const Piece &piece = s_Board[selectedPos];
-	const auto possibleMoves = piece.getPossibleMoves(selectedPos.toSquare(), s_Board);
+	const byte startSq = selectedPos.toSquare();
+	const Piece &piece = s_Board.getPiece(startSq);
+	U64 possibleMoves = piece.getPossibleMoves(startSq, s_Board);
 
-	for (const Pos &destPos : possibleMoves)
+	while (possibleMoves)
 	{
-		const Piece &destPiece = s_Board[destPos];
+		const byte destSq = Bitboard::findNextSquare(possibleMoves);
+		const Piece &destPiece = s_Board.getPiece(destSq);
 		if (destPiece.type == PieceType::KING)
 			continue;
 
 		Board board = s_Board;
-		board.doMove(selectedPos.toSquare(), destPos.toSquare());
+		board.doMove(startSq, destSq);
 
-		if (board.state == State::INVALID)
-			continue;
-		if (piece.isWhite && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
-			continue;
-		if (!piece.isWhite && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
-			continue;
-
-		int count = 1;
-
-		for (const auto &game : BoardManager::getMovesHistory())
-		{
-			if (board.colorToMove == game.board.colorToMove &&
-				board.state == game.board.state &&
-				board.zKey == game.board.zKey)
-				count++;
-
-			// TODO: Fix this
-			if (count == 3)
-			{
-				board.score = 0;
-				board.state = State::DRAW;
-				break;
-			}
-		}
-
-		moves.emplace_back(destPos);
+		moves.emplace_back(Pos(destSq));
 	}
 
 	return moves;
 }
 
-void BoardManager::movePiece(const Pos &selectedPos, const Pos &destPos, const bool movedByPlayer)
+void BoardManager::movePiece(const byte startSq, const byte destSq, const bool movedByPlayer)
 {
-	assert(selectedPos.isValid() && destPos.isValid());
+	assert(startSq < 64 && destSq < 64);
 
 	const byte castledBefore = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
-	s_Board.doMove(selectedPos.toSquare(), destPos.toSquare());
+	s_Board.doMove(startSq, startSq);
 	const byte castledAfter = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
 
 	s_Board.score = Evaluation::evaluate(s_Board);
 	s_Board.zKey = Hash::compute(s_Board);
 
-	const StackVector<PosPair, 2> piecesMoved{ {selectedPos, destPos} };
+	const std::vector piecesMoved{ std::make_pair(startSq, destSq) };
 	const bool shouldRedraw = s_Board.isPromotion || (castledBefore != castledAfter);
 
-	s_MovesHistory.emplace_back(selectedPos, destPos, s_Board);
+	s_MovesHistory.emplace_back(startSq, destSq, s_Board);
 	s_Listener(s_Board.state, shouldRedraw, piecesMoved);
 
 	if (movedByPlayer && (s_Board.state == State::NONE || s_Board.state == State::WHITE_IN_CHECK || s_Board.state == State::BLACK_IN_CHECK))
@@ -132,7 +113,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 
 	Stats::stopTimer();
 	s_IsWorking = false;
-	movePiece(bestMove.start, bestMove.dest, false);
+	movePiece(bestMove.startSq, bestMove.destSq, false);
 
 	s_WorkerThread.detach();
 }
@@ -162,7 +143,7 @@ void BoardManager::undoLastMoves()
 
 	s_Board = previousBoard;
 	s_Listener(previousBoard.state, shouldRedraw,
-			{ { engineMove.dest, engineMove.start }, { playerMove.dest, playerMove.start } });
+			{ { engineMove.destSq, engineMove.startSq }, { playerMove.destSq, playerMove.startSq } });
 
 	// Remove the last two moves from the vector
 	s_MovesHistory.pop_back();

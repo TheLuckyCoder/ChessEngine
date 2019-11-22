@@ -4,9 +4,9 @@
 
 const Piece Piece::EMPTY{};
 
-Piece::MaxMovesVector Piece::getPossibleMoves(const byte square, const Board &board) const noexcept
+U64 Piece::getPossibleMoves(const byte square, const Board &board) const noexcept
 {
-	MaxMovesVector result;
+	U64 result{};
 
 	switch (type)
 	{
@@ -35,9 +35,9 @@ Piece::MaxMovesVector Piece::getPossibleMoves(const byte square, const Board &bo
 	return result;
 }
 
-Piece::MaxMovesVector Piece::getPossibleCaptures(const byte square, const Board &board) const noexcept
+U64 Piece::getPossibleCaptures(const byte square, const Board &board) const noexcept
 {
-	MaxMovesVector result;
+	U64 result{};
 
 	switch (type)
 	{

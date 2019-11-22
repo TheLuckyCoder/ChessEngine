@@ -21,8 +21,6 @@ class Piece final
 public:
 	const static Piece EMPTY;
 
-	using MaxMovesVector = StackVector<Pos, 27>;
-
 	PieceType type;
 	bool isWhite;
 
@@ -37,8 +35,8 @@ public:
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
-	MaxMovesVector getPossibleMoves(const byte square, const Board &board) const noexcept;
-	MaxMovesVector getPossibleCaptures(const byte square, const Board &board) const noexcept;
+	U64 getPossibleMoves(const byte square, const Board &board) const noexcept;
+	U64 getPossibleCaptures(const byte square, const Board &board) const noexcept;
 
 	/*
 	 * Checks if the type and color match

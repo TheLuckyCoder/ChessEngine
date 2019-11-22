@@ -143,4 +143,11 @@ namespace Bitboard
 
         return count;
     }
+
+	constexpr byte findNextSquare(U64 &bb)
+	{
+		const byte square = Bitboard::bitScanForward(bb);
+		bb &= ~Bitboard::shiftedBoards[square];
+		return square;
+	}
 }

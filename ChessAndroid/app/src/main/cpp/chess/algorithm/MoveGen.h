@@ -10,7 +10,7 @@ enum GenType : unsigned char
 	KING_DANGER
 };
 
-template<GenType T, bool ToList = true>
+template<GenType T>
 class MoveGen final
 {
 public:
@@ -18,15 +18,14 @@ public:
 	MoveGen(const MoveGen&) = delete;
 	MoveGen(MoveGen&&) = delete;
 
-	static auto generatePawnMoves(const Piece &piece, byte square, const Board &board);
-	static auto generateKnightMoves(const Piece &piece, byte square, const Board &board);
-	static auto generateBishopMoves(const Piece &piece, byte square, const Board &board);
-	static auto generateRookMoves(const Piece &piece, byte square, const Board &board);
-	static auto generateQueenMoves(const Piece &piece, byte square, const Board &board);
-	static auto generateKingMoves(const Piece &piece, byte square, const Board &board);
+	static U64 generatePawnMoves(const Piece &piece, byte square, const Board &board);
+	static U64 generateKnightMoves(const Piece &piece, byte square, const Board &board);
+	static U64 generateBishopMoves(const Piece &piece, byte square, const Board &board);
+	static U64 generateRookMoves(const Piece &piece, byte square, const Board &board);
+	static U64 generateQueenMoves(const Piece &piece, byte square, const Board &board);
+	static U64 generateKingMoves(const Piece &piece, byte square, const Board &board);
 
-	template <class Func>
-	static void forEachAttack(bool white, const Board &board, Func &&func);
+	static void forEachAttack(bool white, const Board &board, const std::function<bool(U64 attacks)> &func);
 	static AttacksMap getAttacksPerColor(bool white, const Board &board);
 };
 

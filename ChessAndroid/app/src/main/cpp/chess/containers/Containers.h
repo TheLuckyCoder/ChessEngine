@@ -14,5 +14,3 @@ public:
 	PosMap map;
 };
 
-template<std::size_t N>
-using PosVector = StackVector<Pos, N>;

@@ -47,15 +47,16 @@ bool Player::hasNoValidMoves(const Color color, const Board &board)
 	{
 		const byte startSq = pair.first;
 		const Piece &selectedPiece = pair.second;
-		const auto possibleMoves = selectedPiece.getPossibleMoves(startSq, board);
+		U64 possibleMoves = selectedPiece.getPossibleMoves(startSq, board);
 
-		for (const Pos &destPos : possibleMoves)
+		while (possibleMoves)
 		{
-			if (board[destPos].type == PieceType::KING)
+			const byte destSq = Bitboard::findNextSquare(possibleMoves);
+			if (board.getPiece(destSq).type == PieceType::KING)
 				continue;
 
 			Board tempBoard = board;
-			tempBoard.doMove(startSq, destPos.toSquare(), false);
+			tempBoard.doMove(startSq, destSq, false);
 
 			if (isInCheck(color, tempBoard))
 				continue;
@@ -70,14 +71,14 @@ bool Player::hasNoValidMoves(const Color color, const Board &board)
 bool Player::isInCheck(const Color color, const Board &board)
 {
 	const U64 king = board.getType(color, KING);
-	if (!king) return true;
+	if (!king) return false;
 
 	return isAttacked(oppositeColor(color), Bitboard::bitScanForward(king), board);
 }
 
-StackVector<std::pair<byte, Piece>, 16> Player::getAllOwnedPieces(const Color color, const Board &board)
+StackVector<std::pair<byte, Piece>, 32> Player::getAllOwnedPieces(const Color color, const Board &board)
 {
-	StackVector<std::pair<byte, Piece>, 16> pieces;
+	StackVector<std::pair<byte, Piece>, 32> pieces;
 
 	for (byte sq = 0u; sq < 64u; ++sq)
 		if (const Piece &piece = board.getPiece(sq); piece && piece.isWhite == color)

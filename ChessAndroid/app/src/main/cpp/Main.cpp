@@ -18,7 +18,7 @@ JavaVM *jvm = nullptr;
 jobject gameManagerInstance;
 
 const BoardManager::PieceChangeListener listener = [](State state, bool shouldRedraw,
-													  const StackVector<PosPair, 2> &moved)
+                                                      const std::vector<std::pair<byte, byte>> &moved)
 {
 	JNIEnv *env;
 	int getEnvStat = jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
@@ -36,8 +36,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 
 	for (unsigned i = 0; i < moved.size(); ++i)
 	{
-		const Pos &startPos = moved[i].first;
-		const Pos &destPos = moved[i].second;
+		const Pos &startPos = Pos(moved[i].first);
+		const Pos &destPos = Pos(moved[i].second);
 		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
 			startPos.x, startPos.y, destPos.x, destPos.y);
 
@@ -202,8 +202,8 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 											  jbyte selectedX, jbyte selectedY, jbyte destX, jbyte destY)
 {
-	BoardManager::movePiece(Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)),
-							Pos(static_cast<byte>(destX), static_cast<byte>(destY)));
+	BoardManager::movePiece(Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)).toSquare(),
+							Pos(static_cast<byte>(destX), static_cast<byte>(destY)).toSquare());
 }
 
 external JNIEXPORT jint JNICALL
@@ -256,7 +256,7 @@ static U64 perft(const Board &board, int depth)
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jint depth)
 {
-	constexpr std::array perftResults {
+	constexpr std::array<U64, 7> perftResults {
 		1, 20, 400, 8902, 197281, 4865609, 119060324
 	};
 	constexpr int maxSize = static_cast<int>(perftResults.size());

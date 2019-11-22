@@ -139,14 +139,26 @@ Phase Board::getPhase() const noexcept
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
+bool Board::hasValidState() const noexcept
+{
+    if (state == State::INVALID)
+        return false;
+    if (colorToMove && (state == State::WHITE_IN_CHECK || state == State::WINNER_BLACK))
+        return false;
+    if (!colorToMove && (state == State::BLACK_IN_CHECK || state == State::WINNER_WHITE))
+        return false;
+
+    return true;
+}
+
 std::vector<std::pair<Pos, Piece>> Board::getAllPieces() const
 {
 	std::vector<std::pair<Pos, Piece>> pieces;
 	pieces.reserve(32);
 
-	for (byte sq = 0u; sq < 64u; ++sq)
-		if (const Piece &piece = data[sq])
-			pieces.emplace_back(Pos(sq), piece);
+	for (byte square = 0u; square < 64u; ++square)
+		if (const Piece &piece = data[square])
+			pieces.emplace_back(Pos(square), piece);
 
 	return pieces;
 }
@@ -161,23 +173,20 @@ std::vector<Board> Board::listQuiescenceMoves() const
 	{
 		const byte startSq = pair.first;
 		const Piece &selectedPiece = pair.second;
-		const auto possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
+		U64 possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
 
-		for (const Pos &destPos : possibleMoves)
+		while (possibleMoves)
 		{
-			const Piece &destPiece = (*this)[destPos];
+			const byte destSq = Bitboard::findNextSquare(possibleMoves);
+			const Piece &destPiece = getPiece(destSq);
 			if (!destPiece || destPiece.type == PieceType::KING)
 				continue;
 
 			Board board = *this;
-			board.doMove(startSq, destPos.toSquare());
+			board.doMove(startSq, destSq);
 
-			if (board.state == State::INVALID)
-				continue;
-			if (colorToMove && (board.state == State::WHITE_IN_CHECK || board.state == State::WINNER_BLACK))
-				continue;
-			if (!colorToMove && (board.state == State::BLACK_IN_CHECK || board.state == State::WINNER_WHITE))
-				continue;
+			if (!board.hasValidState())
+                continue;
 
 			board.score = Evaluation::simpleEvaluation(board);
 
@@ -227,7 +236,7 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 		else if (startPiece.type == PieceType::KING)
 			moveKing(startPiece, startSq, destSq);
 	}
-	
+
 	if (destPiece)
 	{
 		npm -= Evaluation::getPieceValue(destPiece.type);
