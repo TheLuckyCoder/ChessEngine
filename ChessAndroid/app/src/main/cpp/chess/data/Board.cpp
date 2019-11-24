@@ -135,7 +135,7 @@ Phase Board::getPhase() const noexcept
 	constexpr short midGameLimit = 15258;
 	constexpr short endGameLimit = 3915;
 
-	const int limit = std::max(endGameLimit, std::min(npm, midGameLimit));
+	const short limit = std::max(endGameLimit, std::min(npm, midGameLimit));
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
@@ -143,9 +143,9 @@ bool Board::hasValidState() const noexcept
 {
     if (state == State::INVALID)
         return false;
-    if (colorToMove && (state == State::WHITE_IN_CHECK || state == State::WINNER_BLACK))
+    if (colorToMove == WHITE && (state == State::WHITE_IN_CHECK || state == State::WINNER_BLACK))
         return false;
-    if (!colorToMove && (state == State::BLACK_IN_CHECK || state == State::WINNER_WHITE))
+    if (colorToMove == BLACK && (state == State::BLACK_IN_CHECK || state == State::WINNER_WHITE))
         return false;
 
     return true;
@@ -239,7 +239,8 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 
 	if (destPiece)
 	{
-		npm -= Evaluation::getPieceValue(destPiece.type);
+		if (destPiece.type != PAWN)
+			npm -= Evaluation::getPieceValue(destPiece.type);
 		isCapture = true;
 		halfMoveClock = 0u;
 	}
@@ -279,7 +280,6 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 
 		// Remove the captured Pawn
 		Hash::xorPiece(zKey, capturedPos.toSquare(), capturedPiece);
-		npm -= Evaluation::getPieceValue(PieceType::PAWN);
 		capturedPiece = Piece();
 		getType(toColor(capturedPiece.isWhite), capturedPiece.type);
 		return true;
@@ -326,8 +326,8 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 			getPiece(destX, y) = rook;
 			rook = Piece::EMPTY;
 
-			getType(color, ROOK) &= ~Pos(destX, y).toBitboard();
 			getType(color, ROOK) &= ~Pos(startX, y).toBitboard();
+			getType(color, ROOK) |= Pos(destX, y).toBitboard();
 
 			castled = true;
 			Hash::makeMove(zKey, Pos(startX, y).toSquare(), Pos(destX, y).toSquare(), rook);
@@ -345,8 +345,8 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 			getPiece(destX, y) = rook;
 			rook = Piece::EMPTY;
 
-			getType(color, ROOK) &= ~Pos(destX, y).toBitboard();
 			getType(color, ROOK) &= ~Pos(startX, y).toBitboard();
+			getType(color, ROOK) |= Pos(destX, y).toBitboard();
 
 			castled = true;
 			Hash::makeMove(zKey, Pos(startX, y).toSquare(), Pos(destX, y).toSquare(), rook);

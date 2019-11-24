@@ -76,22 +76,20 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 		if (const Piece &piece = board.getPiece(i); piece)
 		{
 			const short points = [&]() -> short {
-				const byte x = col(i);
-				const byte y = row(i);
 				switch (piece.type)
 				{
 					case PAWN:
-						return Psqt::s_PawnSquares[x][y].mg;
+						return Psqt::s_PawnSquares[i].mg;
 					case KNIGHT:
-						return Psqt::s_KnightSquares[x][y].mg;
+						return Psqt::s_KnightSquares[i].mg;
 					case BISHOP:
-						return Psqt::s_BishopSquares[x][y].mg;
+						return Psqt::s_BishopSquares[i].mg;
 					case ROOK:
-						return Psqt::s_RookSquares[x][y].mg;
+						return Psqt::s_RookSquares[i].mg;
 					case QUEEN:
-						return Psqt::s_QueenSquares[x][y].mg;
+						return Psqt::s_QueenSquares[i].mg;
 					case KING:
-						return Psqt::s_KingSquares[x][y].mg;
+						return Psqt::s_KingSquares[i].mg;
 					default:
 						return 0;
 				}
@@ -263,11 +261,11 @@ short Evaluation::evaluate(const Board &board) noexcept
 
 Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept
 {
-	Score value = Psqt::s_PawnSquares[pos.x][pos.y];
+	Score value = Psqt::s_PawnSquares[pos.toSquare()];
 
 	const byte behind = piece.isWhite ? -1 : 1;
-	const int supported = (board.at(pos.x - 1u, pos.y + behind).isSameType(piece) +
-		board.at(pos.x + 1u, pos.y + behind).isSameType(piece));
+	const int supported = board.at(pos.x - 1u, pos.y + behind).isSameType(piece)
+						+ board.at(pos.x + 1u, pos.y + behind).isSameType(piece);
 
 	bool isolated = !static_cast<bool>(supported);
 
@@ -369,7 +367,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 
 inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::s_KnightSquares[pos.x][pos.y];
+	Score value = Psqt::s_KnightSquares[pos.toSquare()];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateKnightMoves(piece, pos.toSquare(), board));
 	value += KNIGHT_MOBILITY[mobility];
@@ -379,7 +377,7 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, cons
 
 Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::s_BishopSquares[pos.x][pos.y];
+	Score value = Psqt::s_BishopSquares[pos.toSquare()];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateBishopMoves(piece, pos.toSquare(), board));
 	value += BISHOP_MOBILITY[mobility];
@@ -407,7 +405,7 @@ Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board
 
 Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::s_RookSquares[pos.x][pos.y];
+	Score value = Psqt::s_RookSquares[pos.toSquare()];
 
 	value += ROOK_MOBILITY[Bitboard::popCount(MoveGen<ALL>::generateRookMoves(piece, pos.toSquare(), board))];
 
@@ -451,7 +449,7 @@ Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &
 
 Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept
 {
-	Score value = Psqt::s_QueenSquares[pos.x][pos.y];
+	Score value = Psqt::s_QueenSquares[pos.toSquare()];
 
 	value += QUEEN_MOBILITY[Bitboard::popCount(MoveGen<ALL>::generateQueenMoves(piece, pos.toSquare(), board))];
 
@@ -469,7 +467,7 @@ Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board 
 				Pos dPos(pos, d * ix, d * iy);
 				if (dPos.isValid())
 				{
-					const auto &other = board[dPos];
+					const Piece &other = board[dPos];
 					if (other.type == ROOK && (ix == 0 || iy == 0) && count == 1) return true;
 					if (other.type == BISHOP && (ix != 0 && iy != 0) && count == 1) return true;
 					if (other) count++;
@@ -488,5 +486,5 @@ Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board 
 
 inline Score Evaluation::evaluateKing(const Pos &pos) noexcept
 {
-	return Psqt::s_KingSquares[pos.x][pos.y];
+	return Psqt::s_KingSquares[pos.toSquare()];
 }

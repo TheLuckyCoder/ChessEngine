@@ -73,7 +73,7 @@ public:
 
 	constexpr byte toSquare() const noexcept
 	{
-		return static_cast<byte>(x + y * 8u);
+		return static_cast<byte>((y << 3u) + x);
 	}
 
 	constexpr U64 toBitboard() const noexcept
@@ -81,5 +81,3 @@ public:
 		return Bitboard::shiftedBoards[toSquare()];
 	}
 };
-
-using PosPair = std::pair<Pos, Pos>;

@@ -82,10 +82,12 @@ StackVector<Pos, 27> BoardManager::getPossibleMoves(const Pos &selectedPos)
 
 void BoardManager::movePiece(const byte startSq, const byte destSq, const bool movedByPlayer)
 {
+	assert(startSq != destSq);
 	assert(startSq < 64 && destSq < 64);
 
 	const byte castledBefore = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
 	s_Board.doMove(startSq, destSq);
+	assert(s_Board.hasValidState());
 	const byte castledAfter = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
 
 	s_Board.score = Evaluation::evaluate(s_Board);

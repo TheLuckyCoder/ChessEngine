@@ -6,7 +6,7 @@
 
 class Psqt
 {
-	using ScoreArray = std::array<std::array<Score, 8>, 8>;
+	using ScoreArray = std::array<Score, 64>;
 
 public:
 	Psqt() = delete;
