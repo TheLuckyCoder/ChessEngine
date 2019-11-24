@@ -23,10 +23,11 @@ public:
 	}
 
 private:
-	static Score evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept;
-	inline static Score evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept;
-	static Score evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept;
-	static Score evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept;
-	static Score evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept;
-	inline static Score evaluateKing(const Pos &pos) noexcept;
+	static Score evaluatePawn(const Piece &piece, byte square, const Board &board,
+							  const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept;
+	inline static Score evaluateKnight(const Piece &piece, byte square, const Board &board) noexcept;
+	static Score evaluateBishop(const Piece &piece, byte square, const Board &board) noexcept;
+	static Score evaluateRook(const Piece &piece, byte square, const Board &board) noexcept;
+	static Score evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept;
+	inline static Score evaluateKing(byte square) noexcept;
 };

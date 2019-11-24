@@ -53,7 +53,7 @@
         android:layout_marginBottom="8dp"
         android:layout_toStartOf="@+id/iv_settings"
         android:layout_toEndOf="@+id/iv_undo"
-        android:text="@string/restart_game" />
+        android:text="@string/new_game" />
 
     <ImageView
         android:id="@+id/iv_settings"

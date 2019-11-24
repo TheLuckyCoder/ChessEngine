@@ -10,7 +10,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 29
         versionCode 100
-        versionName "1.0-alpha"
+        versionName "1.0-beta"
     }
 
     buildTypes {

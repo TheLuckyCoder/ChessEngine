@@ -3,8 +3,7 @@
 #include "MoveGen.h"
 #include "../Stats.h"
 #include "../data/Psqt.h"
-#include "../data/Board.h"
-#include "../data/Enums.h"
+#include "../data/Rays.h"
 
 #define S Score
 
@@ -13,26 +12,26 @@
  */
 constexpr S MINOR_THREATS[] =
 {
-	S(0, 0), S(0, 31), S(39, 42), S(57, 44), S(68, 112), S(62, 120), S(0, 0)
+	S(0, 0), S(6, 32), S(59, 41), S(79, 56), S(90, 119), S(79, 161), S(0, 0)
 };
 constexpr S OVERLOAD(12, 6);
 constexpr S PAWN_DOUBLED(11, 56);
 constexpr S PAWN_ISOLATED(5, 15);
 constexpr S PASSED_PAWN_RANK[] =
 {
-	S(0, 0), S(5, 18), S(12, 23), S(10, 31), S(57, 62), S(163, 167), S(271, 250)
+	S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(276, 260)
 };
 constexpr S ROOK_ON_PAWN(10, 28);
 constexpr S ROOK_ON_FILE[] =
 {
-	S(0, 0), S(18, 7), S(44, 20)
+	S(0, 0), S(21, 4), S(47, 25)
 };
 constexpr S ROOK_THREATS[] =
 {
-	S(0, 0), S(0, 24), S(38, 71), S(38, 61), S(0, 38), S(51, 38), S(0, 0)
+	S(0, 0), S(3, 44), S(38, 71), S(38, 61), S(0, 38), S(51, 38), S(0, 0)
 };
-constexpr S THREAT_SAFE_PAWN(169, 99);
-constexpr S WEAK_QUEEN(51, 10);
+constexpr S THREAT_SAFE_PAWN(173, 94);
+constexpr S WEAK_QUEEN(49, 15);
 
 constexpr S KNIGHT_MOBILITY[] =
 {
@@ -103,6 +102,7 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 
 short Evaluation::evaluate(const Board &board) noexcept
 {
+	assert(board.state != State::INVALID);
 	if (board.state == State::DRAW)
 		return 0;
 	if (board.state == State::WINNER_WHITE)
@@ -173,22 +173,21 @@ short Evaluation::evaluate(const Board &board) noexcept
 		if (const Piece &piece = board.getPiece(i); piece)
 		{
 			const Score points = [&] {
-				const Pos pos(i);
 				switch (piece.type)
 				{
 				case PAWN:
-					return evaluatePawn(piece, pos, board, piece.isWhite ? whiteMoves : blackMoves,
+					return evaluatePawn(piece, i, board, piece.isWhite ? whiteMoves : blackMoves,
 							piece.isWhite ? blackMoves : whiteMoves);
 				case KNIGHT:
-					return evaluateKnight(piece, pos, board);
+					return evaluateKnight(piece, i, board);
 				case BISHOP:
-					return evaluateBishop(piece, pos, board);
+					return evaluateBishop(piece, i, board);
 				case ROOK:
-					return evaluateRook(piece, pos, board);
+					return evaluateRook(piece, i, board);
 				case QUEEN:
-					return evaluateQueen(piece, pos, board);
+					return evaluateQueen(piece, i, board);
 				case KING:
-					return evaluateKing(pos);
+					return evaluateKing(i);
 				default:
 					return Score();
 				}
@@ -198,17 +197,17 @@ short Evaluation::evaluate(const Board &board) noexcept
 		}
 
 	if (board.isCastled(WHITE))
-		totalScore.mg += 60;
+		totalScore.mg += 57;
 	else {
 		const int count = static_cast<int>(board.canCastleKs(WHITE)) + static_cast<int>(board.canCastleQs(WHITE));
-		totalScore.mg -= count * 25;
+		totalScore.mg += count * 23;
 	}
 
 	if (board.isCastled(BLACK))
-		totalScore.mg -= 60;
+		totalScore.mg -= 57;
 	else {
 		const int count = static_cast<int>(board.canCastleKs(BLACK)) + static_cast<int>(board.canCastleQs(BLACK));
-		totalScore.mg += count * 25;
+		totalScore.mg -= count * 23;
 	}
 
 	if (board.state == State::BLACK_IN_CHECK)
@@ -222,48 +221,22 @@ short Evaluation::evaluate(const Board &board) noexcept
 		totalScore.eg -= 40;
 	}
 
-	// TODO: Scale Factor
-	/*int sf = 64;
-	{
-		if (pawnCount.white == 0 && npm.white - npm.black <= BISHOP_SCORE.mg) sf = npm.white < ROOK_SCORE.mg ? 0 : (npm.black <= BISHOP_SCORE.mg ? 4 : 14);
-		if (sf == 64)
-		{
-			const bool ob = true;// = opposite_bishops(pos);
-			if (ob && npm.white == BISHOP_SCORE.mg && npm.black == BISHOP_SCORE.mg) {
-				int asymmetry = 0;
-				for (const auto &x : board.data)
-				{
-					int open[]{ 0, 0 };
-
-					for (const Piece &piece : x)
-						if (piece.type == PAWN) open[!piece.isWhite] = 1;
-
-					if (open[0] + open[1] == 1) asymmetry++;
-				}
-				//asymmetry += candidate_passed_w + candidate_passed_b;
-				sf = 8 + 4 * asymmetry;
-			} else {
-				sf = std::min(40 + (ob ? 2 : 7) * pawnCount.white, sf);
-			}
-		}
-	}
-	totalScore.eg *= sf / 64;*/
-
 	// Tempo
 	const int tempo = board.colorToMove ? 20 : -20;
 	totalScore += tempo;
-	const Phase phase = board.getPhase();
 
+	const Phase phase = board.getPhase();
 	return phase == Phase::MIDDLE ? totalScore.mg : totalScore.eg;
-	//const short p = static_cast<int>(board.getPhase());
-	//return ((totalScore.mg * p + totalScore.eg * (128 - p)) / 128) + tempo;
 }
 
-Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &board, const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept
+Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Board &board,
+							   const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept
 {
-	Score value = Psqt::s_PawnSquares[pos.toSquare()];
+	const Pos pos(square);
+	Score value = Psqt::s_PawnSquares[square];
 
-	const byte behind = piece.isWhite ? -1 : 1;
+	const Color color = toColor(piece.isWhite);
+	const byte behind = color ? -1 : 1;
 	const int supported = board.at(pos.x - 1u, pos.y + behind).isSameType(piece)
 						+ board.at(pos.x + 1u, pos.y + behind).isSameType(piece);
 
@@ -274,7 +247,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 
 	if (isolated)
 	{
-		for (int y = 0 ; y < 8; y++) {
+		for (byte y = 0u ; y < 8u; y++) {
 			if (board.at(pos.x - 1u, y).isSameType(piece) ||
 				board.at(pos.x + 1u, y).isSameType(piece))
 			{
@@ -288,7 +261,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 		value -= PAWN_ISOLATED;
 
 	// Threat Safe Pawn
-	if (ourAttacks.map[pos] || theirAttacks.map[pos] == 0) // check if the pawn is safe
+	if (ourAttacks.map[square] || theirAttacks.map[square] == 0) // check if the pawn is safe
 	{
 		const auto isEnemyPiece = [&] (const byte x, const byte y) {
 			const Pos newPos(pos, x, y);
@@ -299,61 +272,25 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 			return other.isWhite != piece.isWhite && type > PAWN && type < KING;
 		};
 
-		byte i = 0;
-		if (isEnemyPiece(-1, 1u)) i++;
-		if (isEnemyPiece(1u, 1u)) i++;
+		const int i = static_cast<int>(isEnemyPiece(-1, -behind))
+					+ static_cast<int>(isEnemyPiece(1u, -behind));
 
 		value += THREAT_SAFE_PAWN * i;
 	}
 
 	const auto isPassedPawn = [&] {
-		const Piece enemyPawn(PAWN, !piece.isWhite);
+		const Rays::Dir direction = color ? Rays::NORTH : Rays::SOUTH;
 
-		if (piece.isWhite)
-		{
-			byte x = pos.x;
-			for (byte y = pos.y + 1u; y < 7; y++)
-				if (board.getPiece(x, y).isSameType(enemyPawn))
-					return false;
-			if (x > 0)
-			{
-				--x;
-				for (byte y = pos.y + 1u; y < 7; y++)
-					if (board.getPiece(x, y).isSameType(enemyPawn))
-						return false;
-			}
+		const Pos posLeft(pos, -1, -behind);
+		const Pos posRight(pos, 1, -behind);
 
-			if (x < 7)
-			{
-				++x;
-				for (byte y = pos.y + 1u; y < 7; y++)
-					if (board.getPiece(x, y).isSameType(enemyPawn))
-						return false;
-			}
-		} else {
-			byte x = pos.x;
-			for (byte y = pos.y - 1u; y > 1; y--)
-				if (board.getPiece(x, y).isSameType(enemyPawn))
-					return false;
+		U64 rays = Rays::getRay(direction, square);
+		if (posLeft.isValid())
+			rays |= Rays::getRay(direction, posLeft.toSquare());
+		if (posRight.isValid())
+			rays |= Rays::getRay(direction, posRight.toSquare());
 
-			if (x > 0)
-			{
-				--x;
-				for (byte y = pos.y - 1u; y > 1; y--)
-					if (board.getPiece(x, y).isSameType(enemyPawn))
-						return false;
-			}
-
-			if (x < 7)
-			{
-				++x;
-				for (byte y = pos.y - 1u; y > 1; y--)
-					if (board.getPiece(x, y).isSameType(enemyPawn))
-						return false;
-			}
-		}
-
-		return true;
+		return static_cast<bool>(rays & board.getType(oppositeColor(color), PAWN));
 	}();
 
 	if (isPassedPawn)
@@ -365,21 +302,22 @@ Score Evaluation::evaluatePawn(const Piece &piece, const Pos &pos, const Board &
 	return value;
 }
 
-inline Score Evaluation::evaluateKnight(const Piece &piece, const Pos &pos, const Board &board) noexcept
+inline Score Evaluation::evaluateKnight(const Piece &piece, const byte square, const Board &board) noexcept
 {
-	Score value = Psqt::s_KnightSquares[pos.toSquare()];
+	Score value = Psqt::s_KnightSquares[square];
 
-	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateKnightMoves(piece, pos.toSquare(), board));
+	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateKnightMoves(piece, square, board));
 	value += KNIGHT_MOBILITY[mobility];
 
 	return value;
 }
 
-Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board &board) noexcept
+Score Evaluation::evaluateBishop(const Piece &piece, const byte square, const Board &board) noexcept
 {
-	Score value = Psqt::s_BishopSquares[pos.toSquare()];
+	const Pos pos(square);
+	Score value = Psqt::s_BishopSquares[square];
 
-	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateBishopMoves(piece, pos.toSquare(), board));
+	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateBishopMoves(piece, square, board));
 	value += BISHOP_MOBILITY[mobility];
 
 	// Long Diagonal Bishop
@@ -388,7 +326,8 @@ Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board
 		{
 			byte x = pos.x, y = pos.y;
 			if (std::min<byte>(x, 7u - x) > 2) return false;
-			for (byte i = std::min<byte>(x, 7u - x); i < 4; i++) {
+			for (byte i = std::min<byte>(x, 7u - x); i < 4; i++)
+			{
 				if (board.getPiece(x, y).type == PAWN) return false;
 				if (x < 4) x++; else x--;
 				if (y < 4) y++; else y--;
@@ -398,31 +337,29 @@ Score Evaluation::evaluateBishop(const Piece &piece, const Pos &pos, const Board
 		return true;
 	}();
 
-	if (isLongDiagonalBishop) value.mg += 44;
+	if (isLongDiagonalBishop)
+		value.mg += 44;
 
 	return value;
 }
 
-Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &board) noexcept
+Score Evaluation::evaluateRook(const Piece &piece, const byte square, const Board &board) noexcept
 {
+	const Pos pos(square);
+	const Color color = toColor(piece.isWhite);
 	Score value = Psqt::s_RookSquares[pos.toSquare()];
 
-	value += ROOK_MOBILITY[Bitboard::popCount(MoveGen<ALL>::generateRookMoves(piece, pos.toSquare(), board))];
+	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateRookMoves(piece, pos.toSquare(), board));
+	value += ROOK_MOBILITY[mobility];
 
 	const int rookOnPawn = [&] {
 		if ((piece.isWhite && pos.y < 5) || (!piece.isWhite && pos.y > 4)) return 0;
 
-		const Piece enemyPawn(PAWN, !piece.isWhite);
-		int count = 0;
+		const U64 vertical = Rays::getRay(Rays::NORTH, square) | Rays::getRay(Rays::SOUTH, square);
+		const U64 horizontal = Rays::getRay(Rays::WEST, square) | Rays::getRay(Rays::EAST, square);
+		const U64 rays = vertical | horizontal;
 
-		for (byte x = 0; x < 8; ++x)
-			if (board.getPiece(x, pos.y).isSameType(enemyPawn))
-				count++;
-		for (byte y = 0; y < 8; ++y)
-			if (board.getPiece(pos.x, y).isSameType(enemyPawn))
-				count++;
-
-		return count;
+		return Bitboard::popCount(rays & board.getType(oppositeColor(color), PAWN));
 	}();
 	value += ROOK_ON_PAWN * rookOnPawn;
 
@@ -447,15 +384,17 @@ Score Evaluation::evaluateRook(const Piece &piece, const Pos &pos, const Board &
 	return value;
 }
 
-Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board &board) noexcept
+Score Evaluation::evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept
 {
-	Score value = Psqt::s_QueenSquares[pos.toSquare()];
+	const Pos pos(square);
+	Score value = Psqt::s_QueenSquares[square];
 
-	value += QUEEN_MOBILITY[Bitboard::popCount(MoveGen<ALL>::generateQueenMoves(piece, pos.toSquare(), board))];
+	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateQueenMoves(piece, square, board));
+	value += QUEEN_MOBILITY[mobility];
 
 	const U64 originalPosition = FILE_D & (piece.isWhite ? RANK_1 : RANK_7);
 
-	if ((originalPosition & pos.toBitboard()) ==0)
+	if ((originalPosition & Bitboard::shiftedBoards[square]) ==0)
 		value.mg -= 30;
 
 	const auto weak = [&] {
@@ -484,7 +423,7 @@ Score Evaluation::evaluateQueen(const Piece &piece, const Pos &pos, const Board 
 	return value;
 }
 
-inline Score Evaluation::evaluateKing(const Pos &pos) noexcept
+inline Score Evaluation::evaluateKing(const byte square) noexcept
 {
-	return Psqt::s_KingSquares[pos.toSquare()];
+	return Psqt::s_KingSquares[square];
 }

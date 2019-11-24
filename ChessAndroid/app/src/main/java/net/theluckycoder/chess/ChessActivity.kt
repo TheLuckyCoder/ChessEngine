@@ -63,7 +63,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             val view = View.inflate(this, R.layout.dialog_restart, null)
 
             AlertDialog.Builder(this)
-                .setTitle(R.string.restart_game)
+                .setTitle(R.string.new_game)
                 .setView(view)
                 .setPositiveButton(R.string.action_restart) { _, _ ->
                     val playerWhite = when (view.sp_side.selectedItemPosition) {
