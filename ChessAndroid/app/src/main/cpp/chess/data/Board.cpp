@@ -14,6 +14,11 @@ void Board::setToFen(const std::string &fen)
 	parser.parseFen(fen);
 }
 
+bool Board::canCastle(const Color color) const noexcept
+{
+	return castlingRights & (color == BLACK ? CASTLE_BLACK : CASTLE_WHITE);
+}
+
 bool Board::canCastleKs(const Color color) const noexcept
 {
 	return castlingRights & (color == BLACK ? CASTLE_BLACK_KING : CASTLE_WHITE_KING);
@@ -22,11 +27,6 @@ bool Board::canCastleKs(const Color color) const noexcept
 bool Board::canCastleQs(const Color color) const noexcept
 {
 	return castlingRights & (color == BLACK ? CASTLE_BLACK_QUEEN : CASTLE_WHITE_QUEEN);
-}
-
-bool Board::canCastleAnywhere(const Color color) const noexcept
-{
-	return castlingRights & (color == BLACK ? CASTLE_BLACK : CASTLE_WHITE);
 }
 
 bool Board::isCastled(const Color color) const noexcept

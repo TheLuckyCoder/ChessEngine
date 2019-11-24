@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../containers/Containers.h"
-
 enum GenType : unsigned char
 {
 	ALL,
@@ -24,9 +22,6 @@ public:
 	static U64 generateRookMoves(const Piece &piece, byte square, const Board &board);
 	static U64 generateQueenMoves(const Piece &piece, byte square, const Board &board);
 	static U64 generateKingMoves(const Piece &piece, byte square, const Board &board);
-
-	static void forEachAttack(bool white, const Board &board, const std::function<bool(U64 attacks)> &func);
-	static AttacksMap getAttacksPerColor(bool white, const Board &board);
 };
 
 #include "MoveGen.inl"

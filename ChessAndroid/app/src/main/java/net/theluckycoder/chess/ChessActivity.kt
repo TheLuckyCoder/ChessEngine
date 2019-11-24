@@ -51,6 +51,14 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        iv_settings.setOnLongClickListener {
+            val isPlayerWhite = Native.isPlayerWhite()
+            redrawBoard(isPlayerWhite)
+            redrawPieces(Native.getPieces().toList(), isPlayerWhite)
+
+            true
+        }
+
         btn_restart_game.setOnClickListener {
             val view = View.inflate(this, R.layout.dialog_restart, null)
 

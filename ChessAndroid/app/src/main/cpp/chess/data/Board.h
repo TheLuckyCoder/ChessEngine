@@ -48,9 +48,9 @@ public:
 	void initDefaultBoard() noexcept;
 	void setToFen(const std::string &fen);
 
+	bool canCastle(Color color) const noexcept;
 	bool canCastleKs(Color color) const noexcept;
 	bool canCastleQs(Color color) const noexcept;
-	bool canCastleAnywhere(Color color) const noexcept;
 	bool isCastled(Color color) const noexcept;
 
 	Piece &getPiece(byte squareIndex) noexcept;

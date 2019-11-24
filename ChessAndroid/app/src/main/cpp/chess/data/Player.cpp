@@ -86,3 +86,50 @@ StackVector<std::pair<byte, Piece>, 32> Player::getAllOwnedPieces(const Color co
 
 	return pieces;
 }
+
+AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
+{
+	AttacksMap attacks{};
+
+	for (byte startSq = 0; startSq < 64u; ++startSq)
+	{
+		const Piece &piece = board.getPiece(startSq);
+		if (piece && piece.isWhite == white)
+		{
+			U64 moves{};
+			using Generator = MoveGen<ATTACKS_DEFENSES>;
+			switch (piece.type)
+			{
+				case PieceType::PAWN:
+					moves = Generator::generatePawnMoves(piece, startSq, board);
+					break;
+				case PieceType::KNIGHT:
+					moves = Generator::generateKnightMoves(piece, startSq, board);
+					break;
+				case PieceType::BISHOP:
+					moves = Generator::generateBishopMoves(piece, startSq, board);
+					break;
+				case PieceType::ROOK:
+					moves = Generator::generateRookMoves(piece, startSq, board);
+					break;
+				case PieceType::QUEEN:
+					moves = Generator::generateQueenMoves(piece, startSq, board);
+					break;
+				case PieceType::KING:
+					moves = Generator::generateKingMoves(piece, startSq, board);
+					break;
+				case PieceType::NONE:
+					break;
+			}
+
+			while (moves)
+			{
+				const byte destSq = Bitboard::findNextSquare(moves);
+				attacks.map[destSq]++;
+				attacks.board[piece.isWhite][piece.type - 1u] |= Bitboard::shiftedBoards[destSq];
+			}
+		}
+	}
+
+	return attacks;
+}

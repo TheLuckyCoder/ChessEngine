@@ -142,137 +142,69 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER)
 		return attacks;
 
-	if (attacks == 0ull)
-		return attacks;
-
 	U64 opponentsMoves{};
+	{
+		const Color opponentColor = oppositeColor(toColor(piece.isWhite));
+		U64 attacksCopy = attacks;
+		
+		while (attacksCopy)
+		{
+			const byte currentSquare = Bitboard::findNextSquare(attacksCopy);
+			if (Player::isAttacked(opponentColor, currentSquare, board))
+				opponentsMoves |= Bitboard::shiftedBoards[currentSquare];
+		}
+
+		attacks &= ~opponentsMoves;
+	}
+
+	/*U64 opponentsMoves{};
 	MoveGen<KING_DANGER>::forEachAttack(!piece.isWhite, board, [&] (const U64 enemyAttacks) -> bool {
 		opponentsMoves |= enemyAttacks;
 		attacks &= ~enemyAttacks; // Remove Attacked Positions
 		return static_cast<bool>(attacks);
-	});
+	});*/
 
-	if (!attacks) return 0ull;
+	if (!attacks)
+		return 0ull;
 
 	// Castling
+	const U64 bitboard = Bitboard::shiftedBoards[square];
 	const Color color = toColor(piece.isWhite);
 	const State checkState = piece.isWhite ? State::WHITE_IN_CHECK : State::BLACK_IN_CHECK;
-	if (board.state != checkState
-		&& board.canCastleAnywhere(color)
-		&& !(opponentsMoves & Bitboard::shiftedBoards[square]))
+
+	if (board.state == checkState || !board.canCastle(color) || opponentsMoves & bitboard)
+		return attacks;
+	
+	const byte y = row(square);
+	const auto isEmptyAndCheckFree = [&, y](const byte x) {
+		const byte sq = Pos(x, y).toSquare();
+		const U64 bb = Bitboard::shiftedBoards[sq];
+		 
+		return !board.getPiece(x, y) && !(opponentsMoves & bb) && !Player::isAttacked(oppositeColor(color), sq, board);
+	};
+
+	// King Side
+	if (board.canCastleKs(color)
+		&& isEmptyAndCheckFree(5)
+		&& isEmptyAndCheckFree(6))
 	{
-		const byte y = row(square);
-		const auto isEmptyAndCheckFree = [&, y](const byte x) {
-			return !board.getPiece(x, y) && !(opponentsMoves & Pos(x, y).toBitboard());
-		};
-
-		if (board.canCastleKs(color)
-			&& isEmptyAndCheckFree(5)
-			&& isEmptyAndCheckFree(6))
-		{
-			if (const auto &other = board.getPiece(7, y);
-				other.type == PieceType::ROOK
-				&& piece.isSameColor(other))
-				attacks |= Pos(6, y).toBitboard();
-		}
-
-		if (board.canCastleQs(color)
-			&& isEmptyAndCheckFree(3)
-			&& isEmptyAndCheckFree(2)
-			&& !board.getPiece(1, y))
-		{
-			if (const auto &other = board.getPiece(0, y);
-				other.type == PieceType::ROOK
-				&& piece.isSameColor(other))
-				attacks |= Pos(2, y).toBitboard();
-		}
+		// This shouldn't be needed because the Castling rights would not exist
+		/*if (const auto &other = board.getPiece(7, y);
+			other.type == PieceType::ROOK
+			&& piece.isSameColor(other))*/
+			attacks |= Pos(6, y).toBitboard();
 	}
 
-	return attacks;
-}
-
-template <GenType T> // Class Template
-void MoveGen<T>::forEachAttack(const bool white, const Board &board, const std::function<bool(U64 attacks)> &func)
-{
-	for (byte i = 0; i < 64u; ++i)
+	// Queen Side
+	if (board.canCastleQs(color)
+		&& isEmptyAndCheckFree(3)
+		&& isEmptyAndCheckFree(2)
+		&& !board.getPiece(1, y))
 	{
-		const auto &piece = board.getPiece(i);
-		if (piece && piece.isWhite == white)
-		{
-			U64 moves{};
-			switch (piece.type)
-			{
-			case PieceType::PAWN:
-				moves = MoveGen<KING_DANGER>::generatePawnMoves(piece, i, board);
-				break;
-			case PieceType::KNIGHT:
-				moves = generateKnightMoves(piece, i, board);
-				break;
-			case PieceType::BISHOP:
-				moves = generateBishopMoves(piece, i, board);
-				break;
-			case PieceType::ROOK:
-				moves = generateRookMoves(piece, i, board);
-				break;
-			case PieceType::QUEEN:
-				moves = generateQueenMoves(piece, i, board);
-				break;
-			case PieceType::KING:
-				moves = MoveGen<KING_DANGER>::generateKingMoves(piece, i, board);
-				break;
-			case PieceType::NONE:
-				break;
-			}
-
-			// The function should return true in order to stop the loop
-			if (func(moves))
-				return;
-		}
-	}
-}
-
-template<GenType T>
-AttacksMap MoveGen<T>::getAttacksPerColor(const bool white, const Board &board)
-{
-	AttacksMap attacks{};
-
-	for (byte startSq = 0; startSq < 64u; ++startSq)
-	{
-		const Piece &piece = board.getPiece(startSq);
-		if (piece && piece.isWhite == white)
-		{
-			U64 moves{};
-			switch (piece.type)
-			{
-				case PieceType::PAWN:
-					moves = MoveGen<KING_DANGER>::generatePawnMoves(piece, startSq, board);
-					break;
-				case PieceType::KNIGHT:
-					moves = generateKnightMoves(piece, startSq, board);
-					break;
-				case PieceType::BISHOP:
-					moves = generateBishopMoves(piece, startSq, board);
-					break;
-				case PieceType::ROOK:
-					moves = generateRookMoves(piece, startSq, board);
-					break;
-				case PieceType::QUEEN:
-					moves = generateQueenMoves(piece, startSq, board);
-					break;
-				case PieceType::KING:
-					moves = MoveGen<KING_DANGER>::generateKingMoves(piece, startSq, board);
-					break;
-				case PieceType::NONE:
-					break;
-			}
-
-			while (moves)
-			{
-				const byte destSq = Bitboard::findNextSquare(moves);
-				attacks.map[destSq]++;
-				attacks.board[piece.isWhite][piece.type - 1u] |= Bitboard::shiftedBoards[destSq];
-			}
-		}
+		/*if (const auto &other = board.getPiece(0, y);
+			other.type == PieceType::ROOK
+			&& piece.isSameColor(other))*/
+			attacks |= Pos(2, y).toBitboard();
 	}
 
 	return attacks;

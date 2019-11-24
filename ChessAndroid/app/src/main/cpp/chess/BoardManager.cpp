@@ -85,7 +85,7 @@ void BoardManager::movePiece(const byte startSq, const byte destSq, const bool m
 	assert(startSq < 64 && destSq < 64);
 
 	const byte castledBefore = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
-	s_Board.doMove(startSq, startSq);
+	s_Board.doMove(startSq, destSq);
 	const byte castledAfter = (s_Board.castlingRights & CASTLED_WHITE) | (s_Board.castlingRights & CASTLED_BLACK);
 
 	s_Board.score = Evaluation::evaluate(s_Board);

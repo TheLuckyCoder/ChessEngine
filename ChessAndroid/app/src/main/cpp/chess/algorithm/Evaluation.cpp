@@ -122,8 +122,8 @@ short Evaluation::evaluate(const Board &board) noexcept
 	short whiteNpm = 0;
 	short blackNpm = 0;
 
-	const auto whiteMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(true, board);
-	const auto blackMoves = MoveGen<ATTACKS_DEFENSES>::getAttacksPerColor(false, board);
+	const AttacksMap whiteMoves = Player::getAttacksPerColor(true, board);
+	const AttacksMap blackMoves = Player::getAttacksPerColor(false, board);
 
 	for (byte i = 0; i < 64u; i++)
 		if (const auto &piece = board.getPiece(i); piece && piece.type != KING)
