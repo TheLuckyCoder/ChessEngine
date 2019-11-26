@@ -11,9 +11,9 @@ class FenParser
 public:
 	FenParser(Board &board);
 
-	void parseFen(const std::string &fen) noexcept;
-	std::string exportToFen() noexcept;
+	void parseFen(const std::string &fen);
+	std::string exportToFen();
 
 private:
-	void parsePieces(std::istringstream &stream) noexcept;
+	void parsePieces(std::istringstream &stream);
 };

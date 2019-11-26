@@ -29,5 +29,6 @@ private:
 	static Score evaluateBishop(const Piece &piece, byte square, const Board &board) noexcept;
 	static Score evaluateRook(const Piece &piece, byte square, const Board &board) noexcept;
 	static Score evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept;
-	inline static Score evaluateKing(byte square) noexcept;
+	inline static Score
+	evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept;
 };

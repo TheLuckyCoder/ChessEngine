@@ -3,7 +3,7 @@
 #include "../algorithm/Hash.h"
 #include "../persistence/FenParser.h"
 
-void Board::initDefaultBoard() noexcept
+void Board::initDefaultBoard()
 {
 	setToFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
@@ -141,11 +141,13 @@ Phase Board::getPhase() const noexcept
 
 bool Board::hasValidState() const noexcept
 {
+	const Color previousPlayer = oppositeColor(colorToMove);
+
     if (state == State::INVALID)
         return false;
-    if (colorToMove == WHITE && (state == State::WHITE_IN_CHECK || state == State::WINNER_BLACK))
+    if (previousPlayer == WHITE && (state == State::WHITE_IN_CHECK || state == State::WINNER_BLACK))
         return false;
-    if (colorToMove == BLACK && (state == State::BLACK_IN_CHECK || state == State::WINNER_WHITE))
+    if (previousPlayer == BLACK && (state == State::BLACK_IN_CHECK || state == State::WINNER_WHITE))
         return false;
 
     return true;
@@ -163,48 +165,8 @@ std::vector<std::pair<Pos, Piece>> Board::getAllPieces() const
 	return pieces;
 }
 
-std::vector<Board> Board::listQuiescenceMoves() const
-{
-	const auto pieces = Player::getAllOwnedPieces(colorToMove, *this);
-	std::vector<Board> moves;
-	moves.reserve(50);
-
-	for (const auto &pair : pieces)
-	{
-		const byte startSq = pair.first;
-		const Piece &selectedPiece = pair.second;
-		U64 possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
-
-		while (possibleMoves)
-		{
-			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-			const Piece &destPiece = getPiece(destSq);
-			if (!destPiece || destPiece.type == PieceType::KING)
-				continue;
-
-			Board board = *this;
-			board.doMove(startSq, destSq);
-
-			if (!board.hasValidState())
-                continue;
-
-			board.score = Evaluation::simpleEvaluation(board);
-
-			moves.push_back(board);
-		}
-	}
-
-	if (colorToMove)
-		std::sort(moves.begin(), moves.end(), std::greater<>());
-	else
-		std::sort(moves.begin(), moves.end());
-
-	return moves;
-}
-
 void Board::doMove(const byte startSq, const byte destSq, const bool updateState) noexcept
 {
-	const Color whiteIsMoving = colorToMove;
 	const Piece &startPiece = getPiece(startSq);
 	const Piece &destPiece = getPiece(destSq);
 	const U64 startBb = Bitboard::shiftedBoards[startSq];
@@ -212,13 +174,12 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 
 	score = 0;
 	state = State::NONE;
-	colorToMove = oppositeColor(colorToMove);
 	isPromotion = isCapture = false;
 	++halfMoveClock;
 
-	getType(whiteIsMoving, startPiece.type) &= ~startBb;
-	getType(oppositeColor(whiteIsMoving), destPiece.type) &= ~destBb;
-	getType(whiteIsMoving, startPiece.type) |= destBb;
+	getType(colorToMove, startPiece.type) &= ~startBb;
+	getType(oppositeColor(colorToMove), destPiece.type) &= ~destBb;
+	getType(colorToMove, startPiece.type) |= destBb;
 
 	Hash::flipSide(zKey);
 	Hash::makeMove(zKey, startSq, destSq, startPiece, destPiece);
@@ -249,8 +210,49 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 	getPiece(startSq) = Piece();
 	updateNonPieceBitboards();
 
+	colorToMove = oppositeColor(colorToMove);
+
 	if (updateState)
 		this->updateState();
+}
+
+std::vector<Board> Board::listQuiescenceMoves() const
+{
+	const auto pieces = Player::getAllOwnedPieces(colorToMove, *this);
+	std::vector<Board> moves;
+	moves.reserve(50);
+
+	for (const auto &pair : pieces)
+	{
+		const byte startSq = pair.first;
+		const Piece &selectedPiece = pair.second;
+		U64 possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
+
+		while (possibleMoves)
+		{
+			const byte destSq = Bitboard::findNextSquare(possibleMoves);
+			const Piece &destPiece = getPiece(destSq);
+			if (!destPiece || destPiece.type == PieceType::KING)
+				continue;
+
+			Board board = *this;
+			board.doMove(startSq, destSq);
+
+			if (!board.hasValidState())
+				continue;
+
+			board.score = Evaluation::simpleEvaluation(board);
+
+			moves.push_back(board);
+		}
+	}
+
+	if (colorToMove)
+		std::sort(moves.begin(), moves.end(), std::greater<>());
+	else
+		std::sort(moves.begin(), moves.end());
+
+	return moves;
 }
 
 bool Board::movePawn(const byte startSq, const byte destSq)

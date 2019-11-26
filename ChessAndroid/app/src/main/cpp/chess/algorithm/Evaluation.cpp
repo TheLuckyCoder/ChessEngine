@@ -63,47 +63,26 @@ constexpr S QUEEN_MOBILITY[] =
 
 short Evaluation::simpleEvaluation(const Board &board) noexcept
 {
-	if (board.state == State::DRAW)
+	if (board.state == State::INVALID || board.state == State::DRAW)
 		return 0;
 	if (board.state == State::WINNER_WHITE)
 		return VALUE_WINNER_WHITE;
 	if (board.state == State::WINNER_BLACK)
 		return VALUE_WINNER_BLACK;
 	
-	short score{};
+	short score[2]{};
 	for (byte i = 0; i < 64u; i++)
-		if (const Piece &piece = board.getPiece(i); piece)
-		{
-			const short points = [&]() -> short {
-				switch (piece.type)
-				{
-					case PAWN:
-						return Psqt::s_PawnSquares[i].mg;
-					case KNIGHT:
-						return Psqt::s_KnightSquares[i].mg;
-					case BISHOP:
-						return Psqt::s_BishopSquares[i].mg;
-					case ROOK:
-						return Psqt::s_RookSquares[i].mg;
-					case QUEEN:
-						return Psqt::s_QueenSquares[i].mg;
-					case KING:
-						return Psqt::s_KingSquares[i].mg;
-					default:
-						return 0;
-				}
-			}();
+	{
+		const Piece &piece = board.getPiece(i);
+		score[piece.isWhite] += Psqt::s_Bonus[piece.type][i].mg;
+	}
 
-			if (piece.isWhite) score += points; else score -= points;
-		}
-
-	return score;
+	return score[WHITE] - score[BLACK];
 }
 
 short Evaluation::evaluate(const Board &board) noexcept
 {
-	assert(board.state != State::INVALID);
-	if (board.state == State::DRAW)
+	if (board.state == State::INVALID || board.state == State::DRAW)
 		return 0;
 	if (board.state == State::WINNER_WHITE)
 		return VALUE_WINNER_WHITE;
@@ -187,7 +166,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 				case QUEEN:
 					return evaluateQueen(piece, i, board);
 				case KING:
-					return evaluateKing(i);
+					return evaluateKing(piece, i, board);
 				default:
 					return Score();
 				}
@@ -195,20 +174,6 @@ short Evaluation::evaluate(const Board &board) noexcept
 
 			if (piece.isWhite) totalScore += points; else totalScore -= points;
 		}
-
-	if (board.isCastled(WHITE))
-		totalScore.mg += 57;
-	else {
-		const int count = static_cast<int>(board.canCastleKs(WHITE)) + static_cast<int>(board.canCastleQs(WHITE));
-		totalScore.mg += count * 23;
-	}
-
-	if (board.isCastled(BLACK))
-		totalScore.mg -= 57;
-	else {
-		const int count = static_cast<int>(board.canCastleKs(BLACK)) + static_cast<int>(board.canCastleQs(BLACK));
-		totalScore.mg -= count * 23;
-	}
 
 	if (board.state == State::BLACK_IN_CHECK)
 	{
@@ -233,7 +198,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Boar
 							   const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept
 {
 	const Pos pos(square);
-	Score value = Psqt::s_PawnSquares[square];
+	Score value = Psqt::s_Bonus[PAWN][square];
 
 	const Color color = toColor(piece.isWhite);
 	const byte behind = color ? -1 : 1;
@@ -304,7 +269,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Boar
 
 inline Score Evaluation::evaluateKnight(const Piece &piece, const byte square, const Board &board) noexcept
 {
-	Score value = Psqt::s_KnightSquares[square];
+	Score value = Psqt::s_Bonus[KNIGHT][square];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateKnightMoves(piece, square, board));
 	value += KNIGHT_MOBILITY[mobility];
@@ -315,7 +280,7 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const byte square, c
 Score Evaluation::evaluateBishop(const Piece &piece, const byte square, const Board &board) noexcept
 {
 	const Pos pos(square);
-	Score value = Psqt::s_BishopSquares[square];
+	Score value = Psqt::s_Bonus[BISHOP][square];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateBishopMoves(piece, square, board));
 	value += BISHOP_MOBILITY[mobility];
@@ -324,7 +289,7 @@ Score Evaluation::evaluateBishop(const Piece &piece, const byte square, const Bo
 	const auto isLongDiagonalBishop = [&] {
 		if (pos.y - pos.x == 0 || pos.y - (7 - pos.x) == 0)
 		{
-			byte x = pos.x, y = pos.y;
+			auto [x, y] = pos;
 			if (std::min<byte>(x, 7u - x) > 2) return false;
 			for (byte i = std::min<byte>(x, 7u - x); i < 4; i++)
 			{
@@ -347,7 +312,7 @@ Score Evaluation::evaluateRook(const Piece &piece, const byte square, const Boar
 {
 	const Pos pos(square);
 	const Color color = toColor(piece.isWhite);
-	Score value = Psqt::s_RookSquares[pos.toSquare()];
+	Score value = Psqt::s_Bonus[ROOK][pos.toSquare()];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateRookMoves(piece, pos.toSquare(), board));
 	value += ROOK_MOBILITY[mobility];
@@ -387,14 +352,13 @@ Score Evaluation::evaluateRook(const Piece &piece, const byte square, const Boar
 Score Evaluation::evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept
 {
 	const Pos pos(square);
-	Score value = Psqt::s_QueenSquares[square];
+	Score value = Psqt::s_Bonus[QUEEN][square];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateQueenMoves(piece, square, board));
 	value += QUEEN_MOBILITY[mobility];
 
-	const U64 originalPosition = FILE_D & (piece.isWhite ? RANK_1 : RANK_7);
-
-	if ((originalPosition & Bitboard::shiftedBoards[square]) ==0)
+	if (const U64 originalPosition = FILE_D & (piece.isWhite ? RANK_1 : RANK_8);
+		(originalPosition & Bitboard::shiftedBoards[square]) == 0ull)
 		value.mg -= 30;
 
 	const auto weak = [&] {
@@ -423,7 +387,19 @@ Score Evaluation::evaluateQueen(const Piece &piece, const byte square, const Boa
 	return value;
 }
 
-inline Score Evaluation::evaluateKing(const byte square) noexcept
+inline Score
+Evaluation::evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept
 {
-	return Psqt::s_KingSquares[square];
+	const Color color = toColor(piece.isWhite);
+	Score value = Psqt::s_Bonus[KNIGHT][square];
+
+	if (board.isCastled(color))
+		value.mg += 57;
+	else {
+		const int count = static_cast<int>(board.canCastleKs(color))
+						+ static_cast<int>(board.canCastleQs(color));
+		value.mg += count * 23;
+	}
+
+	return value;
 }

@@ -8,7 +8,7 @@ FenParser::FenParser(Board &board)
 {
 }
 
-void FenParser::parseFen(const std::string &fen) noexcept
+void FenParser::parseFen(const std::string &fen)
 {
 	std::istringstream fenStream(fen);
 
@@ -47,19 +47,22 @@ void FenParser::parseFen(const std::string &fen) noexcept
 	fenStream >> token;
 	//board.enPassant = token == "-" ? 0ull : 1 << x;
 
-	// Halfmove clock
-	fenStream >> board.halfMoveClock;
+
+	// Halfmove Clock
+	int halfMove;
+	fenStream >> halfMove;
+	board.halfMoveClock = static_cast<byte>(halfMove);
 
 	board.updateNonPieceBitboards();
 	board.zKey = Hash::compute(board);
 }
 
-std::string FenParser::exportToFen() noexcept
+std::string FenParser::exportToFen()
 {
 	return std::string();
 }
 
-void FenParser::parsePieces(std::istringstream &stream) noexcept
+void FenParser::parsePieces(std::istringstream &stream)
 {
 	std::string token;
 

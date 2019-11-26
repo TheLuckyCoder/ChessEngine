@@ -32,11 +32,11 @@ public:
 	short npm{};
 
 	Board() = default;
-	Board(Board&&) = default;
+	Board(Board&&) noexcept = default;
 	Board(const Board &board) = default;
 	~Board() = default;
 
-	Board &operator=(Board&&) = default;
+	Board &operator=(Board&&) noexcept = default;
 	Board &operator=(const Board &other) = default;
 
 	Piece &operator[](const Pos &pos) noexcept;
@@ -45,7 +45,7 @@ public:
 	bool operator<(const Board &other) const noexcept;
 	bool operator>(const Board &other) const noexcept;
 
-	void initDefaultBoard() noexcept;
+	void initDefaultBoard();
 	void setToFen(const std::string &fen);
 
 	bool canCastle(Color color) const noexcept;
@@ -66,11 +66,10 @@ public:
 	Phase getPhase() const noexcept;
 	std::vector<std::pair<Pos, Piece>> getAllPieces() const;
 
+	void doMove(byte startSq, byte destSq, bool updateState = true) noexcept;
 	template<class T> // RootMove or Board
 	std::vector<T> listValidMoves() const noexcept;
 	std::vector<Board> listQuiescenceMoves() const;
-
-	void doMove(byte startSq, byte destSq, bool updateState = true) noexcept;
 
 private:
 	bool movePawn(byte startSq, byte destSq);

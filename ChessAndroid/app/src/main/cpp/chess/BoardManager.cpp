@@ -1,10 +1,7 @@
 #include "BoardManager.h"
 
-#include <cassert>
-
 #include "Stats.h"
 #include "data/Board.h"
-#include "algorithm/Evaluation.h"
 #include "algorithm/Hash.h"
 #include "algorithm/NegaMax.h"
 #include "algorithm/PieceAttacks.h"
