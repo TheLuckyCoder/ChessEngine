@@ -9,7 +9,6 @@ class Settings;
 class NegaMax final
 {
 	static bool s_QuiescenceSearchEnabled;
-	static std::size_t s_ThreadCount;
 	static TranspositionTable s_SearchCache;
 	static short s_BestMoveFound;
 

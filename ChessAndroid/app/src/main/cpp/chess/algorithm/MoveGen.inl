@@ -54,9 +54,7 @@ U64 MoveGen<T>::generateKnightMoves(const Piece &piece, const byte square, const
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
-	else if (T == KING_DANGER) {
-		// Do nothing
-	} else if (T == CAPTURES)
+	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
@@ -67,19 +65,14 @@ U64 MoveGen<T>::generateKnightMoves(const Piece &piece, const byte square, const
 template <GenType T>
 U64 MoveGen<T>::generateBishopMoves(const Piece &piece, const byte square, const Board &board)
 {
-	U64 occupancy = board.occupied;
-
-	if constexpr (T == KING_DANGER)
-		occupancy &= ~board.getType(toColor(piece.isWhite), PieceType::KING); // Remove the king
-
-	U64 attacks = PieceAttacks::getBishopAttacks(square, occupancy);
+	U64 attacks = PieceAttacks::getBishopAttacks(square, board.occupied);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= occupancy; // Keep only the pieces
+		attacks &= board.occupied; // Keep only the pieces
 
 	return attacks;
 }
@@ -87,19 +80,14 @@ U64 MoveGen<T>::generateBishopMoves(const Piece &piece, const byte square, const
 template <GenType T>
 U64 MoveGen<T>::generateRookMoves(const Piece &piece, const byte square, const Board &board)
 {
-	U64 occupancy = board.occupied;
-
-	if constexpr (T == KING_DANGER)
-		occupancy &= ~board.getType(toColor(piece.isWhite), PieceType::KING); // Remove their king
-
-	U64 attacks = PieceAttacks::getRookAttacks(square, occupancy);
+	U64 attacks = PieceAttacks::getRookAttacks(square, board.occupied);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= occupancy; // Keep only the pieces
+		attacks &= board.occupied; // Keep only the pieces
 
 	return attacks;
 }
@@ -107,20 +95,15 @@ U64 MoveGen<T>::generateRookMoves(const Piece &piece, const byte square, const B
 template <GenType T>
 U64 MoveGen<T>::generateQueenMoves(const Piece &piece, const byte square, const Board &board)
 {
-	U64 occupancy = board.occupied;
-
-	if constexpr (T == KING_DANGER)
-		occupancy &= ~board.getType(toColor(piece.isWhite), PieceType::KING); // Remove their king
-
-	U64 attacks = PieceAttacks::getBishopAttacks(square, occupancy)
-				| PieceAttacks::getRookAttacks(square, occupancy);
+	U64 attacks = PieceAttacks::getBishopAttacks(square, board.occupied)
+				| PieceAttacks::getRookAttacks(square, board.occupied);
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
 	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
-		attacks &= occupancy; // Keep only the pieces
+		attacks &= board.occupied; // Keep only the pieces
 
 	return attacks;
 }
@@ -132,14 +115,12 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 
 	if constexpr (T == ALL)
 		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
-	else if (T == KING_DANGER) {
-		// Do Nothing
-	} else if (T == CAPTURES)
+	else if (T == CAPTURES)
 		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
 
-	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES || T == KING_DANGER)
+	if constexpr (T == CAPTURES || T == ATTACKS_DEFENSES)
 		return attacks;
 
 	U64 opponentsMoves{};
@@ -156,13 +137,6 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 
 		attacks &= ~opponentsMoves;
 	}
-
-	/*U64 opponentsMoves{};
-	MoveGen<KING_DANGER>::forEachAttack(!piece.isWhite, board, [&] (const U64 enemyAttacks) -> bool {
-		opponentsMoves |= enemyAttacks;
-		attacks &= ~enemyAttacks; // Remove Attacked Positions
-		return static_cast<bool>(attacks);
-	});*/
 
 	if (!attacks)
 		return 0ull;
@@ -188,11 +162,7 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 		&& isEmptyAndCheckFree(5)
 		&& isEmptyAndCheckFree(6))
 	{
-		// This shouldn't be needed because the Castling rights would not exist
-		/*if (const auto &other = board.getPiece(7, y);
-			other.type == PieceType::ROOK
-			&& piece.isSameColor(other))*/
-			attacks |= Pos(6, y).toBitboard();
+		attacks |= Pos(6, y).toBitboard();
 	}
 
 	// Queen Side
@@ -201,10 +171,7 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 		&& isEmptyAndCheckFree(2)
 		&& !board.getPiece(1, y))
 	{
-		/*if (const auto &other = board.getPiece(0, y);
-			other.type == PieceType::ROOK
-			&& piece.isSameColor(other))*/
-			attacks |= Pos(2, y).toBitboard();
+		attacks |= Pos(2, y).toBitboard();
 	}
 
 	return attacks;

@@ -4,8 +4,7 @@ enum GenType : unsigned char
 {
 	ALL,
 	CAPTURES,
-	ATTACKS_DEFENSES,
-	KING_DANGER
+	ATTACKS_DEFENSES
 };
 
 template<GenType T>
