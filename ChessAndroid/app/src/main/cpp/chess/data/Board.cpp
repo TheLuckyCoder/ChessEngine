@@ -228,12 +228,13 @@ std::vector<Board> Board::listQuiescenceMoves() const
 		const Piece &selectedPiece = pair.second;
 		U64 possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
 
+		assert(possibleMoves == (possibleMoves & allPieces[oppositeColor(colorToMove)]));
+		// Make sure we are not capturing the king
+		possibleMoves &= getType(colorToMove, KING);
+
 		while (possibleMoves)
 		{
 			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-			const Piece &destPiece = getPiece(destSq);
-			if (!destPiece || destPiece.type == PieceType::KING)
-				continue;
 
 			Board board = *this;
 			board.doMove(startSq, destSq);

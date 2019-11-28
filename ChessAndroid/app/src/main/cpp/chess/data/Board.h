@@ -115,12 +115,12 @@ std::vector<T> Board::listValidMoves() const noexcept
 		const Piece &selectedPiece = pair.second;
 		U64 possibleMoves = selectedPiece.getPossibleMoves(startSq, *this);
 
+		// Make sure we are not capturing the king
+		possibleMoves &= getType(colorToMove, KING);
+
 		while (possibleMoves)
 		{
 			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-			const auto &destPiece = getPiece(destSq);
-			if (destPiece.type == PieceType::KING)
-				continue;
 
 			Board board = *this;
 			board.doMove(startSq, destSq);
