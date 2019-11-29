@@ -23,8 +23,8 @@ public:
 	bool isPromotion = false;
 	bool isCapture = false;
 	byte castlingRights = CastlingRights::CASTLE_WHITE | CastlingRights::CASTLE_BLACK;
-	U64 enPassant{};
 	byte halfMoveClock{};
+	U64 enPassant{};
 	U64 occupied{};
 	std::array<U64, 2> allPieces{};
 	std::array<std::array<U64, 7>, 2> pieces{};

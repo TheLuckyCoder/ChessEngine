@@ -27,7 +27,7 @@ RootMove NegaMax::findBestMove(const Board &board, const Settings &settings)
 
 	// If the Transposition Table wasn't resized, clean it
 	if (!s_SearchCache.setSize(settings.getCacheTableSizeMb()))
-		s_SearchCache.clear();
+		s_SearchCache.incrementAge();
 	NegaMaxThreadPool::updateThreadCount(threadCount);
 
 	if (board.getPhase() == Phase::ENDING)
@@ -112,7 +112,10 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 
 	const short originalAlpha = alpha;
 	if (const SearchCache cache = s_SearchCache[board.zKey];
-		board.zKey == cache.key && board.score == cache.boardScore && cache.ply == ply)
+		cache.age == s_SearchCache.currentAge()
+		&& board.zKey == cache.key
+		&& board.score == cache.boardScore
+		&& cache.ply == ply)
 	{
 		if (cache.flag == Flag::EXACT)
 			return cache.value;
