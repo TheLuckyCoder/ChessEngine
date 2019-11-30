@@ -8,7 +8,7 @@ enum Color : bool
 
 constexpr Color toColor(const bool isWhite)
 {
-	return static_cast<Color>(isWhite);
+	return isWhite ? WHITE : BLACK;
 }
 
 constexpr Color oppositeColor(const Color color)

@@ -45,6 +45,7 @@ void FenParser::parseFen(const std::string &fen)
 
 	// TODO: En passant target square
 	fenStream >> token;
+	board.enPassantSq = 64u;
 	//board.enPassant = token == "-" ? 0ull : 1 << x;
 
 

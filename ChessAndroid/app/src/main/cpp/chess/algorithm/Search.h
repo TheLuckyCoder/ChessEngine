@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../containers/TranspositionTable.h"
+#include "../threads/ThreadPool.hpp"
 
 class Board;
 class RootMove;
@@ -8,8 +9,9 @@ class Settings;
 
 class Search final
 {
-	static bool s_QuiescenceSearchEnabled;
+	static ThreadPool s_ThreadPool;
 	static TranspositionTable s_SearchCache;
+	static bool s_QuiescenceSearchEnabled;
 	static short s_BestMoveFound;
 
 public:

@@ -19,9 +19,10 @@ void Hash::init()
 	std::mt19937_64 mt(rd());
 	std::uniform_int_distribution<U64> dist(0, UINT64_MAX);
 
-	for (byte i = 0; i < 64; ++i)
-		for (byte p = 0; p < 12; p++)
-			s_Pieces[i][p] = dist(mt);
+	for (auto &i : s_Pieces)
+		for (auto &color : i)
+			for (auto &piece : color)
+				piece = dist(mt);
 
 	for (auto &rights : s_CastlingRights)
 		rights = dist(mt);
@@ -31,7 +32,7 @@ void Hash::init()
 
 U64 Hash::movePiece(const byte sq, const Piece &piece)
 {
-	return s_Pieces[sq][indexOf(piece)];
+	return s_Pieces[sq][piece.isWhite][piece.type - 1u];
 }
 
 U64 Hash::compute(const Board &board)
@@ -40,21 +41,14 @@ U64 Hash::compute(const Board &board)
 
 	for (byte i = 0; i < 64; ++i)
 		if (const Piece &piece = board.getPiece(i); piece)
-			hash ^= s_Pieces[i][indexOf(piece)];
+			hash ^= s_Pieces[i][piece.isWhite][piece.type - 1u];
 
 	if (board.colorToMove)
 		hash ^= s_WhiteToMove;
 
-	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
+	addCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
 
 	return hash;
-}
-
-byte Hash::indexOf(const Piece& piece)
-{
-	byte type = static_cast<byte>(piece.type  - 1u);
-	if (piece.isWhite) type += 6u;
-	return type;
 }
 
 void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece, const Piece &destPiece)
@@ -72,15 +66,15 @@ void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Pi
 void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceType promotedType)
 {
 	// Remove the Pawn
-	key ^= s_Pieces[sq][indexOf(Piece(PieceType::PAWN, color))];
+	key ^= s_Pieces[sq][color][PAWN - 1u];
 
 	// Add the Promoted Piece
-	key ^= s_Pieces[sq][indexOf(Piece(promotedType, color))];
+	key ^= s_Pieces[sq][color][promotedType - 1u];
 }
 
 void Hash::xorPiece(U64 &key, const byte sq, const Piece &piece)
 {
-	key ^= s_Pieces[sq][indexOf(piece)];
+	key ^= s_Pieces[sq][piece.isWhite][piece.type - 1u];
 }
 
 void Hash::flipSide(U64 &key)
@@ -88,7 +82,7 @@ void Hash::flipSide(U64 &key)
 	key ^= Hash::s_WhiteToMove;
 }
 
-void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
+void Hash::addCastlingRights(U64 &key, const CastlingRights rights)
 {
 	if (rights & CASTLE_WHITE_KING)
 		key ^= s_CastlingRights[0];
@@ -99,4 +93,18 @@ void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
 		key ^= s_CastlingRights[2];
 	if (rights & CASTLE_BLACK_QUEEN)
 		key ^= s_CastlingRights[3];
+}
+
+void Hash::removeCastlingRights(U64 &key, const CastlingRights rights)
+{
+	// Remove them in the opposite order they were added in
+	if (rights & CASTLE_BLACK_QUEEN)
+		key ^= s_CastlingRights[3];
+	if (rights & CASTLE_BLACK_KING)
+		key ^= s_CastlingRights[2];
+
+	if (rights & CASTLE_WHITE_QUEEN)
+		key ^= s_CastlingRights[1];
+	if (rights & CASTLE_WHITE_KING)
+		key ^= s_CastlingRights[0];
 }

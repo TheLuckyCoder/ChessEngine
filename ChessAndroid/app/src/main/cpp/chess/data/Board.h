@@ -24,7 +24,7 @@ public:
 	bool isCapture = false;
 	byte castlingRights = CastlingRights::CASTLE_WHITE | CastlingRights::CASTLE_BLACK;
 	byte halfMoveClock{};
-	U64 enPassant{};
+	byte enPassantSq{};
 	U64 occupied{};
 	std::array<U64, 2> allPieces{};
 	std::array<std::array<U64, 7>, 2> pieces{};

@@ -9,8 +9,7 @@ using U64 = std::uint64_t;
 
 class Hash final
 {
-private:
-	using HashArray = std::array<std::array<U64, 12>, 64>;
+	using HashArray = std::array<std::array<std::array<U64, 6>, 2>, 64>;
 
 	static HashArray s_Pieces;
 	static U64 s_WhiteToMove;
@@ -21,6 +20,9 @@ public:
 	Hash(const Hash&) = delete;
 	Hash(Hash&&) = delete;
 
+	Hash &operator=(const Hash&) = delete;
+	Hash &operator=(Hash&&) = delete;
+
 	static void init();
 	static U64 movePiece(byte sq, const Piece &piece);
 	static U64 compute(const Board &board);
@@ -29,8 +31,6 @@ public:
 	static void promotePawn(U64 &key, byte sq, Color color, PieceType promotedType);
 	static void xorPiece(U64 &key, byte sq, const Piece &piece);
 	static void flipSide(U64 &key);
-	static void xorCastlingRights(U64 &key, CastlingRights rights);
-
-private:
-	static byte indexOf(const Piece &piece);
+	static void addCastlingRights(U64 &key, CastlingRights rights);
+	static void removeCastlingRights(U64 &key, CastlingRights rights);
 };

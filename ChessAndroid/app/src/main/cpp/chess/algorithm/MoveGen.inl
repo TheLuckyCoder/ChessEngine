@@ -7,16 +7,22 @@
 #include "../data/Bitboard.h"
 
 template <GenType T>
-U64 MoveGen<T>::generatePawnMoves(const Piece &piece, byte square, const Board &board)
+U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const Board &board)
 {
 	U64 attacks = PieceAttacks::getPawnAttacks(piece.isWhite, square);
 
 	if constexpr (T == ALL || T == CAPTURES)
 	{
 		U64 captures = attacks & board.allPieces[!piece.isWhite];
+
+		/*if (board.enPassantSq < 64)
+		{ 
+			Pos capturedPos(board.enPassantSq);
+			capturedPos.y += static_cast<byte>(piece.isWhite ? -1 : 1);
+			// Keep the en-passant capture if it intersect with one of our potential attacks
+			captures |= attacks & Bitboard::shiftedBoards[board.enPassantSq];
+		}*/
 		
-		// Keep the en-passant capture if it intersect with one of our potential attacks
-		captures |= attacks & board.enPassant;
 		attacks = captures;
 	}
 	else if (T == ATTACKS_DEFENSES)
