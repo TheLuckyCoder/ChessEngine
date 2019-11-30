@@ -116,7 +116,7 @@ std::vector<T> Board::listValidMoves() const noexcept
 		U64 possibleMoves = selectedPiece.getPossibleMoves(startSq, *this);
 
 		// Make sure we are not capturing the king
-		possibleMoves &= getType(colorToMove, KING);
+		possibleMoves &= ~getType(colorToMove, KING);
 
 		while (possibleMoves)
 		{

@@ -230,7 +230,7 @@ std::vector<Board> Board::listQuiescenceMoves() const
 
 		assert(possibleMoves == (possibleMoves & allPieces[oppositeColor(colorToMove)]));
 		// Make sure we are not capturing the king
-		possibleMoves &= getType(colorToMove, KING);
+		possibleMoves &= ~getType(colorToMove, KING);
 
 		while (possibleMoves)
 		{

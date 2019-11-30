@@ -15,6 +15,7 @@ short NegaMax::s_BestMoveFound{};
 RootMove NegaMax::findBestMove(const Board &board, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<RootMove>();
+	assert(!validMoves.empty());
 	
 	for (const RootMove &move : validMoves)
 		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
@@ -25,7 +26,7 @@ RootMove NegaMax::findBestMove(const Board &board, const Settings &settings)
 	const auto threadCount = settings.getThreadCount();
 	s_QuiescenceSearchEnabled = settings.performQuiescenceSearch();
 
-	// If the Transposition Table wasn't resized, clean it
+	// If the Transposition Table wasn't resized, increment its age
 	if (!s_SearchCache.setSize(settings.getCacheTableSizeMb()))
 		s_SearchCache.incrementAge();
 	NegaMaxThreadPool::updateThreadCount(threadCount);
@@ -90,7 +91,7 @@ RootMove NegaMax::negaMaxRoot(const std::vector<RootMove> &validMoves, const uns
 	for (auto &future : futures)
 		future.get(); // Wait for the Search to finish
 
-	s_BestMoveFound = alpha;
+	s_BestMoveFound = validMoves.front().board.colorToMove ? alpha : -alpha;
 
 	return bestMove;
 }

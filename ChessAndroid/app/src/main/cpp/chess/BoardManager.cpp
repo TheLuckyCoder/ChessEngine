@@ -21,7 +21,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 
 	s_MovesHistory.clear();
 	s_MovesHistory.reserve(200);
-	s_MovesHistory.emplace_back(0u, 0u, s_Board);
+	s_MovesHistory.emplace_back(64u, 64u, s_Board);
 
 	Stats::resetStats();
 
@@ -37,18 +37,22 @@ void BoardManager::loadGame(const std::vector<std::pair<byte, byte>> &moves, con
 
 	s_Board.initDefaultBoard();
 
-	s_MovesHistory.emplace_back(0u, 0u, s_Board);
+	s_MovesHistory.clear();
+	s_MovesHistory.emplace_back(64u, 64u, s_Board);
 
     try {
         for (const auto &move : moves)
         {
-            s_Board.doMove(move.first, move.second);
-            s_Board.score = Evaluation::evaluate(s_Board);
-            s_MovesHistory.emplace_back(move.first, move.second, s_Board);
+			s_Board.doMove(move.first, move.second);
+			s_Board.score = Evaluation::evaluate(s_Board);
+			s_MovesHistory.emplace_back(move.first, move.second, s_Board);
         }
     } catch (...) {
-        // Couldn't load all moves correctly
-    }
+        // Couldn't load all moves correctly, fallback to the original board
+        s_Board.initDefaultBoard();
+        s_MovesHistory.clear();
+		s_MovesHistory.emplace_back(64u, 64u, s_Board);
+	}
 
 	s_Listener(s_Board.state, true, {});
 }
@@ -107,13 +111,12 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	assert(s_Board.colorToMove != toColor(s_IsPlayerWhite));
 	const RootMove bestMove = NegaMax::findBestMove(s_Board, settings);
 
 	Stats::stopTimer();
-	s_IsWorking = false;
 	movePiece(bestMove.startSq, bestMove.destSq, false);
 
+	s_IsWorking = false;
 	s_WorkerThread.detach();
 }
 
