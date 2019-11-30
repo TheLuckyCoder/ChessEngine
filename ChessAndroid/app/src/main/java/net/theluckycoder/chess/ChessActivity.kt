@@ -82,7 +82,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             preferences.firstStart = false
             // Set Default Settings
             preferences.settings =
-                Settings(4, Runtime.getRuntime().availableProcessors() - 1, 200, true)
+                Settings(4, Runtime.getRuntime().availableProcessors() - 1, 100, true)
         }
 
         gameManager.initBoard(false)
@@ -121,15 +121,14 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         pieces.forEach {
             if (it.value.res == drawable)
-                it.value.isInChess = true
+                it.value.isInCheck = true
         }
     }
 
     private fun movePiece(view: TileView) {
         if (!selectedPos.isValid || !canMove) return
 
-        val startPos = selectedPos
-        gameManager.makeMove(startPos, view.pos)
+        gameManager.makeMove(selectedPos, view.pos)
         clearTiles(true)
         selectedPos = Pos()
 
@@ -154,8 +153,12 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         if (gameManager.statsEnabled) {
             tv_debug.visibility = View.VISIBLE
-            tv_debug.text =
-                getString(R.string.stats, Native.getStats(), Native.getBoardValue(), Native.getBestMoveFound())
+            tv_debug.text = getString(
+                R.string.stats,
+                Native.getStats(),
+                Native.getBoardValue(),
+                Native.getBestMoveFound()
+            )
         } else {
             tv_debug.visibility = View.GONE
         }
@@ -185,8 +188,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             setKingInChess(false)
         } else {
             pieces.forEach {
-                if (it.value.isInChess)
-                    it.value.isInChess = false
+                if (it.value.isInCheck)
+                    it.value.isInCheck = false
             }
         }
     }
@@ -221,23 +224,21 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         }
         tiles.clear()
 
-        for (i in 0..7) {
-            for (j in 0..7) {
-                val pos = Pos(invertIf(!isPlayerWhite, i), invertIf(isPlayerWhite, j))
-                val isWhite = (i + j) % 2 == 0
+        for (i in 0 until 64) {
+            val pos = Pos(i % 8, i / 8)
+            val isWhite = (pos.x + pos.y) % 2 == 0
 
-                val xSize = invertIf(!isPlayerWhite, pos.x.toInt()) * viewSize
-                val ySize = invertIf(isPlayerWhite, pos.y.toInt()) * viewSize
+            val xSize = pos.x * viewSize
+            val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
 
-                val tileView = TileView(this, isWhite, pos, this).apply {
-                    layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
-                    x = xSize.toFloat()
-                    y = ySize.toFloat()
-                }
-
-                tiles[pos] = tileView
-                layout_board.addView(tileView)
+            val tileView = TileView(this, isWhite, pos, this).apply {
+                layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
+                x = xSize.toFloat()
+                y = ySize.toFloat()
             }
+
+            tiles[pos] = tileView
+            layout_board.addView(tileView)
         }
     }
 
@@ -251,10 +252,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             val isWhite = it.type in 1..6
             val resource = PieceResourceManager.piecesResources[it.type.toInt() - 1]
             val clickable = isWhite == isPlayerWhite
-            val xSize = invertIf(!isPlayerWhite, it.x.toInt()) * viewSize
-            val ySize = invertIf(isPlayerWhite, it.y.toInt()) * viewSize
 
             val pos = Pos(it.x, it.y)
+
+            val xSize = pos.x * viewSize
+            val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
 
             val pieceView = PieceView(this, clickable, resource, pos, this).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
@@ -280,8 +282,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 it.pos = destPos
 
                 // Calculate the new View Position
-                val xPos = invertIf(!isPlayerWhite, destPos.x.toInt()) * viewSize
-                val yPos = invertIf(isPlayerWhite, destPos.y.toInt()) * viewSize
+                val xPos = destPos.x * viewSize
+                val yPos = invertIf(isPlayerWhite, destPos.y) * viewSize
 
                 it.animate()
                     .x(xPos.toFloat())
@@ -295,9 +297,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 layout_board.removeView(destView)
 
                 val type = PieceResourceManager.piecesResources.indexOf(destView.res) + 1
-                val piece = Piece(destView.pos.x, destView.pos.y, type.toByte())
+                val piece =
+                    Piece(destView.pos.x, invertIf(isPlayerWhite, destView.pos.y), type.toByte())
 
-                if (isPlayerWhite) capturedPieces.addBlackPiece(piece) else capturedPieces.addWhitePiece(piece)
+                if (isPlayerWhite)
+                    capturedPieces.addBlackPiece(piece)
+                else
+                    capturedPieces.addWhitePiece(piece)
             }
 
             pieceView?.let {

@@ -68,7 +68,12 @@ class GameManager(
 
     fun makeMove(startPos: Pos, destPos: Pos) {
         Native.enableStats(statsEnabled)
-        Native.movePiece(startPos.x, startPos.y, destPos.x, destPos.y)
+        Native.movePiece(
+            startPos.x.toByte(),
+            startPos.y.toByte(),
+            destPos.x.toByte(),
+            destPos.y.toByte()
+        )
     }
 
     private fun getPiecesList() = Native.getPieces().filter { it.type.toInt() != 0 }

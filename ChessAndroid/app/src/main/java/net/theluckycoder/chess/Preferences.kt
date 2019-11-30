@@ -15,7 +15,7 @@ class Preferences(private val context: Context) {
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
         const val KEY_TILE_SELECTED = "key_tile_selected"
         const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
-        const val KEY_KING_IN_CHESS = "key_king_in_chess"
+        const val KEY_KING_IN_CHECK = "key_king_in_check"
         const val KEY_RESET_COLORS = "key_reset_colors"
 
         const val KEY_DEPTH = "key_depth"
@@ -54,15 +54,15 @@ class Preferences(private val context: Context) {
         set(value) = manager.edit().putInt(KEY_TILE_LAST_MOVED, value).apply()
 
     var kingInChessColor
-        get() = manager.getInt(KEY_KING_IN_CHESS, getColor(context, R.color.king_in_chess))
-        set(value) = manager.edit().putInt(KEY_KING_IN_CHESS, value).apply()
+        get() = manager.getInt(KEY_KING_IN_CHECK, getColor(context, R.color.king_in_check))
+        set(value) = manager.edit().putInt(KEY_KING_IN_CHECK, value).apply()
 
     var settings
         get() = Settings(
             baseSearchDepth = manager.getString(KEY_DEPTH, null)?.toIntOrNull() ?: 4,
             threadCount = manager.getString(KEY_THREADS, null)?.toIntOrNull()
                 ?: Runtime.getRuntime().availableProcessors() - 1,
-            cacheSize = manager.getString(KEY_CACHE_SIZE, null)?.toIntOrNull() ?: 200,
+            cacheSize = manager.getString(KEY_CACHE_SIZE, null)?.toIntOrNull() ?: 100,
             performQuiescenceSearch = manager.getBoolean(KEY_QUIET_SEARCH, true)
         )
         set(value) {

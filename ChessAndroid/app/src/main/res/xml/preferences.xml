@@ -40,7 +40,7 @@
             app:cpv_showAlphaSlider="true" />
 
         <com.jaredrummler.android.colorpicker.ColorPreference
-            android:defaultValue="@color/king_in_chess"
+            android:defaultValue="@color/king_in_check"
             android:key="key_king_in_chess"
             android:title="King In Chess Color"
             app:cpv_colorShape="circle"

@@ -5,5 +5,5 @@
     <color name="tile_selected">#ef4fc3f7</color>
     <color name="tile_possible">#CC32BF37</color>
     <color name="tile_last_moved">#8CFBC02D</color>
-    <color name="king_in_chess">#aadd0000</color>
+    <color name="king_in_check">#aadd0000</color>
 </resources>

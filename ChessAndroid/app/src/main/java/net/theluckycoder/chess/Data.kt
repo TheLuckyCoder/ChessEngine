@@ -11,9 +11,9 @@ enum class State {
 
 data class Piece(
     @JvmField
-    val x: Byte,
+    val x: Int,
     @JvmField
-    val y: Byte,
+    val y: Int,
     @JvmField
     val type: Byte
 ) {
@@ -30,13 +30,15 @@ data class Piece(
 
 data class Pos(
     @JvmField
-    val x: Byte,
+    val x: Int,
     @JvmField
-    val y: Byte
+    val y: Int
 ) {
 
     constructor() : this(8, 8)
-    constructor(x: Int, y: Int) : this(x.toByte(), y.toByte())
+    constructor(square: Byte) : this(square % 8, square / 8)
+
+    fun invertIf(invert: Boolean) = Pos(x, if (invert) 7 - y else y)
 
     val isValid
         get() = (x in 0..7 && y in 0..7)
@@ -44,13 +46,13 @@ data class Pos(
 
 data class PosPair(
     @JvmField
-    val startX: Byte,
+    val startX: Int,
     @JvmField
-    val startY: Byte,
+    val startY: Int,
     @JvmField
-    val destX: Byte,
+    val destX: Int,
     @JvmField
-    val destY: Byte
+    val destY: Int
 )
 
 class Settings(
