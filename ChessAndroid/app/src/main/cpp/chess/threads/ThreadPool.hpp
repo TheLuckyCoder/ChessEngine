@@ -2,120 +2,26 @@
 
 #include "ThreadSafeQueue.hpp"
 
-#include <algorithm>
 #include <atomic>
-#include <cstdint>
 #include <functional>
 #include <future>
-#include <memory>
 #include <thread>
 #include <type_traits>
-#include <utility>
 #include <vector>
 
 class ThreadPool
 {
-	class IThreadTask
-	{
-	public:
-		IThreadTask() = default;
-		virtual ~IThreadTask() = default;
-		IThreadTask(const IThreadTask&) = delete;
-		IThreadTask &operator=(const IThreadTask&) = delete;
-		IThreadTask(IThreadTask&&) noexcept = default;
-		IThreadTask &operator=(IThreadTask&&) noexcept = default;
-
-		/**
-		 * Run the task.
-		 */
-		virtual void execute() = 0;
-	};
-
-	template <typename Func>
-	class ThreadTask : public IThreadTask
-	{
-	public:
-		explicit ThreadTask(Func &&func)
-			: m_func{ std::move(func) } {}
-
-		~ThreadTask() override = default;
-		ThreadTask(const ThreadTask &rhs) = delete;
-		ThreadTask &operator=(const ThreadTask &rhs) = delete;
-		ThreadTask(ThreadTask&&) noexcept = default;
-		ThreadTask &operator=(ThreadTask&&) noexcept = default;
-
-		/**
-		 * Run the task.
-		 */
-		void execute() override
-		{
-			m_func();
-		}
-
-	private:
-		Func m_func;
-	};
-
 public:
-	/**
-	 * A wrapper around a std::future that adds the behavior of futures returned from std::async.
-	 * Specifically, this object will block and wait for execution to finish before going out of scope.
-	 */
-	template <typename T = void>
-	class TaskFuture
+
+	explicit ThreadPool(const std::size_t numThreads = std::thread::hardware_concurrency())
+		: m_Done{ false }
 	{
-	public:
-		explicit TaskFuture(std::future<T> &&future)
-			: m_future{ std::move(future) } {}
-
-		TaskFuture(const TaskFuture &rhs) = delete;
-		TaskFuture &operator=(const TaskFuture &rhs) = delete;
-		TaskFuture(TaskFuture &&other) = default;
-		TaskFuture &operator=(TaskFuture &&other) = default;
-		~TaskFuture()
-		{
-			if (m_future.valid())
-				m_future.get();
-		}
-
-		auto get()
-		{
-			return m_future.get();
-		}
-
-		bool ready(const std::size_t millis) const
-		{
-			return m_future.wait_for(std::chrono::milliseconds(millis)) == std::future_status::ready;
-		}
-
-
-	private:
-		std::future<T> m_future;
-	};
-
-public:
-	/**
-	 * Constructor.
-	 */
-	ThreadPool()
-		: ThreadPool { std::max(std::thread::hardware_concurrency() - 1u, 2u) }
-	{
-		/*
-		 * Always create at least two threads.
-		 */
-	}
-
-	/**
-	 * Constructor.
-	 */
-	explicit ThreadPool(const std::size_t numThreads)
-		: m_done{ false }
-	{
-		m_threads.reserve(numThreads);
+		m_Threads.reserve(numThreads);
 		try
 		{
 			for (auto i = 0u; i < numThreads; ++i)
-				m_threads.emplace_back(&ThreadPool::worker, this);
+				m_Threads.emplace_back(&ThreadPool::worker, this);
+			m_WaitingThreads = numThreads;
 		}
 		catch (...)
 		{
@@ -144,7 +50,7 @@ public:
 
 	std::size_t threadCount() const noexcept
 	{
-		return m_threads.size();
+		return m_Threads.size();
 	}
 
 	void updateThreadCount(const std::size_t numThreads) noexcept(false)
@@ -153,49 +59,64 @@ public:
 
 		if (numThreads < currentThreadCount)
 		{
-			m_done = true;
-			for (auto &thread : m_threads)
-				if (thread.joinable())
-					thread.join();
-
-			m_threads.reserve(numThreads);
-			m_threads.clear();
-
-			try
+			// Destroy all the threads and invalidate the queue
 			{
+				m_Done = true;
+				m_Queue.invalidate();
+				for (auto &thread : m_Threads)
+					if (thread.joinable())
+						thread.join();
+
+				m_Threads.clear();
+			}
+
+			{
+				m_Threads.reserve(numThreads);
+				m_Done = false;
+
+				m_Queue.~ThreadSafeQueue();
+				new(&m_Queue) QueueType();
+
 				for (auto i = 0u; i < numThreads; ++i)
-					m_threads.emplace_back(&ThreadPool::worker, this);
+					m_Threads.emplace_back(&ThreadPool::worker, this);
+				
+				m_WaitingThreads = numThreads;
 			}
-			catch (...)
-			{
-				destroy();
-				throw;
-			}
-
-			m_done = false;
 		} else if (numThreads > currentThreadCount) {
-			m_threads.reserve(numThreads);
+			// Add the extra number of threads necessary
+			m_Threads.reserve(numThreads);
 
 			for (auto i = currentThreadCount; i < numThreads; ++i)
-				m_threads.emplace_back(&ThreadPool::worker, this);
-		}
+				m_Threads.emplace_back(&ThreadPool::worker, this);
 
-		// Else the size should be the same
+			m_WaitingThreads = numThreads;
+		}
+		
+
+		// Otherwise the size should be the same
 	}
 
-	/**
-	 * Submit a job to be run by the thread pool.
-	 */
-	template <typename ResultType, typename Func, typename... Args>
-	TaskFuture<ResultType> submit(Func &&func, Args &&...args)
-	{
-		auto boundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-		using PackagedTask = std::packaged_task<ResultType()>;
-		using TaskType = ThreadTask<PackagedTask>;
 
-		PackagedTask task{ std::move(boundTask) };
-		TaskFuture<ResultType> result{ task.get_future() };
-		m_workQueue.push(std::make_unique<TaskType>(std::move(task)));
+	template <typename Func, typename... Args>
+	void submitWork(Func &&func, Args &&...args)
+	{
+		auto work = [func, args...] { func(args...); };
+		m_Queue.push(work);
+	}
+
+	template <typename Func, typename... Args>
+	auto submitTask(Func &&func, Args &&...args) -> std::future<std::invoke_result_t<Func, Args...>>
+	{
+		using ReturnType = std::invoke_result_t<Func, Args...>;
+		auto task = std::make_shared<std::packaged_task<ReturnType()>>(
+			std::bind(std::forward<Func>(func),
+			std::forward<Args>(args)...)
+		);
+		std::future<ReturnType> result = task->get_future();
+
+		auto work = [task] { (*task)(); };
+		m_Queue.push(work);
+
 		return result;
 	}
 
@@ -205,11 +126,16 @@ private:
 	 */
 	void worker()
 	{
-		while (!m_done)
+		while (!m_Done)
 		{
-			std::unique_ptr<IThreadTask> pTask{ nullptr };
-			if (m_workQueue.waitPop(pTask))
-				pTask->execute();
+			Proc func;
+			if (m_Queue.waitPop(func))
+			{
+				--m_WaitingThreads;
+				func();
+				if (++m_WaitingThreads == threadCount())
+					m_JoinCondition.notify_one();
+			}
 		}
 	}
 
@@ -218,15 +144,20 @@ private:
 	 */
 	void destroy()
 	{
-		m_done = true;
-		m_workQueue.invalidate();
-		for (auto &thread : m_threads)
+		m_Done = true;
+		m_Queue.invalidate();
+		for (auto &thread : m_Threads)
 			if (thread.joinable())
 				thread.join();
 	}
 
 private:
-	std::atomic_bool m_done;
-	ThreadSafeQueue<std::unique_ptr<IThreadTask>> m_workQueue;
-	std::vector<std::thread> m_threads;
+	using Proc = std::function<void(void)>;
+	using QueueType = ThreadSafeQueue<Proc>;
+
+	std::atomic_bool m_Done;
+	QueueType m_Queue;
+	std::vector<std::thread> m_Threads;
+	std::atomic_size_t m_WaitingThreads;
+	std::condition_variable m_JoinCondition;
 };

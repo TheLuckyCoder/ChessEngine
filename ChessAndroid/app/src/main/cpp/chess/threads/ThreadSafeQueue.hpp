@@ -10,9 +10,6 @@ template <typename T>
 class ThreadSafeQueue
 {
 public:
-	/**
-		* Destructor.
-		*/
 	~ThreadSafeQueue()
 	{
 		invalidate();
@@ -22,73 +19,70 @@ public:
 		* Attempt to get the first value in the queue.
 		* Returns true if a value was successfully written to the out parameter, false otherwise.
 		*/
-	bool tryPop(T& out)
+	bool tryPop(T &out)
 	{
-		std::lock_guard<std::mutex> lock{ m_mutex };
-		if (m_queue.empty() || !m_valid)
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		if (m_Queue.empty() || !m_Valid)
 		{
 			return false;
 		}
-		out = std::move(m_queue.front());
-		m_queue.pop();
+		out = std::move(m_Queue.front());
+		m_Queue.pop();
 		return true;
 	}
 
 	/**
-		* Get the first value in the queue.
-		* Will block until a value is available unless clear is called or the instance is destructed.
-		* Returns true if a value was successfully written to the out parameter, false otherwise.
-		*/
-	bool waitPop(T& out)
+	 * Get the first value in the queue.
+	 * Will block until a value is available unless clear is called or the instance is destructed.
+	 * Returns true if a value was successfully written to the out parameter, false otherwise.
+	 */
+	bool waitPop(T &out)
 	{
-		std::unique_lock<std::mutex> lock{ m_mutex };
-		m_condition.wait(lock, [this]()
+		std::unique_lock<std::mutex> lock{ m_Mutex };
+		m_Condition.wait(lock, [this]()
 		{
-			return !m_queue.empty() || !m_valid;
+			return !m_Queue.empty() || !m_Valid;
 		});
 		/*
-			* Using the condition in the predicate ensures that spurious wakeups with a valid
-			* but empty queue will not proceed, so only need to check for validity before proceeding.
-			*/
-		if (!m_valid)
-		{
+		 * Using the condition in the predicate ensures that spurious wakeups with a valid
+		 * but empty queue will not proceed, so only need to check for validity before proceeding.
+		 */
+		if (!m_Valid)
 			return false;
-		}
-		out = std::move(m_queue.front());
-		m_queue.pop();
+		
+		out = std::move(m_Queue.front());
+		m_Queue.pop();
 		return true;
 	}
 
-	/**
-		* Push a new value onto the queue.
-		*/
-	void push(T value)
+	void push(const T &value)
 	{
-		std::lock_guard<std::mutex> lock{ m_mutex };
-		m_queue.push(std::move(value));
-		m_condition.notify_one();
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		m_Queue.push(value);
+		m_Condition.notify_one();
+	}
+	
+	void push(T &&value)
+	{
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		m_Queue.push(std::move(value));
+		m_Condition.notify_one();
 	}
 
-	/**
-		* Check whether or not the queue is empty.
-		*/
 	bool empty() const
 	{
-		std::lock_guard<std::mutex> lock{ m_mutex };
-		return m_queue.empty();
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		return m_Queue.empty();
 	}
 
-	/**
-		* Clear all items from the queue.
-		*/
 	void clear()
 	{
-		std::lock_guard<std::mutex> lock{ m_mutex };
-		while (!m_queue.empty())
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		while (!m_Queue.empty())
 		{
-			m_queue.pop();
+			m_Queue.pop();
 		}
-		m_condition.notify_all();
+		m_Condition.notify_all();
 	}
 
 	/**
@@ -100,23 +94,20 @@ public:
 		*/
 	void invalidate()
 	{
-		std::lock_guard<std::mutex> lock{ m_mutex };
-		m_valid = false;
-		m_condition.notify_all();
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		m_Valid = false;
+		m_Condition.notify_all();
 	}
 
-	/**
-		* Returns whether or not this queue is valid.
-		*/
 	bool isValid() const
 	{
-		std::lock_guard<std::mutex> lock{ m_mutex };
-		return m_valid;
+		std::lock_guard<std::mutex> lock{ m_Mutex };
+		return m_Valid;
 	}
 
 private:
-	std::atomic_bool m_valid{ true };
-	mutable std::mutex m_mutex;
-	std::queue<T> m_queue;
-	std::condition_variable m_condition;
+	std::atomic_bool m_Valid{ true };
+	mutable std::mutex m_Mutex;
+	std::queue<T> m_Queue;
+	std::condition_variable m_Condition;
 };

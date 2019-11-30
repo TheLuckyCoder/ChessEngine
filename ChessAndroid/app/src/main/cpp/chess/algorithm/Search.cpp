@@ -6,10 +6,10 @@
 
 #include "../Stats.h"
 #include "../data/Board.h"
-#include "../threads/NegaMaxThreadPool.h"
 
-bool Search::s_QuiescenceSearchEnabled{};
+ThreadPool Search::s_ThreadPool(1);
 TranspositionTable Search::s_SearchCache(1);
+bool Search::s_QuiescenceSearchEnabled{};
 short Search::s_BestMoveFound{};
 
 RootMove Search::findBestMove(const Board &board, const Settings &settings)
@@ -29,7 +29,10 @@ RootMove Search::findBestMove(const Board &board, const Settings &settings)
 	// If the Transposition Table wasn't resized, increment its age
 	if (!s_SearchCache.setSize(settings.getCacheTableSizeMb()))
 		s_SearchCache.incrementAge();
-	NegaMaxThreadPool::updateThreadCount(threadCount);
+
+	// Update ThreadPool size if needed
+	if (s_ThreadPool.threadCount() != threadCount)
+		s_ThreadPool.updateThreadCount(threadCount);
 
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
@@ -44,16 +47,16 @@ short Search::getBestMoveFound()
 
 RootMove Search::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsigned jobCount, const short ply)
 {
-	std::vector<ThreadPool::TaskFuture<void>> futures;
+	std::vector<std::future<void>> futures;
 	futures.reserve(jobCount);
-
 	std::mutex mutex;
+	
 	RootMove bestMove = validMoves.front();
 	auto currentMove = validMoves.begin();
 	const auto lastMove = validMoves.end();
 	short alpha = VALUE_MIN;
 
-	const auto doWork = [&] {
+	const auto worker = [&] {
 		mutex.lock();
 
 		while (currentMove != lastMove)
@@ -77,19 +80,22 @@ RootMove Search::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsi
 		mutex.unlock();
 	};
 
-	futures.emplace_back(NegaMaxThreadPool::submitJob(doWork));
+	// Initially create only use thread
+	futures.emplace_back(s_ThreadPool.submitTask(worker));
 
-	if (jobCount > 1) {
+	if (jobCount > 1)
+	{
 		// Wait until an alpha bound has been found
 		while (alpha == VALUE_MIN)
 			std::this_thread::yield();
 
+		// After an alpha bound was found start searching using multiple threads
 		for (unsigned i = 1u; i < jobCount; ++i)
-			futures.emplace_back(NegaMaxThreadPool::submitJob(doWork));
+			futures.emplace_back(s_ThreadPool.submitTask(worker));
 	}
 
 	for (auto &future : futures)
-		future.get(); // Wait for the Search to finish
+		future.get(); // Wait for the search to finish
 
 	s_BestMoveFound = oppositeColor(validMoves.front().board.colorToMove) ? alpha : -alpha;
 
