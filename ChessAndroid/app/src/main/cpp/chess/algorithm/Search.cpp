@@ -1,4 +1,4 @@
-#include "NegaMax.h"
+#include "Search.h"
 
 #include <algorithm>
 #include <atomic>
@@ -8,11 +8,11 @@
 #include "../data/Board.h"
 #include "../threads/NegaMaxThreadPool.h"
 
-bool NegaMax::s_QuiescenceSearchEnabled{};
-TranspositionTable NegaMax::s_SearchCache(1);
-short NegaMax::s_BestMoveFound{};
+bool Search::s_QuiescenceSearchEnabled{};
+TranspositionTable Search::s_SearchCache(1);
+short Search::s_BestMoveFound{};
 
-RootMove NegaMax::findBestMove(const Board &board, const Settings &settings)
+RootMove Search::findBestMove(const Board &board, const Settings &settings)
 {
 	const auto validMoves = board.listValidMoves<RootMove>();
 	assert(!validMoves.empty());
@@ -37,12 +37,12 @@ RootMove NegaMax::findBestMove(const Board &board, const Settings &settings)
 	return negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth);
 }
 
-short NegaMax::getBestMoveFound()
+short Search::getBestMoveFound()
 {
 	return s_BestMoveFound;
 }
 
-RootMove NegaMax::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsigned jobCount, const short ply)
+RootMove Search::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsigned jobCount, const short ply)
 {
 	std::vector<ThreadPool::TaskFuture<void>> futures;
 	futures.reserve(jobCount);
@@ -91,12 +91,12 @@ RootMove NegaMax::negaMaxRoot(const std::vector<RootMove> &validMoves, const uns
 	for (auto &future : futures)
 		future.get(); // Wait for the Search to finish
 
-	s_BestMoveFound = validMoves.front().board.colorToMove ? alpha : -alpha;
+	s_BestMoveFound = oppositeColor(validMoves.front().board.colorToMove) ? alpha : -alpha;
 
 	return bestMove;
 }
 
-short NegaMax::negaMax(const Board &board, const short ply, short alpha, short beta, const short depth, const bool moveCountPruning)
+short Search::negaMax(const Board &board, const short ply, short alpha, short beta, const short depth, const bool moveCountPruning)
 {
 	if (board.state == State::DRAW)
 		return 0;
@@ -210,7 +210,7 @@ short NegaMax::negaMax(const Board &board, const short ply, short alpha, short b
 	return alpha;
 }
 
-short NegaMax::quiescence(const Board &board, short alpha, const short beta)
+short Search::quiescence(const Board &board, short alpha, const short beta)
 {
 	if (board.state == State::DRAW)
 		return 0;
@@ -225,8 +225,8 @@ short NegaMax::quiescence(const Board &board, short alpha, const short beta)
 	// Delta Pruning
 	if (board.getPhase() != Phase::ENDING) // Turn it off in the Endgame
 	{
-		constexpr short QUEEN_VALUE = 2529;
-		constexpr short PAWN_VALUE = 136;
+		constexpr short QUEEN_VALUE = 2538;
+		constexpr short PAWN_VALUE = 128;
 
 		short bigDelta = QUEEN_VALUE;
 		if (board.isPromotion)
@@ -257,7 +257,7 @@ short NegaMax::quiescence(const Board &board, short alpha, const short beta)
 	return alpha;
 }
 
-short NegaMax::negaScout(const Board &board, const short ply, short alpha, const short beta, const bool isWhite, const short depth)
+short Search::negaScout(const Board &board, const short ply, short alpha, const short beta, const bool isWhite, const short depth)
 {
 	if (board.state == State::DRAW)
 		return 0;
@@ -294,7 +294,7 @@ short NegaMax::negaScout(const Board &board, const short ply, short alpha, const
 	return bestScore;
 }
 
-inline short NegaMax::sideToMove(const Board &board)
+inline short Search::sideToMove(const Board &board)
 {
 	const short value = Evaluation::evaluate(board);
 	return board.colorToMove ? value : -value;

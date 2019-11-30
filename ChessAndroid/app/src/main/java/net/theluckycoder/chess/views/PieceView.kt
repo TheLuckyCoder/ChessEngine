@@ -6,7 +6,7 @@ import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Paint
 import net.theluckycoder.chess.ChessActivity
-import net.theluckycoder.chess.PieceResourceManager
+import net.theluckycoder.chess.utils.PieceResourceManager
 import net.theluckycoder.chess.Pos
 
 @SuppressLint("ViewConstructor")

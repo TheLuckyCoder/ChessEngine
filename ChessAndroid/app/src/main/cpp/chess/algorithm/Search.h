@@ -6,16 +6,16 @@ class Board;
 class RootMove;
 class Settings;
 
-class NegaMax final
+class Search final
 {
 	static bool s_QuiescenceSearchEnabled;
 	static TranspositionTable s_SearchCache;
 	static short s_BestMoveFound;
 
 public:
-	NegaMax() = delete;
-	NegaMax(const NegaMax&) = delete;
-	NegaMax(NegaMax&&) = delete;
+	Search() = delete;
+	Search(const Search&) = delete;
+	Search(Search&&) = delete;
 
 	static RootMove findBestMove(const Board &board, const Settings &settings);
 	static short getBestMoveFound();

@@ -10,7 +10,7 @@
 #include "chess/Stats.h"
 #include "chess/data/Board.h"
 #include "chess/persistence/MovesPersistence.h"
-#include "chess/algorithm/NegaMax.h"
+#include "chess/algorithm/Search.h"
 
 JavaVM *jvm = nullptr;
 jobject gameManagerInstance;
@@ -220,7 +220,7 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 external JNIEXPORT jint JNICALL
 Java_net_theluckycoder_chess_Native_getBestMoveFound(JNIEnv */*pEnv*/, jclass /*type*/)
 {
-	return static_cast<jint>(NegaMax::getBestMoveFound());
+	return static_cast<jint>(Search::getBestMoveFound());
 }
 
 

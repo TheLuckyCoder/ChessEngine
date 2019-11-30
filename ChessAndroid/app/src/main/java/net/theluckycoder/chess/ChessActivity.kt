@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_chess.*
 import kotlinx.android.synthetic.main.dialog_restart.view.*
 import net.theluckycoder.chess.utils.CapturedPieces
+import net.theluckycoder.chess.utils.PieceResourceManager
 import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
 import net.theluckycoder.chess.views.TileView

@@ -3,7 +3,7 @@
 #include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Hash.h"
-#include "algorithm/NegaMax.h"
+#include "algorithm/Search.h"
 #include "algorithm/PieceAttacks.h"
 
 Settings BoardManager::s_Settings(4u, std::thread::hardware_concurrency() - 1u, 100, true);
@@ -111,7 +111,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	const RootMove bestMove = NegaMax::findBestMove(s_Board, settings);
+	const RootMove bestMove = Search::findBestMove(s_Board, settings);
 
 	Stats::stopTimer();
 	movePiece(bestMove.startSq, bestMove.destSq, false);

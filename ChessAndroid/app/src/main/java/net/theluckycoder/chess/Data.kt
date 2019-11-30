@@ -36,9 +36,8 @@ data class Pos(
 ) {
 
     constructor() : this(8, 8)
-    constructor(square: Byte) : this(square % 8, square / 8)
 
-    fun invertIf(invert: Boolean) = Pos(x, if (invert) 7 - y else y)
+    constructor(square: Byte) : this(square % 8, square / 8)
 
     val isValid
         get() = (x in 0..7 && y in 0..7)
