@@ -8,8 +8,10 @@ import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import kotlinx.android.synthetic.main.activity_chess.*
 import kotlinx.android.synthetic.main.dialog_restart.view.*
+import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.CapturedPieces
 import net.theluckycoder.chess.utils.PieceResourceManager
 import net.theluckycoder.chess.views.CustomView
@@ -25,7 +27,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     private val capturedPieces = CapturedPieces()
     private var viewSize = 0
 
-    val preferences = Preferences(this)
+    val preferences = AppPreferences(this)
     val pieces = HashMap<Pos, PieceView>(32)
 
     private var selectedPos = Pos()
@@ -86,6 +88,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 Settings(4, Runtime.getRuntime().availableProcessors() - 1, 100, true)
         }
 
+        val delegateThemeValue = if (preferences.darkTheme)
+            AppCompatDelegate.MODE_NIGHT_YES
+        else
+            AppCompatDelegate.MODE_NIGHT_NO
+
+        AppCompatDelegate.setDefaultNightMode(delegateThemeValue)
+
         gameManager.initBoard(false)
     }
 
@@ -95,7 +104,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         tiles.forEach {
             it.value.invalidate()
         }
-        gameManager.statsEnabled = preferences.debugInfo
+        gameManager.basicStatsEnabled = preferences.basicDebugInfo
+        gameManager.advancedStatsEnabled = preferences.advancedDebugInfo
         gameManager.updateSettings(preferences.settings)
     }
 
@@ -152,13 +162,18 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     private fun updateState(state: State) {
         canMove = true
 
-        if (gameManager.statsEnabled) {
+        if (gameManager.basicStatsEnabled) {
             tv_debug.visibility = View.VISIBLE
+
+            val advancedStats =
+                if (gameManager.advancedStatsEnabled) "\n" + Native.getAdvancedStats() else ""
+
             tv_debug.text = getString(
-                R.string.stats,
-                Native.getStats(),
-                Native.getBoardValue(),
-                Native.getBestMoveFound()
+                R.string.basic_stats,
+                Native.getSearchTime(),
+                Native.getCurrentBoardValue(),
+                Native.getBestMoveFound(),
+                advancedStats
             )
         } else {
             tv_debug.visibility = View.GONE
@@ -227,7 +242,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         for (i in 0 until 64) {
             val pos = Pos(i % 8, i / 8)
-            val isWhite = (pos.x + pos.y) % 2 == 0
+            val isWhite = (pos.x + pos.y) % 2 == 1
 
             val xSize = pos.x * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize

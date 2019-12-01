@@ -1,15 +1,17 @@
-package net.theluckycoder.chess
+package net.theluckycoder.chess.utils
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
-import net.theluckycoder.chess.utils.getColor
+import androidx.preference.PreferenceManager
+import net.theluckycoder.chess.R
+import net.theluckycoder.chess.Settings
 
-class Preferences(private val context: Context) {
+class AppPreferences(private val context: Context) {
 
     companion object {
         const val KEY_FIRST_START = "key_first_start"
 
+        const val KEY_DARK_THEME = "key_dark_theme"
         const val KEY_TILE_WHITE = "key_tile_white"
         const val KEY_TILE_BLACK = "key_tile_black"
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
@@ -18,11 +20,12 @@ class Preferences(private val context: Context) {
         const val KEY_KING_IN_CHECK = "key_king_in_check"
         const val KEY_RESET_COLORS = "key_reset_colors"
 
-        const val KEY_DEPTH = "key_depth"
-        const val KEY_THREADS = "key_threads"
+        const val KEY_SEARCH_DEPTH = "key_search_depth"
+        const val KEY_THREAD_COUNT = "key_thread_count"
         const val KEY_CACHE_SIZE = "key_cache_size"
         const val KEY_QUIET_SEARCH = "key_quiet_search"
-        const val KEY_DEBUG_INFO = "key_debug_info"
+        const val KEY_DEBUG_INFO_BASIC = "key_debug_basic"
+        const val KEY_DEBUG_INFO_ADVANCED = "key_debug_advanced"
         const val KEY_PERFT_TEST = "key_perft_test"
     }
 
@@ -32,6 +35,9 @@ class Preferences(private val context: Context) {
     var firstStart
         get() = manager.getBoolean(KEY_FIRST_START, true)
         set(value) = manager.edit().putBoolean(KEY_FIRST_START, value).apply()
+
+    val darkTheme
+        get() = manager.getBoolean(KEY_DARK_THEME, false)
 
     var whiteTileColor
         get() = manager.getInt(KEY_TILE_WHITE, getColor(context, R.color.tile_white))
@@ -59,21 +65,29 @@ class Preferences(private val context: Context) {
 
     var settings
         get() = Settings(
-            baseSearchDepth = manager.getString(KEY_DEPTH, null)?.toIntOrNull() ?: 4,
-            threadCount = manager.getString(KEY_THREADS, null)?.toIntOrNull()
-                ?: Runtime.getRuntime().availableProcessors() - 1,
-            cacheSize = manager.getString(KEY_CACHE_SIZE, null)?.toIntOrNull() ?: 100,
+            baseSearchDepth = manager.getInt(KEY_SEARCH_DEPTH, 4),
+            threadCount = manager.getInt(
+                KEY_THREAD_COUNT,
+                Runtime.getRuntime().availableProcessors() - 1
+            ),
+            cacheSize = manager.getString(
+                KEY_CACHE_SIZE,
+                null
+            )?.toIntOrNull() ?: 100,
             performQuiescenceSearch = manager.getBoolean(KEY_QUIET_SEARCH, true)
         )
         set(value) {
             manager.edit()
-                .putString(KEY_DEPTH, value.baseSearchDepth.toString())
-                .putString(KEY_THREADS, value.threadCount.toString())
+                .putInt(KEY_SEARCH_DEPTH, value.baseSearchDepth)
+                .putInt(KEY_THREAD_COUNT, value.threadCount)
                 .putString(KEY_CACHE_SIZE, value.cacheSize.toString())
                 .putBoolean(KEY_QUIET_SEARCH, value.performQuiescenceSearch)
                 .apply()
         }
 
-    val debugInfo
-        get() = manager.getBoolean(KEY_DEBUG_INFO, false)
+    val basicDebugInfo
+        get() = manager.getBoolean(KEY_DEBUG_INFO_BASIC, false)
+
+    val advancedDebugInfo
+        get() = manager.getBoolean(KEY_DEBUG_INFO_ADVANCED, false)
 }

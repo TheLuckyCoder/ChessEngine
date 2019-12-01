@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chess</string>
-    <string name="stats">%sCurrent Board is evaluated at: %d\nBest Move Found: %d</string>
+    <string name="basic_stats">Time Needed: %.3f millis\nCurrent Board is evaluated at: %d\nBest Move Found: %d%s</string>
     <string name="new_game">New Game</string>
     <string name="side">Side:</string>
     <string name="action_restart">Restart</string>
     <string name="settings">Settings</string>
     <string name="undo_move">Undo Move</string>
+
+    <!-- Preferences -->
+    <string name="pref_category_appearance">Appearance</string>
+    <string name="pref_category_difficulty">Difficulty</string>
+    <string name="pref_category_other">Other Algorithm Settings</string>
+    <string name="pref_category_debug">Debugging</string>
 </resources>

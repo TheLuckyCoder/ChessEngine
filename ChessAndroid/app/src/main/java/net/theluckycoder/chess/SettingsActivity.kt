@@ -1,11 +1,17 @@
 package net.theluckycoder.chess
 
 import android.os.Bundle
-import android.preference.PreferenceFragment
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SeekBarPreference
+import androidx.preference.SwitchPreferenceCompat
+import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.getColor
 import kotlin.concurrent.thread
+import kotlin.math.min
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -13,22 +19,21 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        fragmentManager
+        supportFragmentManager
             .beginTransaction()
             .replace(android.R.id.content, SettingsFragment())
             .commit()
     }
 
-    class SettingsFragment : PreferenceFragment() {
+    class SettingsFragment : PreferenceFragmentCompat() {
 
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
+        override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             addPreferencesFromResource(R.xml.preferences)
 
-            findPreference(Preferences.KEY_RESET_COLORS).setOnPreferenceClickListener {
+            findPreference<Preference>(AppPreferences.KEY_RESET_COLORS)?.setOnPreferenceClickListener {
                 val activity = activity ?: return@setOnPreferenceClickListener false
 
-                Preferences(activity).apply {
+                AppPreferences(activity).apply {
                     whiteTileColor = getColor(activity, R.color.tile_white)
                     blackTileColor = getColor(activity, R.color.tile_black)
                     possibleTileColor = getColor(activity, R.color.tile_possible)
@@ -39,7 +44,29 @@ class SettingsActivity : AppCompatActivity() {
                 true
             }
 
-            findPreference(Preferences.KEY_PERFT_TEST).setOnPreferenceClickListener {
+            val threadCountPref = findPreference<SeekBarPreference>(AppPreferences.KEY_THREAD_COUNT)
+            if (threadCountPref != null) {
+                val defaultValue = min(Runtime.getRuntime().availableProcessors() - 1, 1)
+                threadCountPref.setDefaultValue(defaultValue)
+                threadCountPref.max = Runtime.getRuntime().availableProcessors()
+            }
+
+            val darkThemePref =
+                findPreference<SwitchPreferenceCompat>(AppPreferences.KEY_DARK_THEME)
+            if (darkThemePref != null) {
+                darkThemePref.onPreferenceChangeListener =
+                    Preference.OnPreferenceChangeListener { _, newValue ->
+                        val delegateValue = if (newValue == true)
+                            AppCompatDelegate.MODE_NIGHT_YES
+                        else
+                            AppCompatDelegate.MODE_NIGHT_NO
+
+                        AppCompatDelegate.setDefaultNightMode(delegateValue)
+                        true
+                    }
+            }
+
+            findPreference<Preference>(AppPreferences.KEY_PERFT_TEST)?.setOnPreferenceClickListener {
                 thread {
                     Native.perft(5)
                 }

@@ -2,44 +2,50 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="Appearance">
+    <PreferenceCategory android:title="@string/pref_category_appearance">
 
-        <com.jaredrummler.android.colorpicker.ColorPreference
+        <SwitchPreferenceCompat
+            android:key="key_dark_theme"
+            android:summary="An app restart might be needed to fully apply the theme"
+            android:title="Dark Theme"
+            app:defaultValue="false" />
+
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_white"
             android:key="key_tile_white"
             android:title="White Tile Color"
             app:cpv_colorShape="square"
             app:cpv_showAlphaSlider="false" />
 
-        <com.jaredrummler.android.colorpicker.ColorPreference
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_black"
             android:key="key_tile_black"
             android:title="Black Tile Color"
             app:cpv_colorShape="square"
             app:cpv_showAlphaSlider="false" />
 
-        <com.jaredrummler.android.colorpicker.ColorPreference
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_possible"
             android:key="key_tile_possible"
             android:title="Possible Tile Color"
             app:cpv_colorShape="square"
             app:cpv_showAlphaSlider="true" />
 
-        <com.jaredrummler.android.colorpicker.ColorPreference
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_selected"
             android:key="key_tile_selected"
             android:title="Selected Tile Color"
             app:cpv_colorShape="square"
             app:cpv_showAlphaSlider="true" />
 
-        <com.jaredrummler.android.colorpicker.ColorPreference
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_last_moved"
             android:key="key_tile_last_moved"
             android:title="Last Moved Tile Color"
             app:cpv_colorShape="square"
             app:cpv_showAlphaSlider="true" />
 
-        <com.jaredrummler.android.colorpicker.ColorPreference
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/king_in_check"
             android:key="key_king_in_chess"
             android:title="King In Chess Color"
@@ -52,15 +58,18 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Difficulty">
+    <PreferenceCategory android:title="@string/pref_category_difficulty">
 
-        <EditTextPreference
-            android:inputType="number"
-            android:key="key_depth"
-            android:summary="Search Depth of the Algorithm"
-            android:title="Base Search Depth" />
+        <SeekBarPreference
+            android:key="key_search_depth"
+            android:max="9"
+            android:summary="Base Search Depth of the Algorithm. The value can be tweaked by the engine"
+            android:title="Search Depth"
+            app:defaultValue="4"
+            app:min="1"
+            app:showSeekBarValue="true" />
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="key_quiet_search"
             android:summary="Perform a Quiescence Search at the end of each normal search"
@@ -68,31 +77,45 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Other Algorithm Settings">
+    <PreferenceCategory android:title="@string/pref_category_other">
 
-        <EditTextPreference
-            android:inputType="number"
-            android:key="key_threads"
+        <SeekBarPreference
+            android:key="key_thread_count"
             android:summary="Number of Search Threads to be used"
-            android:title="Thread Count" />
+            android:title="Thread Count"
+            app:icon="@drawable/ic_pref_thread_count"
+            app:min="1"
+            app:showSeekBarValue="true" />
 
         <EditTextPreference
             android:inputType="number"
             android:key="key_cache_size"
             android:summary="Specify the size of the Transposition Table in Megabytes"
-            android:title="Cache Size" />
+            android:title="Cache Size"
+            app:icon="@drawable/ic_pref_cache" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Debugging">
+    <PreferenceCategory android:title="@string/pref_category_debug">
 
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:defaultValue="false"
-            android:key="key_debug_info"
-            android:title="Enable Debug Info" />
+            android:key="key_debug_basic"
+            android:summary="Displays Board Evaluation and Search Time"
+            android:title="Enable Debug Info"
+            app:icon="@drawable/ic_pref_debug_info" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:dependency="key_debug_basic"
+            android:key="key_debug_advanced"
+            android:summary="Displays the number of Evaluated Boards and Searched Nodes"
+            android:title="Enable Advanced Debug Info"
+            app:icon="@drawable/ic_pref_stats" />
 
         <Preference
             android:key="key_perft_test"
+            android:summary="Run a Perft Test on the default board"
             android:title="Execute Perft Test" />
 
     </PreferenceCategory>

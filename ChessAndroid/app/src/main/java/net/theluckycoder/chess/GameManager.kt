@@ -26,7 +26,8 @@ class GameManager(
     private var initialized = false
     private var isPlayerWhite = true
 
-    var statsEnabled = false
+    var basicStatsEnabled = false
+    var advancedStatsEnabled = false
     val isWorking
         get() = Native.isWorking()
 
@@ -67,7 +68,7 @@ class GameManager(
     }
 
     fun makeMove(startPos: Pos, destPos: Pos) {
-        Native.enableStats(statsEnabled)
+        Native.enableStats(advancedStatsEnabled)
         Native.movePiece(
             startPos.x.toByte(),
             startPos.y.toByte(),

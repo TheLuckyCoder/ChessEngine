@@ -121,18 +121,33 @@ Java_net_theluckycoder_chess_Native_isPlayerWhite(JNIEnv */*pEnv*/, jclass /*typ
 	return static_cast<jboolean>(BoardManager::isPlayerWhite());
 }
 
+// region Stats
+
+external JNIEXPORT jdouble JNICALL
+Java_net_theluckycoder_chess_Native_getSearchTime(JNIEnv *pEnv, jclass /*type*/)
+{
+	return static_cast<jdouble>(Stats::getElapsedTime());
+}
+
+external JNIEXPORT jint JNICALL
+Java_net_theluckycoder_chess_Native_getCurrentBoardValue(JNIEnv */*pEnv*/, jclass /*type*/)
+{
+	return static_cast<jint>(BoardManager::getBoard().score);
+}
+
+external JNIEXPORT jint JNICALL
+Java_net_theluckycoder_chess_Native_getBestMoveFound(JNIEnv */*pEnv*/, jclass /*type*/)
+{
+	return static_cast<jint>(Search::getBestMoveFound());
+}
 
 external JNIEXPORT jstring JNICALL
-Java_net_theluckycoder_chess_Native_getStats(JNIEnv *pEnv, jclass /*type*/)
+Java_net_theluckycoder_chess_Native_getAdvancedStats(JNIEnv *pEnv, jclass /*type*/)
 {
 	return pEnv->NewStringUTF(Stats::formatStats('\n').c_str());
 }
 
-external JNIEXPORT jint JNICALL
-Java_net_theluckycoder_chess_Native_getBoardValue(JNIEnv */*pEnv*/, jclass /*type*/)
-{
-	return static_cast<jint>(BoardManager::getBoard().score);
-}
+// endregion Stats
 
 external JNIEXPORT _jobjectArray *JNICALL
 Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jclass /*type*/)
@@ -215,12 +230,6 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 	BoardManager::movePiece(
 		Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)).toSquare(),
 		Pos(static_cast<byte>(destX), static_cast<byte>(destY)).toSquare());
-}
-
-external JNIEXPORT jint JNICALL
-Java_net_theluckycoder_chess_Native_getBestMoveFound(JNIEnv */*pEnv*/, jclass /*type*/)
-{
-	return static_cast<jint>(Search::getBestMoveFound());
 }
 
 
