@@ -31,7 +31,7 @@ RootMove Search::findBestMove(const Board &board, const Settings &settings)
 		s_SearchCache.incrementAge();
 
 	// Update ThreadPool size if needed
-	if (s_ThreadPool.threadCount() != threadCount)
+	if (s_ThreadPool.getThreadCount() != threadCount)
 		s_ThreadPool.updateThreadCount(threadCount);
 
 	if (board.getPhase() == Phase::ENDING)

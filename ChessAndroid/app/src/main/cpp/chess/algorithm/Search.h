@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../containers/TranspositionTable.h"
-#include "../threads/ThreadPool.hpp"
+#include "../threads/ThreadPool.h"
 
 class Board;
 class RootMove;
