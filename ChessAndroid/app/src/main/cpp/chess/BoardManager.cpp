@@ -65,15 +65,18 @@ StackVector<Pos, 27> BoardManager::getPossibleMoves(const Pos &selectedPos)
 	const Piece &piece = s_Board.getPiece(startSq);
 	U64 possibleMoves = piece.getPossibleMoves(startSq, s_Board);
 
+	// Make sure we are not capturing the king
+	possibleMoves &= ~s_Board.getType(s_Board.colorToMove, KING);
+
 	while (possibleMoves)
 	{
 		const byte destSq = Bitboard::findNextSquare(possibleMoves);
-		const Piece &destPiece = s_Board.getPiece(destSq);
-		if (destPiece.type == PieceType::KING)
-			continue;
 
 		Board board = s_Board;
 		board.doMove(startSq, destSq);
+
+		if (!board.hasValidState())
+			continue;
 
 		moves.emplace_back(Pos(destSq));
 	}

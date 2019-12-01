@@ -135,12 +135,12 @@ short Search::negaMax(const Board &board, const short ply, short alpha, short be
 			return cache.value;
 	}
 
-	if (Stats::enabled())
-		++Stats::nodesSearched;
-
 	const auto validMoves = board.listValidMoves<Board>();
 	short bestScore = VALUE_MIN;
 	short movesCount = 0;
+
+	Stats::incrementNodesSearched();
+	Stats::incrementNodesGenerated(validMoves.size());
 
 	for (const Board &move : validMoves)
 	{
@@ -244,8 +244,8 @@ short Search::quiescence(const Board &board, short alpha, const short beta)
 
 	const auto validMoves = board.listQuiescenceMoves();
 
-	if (Stats::enabled())
-		++Stats::nodesSearched;
+	Stats::incrementNodesSearched();
+	Stats::incrementNodesGenerated(validMoves.size());
 
 	for (const Board &move : validMoves)
 	{

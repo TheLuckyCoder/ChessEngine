@@ -89,8 +89,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 	if (board.state == State::WINNER_BLACK)
 		return VALUE_WINNER_BLACK;
 
-	if (Stats::enabled())
-		++Stats::boardsEvaluated;
+	Stats::incrementBoardsEvaluated();
 
 	Score totalScore;
 
