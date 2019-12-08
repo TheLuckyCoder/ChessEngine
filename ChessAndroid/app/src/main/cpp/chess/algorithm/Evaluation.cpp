@@ -7,6 +7,9 @@
 
 #define S Score
 
+constexpr short TEMPO_BONUS = 20;
+constexpr S CHECK_BONUS{ 30, 42 };
+
 /*
  * These values were imported from the Stockfish Chess Engine
  */
@@ -70,14 +73,16 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 	if (board.state == State::WINNER_BLACK)
 		return VALUE_WINNER_BLACK;
 	
-	short score[2]{};
+	Score score[2]{};
 	for (byte i = 0; i < 64u; i++)
 	{
 		const Piece &piece = board.getPiece(i);
-		score[piece.isWhite] += Psqt::s_Bonus[piece.type][i].mg;
+		score[piece.isWhite] += Psqt::s_Bonus[piece.type][i];
 	}
 
-	return score[WHITE] - score[BLACK];
+	const Phase phase = board.getPhase();
+	const Score finalScore = score[WHITE] - score[BLACK];
+	return phase == Phase::MIDDLE ? finalScore.mg : finalScore.eg;
 }
 
 short Evaluation::evaluate(const Board &board) noexcept
@@ -91,12 +96,10 @@ short Evaluation::evaluate(const Board &board) noexcept
 
 	Stats::incrementBoardsEvaluated();
 
-	Score totalScore;
-
+	Score totalScore[2]{};
 	byte pawnCount[2]{};
 	byte bishopCount[2]{};
-	short whiteNpm = 0;
-	short blackNpm = 0;
+	short npm[2]{};
 
 	const AttacksMap whiteMoves = Player::getAttacksPerColor(true, board);
 	const AttacksMap blackMoves = Player::getAttacksPerColor(false, board);
@@ -132,20 +135,15 @@ short Evaluation::evaluate(const Board &board) noexcept
 			if (theirAttacks[!isWhite][ROOK] & bb)
 				points -= ROOK_THREATS[piece.type];
 
-			if (isWhite) {
-				whiteNpm += getPieceValue(piece.type);
-				totalScore += points;
-			} else {
-				blackNpm += getPieceValue(piece.type);
-				totalScore -= points;
-			}
+			npm[piece.isWhite] += getPieceValue(piece.type);
+			totalScore[piece.isWhite] += points;
 		}
 
 	// 2 Bishops receive a bonus
 	if (bishopCount[WHITE] >= 2)
-		totalScore += 10;
+		totalScore[WHITE] += 10;
 	if (bishopCount[BLACK] >= 2)
-		totalScore -= 10;
+		totalScore[BLACK] += 10;
 
 	for (byte i = 0; i < 64u; i++)
 		if (const Piece &piece = board.getPiece(i); piece)
@@ -171,26 +169,19 @@ short Evaluation::evaluate(const Board &board) noexcept
 				}
 			}();
 
-			if (piece.isWhite) totalScore += points; else totalScore -= points;
+			totalScore[piece.isWhite] += points;
 		}
 
 	if (board.state == State::BLACK_IN_CHECK)
-	{
-		totalScore.mg += 30;
-		totalScore.eg += 40;
-	}
+		totalScore[WHITE] += CHECK_BONUS;
 	else if (board.state == State::WHITE_IN_CHECK)
-	{
-		totalScore.mg -= 30;
-		totalScore.eg -= 40;
-	}
+		totalScore[BLACK] += CHECK_BONUS;
 
-	// Tempo
-	const int tempo = board.colorToMove ? 20 : -20;
-	totalScore += tempo;
+	totalScore[board.colorToMove] += TEMPO_BONUS;
 
+	const Score finalScore = totalScore[WHITE] - totalScore[BLACK];
 	const Phase phase = board.getPhase();
-	return phase == Phase::MIDDLE ? totalScore.mg : totalScore.eg;
+	return phase == Phase::MIDDLE ? finalScore.mg : finalScore.eg;
 }
 
 Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Board &board,

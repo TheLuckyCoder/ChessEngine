@@ -8,7 +8,7 @@ class Board;
 
 class Evaluation final
 {
-	constexpr static short PIECE_VALUE[] = { 0, 136, 782, 830, 1289, 2529, 0 };
+	constexpr static short PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
 
 public:
 	Evaluation() = delete;
@@ -29,6 +29,5 @@ private:
 	static Score evaluateBishop(const Piece &piece, byte square, const Board &board) noexcept;
 	static Score evaluateRook(const Piece &piece, byte square, const Board &board) noexcept;
 	static Score evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept;
-	inline static Score
-	evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept;
+	inline static Score evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept;
 };

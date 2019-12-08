@@ -15,12 +15,13 @@ constexpr static S QUEEN_SCORE(2538, 2682);
 
 constexpr static S PAWN_SQUARE[][8] = {
 	{ },
-	{ S( 3, -10), S(  3,  -6), S( 10,  10), S( 19,   0), S(16,  14), S( 19,   7), S(  7,  -5), S( -5, -19) },
-	{ S(-9, -10), S(-15, -10), S( 11, -10), S( 15,   4), S(32,   4), S( 22,   3), S(  5,  -6), S(-22,  -4) },
-	{ S(-8,   6), S(-23,  -2), S(  6,  -8), S( 20,  -4), S(40, -13), S( 17, -12), S(  4, -10), S(-12,  -9) },
-	{ S(13,   9), S(  0,   4), S(-13,   3), S(  1, -12), S(11, -12), S( -2,  -6), S(-13,  13), S(  5,   8) },
-	{ S(-5,  28), S(-12,  20), S( -7,  21), S( 22,  28), S(-8,  30), S( -5,   7), S(-15,   6), S(-18,  13) },
-	{ S(-7,   0), S(  7, -11), S( -3,  12), S(-13,  21), S( 5,  25), S(-16,  19), S( 10,   4), S( -8,   7) }
+	{ S(-11, -3), S(  7,  -1), S( 7,   7), S(17,  2) },
+	{ S(-16, -2), S( -3,   2), S( 23,  6), S(23, -1) },
+	{ S(-14,  7), S( -7,  -4), S( 20, -8), S(24,  2) },
+	{ S( -5, 13), S( -2,  10), S( -1, -1), S(12, -8) },
+	{ S(-11, 16), S(-12,   6), S( -2,  1), S( 4, 16) },
+	{ S( -2,  1), S( 20, -12), S(-10,  6), S(-2, 25) },
+	{ }
 };
 
 constexpr static S KNIGHT_SQUARE[][4] = {
@@ -89,7 +90,7 @@ const Psqt::ScoreArray Psqt::s_Bonus = [] {
 		const byte y = row(i);
 		const byte queen_side_y = std::min<byte>(y, 7u - y);
 
-		bonuses[PAWN][i] = PAWN_SCORE + PAWN_SQUARE[x][y];
+		bonuses[PAWN][i] = PAWN_SCORE + PAWN_SQUARE[x][queen_side_y];
 		bonuses[KNIGHT][i] = KNIGHT_SCORE + KNIGHT_SQUARE[x][queen_side_y];
 		bonuses[BISHOP][i] = BISHOP_SCORE + BISHOP_SQUARE[x][queen_side_y];
 		bonuses[ROOK][i] = ROOK_SCORE + ROOK_SQUARE[x][queen_side_y];

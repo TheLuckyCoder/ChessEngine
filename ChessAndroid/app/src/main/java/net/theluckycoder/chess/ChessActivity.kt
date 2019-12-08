@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Point
 import android.os.Bundle
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
@@ -68,7 +69,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             AlertDialog.Builder(this)
                 .setTitle(R.string.new_game)
                 .setView(view)
-                .setPositiveButton(R.string.action_restart) { _, _ ->
+                .setPositiveButton(R.string.action_start) { _, _ ->
                     val playerWhite = when (view.sp_side.selectedItemPosition) {
                         0 -> true
                         1 -> false
@@ -244,7 +245,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             val pos = Pos(i % 8, i / 8)
             val isWhite = (pos.x + pos.y) % 2 == 1
 
-            val xSize = pos.x * viewSize
+            val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
 
             val tileView = TileView(this, isWhite, pos, this).apply {
@@ -271,7 +272,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
             val pos = Pos(it.x, it.y)
 
-            val xSize = pos.x * viewSize
+            val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
 
             val pieceView = PieceView(this, clickable, resource, pos, this).apply {
@@ -298,13 +299,14 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 it.pos = destPos
 
                 // Calculate the new View Position
-                val xPos = destPos.x * viewSize
+                val xPos = invertIf(!isPlayerWhite, destPos.x) * viewSize
                 val yPos = invertIf(isPlayerWhite, destPos.y) * viewSize
 
                 it.animate()
                     .x(xPos.toFloat())
                     .y(yPos.toFloat())
                     .setDuration(250L)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
                     .start()
             }
 
@@ -313,8 +315,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 layout_board.removeView(destView)
 
                 val type = PieceResourceManager.piecesResources.indexOf(destView.res) + 1
-                val piece =
-                    Piece(destView.pos.x, invertIf(isPlayerWhite, destView.pos.y), type.toByte())
+                val piece = Piece(
+                    invertIf(!isPlayerWhite, destView.pos.x),
+                    invertIf(isPlayerWhite, destView.pos.y),
+                    type.toByte()
+                )
 
                 if (isPlayerWhite)
                     capturedPieces.addBlackPiece(piece)

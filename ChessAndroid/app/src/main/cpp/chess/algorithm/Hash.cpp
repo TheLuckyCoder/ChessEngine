@@ -2,7 +2,6 @@
 
 #include <random>
 
-#include "../data/Pos.h"
 #include "../data/Board.h"
 
 Hash::HashArray Hash::s_Pieces{};

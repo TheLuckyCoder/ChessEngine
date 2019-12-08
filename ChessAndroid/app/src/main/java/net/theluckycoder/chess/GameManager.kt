@@ -35,6 +35,7 @@ class GameManager(
 
     fun initBoard(restartGame: Boolean, playerWhite: Boolean = true) {
         initBoardNative(restartGame, playerWhite)
+        Native.enableStats(advancedStatsEnabled)
 
         if (initialized) {
             if (isPlayerWhite != playerWhite) {

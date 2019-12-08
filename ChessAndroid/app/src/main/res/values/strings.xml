@@ -4,7 +4,7 @@
     <string name="basic_stats">Time Needed: %.3f millis\nCurrent Board is evaluated at: %d\nBest Move Found: %d%s</string>
     <string name="new_game">New Game</string>
     <string name="side">Side:</string>
-    <string name="action_restart">Restart</string>
+    <string name="action_start">Start</string>
     <string name="settings">Settings</string>
     <string name="undo_move">Undo Move</string>
 
