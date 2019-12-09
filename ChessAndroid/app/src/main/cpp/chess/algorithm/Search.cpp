@@ -1,9 +1,5 @@
 #include "Search.h"
 
-#include <algorithm>
-#include <atomic>
-#include <mutex>
-
 #include "../Stats.h"
 #include "../data/Board.h"
 
@@ -139,7 +135,6 @@ short Search::negaMax(const Board &board, const short ply, short alpha, short be
 	short bestScore = VALUE_MIN;
 	short movesCount = 0;
 
-	Stats::incrementNodesSearched();
 	Stats::incrementNodesGenerated(validMoves.size());
 
 	for (const Board &move : validMoves)
@@ -200,6 +195,8 @@ short Search::negaMax(const Board &board, const short ply, short alpha, short be
 
 		++movesCount;
 	}
+
+	Stats::incrementNodesSearched(static_cast<size_t>(movesCount));
 
 	// Store the result in the transposition table
 	Flag flag = Flag::EXACT;

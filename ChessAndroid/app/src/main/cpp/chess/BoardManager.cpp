@@ -15,8 +15,10 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 {
     Hash::init();
 	PieceAttacks::init();
+	//MoveOrdering::init();
 
 	s_Board.initDefaultBoard();
+	//s_Board.setToFen("r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1");
 	s_Listener = listener;
 
 	s_MovesHistory.clear();

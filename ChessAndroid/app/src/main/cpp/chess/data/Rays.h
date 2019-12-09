@@ -52,7 +52,6 @@ namespace Rays
 	 *
 	 * @param direction Direction of ray to return
 	 * @param square Square to get ray starting from (in little endian rank file mapping form)
-	 * @return A bitboard containing the given ray in the given direction
 	 */
 	constexpr U64 getRay(const Dir direction, const byte square) noexcept
 	{

@@ -15,25 +15,25 @@ U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const B
 	{
 		U64 captures = attacks & board.allPieces[!piece.isWhite];
 
-		/*if (board.enPassantSq < 64)
-		{ 
+		if (board.enPassantSq < 64u)
+		{
 			Pos capturedPos(board.enPassantSq);
 			capturedPos.y += static_cast<byte>(piece.isWhite ? -1 : 1);
 			// Keep the en-passant capture if it intersect with one of our potential attacks
 			captures |= attacks & Bitboard::shiftedBoards[board.enPassantSq];
-		}*/
+		}
 		
 		attacks = captures;
 	}
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied;
 
-	const U64 initialBb = Bitboard::shiftedBoards[square];
-	Pos pos(square);
-	piece.isWhite ? pos.y++ : pos.y--;
-
 	if constexpr (T == ALL)
 	{
+		const U64 initialBb = Bitboard::shiftedBoards[square];
+		Pos pos(square);
+		piece.isWhite ? pos.y++ : pos.y--;
+
 		if (!board[pos])
 		{
 			attacks |= pos.toBitboard();
@@ -157,10 +157,11 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 	
 	const byte y = row(square);
 	const auto isEmptyAndCheckFree = [&, y](const byte x) {
-		const byte sq = Pos(x, y).toSquare();
+		const byte sq = toSquare(x, y);
 		const U64 bb = Bitboard::shiftedBoards[sq];
 		 
-		return !board.getPiece(x, y) && !(opponentsMoves & bb) && !Player::isAttacked(oppositeColor(color), sq, board);
+		return !board.getPiece(x, y) && !(opponentsMoves & bb)
+			&& !Player::isAttacked(oppositeColor(color), sq, board);
 	};
 
 	// King Side

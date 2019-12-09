@@ -12,8 +12,8 @@
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/algorithm/Search.h"
 
-JavaVM *jvm = nullptr;
-jobject gameManagerInstance;
+static JavaVM *jvm = nullptr;
+static jobject gameManagerInstance;
 
 const BoardManager::PieceChangeListener listener = [](State state, bool shouldRedraw,
 													  const std::vector<std::pair<byte, byte>> &moved)
@@ -23,7 +23,7 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 	if (getEnvStat == JNI_EDETACHED)
 	{
 		jvm->AttachCurrentThread(&env, nullptr);
-		LOGI("ChessCpp", "Attached to Thread");
+		LOGD("ChessCpp", "Attached to Thread");
 	}
 
 	env->ExceptionClear();
@@ -51,7 +51,7 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 	if (getEnvStat == JNI_EDETACHED)
 	{
 		jvm->DetachCurrentThread();
-		LOGI("ChessCpp", "Detached from Thread");
+		LOGD("ChessCpp", "Detached from Thread");
 	}
 };
 
@@ -124,7 +124,7 @@ Java_net_theluckycoder_chess_Native_isPlayerWhite(JNIEnv */*pEnv*/, jclass /*typ
 // region Stats
 
 external JNIEXPORT jdouble JNICALL
-Java_net_theluckycoder_chess_Native_getSearchTime(JNIEnv *pEnv, jclass /*type*/)
+Java_net_theluckycoder_chess_Native_getSearchTime(JNIEnv */*pEnv*/, jclass /*type*/)
 {
 	return static_cast<jdouble>(Stats::getElapsedTime());
 }
@@ -228,8 +228,8 @@ Java_net_theluckycoder_chess_Native_movePiece(JNIEnv */*pEnv*/, jclass /*type*/,
 											  jbyte destY)
 {
 	BoardManager::movePiece(
-		Pos(static_cast<byte>(selectedX), static_cast<byte>(selectedY)).toSquare(),
-		Pos(static_cast<byte>(destX), static_cast<byte>(destY)).toSquare());
+		toSquare(static_cast<byte>(selectedX), static_cast<byte>(selectedY)),
+		toSquare(static_cast<byte>(destX), static_cast<byte>(destY)));
 }
 
 
@@ -243,7 +243,7 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jclass /*type*/, jstring moves)
 {
 	const char *nativeString = pEnv->GetStringUTFChars(moves, nullptr);
-	const MovesPersistence savedMoves = MovesPersistence(nativeString);
+	const MovesPersistence savedMoves(nativeString);
 
 	BoardManager::loadGame(savedMoves.getMoves(), savedMoves.isPlayerWhite());
 
@@ -279,6 +279,7 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jin
 {
 	using namespace std::chrono;
 
+	constexpr auto TAG = "Perft Test";
 	constexpr std::array<U64, 7> perftResults{
 		1, 20, 400, 8902, 197281, 4865609, 119060324
 	};
@@ -292,7 +293,7 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jin
 
 	for (int i = 0; i <= depth; ++i)
 	{
-		LOGV("Perft Test", "Starting Depth %d Test", i);
+		LOGV(TAG, "Starting Depth %d Test", i);
 
 		const auto startTime = high_resolution_clock::now();
 		const U64 nodesCount = perft(board, i);
@@ -300,9 +301,9 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jin
 
 		const auto timeNeeded = duration<double, std::milli>(endTime - startTime).count();
 
-		LOGV("Perft Test", "Time needed: %lf", timeNeeded);
-		LOGV("Perft Test", "Nodes count: %llu/%llu", nodesCount, perftResults[i]);
+		LOGV(TAG, "Time needed: %lf", timeNeeded);
+		LOGV(TAG, "Nodes count: %llu/%llu", nodesCount, perftResults[i]);
 		if (nodesCount != perftResults[i])
-			LOGE("Perft Test Error", "Nodes count do not match at depth %d", i);
+			LOGE(TAG, "Nodes count do not match at depth %d", i);
 	}
 }

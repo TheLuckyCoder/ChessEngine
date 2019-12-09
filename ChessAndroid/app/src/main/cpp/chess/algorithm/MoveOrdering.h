@@ -15,9 +15,9 @@ public:
 		if (initialized) return;
 		initialized = true;
 
-		for (int attacker = PAWN; attacker <= KING; ++attacker)
+		for (byte attacker = PAWN; attacker <= KING; ++attacker)
 		{
-			for (int victim = PAWN; victim <= KING; ++victim)
+			for (byte victim = PAWN; victim <= KING; ++victim)
 			{
 				MvvLvaScore[victim][attacker] = victimScore[victim] + 6 - (victimScore[attacker] / 100);
 			}

@@ -2,32 +2,17 @@
 
 #include <array>
 #include <cassert>
-#include <cstdint>
 
-using byte = unsigned char;
-using U64 = std::uint64_t;
-
-constexpr U64 RANK_1 = 0xffull;
-constexpr U64 RANK_2 = 0xff00ull;
-constexpr U64 RANK_3 = 0xff0000ull;
-constexpr U64 RANK_4 = 0xff000000ull;
-constexpr U64 RANK_5 = 0xff00000000ull;
-constexpr U64 RANK_6 = 0xff0000000000ull;
-constexpr U64 RANK_7 = 0xff000000000000ull;
-constexpr U64 RANK_8 = 0xff00000000000000ull;
-
-constexpr U64 FILE_H = 0x8080808080808080ull;
-constexpr U64 FILE_G = 0x4040404040404040ull;
-constexpr U64 FILE_F = 0x2020202020202020ull;
-constexpr U64 FILE_E = 0x1010101010101010ull;
-constexpr U64 FILE_D = 0x808080808080808ull;
-constexpr U64 FILE_C = 0x404040404040404ull;
-constexpr U64 FILE_B = 0x202020202020202ull;
-constexpr U64 FILE_A = 0x101010101010101ull;
+#include "Defs.h"
 
 constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos / 8u); }
 
 constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos % 8u); }
+
+constexpr byte toSquare(const byte x, const byte y) noexcept
+{
+	return static_cast<byte>((y << 3u) + x);
+}
 
 namespace Bitboard
 {

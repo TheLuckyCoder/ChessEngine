@@ -19,16 +19,31 @@ void Stats::resetStats() noexcept
 	s_NodesGenerated = 0;
 }
 
+size_t Stats::getBoardsEvaluated() noexcept
+{
+	return s_BoardsEvaluated;
+}
+
+size_t Stats::getNodesSearched() noexcept
+{
+	return s_NodesSearched;
+}
+
+size_t Stats::getNodesGenerated() noexcept
+{
+	return s_NodesGenerated;
+}
+
 void Stats::incrementBoardsEvaluated() noexcept
 {
 	if (s_StatsEnabled)
 		++s_BoardsEvaluated;
 }
 
-void Stats::incrementNodesSearched() noexcept
+void Stats::incrementNodesSearched(const std::size_t amount) noexcept
 {
 	if (s_StatsEnabled)
-		++s_NodesSearched;
+		s_NodesSearched += amount;
 }
 
 void Stats::incrementNodesGenerated(const std::size_t amount) noexcept

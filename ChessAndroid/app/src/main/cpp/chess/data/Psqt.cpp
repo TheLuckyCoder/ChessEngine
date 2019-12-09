@@ -13,7 +13,7 @@ constexpr static S BISHOP_SCORE(825, 915);
 constexpr static S ROOK_SCORE(1276, 1380);
 constexpr static S QUEEN_SCORE(2538, 2682);
 
-constexpr static S PAWN_SQUARE[][8] = {
+constexpr static S PAWN_SQUARE[][4] = {
 	{ },
 	{ S(-11, -3), S(  7,  -1), S( 7,   7), S(17,  2) },
 	{ S(-16, -2), S( -3,   2), S( 23,  6), S(23, -1) },

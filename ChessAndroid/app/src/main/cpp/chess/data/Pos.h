@@ -4,8 +4,6 @@
 
 #include "Bitboard.h"
 
-using byte = unsigned char;
-
 class Pos
 {
 public:
@@ -73,7 +71,7 @@ public:
 
 	constexpr byte toSquare() const noexcept
 	{
-		return static_cast<byte>((y << 3u) + x);
+		return ::toSquare(x, y);
 	}
 
 	constexpr U64 toBitboard() const noexcept

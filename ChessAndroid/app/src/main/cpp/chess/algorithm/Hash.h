@@ -2,14 +2,14 @@
 
 #include <array>
 
-#include "../data/Enums.h"
+#include "../data/Defs.h"
 #include "../data/Piece.h"
 
 using U64 = std::uint64_t;
 
 class Hash final
 {
-	using HashArray = std::array<std::array<std::array<U64, 6>, 2>, 64>;
+	using HashArray = std::array<std::array<std::array<U64, 7>, 2>, 64>;
 
 	static HashArray s_Pieces;
 	static U64 s_WhiteToMove;

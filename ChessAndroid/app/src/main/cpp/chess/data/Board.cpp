@@ -16,7 +16,7 @@ void Board::setToFen(const std::string &fen)
 
 bool Board::canCastle(const Color color) const noexcept
 {
-	return castlingRights & (color == BLACK ? CASTLE_BLACK : CASTLE_WHITE);
+	return castlingRights & (color == BLACK ? CASTLE_BLACK_BOTH : CASTLE_WHITE_BOTH);
 }
 
 bool Board::canCastleKs(const Color color) const noexcept
@@ -46,12 +46,12 @@ const Piece &Board::getPiece(const byte squareIndex) const noexcept
 
 Piece &Board::getPiece(const byte x, const byte y) noexcept
 {
-	return data[Pos(x, y).toSquare()];
+	return data[toSquare(x, y)];
 }
 
 const Piece &Board::getPiece(const byte x, const byte y) const noexcept
 {
-	return data[Pos(x, y).toSquare()];
+	return data[toSquare(x, y)];
 }
 
 /*
@@ -228,7 +228,6 @@ std::vector<Board> Board::listQuiescenceMoves() const
 		const Piece &selectedPiece = pair.second;
 		U64 possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
 
-		assert(possibleMoves == (possibleMoves & allPieces[oppositeColor(colorToMove)]));
 		// Make sure we are not capturing the king
 		possibleMoves &= ~getType(colorToMove, KING);
 
@@ -260,7 +259,8 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 {
 	Piece &pawn = getPiece(startSq);
 
-	if (row(destSq) == 0u || row(destSq) == 7u)
+	if (const byte y = row(destSq);
+		y == 0u || y == 7u)
 	{
 		const PieceType newPieceType = PieceType::QUEEN;
 		pawn.type = newPieceType;
@@ -274,7 +274,7 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 		return true;
 	}
 
-	if (enPassantSq < 64)
+	if (enPassantSq < 64u)
 	{
 		if (destSq == enPassantSq)
 		{
@@ -292,14 +292,15 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 		}
 	}
 
+	enPassantSq = 64u;
+
 	const int distance = static_cast<int>(row(destSq)) - static_cast<int>(row(startSq));
 	if (distance == 2 || distance == -2)
 	{
 		Pos newEnPassant(destSq);
 		newEnPassant.y -= static_cast<byte>(distance / 2);
 		enPassantSq = newEnPassant.toSquare();
-	} else
-		enPassantSq = 64u;
+	}
 
 	return false;
 }
@@ -309,7 +310,7 @@ void Board::moveRook(const byte startSq)
 	const bool isPieceWhite = getPiece(startSq).isWhite;
 
 	Hash::removeCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
-		
+
 	if (col(startSq) == 0u)
 		castlingRights &= ~(isPieceWhite ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 	else if (col(startSq) == 7u)
@@ -336,11 +337,14 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 			constexpr byte destX = 5;
 			getPiece(destX, y) = rook;
 
-			getType(color, ROOK) &= ~Pos(startX, y).toBitboard();
-			getType(color, ROOK) |= Pos(destX, y).toBitboard();
+			const Pos startPos(startX, y);
+			const Pos destPos(destX, y);
+
+			getType(color, ROOK) &= ~startPos.toBitboard();
+			getType(color, ROOK) |= destPos.toBitboard();
 
 			castled = true;
-			Hash::makeMove(zKey, Pos(startX, y).toSquare(), Pos(destX, y).toSquare(), rook);
+			Hash::makeMove(zKey, startPos.toSquare(), destPos.toSquare(), rook);
 			rook = Piece::EMPTY;
 		}
 	}
@@ -355,11 +359,14 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 			constexpr byte destX = 3u;
 			getPiece(destX, y) = rook;
 
-			getType(color, ROOK) &= ~Pos(startX, y).toBitboard();
-			getType(color, ROOK) |= Pos(destX, y).toBitboard();
+			const Pos startPos(startX, y);
+			const Pos destPos(destX, y);
+
+			getType(color, ROOK) &= ~startPos.toBitboard();
+			getType(color, ROOK) |= destPos.toBitboard();
 
 			castled = true;
-			Hash::makeMove(zKey, Pos(startX, y).toSquare(), Pos(destX, y).toSquare(), rook);
+			Hash::makeMove(zKey, startPos.toSquare(), destPos.toSquare(), rook);
 			rook = Piece::EMPTY;
 		}
 	}
@@ -370,14 +377,16 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 		
 		if (king.isWhite)
 		{
-			castlingRights &= ~CASTLE_WHITE;
+			castlingRights &= ~CASTLE_WHITE_BOTH;
 			castlingRights |= CASTLED_WHITE;
 		} else {
-			castlingRights &= ~CASTLE_BLACK;
+			castlingRights &= ~CASTLE_BLACK_BOTH;
 			castlingRights |= CASTLED_BLACK;
 		}
 		
 		Hash::addCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+	} else {
+		castlingRights &= ~(king.isWhite ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	}
 }
 

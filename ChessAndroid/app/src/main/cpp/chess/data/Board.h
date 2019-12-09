@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "Player.h"
+#include "../algorithm/Player.h"
 #include "Piece.h"
 #include "../BoardManager.h"
 #include "../algorithm/Evaluation.h"
@@ -22,7 +22,7 @@ public:
 	Color colorToMove = WHITE;
 	bool isPromotion = false;
 	bool isCapture = false;
-	byte castlingRights = CastlingRights::CASTLE_WHITE | CastlingRights::CASTLE_BLACK;
+	byte castlingRights = CastlingRights::CASTLE_WHITE_BOTH | CastlingRights::CASTLE_BLACK_BOTH;
 	byte halfMoveClock{};
 	byte enPassantSq{};
 	U64 occupied{};
@@ -112,8 +112,8 @@ std::vector<T> Board::listValidMoves() const noexcept
 	for (const auto &pair : pieces)
 	{
 		const byte startSq = pair.first;
-		const Piece &selectedPiece = pair.second;
-		U64 possibleMoves = selectedPiece.getPossibleMoves(startSq, *this);
+		const Piece &attacker = pair.second;
+		U64 possibleMoves = attacker.getPossibleMoves(startSq, *this);
 
 		// Make sure we are not capturing the king
 		possibleMoves &= ~getType(colorToMove, KING);
@@ -121,6 +121,7 @@ std::vector<T> Board::listValidMoves() const noexcept
 		while (possibleMoves)
 		{
 			const byte destSq = Bitboard::findNextSquare(possibleMoves);
+			//const Piece victim = getPiece(destSq);
 
 			Board board = *this;
 			board.doMove(startSq, destSq);
@@ -128,7 +129,7 @@ std::vector<T> Board::listValidMoves() const noexcept
             if (!board.hasValidState())
                 continue;
 
-			board.score = Evaluation::simpleEvaluation(board);
+            board.score = Evaluation::simpleEvaluation(board);
 
 			if constexpr (std::is_same_v<T, RootMove>)
 			{
