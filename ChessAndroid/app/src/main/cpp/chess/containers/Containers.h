@@ -3,7 +3,6 @@
 #include <array>
 
 #include "PosMap.h"
-#include "StackVector.h"
 
 using U64 = std::uint64_t;
 

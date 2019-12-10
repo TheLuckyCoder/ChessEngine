@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Settings.h"
-#include "containers/StackVector.h"
 #include "data/Defs.h"
 #include "data/Piece.h"
 
@@ -36,7 +35,7 @@ public:
 	static const auto &getMovesHistory() { return s_MovesHistory; }
 	static bool isWorking() { return s_IsWorking; }
 	static bool isPlayerWhite() { return s_IsPlayerWhite; }
-	static StackVector<Pos, 27> getPossibleMoves(const Pos &selectedPos);
+	static std::vector<Pos> getPossibleMoves(const Pos &selectedPos);
 	static void movePiece(byte startSq, byte destSq, bool movedByPlayer = true);
 	static void setSettings(const Settings &settings) { s_Settings = settings; }
 

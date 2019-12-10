@@ -59,9 +59,10 @@ void BoardManager::loadGame(const std::vector<std::pair<byte, byte>> &moves, con
 	s_Listener(s_Board.state, true, {});
 }
 
-StackVector<Pos, 27> BoardManager::getPossibleMoves(const Pos &selectedPos)
+std::vector<Pos> BoardManager::getPossibleMoves(const Pos &selectedPos)
 {
-    StackVector<Pos, 27> moves;
+	std::vector<Pos> moves;
+	moves.reserve(27);
 
 	const byte startSq = selectedPos.toSquare();
 	const Piece &piece = s_Board.getPiece(startSq);

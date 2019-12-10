@@ -18,6 +18,11 @@ class Board final
 public:
 	std::array<Piece, 64> data{};
 	U64 zKey{};
+	U64 occupied{};
+	std::array<U64, 2> allPieces{};
+	std::array<std::array<U64, 7>, 2> pieces{};
+	short score{};
+	short npm{};
 	State state = State::NONE;
 	Color colorToMove = WHITE;
 	bool isPromotion = false;
@@ -25,11 +30,7 @@ public:
 	byte castlingRights = CastlingRights::CASTLE_WHITE_BOTH | CastlingRights::CASTLE_BLACK_BOTH;
 	byte halfMoveClock{};
 	byte enPassantSq{};
-	U64 occupied{};
-	std::array<U64, 2> allPieces{};
-	std::array<std::array<U64, 7>, 2> pieces{};
-	short score{};
-	short npm{};
+
 
 	Board() = default;
 	Board(Board&&) noexcept = default;
