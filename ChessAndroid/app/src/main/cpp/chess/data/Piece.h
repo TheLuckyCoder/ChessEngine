@@ -5,17 +5,6 @@
 
 class Board;
 
-enum PieceType : unsigned char
-{
-	NONE = 0,
-	PAWN = 1,
-	KNIGHT = 2,
-	BISHOP = 3,
-	ROOK = 4,
-	QUEEN = 5,
-	KING = 6
-};
-
 class Piece final
 {
 public:
@@ -25,7 +14,7 @@ public:
 	bool isWhite;
 
 	constexpr Piece() noexcept
-		: type(PieceType::NONE), isWhite(false) {}
+		: type(PieceType::NO_PIECE_TYPE), isWhite(false) {}
 	constexpr Piece(const PieceType type, const bool isWhite) noexcept
 		: type(type), isWhite(isWhite) {}
 	Piece(Piece&&) = default;
@@ -35,16 +24,13 @@ public:
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
-	U64 getPossibleMoves(const byte square, const Board &board) const noexcept;
-	U64 getPossibleCaptures(const byte square, const Board &board) const noexcept;
-
-	/*
-	 * Checks if the type and color match
-	 */
-	constexpr bool isSameType(const Piece &other) const noexcept
+	constexpr bool operator==(const Piece &other) const noexcept
 	{
 		return type == other.type && isWhite == other.isWhite;
 	}
+
+	U64 getPossibleMoves(const byte square, const Board &board) const noexcept;
+	U64 getPossibleCaptures(const byte square, const Board &board) const noexcept;
 
 	constexpr bool isSameColor(const Piece &other) const noexcept
 	{
@@ -53,6 +39,6 @@ public:
 
 	constexpr operator bool() const noexcept
 	{
-		return type != PieceType::NONE;
+		return type != PieceType::NO_PIECE_TYPE;
 	}
 };

@@ -141,7 +141,7 @@ Phase Board::getPhase() const noexcept
 
 bool Board::hasValidState() const noexcept
 {
-	const Color previousPlayer = oppositeColor(colorToMove);
+	const Color previousPlayer = ~colorToMove;
 
     if (state == State::INVALID)
         return false;
@@ -178,7 +178,7 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 	++halfMoveClock;
 
 	getType(colorToMove, startPiece.type) &= ~startBb;
-	getType(oppositeColor(colorToMove), destPiece.type) &= ~destBb;
+	getType(~colorToMove, destPiece.type) &= ~destBb;
 	getType(colorToMove, startPiece.type) |= destBb;
 
 	Hash::flipSide(zKey);
@@ -210,7 +210,7 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 	getPiece(startSq) = Piece();
 	updateNonPieceBitboards();
 
-	colorToMove = oppositeColor(colorToMove);
+	colorToMove = ~colorToMove;
 
 	if (updateState)
 		this->updateState();
@@ -218,15 +218,16 @@ void Board::doMove(const byte startSq, const byte destSq, const bool updateState
 
 std::vector<Board> Board::listQuiescenceMoves() const
 {
-	const auto pieces = Player::getAllOwnedPieces(colorToMove, *this);
 	std::vector<Board> moves;
 	moves.reserve(50);
 
-	for (const auto &pair : pieces)
+	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
-		const byte startSq = pair.first;
-		const Piece &selectedPiece = pair.second;
-		U64 possibleMoves = selectedPiece.getPossibleCaptures(startSq, *this);
+		const Piece &attacker = getPiece(startSq);
+		if (attacker.type == NO_PIECE_TYPE || attacker.isWhite != colorToMove)
+			continue;
+
+		U64 possibleMoves = attacker.getPossibleCaptures(startSq, *this);
 
 		// Make sure we are not capturing the king
 		possibleMoves &= ~getType(colorToMove, KING);
@@ -332,7 +333,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 		const byte y = row(startSq);
 
 		Piece &rook = getPiece(startX, y);
-		if (rook.type == PieceType::ROOK && king.isSameColor(rook) && canCastleKs(color))
+		if (canCastleKs(color) && rook == Piece(ROOK, king.isWhite))
 		{
 			constexpr byte destX = 5;
 			getPiece(destX, y) = rook;
@@ -354,7 +355,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 		const byte y = row(startSq);
 
 		Piece &rook = getPiece(startX, y);
-		if (rook.type == PieceType::ROOK && king.isSameColor(rook) && canCastleQs(color))
+		if (canCastleQs(color) && rook == Piece(ROOK, king.isWhite))
 		{
 			constexpr byte destX = 3u;
 			getPiece(destX, y) = rook;
@@ -392,14 +393,19 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 
 void Board::updateNonPieceBitboards()
 {
-	allPieces[BLACK] = 0ull;
-	allPieces[WHITE] = 0ull;
+	allPieces[BLACK] = getType(BLACK, PAWN)
+					 | getType(BLACK, KNIGHT)
+					 | getType(BLACK, BISHOP)
+					 | getType(BLACK, ROOK)
+					 | getType(BLACK, QUEEN)
+					 | getType(BLACK, KING);
 
-	for (byte i = PAWN; i <= KING; ++i)
-	{
-		allPieces[BLACK] |= getType(BLACK, static_cast<PieceType>(i));
-		allPieces[WHITE] |= getType(WHITE, static_cast<PieceType>(i));
-	}
+	allPieces[WHITE] = getType(WHITE, PAWN)
+					 | getType(WHITE, KNIGHT)
+					 | getType(WHITE, BISHOP)
+					 | getType(WHITE, ROOK)
+					 | getType(WHITE, QUEEN)
+					 | getType(WHITE, KING);
 
 	occupied = allPieces[BLACK] | allPieces[WHITE];
 }

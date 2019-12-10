@@ -39,13 +39,13 @@ bool Player::onlyKingsLeft(const Board &board)
 
 bool Player::hasNoValidMoves(const Color color, const Board &board)
 {
-	const auto pieces = getAllOwnedPieces(color, board);
-
-	for (const auto &pair : pieces)
+	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
-		const byte startSq = pair.first;
-		const Piece &selectedPiece = pair.second;
-		U64 possibleMoves = selectedPiece.getPossibleMoves(startSq, board);
+		const Piece &attacker = board.getPiece(startSq);
+		if (attacker.type == NO_PIECE_TYPE || attacker.isWhite != board.colorToMove)
+			continue;
+
+		U64 possibleMoves = attacker.getPossibleMoves(startSq, board);
 
 		while (possibleMoves)
 		{
@@ -74,22 +74,11 @@ bool Player::isInCheck(const Color color, const Board &board)
 	return isAttacked(oppositeColor(color), Bitboard::bitScanForward(king), board);
 }
 
-StackVector<std::pair<byte, Piece>, 32> Player::getAllOwnedPieces(const Color color, const Board &board)
-{
-	StackVector<std::pair<byte, Piece>, 32> pieces;
-
-	for (byte sq = 0u; sq < 64u; ++sq)
-		if (const Piece &piece = board.getPiece(sq); piece && piece.isWhite == color)
-			pieces.emplace_back(sq, piece);
-
-	return pieces;
-}
-
 AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
 {
 	AttacksMap attacks{};
 
-	for (byte startSq = 0; startSq < 64u; ++startSq)
+	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &piece = board.getPiece(startSq);
 		if (piece && piece.isWhite == white)
@@ -117,7 +106,7 @@ AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
 				case PieceType::KING:
 					moves = Generator::generateKingMoves(piece, startSq, board);
 					break;
-				case PieceType::NONE:
+				default:
 					break;
 			}
 

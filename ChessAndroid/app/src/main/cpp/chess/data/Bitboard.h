@@ -5,14 +5,9 @@
 
 #include "Defs.h"
 
-constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos / 8u); }
-
-constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos % 8u); }
-
-constexpr byte toSquare(const byte x, const byte y) noexcept
-{
-	return static_cast<byte>((y << 3u) + x);
-}
+#ifdef _MSC_VER
+#  include <intrin.h> // Microsoft header for _BitScanForward64()
+#endif
 
 namespace Bitboard
 {
@@ -35,23 +30,81 @@ namespace Bitboard
 	/**
 	 * Table of precalculated shifted bitboards indexed by the times 1 has been shifted to the left
 	 */
-	constexpr std::array<U64, 64> shiftedBoards = [] {
-        std::array<U64, 64> array{};
+	constexpr std::array<U64, 64> shiftedBoards = []
+	{
+		std::array<U64, 64> array{};
 
-        for (auto i = 0u; i < 64u; ++i)
-            array[i] = 1ULL << i;
+		for (auto i = 0u; i < 64u; ++i)
+			array[i] = 1ULL << i;
 
-        return array;
-    }();
+		return array;
+	}();
+
+#if defined(__GNUC__)  // GCC, Clang
+
+	inline byte bitScanForward(const U64 bb) noexcept
+	{
+		assert(bb);
+		return static_cast<byte>(__builtin_ctzll(bb));
+	}
+
+	inline byte bitScanReverse(U64 bb) noexcept
+	{
+		assert(bb);
+		return static_cast<byte>(63 ^ __builtin_clzll(bb));
+	}
+
+#elif defined(_MSC_VER)
+
+	inline byte bitScanForward(const U64 bb) noexcept
+	{
+		assert(bb);
+		unsigned long index{};
+
+#	ifdef _WIN64 // 64-bit
+		_BitScanForward64(&index, bb);
+		return static_cast<byte>(index);
+#	else // 32-bit
+		if (bb & 0xffffffff) // If the bit is in the lower 32 bits
+		{
+			_BitScanForward(&index, static_cast<unsigned long>(bb));
+			return static_cast<byte>(index);
+		}
+
+		_BitScanForward(&index, static_cast<unsigned long>(bb >> 32));
+		return static_cast<byte>(index + 32u); // The bit is in the upper 32 bits
+#	endif
+	}
+
+	inline byte bitScanReverse(const U64 bb) noexcept
+	{
+		assert(bb);
+		unsigned long index{};
+
+#	ifdef _WIN64 // 64-bit
+		_BitScanReverse64(&index, bb);
+		return static_cast<byte>(index);
+#	else // 32-bit
+		if (bb >> 32u) // If the bit is in the upper 32 bits
+		{
+			_BitScanReverse(&index, static_cast<unsigned long>(bb >> 32u));
+			return static_cast<byte>(index + 32u);
+		}
+
+		_BitScanReverse(&index, static_cast<unsigned long>(bb));
+		return static_cast<byte>(index);
+#	endif
+	}
+
+#else
 
 	/**
-	 * bitScanForward
 	 * @author Kim Walisch (2012)
 	 * @param bb bitboard to scan
 	 * @precondition bb != 0
 	 * @return index (0..63) of least significant one bit
 	 */
-	constexpr byte bitScanForward(const U64 bb) noexcept
+	inline byte bitScanForward(const U64 bb) noexcept
 	{
 		assert(bb);
 
@@ -71,15 +124,14 @@ namespace Bitboard
 	}
 
 	/**
-	 * bitScanReverse
 	 * @authors Kim Walisch, Mark Dickinson
 	 * @param bb bitboard to scan
 	 * @precondition bb != 0
 	 * @return index (0..63) of most significant one bit
 	 */
-	constexpr byte bitScanReverse(U64 bb) noexcept
+	inline byte bitScanReverse(U64 bb) noexcept
 	{
-		assert (bb != 0);
+		assert(bb);
 
 		constexpr U64 debruijn64{ 0x03f79d71b4cb0a89 };
 		constexpr byte index64[64] = {
@@ -103,7 +155,9 @@ namespace Bitboard
 		return index64[(bb * debruijn64) >> 58];
 	}
 
-	constexpr byte popLsb(U64 &bb) noexcept
+#endif
+
+	inline byte popLsb(U64 &bb) noexcept
 	{
 		const byte lsbIndex = bitScanForward(bb);
 		bb &= bb - 1;
@@ -116,9 +170,9 @@ namespace Bitboard
 	 * @param x bitboard to count the bits from
 	 * @return number of 1 bits in the bitboard
 	 */
-    constexpr int popCount(U64 x) noexcept
-    {
-        int count = 0;
+	inline int popCount(U64 x) noexcept
+	{
+		int count = 0;
 
 		while (x)
 		{
@@ -126,13 +180,13 @@ namespace Bitboard
 			++count;
 		}
 
-        return count;
-    }
+		return count;
+	}
 
-	constexpr byte findNextSquare(U64 &bb)
+	inline byte findNextSquare(U64 &bb)
 	{
 		const byte square = Bitboard::bitScanForward(bb);
-		bb &= ~Bitboard::shiftedBoards[square];
+		bb ^= Bitboard::shiftedBoards[square];
 		return square;
 	}
 }

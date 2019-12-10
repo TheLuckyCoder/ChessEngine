@@ -105,14 +105,15 @@ public:
 template<class T>
 std::vector<T> Board::listValidMoves() const noexcept
 {
-	const auto pieces = Player::getAllOwnedPieces(colorToMove, *this);
 	std::vector<T> moves;
 	moves.reserve(100);
 
-	for (const auto &pair : pieces)
+	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
-		const byte startSq = pair.first;
-		const Piece &attacker = pair.second;
+		const Piece &attacker = getPiece(startSq);
+		if (attacker.type == NO_PIECE_TYPE || attacker.isWhite != colorToMove)
+			continue;
+
 		U64 possibleMoves = attacker.getPossibleMoves(startSq, *this);
 
 		// Make sure we are not capturing the king
@@ -126,10 +127,10 @@ std::vector<T> Board::listValidMoves() const noexcept
 			Board board = *this;
 			board.doMove(startSq, destSq);
 
-            if (!board.hasValidState())
-                continue;
+			if (!board.hasValidState())
+				continue;
 
-            board.score = Evaluation::simpleEvaluation(board);
+			board.score = Evaluation::simpleEvaluation(board);
 
 			if constexpr (std::is_same_v<T, RootMove>)
 			{

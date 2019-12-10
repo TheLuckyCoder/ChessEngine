@@ -93,7 +93,7 @@ constexpr auto rookMasks = [] {
 	return masks;
 }();
 
-constexpr U64 getBlockersFromIndex(const int index, U64 mask)
+U64 getBlockersFromIndex(const int index, U64 mask)
 {
 	U64 blockers{};
 	const int bits = Bitboard::popCount(mask);
@@ -108,7 +108,7 @@ constexpr U64 getBlockersFromIndex(const int index, U64 mask)
 	return blockers;
 }
 
-constexpr U64 getRayAttacksForwards(const byte square, const U64 occupied, const Rays::Dir direction)
+U64 getRayAttacksForwards(const byte square, const U64 occupied, const Rays::Dir direction)
 {
 	const U64 attacks = Rays::getRay(direction, square);
 	const U64 blocker = attacks & occupied;
@@ -116,7 +116,7 @@ constexpr U64 getRayAttacksForwards(const byte square, const U64 occupied, const
 	return attacks ^ Rays::getRay(direction, index);
 }
 
-constexpr U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Rays::Dir direction)
+U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Rays::Dir direction)
 {
 	const U64 attacks = Rays::getRay(direction, square);
 	const U64 blocker = attacks & occupied;
@@ -124,7 +124,7 @@ constexpr U64 getRayAttacksBackwards(const byte square, const U64 occupied, cons
 	return attacks ^ Rays::getRay(direction, index);
 }
 
-constexpr U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
+U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
 {
 	U64 attacks{};
 
@@ -136,7 +136,7 @@ constexpr U64 generateBishopAttacks(const byte square, const U64 blockers) noexc
 	return attacks;
 }
 
-constexpr U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
+U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 {
 	U64 attacks{};
 

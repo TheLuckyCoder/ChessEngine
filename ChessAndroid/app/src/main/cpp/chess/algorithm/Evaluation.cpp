@@ -192,19 +192,19 @@ Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Boar
 
 	const Color color = toColor(piece.isWhite);
 	const byte behind = color ? -1 : 1;
-	const int supported = board.at(pos.x - 1u, pos.y + behind).isSameType(piece)
-						+ board.at(pos.x + 1u, pos.y + behind).isSameType(piece);
+	const int supported = int(piece == board.at(pos.x - 1u, pos.y + behind))
+						+ int(piece == board.at(pos.x + 1u, pos.y + behind));
 
 	bool isolated = !static_cast<bool>(supported);
 
-	if (board.getPiece(pos.x, pos.y + behind).isSameType(piece))
+	if (piece == board.getPiece(pos.x, pos.y + behind))
 		value -= PAWN_DOUBLED;
 
 	if (isolated)
 	{
 		for (byte y = 0u ; y < 8u; y++) {
-			if (board.at(pos.x - 1u, y).isSameType(piece) ||
-				board.at(pos.x + 1u, y).isSameType(piece))
+			if (piece == board.at(pos.x - 1u, y) ||
+				piece == board.at(pos.x + 1u, y))
 			{
 				isolated = false;
 				break;

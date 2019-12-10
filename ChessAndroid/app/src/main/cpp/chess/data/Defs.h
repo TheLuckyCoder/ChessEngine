@@ -11,6 +11,11 @@ enum Color : bool
 	WHITE = true
 };
 
+constexpr Color operator~(Color c)
+{
+	return Color(c ^ WHITE); // Toggle color
+}
+
 constexpr Color toColor(const bool isWhite)
 {
 	return isWhite ? WHITE : BLACK;
@@ -18,7 +23,7 @@ constexpr Color toColor(const bool isWhite)
 
 constexpr Color oppositeColor(const Color color)
 {
-	return color == BLACK ? WHITE : BLACK;
+	return ~color;
 }
 
 enum class State : unsigned char
@@ -69,6 +74,27 @@ enum class Flag : unsigned char
 	BETA
 };
 
+enum PieceType : unsigned char
+{
+	NO_PIECE_TYPE = 0,
+	PAWN = 1,
+	KNIGHT = 2,
+	BISHOP = 3,
+	ROOK = 4,
+	QUEEN = 5,
+	KING = 6,
+
+	PIECE_TYPE_NB = 8
+};
+
+/*enum Piece : byte
+{
+	NO_PIECE,
+	W_PAWN = 1, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
+	B_PAWN = 9, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
+	PIECE_NB = 16
+};*/
+
 constexpr U64 RANK_1 = 0xffull;
 constexpr U64 RANK_2 = 0xff00ull;
 constexpr U64 RANK_3 = 0xff0000ull;
@@ -87,4 +113,13 @@ constexpr U64 FILE_C = 0x404040404040404ull;
 constexpr U64 FILE_B = 0x202020202020202ull;
 constexpr U64 FILE_A = 0x101010101010101ull;
 
-constexpr byte SQUARE_NB = 64;
+constexpr byte SQUARE_NB = 64u;
+
+constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos / 8u); }
+
+constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos % 8u); }
+
+constexpr byte toSquare(const byte x, const byte y) noexcept
+{
+	return static_cast<byte>((y << 3u) + x);
+}

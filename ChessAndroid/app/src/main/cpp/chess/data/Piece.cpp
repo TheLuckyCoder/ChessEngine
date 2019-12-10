@@ -10,8 +10,6 @@ U64 Piece::getPossibleMoves(const byte square, const Board &board) const noexcep
 
 	switch (type)
 	{
-	case PieceType::NONE:
-		break;
 	case PieceType::PAWN:
 		result = MoveGen<ALL>::generatePawnMoves(*this, square, board);
 		break;
@@ -30,6 +28,8 @@ U64 Piece::getPossibleMoves(const byte square, const Board &board) const noexcep
 	case PieceType::KING:
 		result = MoveGen<ALL>::generateKingMoves(*this, square, board);
 		break;
+	default:
+		break;
 	}
 
 	return result;
@@ -41,8 +41,6 @@ U64 Piece::getPossibleCaptures(const byte square, const Board &board) const noex
 
 	switch (type)
 	{
-	case PieceType::NONE:
-		break;
 	case PieceType::PAWN:
 		result = MoveGen<CAPTURES>::generatePawnMoves(*this, square, board);
 		break;
@@ -60,6 +58,8 @@ U64 Piece::getPossibleCaptures(const byte square, const Board &board) const noex
 		break;
 	case PieceType::KING:
 		result = MoveGen<CAPTURES>::generateKingMoves(*this, square, board);
+		break;
+	default:
 		break;
 	}
 
