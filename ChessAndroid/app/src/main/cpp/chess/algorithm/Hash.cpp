@@ -31,7 +31,7 @@ void Hash::init()
 
 U64 Hash::movePiece(const byte sq, const Piece &piece)
 {
-	return s_Pieces[sq][piece.isWhite][piece.type];
+	return s_Pieces[sq][piece.color][piece.type];
 }
 
 U64 Hash::compute(const Board &board)
@@ -40,7 +40,7 @@ U64 Hash::compute(const Board &board)
 
 	for (byte i = 0; i < 64; ++i)
 		if (const Piece &piece = board.getPiece(i); piece)
-			hash ^= s_Pieces[i][piece.isWhite][piece.type];
+			hash ^= s_Pieces[i][piece.color][piece.type];
 
 	if (board.colorToMove)
 		hash ^= s_WhiteToMove;
@@ -73,7 +73,7 @@ void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceTy
 
 void Hash::xorPiece(U64 &key, const byte sq, const Piece &piece)
 {
-	key ^= s_Pieces[sq][piece.isWhite][piece.type];
+	key ^= s_Pieces[sq][piece.color][piece.type];
 }
 
 void Hash::flipSide(U64 &key)

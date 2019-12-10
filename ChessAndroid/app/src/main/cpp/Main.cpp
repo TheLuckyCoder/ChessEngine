@@ -165,7 +165,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jclass /*type*/)
 	{
 		const Pos &pos = it.first;
 		auto pieceType = static_cast<jbyte>(it.second.type);
-		if (!it.second.isWhite)
+		if (it.second.color == BLACK)
 			pieceType += 6;
 
 		jobject obj = pEnv->NewObject(Cache::pieceClass, constructorId, pos.x, pos.y, pieceType);

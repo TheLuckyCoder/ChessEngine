@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Pos.h"
-#include "../containers/StackVector.h"
 
 class Board;
 
@@ -11,12 +10,12 @@ public:
 	const static Piece EMPTY;
 
 	PieceType type;
-	bool isWhite;
+	Color color;
 
 	constexpr Piece() noexcept
-		: type(PieceType::NO_PIECE_TYPE), isWhite(false) {}
-	constexpr Piece(const PieceType type, const bool isWhite) noexcept
-		: type(type), isWhite(isWhite) {}
+		: type(PieceType::NO_PIECE_TYPE), color(BLACK) {}
+	constexpr Piece(const PieceType type, const Color color) noexcept
+		: type(type), color(color) {}
 	Piece(Piece&&) = default;
 	Piece(const Piece&) = default;
 	~Piece() = default;
@@ -26,7 +25,7 @@ public:
 
 	constexpr bool operator==(const Piece &other) const noexcept
 	{
-		return type == other.type && isWhite == other.isWhite;
+		return type == other.type && color == other.color;
 	}
 
 	U64 getPossibleMoves(const byte square, const Board &board) const noexcept;
@@ -34,7 +33,7 @@ public:
 
 	constexpr bool isSameColor(const Piece &other) const noexcept
 	{
-		return isWhite == other.isWhite;
+		return color == other.color;
 	}
 
 	constexpr operator bool() const noexcept

@@ -5,7 +5,7 @@
 
 bool Player::isAttacked(const Color colorAttacking, const byte targetSquare, const Board &board)
 {
-    if (board.getType(colorAttacking, PAWN) & PieceAttacks::getPawnAttacks(oppositeColor(colorAttacking), targetSquare))
+    if (board.getType(colorAttacking, PAWN) & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare))
 		return true;
 
     if (board.getType(colorAttacking, KNIGHT) & PieceAttacks::getKnightAttacks(targetSquare))
@@ -42,7 +42,7 @@ bool Player::hasNoValidMoves(const Color color, const Board &board)
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &attacker = board.getPiece(startSq);
-		if (attacker.type == NO_PIECE_TYPE || attacker.isWhite != board.colorToMove)
+		if (attacker.type == NO_PIECE_TYPE || attacker.color != board.colorToMove)
 			continue;
 
 		U64 possibleMoves = attacker.getPossibleMoves(startSq, board);
@@ -71,7 +71,7 @@ bool Player::isInCheck(const Color color, const Board &board)
 	const U64 king = board.getType(color, KING);
 	if (!king) return false;
 
-	return isAttacked(oppositeColor(color), Bitboard::bitScanForward(king), board);
+	return isAttacked(~color, Bitboard::bitScanForward(king), board);
 }
 
 AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
@@ -81,7 +81,7 @@ AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &piece = board.getPiece(startSq);
-		if (piece && piece.isWhite == white)
+		if (piece && piece.color == white)
 		{
 			U64 moves{};
 			using Generator = MoveGen<ATTACKS_DEFENSES>;
@@ -114,7 +114,7 @@ AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
 			{
 				const byte destSq = Bitboard::findNextSquare(moves);
 				attacks.map[destSq]++;
-				attacks.board[piece.isWhite][piece.type - 1u] |= Bitboard::shiftedBoards[destSq];
+				attacks.board[piece.color][piece.type - 1u] |= Bitboard::shiftedBoards[destSq];
 			}
 		}
 	}

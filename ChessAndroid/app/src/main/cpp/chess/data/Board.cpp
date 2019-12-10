@@ -224,7 +224,7 @@ std::vector<Board> Board::listQuiescenceMoves() const
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &attacker = getPiece(startSq);
-		if (attacker.type == NO_PIECE_TYPE || attacker.isWhite != colorToMove)
+		if (attacker.type == NO_PIECE_TYPE || attacker.color != colorToMove)
 			continue;
 
 		U64 possibleMoves = attacker.getPossibleCaptures(startSq, *this);
@@ -267,11 +267,11 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 		pawn.type = newPieceType;
 		isPromotion = true;
 
-		Hash::promotePawn(zKey, destSq, toColor(pawn.isWhite), newPieceType);
+		Hash::promotePawn(zKey, destSq, pawn.color, newPieceType);
 		const U64 destBb = Bitboard::shiftedBoards[destSq];
 
-		getType(toColor(pawn.isWhite), PieceType::PAWN) &= ~destBb;
-		getType(toColor(pawn.isWhite), newPieceType) |= destBb;
+		getType(pawn.color, PieceType::PAWN) &= ~destBb;
+		getType(pawn.color, newPieceType) |= destBb;
 		return true;
 	}
 
@@ -282,12 +282,12 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 			isCapture = true;
 
 			Pos capturedPos(enPassantSq);
-			capturedPos.y += static_cast<byte>(pawn.isWhite ? -1 : 1);
+			capturedPos.y += static_cast<byte>(pawn.color ? -1 : 1);
 			Piece &capturedPiece = getPiece(capturedPos.toSquare());
 
 			// Remove the captured Pawn
 			Hash::xorPiece(zKey, capturedPos.toSquare(), capturedPiece);
-			getType(toColor(capturedPiece.isWhite), capturedPiece.type) &= ~capturedPos.toBitboard();
+			getType(capturedPiece.color, capturedPiece.type) &= ~capturedPos.toBitboard();
 			capturedPiece = Piece();
 			return true;
 		}
@@ -308,7 +308,7 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 
 void Board::moveRook(const byte startSq)
 {
-	const bool isPieceWhite = getPiece(startSq).isWhite;
+	const bool isPieceWhite = getPiece(startSq).color;
 
 	Hash::removeCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 
@@ -322,9 +322,9 @@ void Board::moveRook(const byte startSq)
 
 void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 {
-	if (!canCastle(toColor(king.isWhite))) return;
+	if (!canCastle(king.color)) return;
 
-	const Color color = toColor(king.isWhite);
+	const Color color = king.color;
 	bool castled = false;
 
 	if (col(destSq) == 6u)
@@ -333,7 +333,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 		const byte y = row(startSq);
 
 		Piece &rook = getPiece(startX, y);
-		if (canCastleKs(color) && rook == Piece(ROOK, king.isWhite))
+		if (canCastleKs(color) && rook == Piece(ROOK, color))
 		{
 			constexpr byte destX = 5;
 			getPiece(destX, y) = rook;
@@ -355,7 +355,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 		const byte y = row(startSq);
 
 		Piece &rook = getPiece(startX, y);
-		if (canCastleQs(color) && rook == Piece(ROOK, king.isWhite))
+		if (canCastleQs(color) && rook == Piece(ROOK, color))
 		{
 			constexpr byte destX = 3u;
 			getPiece(destX, y) = rook;
@@ -376,7 +376,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 	{
 		Hash::removeCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 		
-		if (king.isWhite)
+		if (king.color)
 		{
 			castlingRights &= ~CASTLE_WHITE_BOTH;
 			castlingRights |= CASTLED_WHITE;
@@ -387,7 +387,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 		
 		Hash::addCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 	} else {
-		castlingRights &= ~(king.isWhite ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
+		castlingRights &= ~(king.color ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	}
 }
 

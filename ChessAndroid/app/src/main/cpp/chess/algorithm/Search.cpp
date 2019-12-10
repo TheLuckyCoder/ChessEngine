@@ -93,7 +93,7 @@ RootMove Search::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsi
 	for (auto &future : futures)
 		future.get(); // Wait for the search to finish
 
-	s_BestMoveFound = oppositeColor(validMoves.front().board.colorToMove) ? alpha : -alpha;
+	s_BestMoveFound = validMoves.front().board.colorToMove ? -alpha : alpha;
 
 	return bestMove;
 }

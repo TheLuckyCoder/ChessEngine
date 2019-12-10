@@ -112,7 +112,7 @@ std::vector<T> Board::listValidMoves() const noexcept
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &attacker = getPiece(startSq);
-		if (attacker.type == NO_PIECE_TYPE || attacker.isWhite != colorToMove)
+		if (attacker.type == NO_PIECE_TYPE || attacker.color != colorToMove)
 			continue;
 
 		U64 possibleMoves = attacker.getPossibleMoves(startSq, *this);

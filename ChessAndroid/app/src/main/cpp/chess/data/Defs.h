@@ -16,16 +16,6 @@ constexpr Color operator~(Color c)
 	return Color(c ^ WHITE); // Toggle color
 }
 
-constexpr Color toColor(const bool isWhite)
-{
-	return isWhite ? WHITE : BLACK;
-}
-
-constexpr Color oppositeColor(const Color color)
-{
-	return ~color;
-}
-
 enum class State : unsigned char
 {
 	NONE,

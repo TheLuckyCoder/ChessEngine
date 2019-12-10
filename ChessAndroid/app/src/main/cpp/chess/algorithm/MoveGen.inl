@@ -9,16 +9,16 @@
 template <GenType T>
 U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const Board &board)
 {
-	U64 attacks = PieceAttacks::getPawnAttacks(piece.isWhite, square);
+	U64 attacks = PieceAttacks::getPawnAttacks(piece.color, square);
 
 	if constexpr (T == ALL || T == CAPTURES)
 	{
-		U64 captures = attacks & board.allPieces[!piece.isWhite];
+		U64 captures = attacks & board.allPieces[~piece.color];
 
 		if (board.enPassantSq < 64u)
 		{
 			Pos capturedPos(board.enPassantSq);
-			capturedPos.y += static_cast<byte>(piece.isWhite ? -1 : 1);
+			capturedPos.y += static_cast<byte>(piece.color ? -1 : 1);
 			// Keep the en-passant capture if it intersect with one of our potential attacks
 			captures |= attacks & Bitboard::shiftedBoards[board.enPassantSq];
 		}
@@ -32,18 +32,18 @@ U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const B
 	{
 		const U64 initialBb = Bitboard::shiftedBoards[square];
 		Pos pos(square);
-		piece.isWhite ? pos.y++ : pos.y--;
+		piece.color ? pos.y++ : pos.y--;
 
 		if (!board[pos])
 		{
 			attacks |= pos.toBitboard();
 
-			const U64 initialRank = piece.isWhite ? RANK_2 : RANK_7;
+			const U64 initialRank = piece.color ? RANK_2 : RANK_7;
 			if (initialRank & initialBb)
 			{
 				byte y = pos.y;
 
-				piece.isWhite ? y++ : y--;
+				piece.color ? y++ : y--;
 				if (y < 8u && !board.getPiece(pos.x, y))
 					attacks |= Pos(pos.x, y).toBitboard();
 			}
@@ -59,9 +59,9 @@ U64 MoveGen<T>::generateKnightMoves(const Piece &piece, const byte square, const
 	U64 attacks = PieceAttacks::getKnightAttacks(square);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.color]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[~piece.color]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
 
@@ -74,9 +74,9 @@ U64 MoveGen<T>::generateBishopMoves(const Piece &piece, const byte square, const
 	U64 attacks = PieceAttacks::getBishopAttacks(square, board.occupied);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.color]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[~piece.color]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
 
@@ -89,9 +89,9 @@ U64 MoveGen<T>::generateRookMoves(const Piece &piece, const byte square, const B
 	U64 attacks = PieceAttacks::getRookAttacks(square, board.occupied);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.color]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[~piece.color]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
 
@@ -105,9 +105,9 @@ U64 MoveGen<T>::generateQueenMoves(const Piece &piece, const byte square, const 
 				| PieceAttacks::getRookAttacks(square, board.occupied);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.color]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[~piece.color]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
 
@@ -120,9 +120,9 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 	U64 attacks = PieceAttacks::getKingAttacks(square);
 
 	if constexpr (T == ALL)
-		attacks &= ~board.allPieces[piece.isWhite]; // Remove our pieces
+		attacks &= ~board.allPieces[piece.color]; // Remove our pieces
 	else if (T == CAPTURES)
-		attacks &= board.allPieces[!piece.isWhite]; // Keep only their pieces
+		attacks &= board.allPieces[~piece.color]; // Keep only their pieces
 	else if (T == ATTACKS_DEFENSES)
 		attacks &= board.occupied; // Keep only the pieces
 
@@ -131,7 +131,7 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 
 	U64 opponentsMoves{};
 	{
-		const Color opponentColor = oppositeColor(toColor(piece.isWhite));
+		const Color opponentColor = ~piece.color;
 		U64 attacksCopy = attacks;
 		
 		while (attacksCopy)
@@ -149,10 +149,9 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 
 	// Castling
 	const U64 bitboard = Bitboard::shiftedBoards[square];
-	const Color color = toColor(piece.isWhite);
-	const State checkState = piece.isWhite ? State::WHITE_IN_CHECK : State::BLACK_IN_CHECK;
+	const State checkState = piece.color ? State::WHITE_IN_CHECK : State::BLACK_IN_CHECK;
 
-	if (board.state == checkState || !board.canCastle(color) || opponentsMoves & bitboard)
+	if (board.state == checkState || !board.canCastle(piece.color) || opponentsMoves & bitboard)
 		return attacks;
 	
 	const byte y = row(square);
@@ -161,11 +160,11 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 		const U64 bb = Bitboard::shiftedBoards[sq];
 		 
 		return !board.getPiece(x, y) && !(opponentsMoves & bb)
-			&& !Player::isAttacked(oppositeColor(color), sq, board);
+			&& !Player::isAttacked(~piece.color, sq, board);
 	};
 
 	// King Side
-	if (board.canCastleKs(color)
+	if (board.canCastleKs(piece.color)
 		&& isEmptyAndCheckFree(5)
 		&& isEmptyAndCheckFree(6))
 	{
@@ -173,7 +172,7 @@ U64 MoveGen<T>::generateKingMoves(const Piece &piece, const byte square, const B
 	}
 
 	// Queen Side
-	if (board.canCastleQs(color)
+	if (board.canCastleQs(piece.color)
 		&& isEmptyAndCheckFree(3)
 		&& isEmptyAndCheckFree(2)
 		&& !board.getPiece(1, y))
