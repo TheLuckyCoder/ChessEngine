@@ -105,9 +105,9 @@ constexpr U64 FILE_A = 0x101010101010101ull;
 
 constexpr byte SQUARE_NB = 64u;
 
-constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos / 8u); }
+constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos >> 3u); }
 
-constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos % 8u); }
+constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos & 7u); }
 
 constexpr byte toSquare(const byte x, const byte y) noexcept
 {

@@ -8,7 +8,7 @@
 #define S Score
 
 constexpr short TEMPO_BONUS = 20;
-constexpr S CHECK_BONUS{ 30, 42 };
+constexpr S CHECK_BONUS(30, 42);
 
 /*
  * These values were imported from the Stockfish Chess Engine
@@ -20,6 +20,10 @@ constexpr S MINOR_THREATS[] =
 constexpr S OVERLOAD(12, 6);
 constexpr S PAWN_DOUBLED(11, 56);
 constexpr S PAWN_ISOLATED(5, 15);
+constexpr short PAWN_CONNECTED[] =
+{
+	0, 7, 8, 12, 29, 48, 86
+};
 constexpr S PASSED_PAWN_RANK[] =
 {
 	S(0, 0), S(10, 28), S(17, 33), S(15, 41), S(62, 72), S(168, 177), S(276, 260)
@@ -74,7 +78,7 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 		return VALUE_WINNER_BLACK;
 	
 	Score score[2]{};
-	for (byte i = 0; i < 64u; i++)
+	for (byte i = 0; i < SQUARE_NB; i++)
 	{
 		const Piece &piece = board.getPiece(i);
 		score[piece.color] += Psqt::s_Bonus[piece.type][i];
@@ -104,7 +108,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 	const AttacksMap whiteMoves = Player::getAttacksPerColor(true, board);
 	const AttacksMap blackMoves = Player::getAttacksPerColor(false, board);
 
-	for (byte i = 0; i < 64u; i++)
+	for (byte i = 0u; i < SQUARE_NB; i++)
 		if (const auto &piece = board.getPiece(i); piece && piece.type != KING)
 		{
 			if (piece.type == PAWN)
@@ -145,7 +149,7 @@ short Evaluation::evaluate(const Board &board) noexcept
 	if (bishopCount[BLACK] >= 2)
 		totalScore[BLACK] += 10;
 
-	for (byte i = 0; i < 64u; i++)
+	for (byte i = 0u; i < SQUARE_NB; i++)
 		if (const Piece &piece = board.getPiece(i); piece)
 		{
 			const Score points = [&] {
@@ -187,70 +191,53 @@ short Evaluation::evaluate(const Board &board) noexcept
 Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Board &board,
 							   const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept
 {
+	const Color oppositeColor = ~piece.color;
 	const Pos pos(square);
 	Score value = Psqt::s_Bonus[PAWN][square];
 
+	const Rays::Dir forwardDir = piece.color ? Rays::NORTH : Rays::SOUTH;
+	const byte rank = (piece.color ? pos.y : 7u - pos.y) - 1u;
 	const byte behind = piece.color ? -1 : 1;
-	const int supported = int(piece == board.at(pos.x - 1u, pos.y + behind))
-						+ int(piece == board.at(pos.x + 1u, pos.y + behind));
 
-	bool isolated = !static_cast<bool>(supported);
+	const U64 adjacentFiles = Rays::getAdjacentFiles(square);
+	const U64 opposed = board.getType(oppositeColor, PAWN) & Rays::getRay(forwardDir, square);
+	const U64 neighbours = board.getType(piece.color, PAWN) & adjacentFiles;
+	const U64 connected = neighbours & Rays::getRank(square);
+	const U64 support = neighbours & Rays::getRank(toSquare(pos.x + behind, pos.y));
+	const bool isDoubled = board.at(pos.x, pos.y - behind) == piece;
 
-	if (piece == board.getPiece(pos.x, pos.y + behind))
-		value -= PAWN_DOUBLED;
-
-	if (isolated)
+	if (support | connected)
 	{
-		for (byte y = 0u ; y < 8u; y++) {
-			if (piece == board.at(pos.x - 1u, y) ||
-				piece == board.at(pos.x + 1u, y))
-			{
-				isolated = false;
-				break;
-			}
-		}
-	}
+		const int connectedScore = PAWN_CONNECTED[rank] * (2 + bool(connected) - bool(opposed))
+			+ 21 * Bitboard::popCount(support);
 
-	if (isolated)
+		value += Score(connectedScore, connectedScore * (rank - 2) / 4);
+	} else if (!neighbours)
 		value -= PAWN_ISOLATED;
+
+	if (!support && isDoubled)
+		value -= PAWN_DOUBLED;
 
 	// Threat Safe Pawn
 	if (ourAttacks.map[square] || theirAttacks.map[square] == 0) // check if the pawn is safe
 	{
-		const auto isEnemyPiece = [&] (const byte x, const byte y) {
-			const Pos newPos(pos, x, y);
-			if (!newPos.isValid()) return false;
+		const U64 enemyPieces = MoveGen<CAPTURES>::generatePawnMoves(piece, square, board)
+			& ~(board.getType(oppositeColor, PAWN) | board.getType(oppositeColor, KING));
 
-			const Piece &other = board[newPos];
-			const byte type = other.type;
-			return other.color != piece.color && type > PAWN && type < KING;
-		};
+		const int count = Bitboard::popCount(enemyPieces);
 
-		const int i = static_cast<int>(isEnemyPiece(-1, -behind))
-					+ static_cast<int>(isEnemyPiece(1u, -behind));
-
-		value += THREAT_SAFE_PAWN * i;
+		value += THREAT_SAFE_PAWN * count;
 	}
 
-	const auto isPassedPawn = [&] {
-		const Rays::Dir direction = piece.color ? Rays::NORTH : Rays::SOUTH;
+	{ // Passed Pawn
+		U64 rays = Rays::getRay(forwardDir, square);
+		const U64 adjacentRays = Rays::shift<Rays::WEST>(rays) | Rays::shift<Rays::EAST>(rays);
+		rays |= piece.color ? Rays::shift<Rays::NORTH>(adjacentRays) : Rays::shift<Rays::SOUTH>(adjacentRays);
 
-		const Pos posLeft(pos, -1, -behind);
-		const Pos posRight(pos, 1, -behind);
+		const bool isPassedPawn = !static_cast<bool>(rays & board.getType(oppositeColor, PAWN));
 
-		U64 rays = Rays::getRay(direction, square);
-		if (posLeft.isValid())
-			rays |= Rays::getRay(direction, posLeft.toSquare());
-		if (posRight.isValid())
-			rays |= Rays::getRay(direction, posRight.toSquare());
-
-		return static_cast<bool>(rays & board.getType(~piece.color, PAWN));
-	}();
-
-	if (isPassedPawn)
-	{
-		const auto rank = (piece.color ? pos.y : 7u - pos.y) - 1u;
-		value += PASSED_PAWN_RANK[rank];
+		if (isPassedPawn)
+			value += PASSED_PAWN_RANK[rank];
 	}
 
 	return value;
@@ -278,7 +265,7 @@ Score Evaluation::evaluateBishop(const Piece &piece, const byte square, const Bo
 	const auto isLongDiagonalBishop = [&] {
 		if (pos.y - pos.x == 0 || pos.y - (7 - pos.x) == 0)
 		{
-			auto [x, y] = pos;
+			auto[x, y] = pos;
 			if (std::min<byte>(x, 7u - x) > 2) return false;
 			for (byte i = std::min<byte>(x, 7u - x); i < 4; i++)
 			{
@@ -375,17 +362,15 @@ Score Evaluation::evaluateQueen(const Piece &piece, const byte square, const Boa
 	return value;
 }
 
-inline Score
-Evaluation::evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept
+inline Score Evaluation::evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept
 {
 	Score value = Psqt::s_Bonus[KNIGHT][square];
 
 	if (board.isCastled(piece.color))
 		value.mg += 57;
 	else {
-		const int count = static_cast<int>(board.canCastleKs(piece.color))
-						+ static_cast<int>(board.canCastleQs(piece.color));
-		value.mg += count * 23;
+		const int count = int(board.canCastleKs(piece.color)) + int(board.canCastleQs(piece.color));
+		value.mg += count * 20;
 	}
 
 	return value;

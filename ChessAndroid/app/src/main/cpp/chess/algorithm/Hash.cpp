@@ -38,7 +38,7 @@ U64 Hash::compute(const Board &board)
 {
 	U64 hash{};
 
-	for (byte i = 0; i < 64; ++i)
+	for (byte i = 0; i < SQUARE_NB; ++i)
 		if (const Piece &piece = board.getPiece(i); piece)
 			hash ^= s_Pieces[i][piece.color][piece.type];
 

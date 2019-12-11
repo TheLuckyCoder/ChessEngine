@@ -133,7 +133,7 @@ short Search::negaMax(const Board &board, const short ply, short alpha, short be
 
 	const auto validMoves = board.listValidMoves<Board>();
 	short bestScore = VALUE_MIN;
-	short movesCount = 0;
+	size_t movesCount{};
 
 	Stats::incrementNodesGenerated(validMoves.size());
 
@@ -196,7 +196,7 @@ short Search::negaMax(const Board &board, const short ply, short alpha, short be
 		++movesCount;
 	}
 
-	Stats::incrementNodesSearched(static_cast<size_t>(movesCount));
+	Stats::incrementNodesSearched(movesCount);
 
 	// Store the result in the transposition table
 	Flag flag = Flag::EXACT;
@@ -240,8 +240,8 @@ short Search::quiescence(const Board &board, short alpha, const short beta)
 	}
 
 	const auto validMoves = board.listQuiescenceMoves();
+	size_t movesCount{};
 
-	Stats::incrementNodesSearched();
 	Stats::incrementNodesGenerated(validMoves.size());
 
 	for (const Board &move : validMoves)
@@ -255,7 +255,11 @@ short Search::quiescence(const Board &board, short alpha, const short beta)
 			return moveScore;
 		if (moveScore > alpha)
 			alpha = moveScore;
+
+		++movesCount;
 	}
+
+	Stats::incrementNodesSearched(movesCount);
 
 	return alpha;
 }
