@@ -3,7 +3,6 @@
 #include "MoveGen.h"
 #include "../Stats.h"
 #include "../data/Psqt.h"
-#include "../data/Rays.h"
 
 #define S Score
 
@@ -191,19 +190,21 @@ short Evaluation::evaluate(const Board &board) noexcept
 Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Board &board,
 							   const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept
 {
+	using namespace Bitboard;
+
 	const Color oppositeColor = ~piece.color;
 	const Pos pos(square);
 	Score value = Psqt::s_Bonus[PAWN][square];
 
-	const Rays::Dir forwardDir = piece.color ? Rays::NORTH : Rays::SOUTH;
+	const Dir forwardDir = piece.color ? NORTH : SOUTH;
 	const byte rank = (piece.color ? pos.y : 7u - pos.y) - 1u;
 	const byte behind = piece.color ? -1 : 1;
 
-	const U64 adjacentFiles = Rays::getAdjacentFiles(square);
-	const U64 opposed = board.getType(oppositeColor, PAWN) & Rays::getRay(forwardDir, square);
+	const U64 adjacentFiles = getAdjacentFiles(square);
+	const U64 opposed = board.getType(oppositeColor, PAWN) & getRay(forwardDir, square);
 	const U64 neighbours = board.getType(piece.color, PAWN) & adjacentFiles;
-	const U64 connected = neighbours & Rays::getRank(square);
-	const U64 support = neighbours & Rays::getRank(toSquare(pos.x + behind, pos.y));
+	const U64 connected = neighbours & getRank(square);
+	const U64 support = neighbours & getRank(toSquare(pos.x + behind, pos.y));
 	const bool isDoubled = board.at(pos.x, pos.y - behind) == piece;
 
 	if (support | connected)
@@ -230,9 +231,9 @@ Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Boar
 	}
 
 	{ // Passed Pawn
-		U64 rays = Rays::getRay(forwardDir, square);
-		const U64 adjacentRays = Rays::shift<Rays::WEST>(rays) | Rays::shift<Rays::EAST>(rays);
-		rays |= piece.color ? Rays::shift<Rays::NORTH>(adjacentRays) : Rays::shift<Rays::SOUTH>(adjacentRays);
+		U64 rays = getRay(forwardDir, square);
+		const U64 adjacentRays = shift<WEST>(rays) | shift<EAST>(rays);
+		rays |= piece.color ? shift<NORTH>(adjacentRays) : shift<SOUTH>(adjacentRays);
 
 		const bool isPassedPawn = !static_cast<bool>(rays & board.getType(oppositeColor, PAWN));
 
@@ -295,9 +296,7 @@ Score Evaluation::evaluateRook(const Piece &piece, const byte square, const Boar
 	const int rookOnPawn = [&] {
 		if ((piece.color && pos.y < 5) || (!piece.color && pos.y > 4)) return 0;
 
-		const U64 vertical = Rays::getRay(Rays::NORTH, square) | Rays::getRay(Rays::SOUTH, square);
-		const U64 horizontal = Rays::getRay(Rays::WEST, square) | Rays::getRay(Rays::EAST, square);
-		const U64 rays = vertical | horizontal;
+		const U64 rays = Bitboard::getRank(square) | Bitboard::getFile(square);
 
 		return Bitboard::popCount(rays & board.getType(~piece.color, PAWN));
 	}();

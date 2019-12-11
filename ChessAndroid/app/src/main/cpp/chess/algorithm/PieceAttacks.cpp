@@ -1,9 +1,8 @@
 #include "PieceAttacks.h"
 
 #include "../data/Pos.h"
-#include "../data/Rays.h"
 
-constexpr std::array<byte, 64> rookIndexBits = {
+constexpr std::array<byte, SQUARE_NB> rookIndexBits = {
 	12, 11, 11, 11, 11, 11, 11, 12,
 	11, 10, 10, 10, 10, 10, 10, 11,
 	11, 10, 10, 10, 10, 10, 10, 11,
@@ -14,7 +13,7 @@ constexpr std::array<byte, 64> rookIndexBits = {
 	12, 11, 11, 11, 11, 11, 11, 12
 };
 
-constexpr std::array<byte, 64> bishopIndexBits = {
+constexpr std::array<byte, SQUARE_NB> bishopIndexBits = {
 	6, 5, 5, 5, 5, 5, 5, 6,
 	5, 5, 5, 5, 5, 5, 5, 5,
 	5, 5, 7, 7, 7, 7, 5, 5,
@@ -65,29 +64,33 @@ constexpr std::array<U64, 64> rookMagics = {
  * These do not include edge squares
  */
 constexpr auto bishopMasks = [] {
+	using namespace Bitboard;
+	
 	const U64 edgeSquares = FILE_A | FILE_H | RANK_1 | RANK_8;
 	std::array<U64, 64> masks{};
 
-	for (byte square = 0u; square < 64u; ++square)
+	for (byte square = 0u; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (Rays::getRay(Rays::NORTH_EAST, square)
-						| Rays::getRay(Rays::NORTH_WEST, square)
-						| Rays::getRay(Rays::SOUTH_WEST, square)
-						| Rays::getRay(Rays::SOUTH_EAST, square)) & ~(edgeSquares);
+		masks[square] = (getRay(NORTH_EAST, square)
+						| getRay(NORTH_WEST, square)
+						| getRay(SOUTH_WEST, square)
+						| getRay(SOUTH_EAST, square)) & ~(edgeSquares);
 	}
 
 	return masks;
 }();
 
 constexpr auto rookMasks = [] {
+	using namespace Bitboard;
+
 	std::array<U64, 64> masks{};
 
 	for (byte square = 0u; square < 64u; ++square)
 	{
-		masks[square] = (Rays::getRay(Rays::NORTH, square) & ~RANK_8)
-						| (Rays::getRay(Rays::SOUTH, square) & ~RANK_1)
-						| (Rays::getRay(Rays::EAST, square) & ~FILE_H)
-						| (Rays::getRay(Rays::WEST, square) & ~FILE_A);
+		masks[square] = (getRay(NORTH, square) & ~RANK_8)
+						| (getRay(SOUTH, square) & ~RANK_1)
+						| (getRay(EAST, square) & ~FILE_H)
+						| (getRay(WEST, square) & ~FILE_A);
 	}
 
 	return masks;
@@ -108,44 +111,38 @@ U64 getBlockersFromIndex(const int index, U64 mask)
 	return blockers;
 }
 
-U64 getRayAttacksForwards(const byte square, const U64 occupied, const Rays::Dir direction)
+U64 getRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
 {
-	const U64 attacks = Rays::getRay(direction, square);
+	const U64 attacks = Bitboard::getRay(direction, square);
 	const U64 blocker = attacks & occupied;
 	const byte index = Bitboard::bitScanForward(blocker | 0x8000000000000000);
-	return attacks ^ Rays::getRay(direction, index);
+	return attacks ^ Bitboard::getRay(direction, index);
 }
 
-U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Rays::Dir direction)
+U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
 {
-	const U64 attacks = Rays::getRay(direction, square);
+	const U64 attacks = Bitboard::getRay(direction, square);
 	const U64 blocker = attacks & occupied;
 	const byte index = Bitboard::bitScanReverse(blocker | 1ULL);
-	return attacks ^ Rays::getRay(direction, index);
+	return attacks ^ Bitboard::getRay(direction, index);
 }
 
 U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
 {
-	U64 attacks{};
-
-	attacks |= getRayAttacksForwards(square, blockers, Rays::NORTH_WEST);
-	attacks |= getRayAttacksForwards(square, blockers, Rays::NORTH_EAST);
-	attacks |= getRayAttacksBackwards(square, blockers, Rays::SOUTH_EAST);
-	attacks |= getRayAttacksBackwards(square, blockers, Rays::SOUTH_WEST);
-
-	return attacks;
+	using namespace Bitboard;
+	return getRayAttacksForwards(square, blockers, NORTH_WEST)
+		   | getRayAttacksForwards(square, blockers, NORTH_EAST)
+		   | getRayAttacksBackwards(square, blockers, SOUTH_EAST)
+		   | getRayAttacksBackwards(square, blockers, SOUTH_WEST);
 }
 
 U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 {
-	U64 attacks{};
-
-	attacks |= getRayAttacksForwards(square, blockers, Rays::NORTH);
-	attacks |= getRayAttacksForwards(square, blockers, Rays::EAST);
-	attacks |= getRayAttacksBackwards(square, blockers, Rays::SOUTH);
-	attacks |= getRayAttacksBackwards(square, blockers, Rays::WEST);
-
-	return attacks;
+	using namespace Bitboard;
+	return getRayAttacksForwards(square, blockers, NORTH)
+		   | getRayAttacksForwards(square, blockers, EAST)
+		   | getRayAttacksBackwards(square, blockers, SOUTH)
+		   | getRayAttacksBackwards(square, blockers, WEST);
 }
 
 const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
@@ -212,12 +209,12 @@ const std::array<U64, 64> PieceAttacks::s_KnightAttacks = [] {
 	return moves;
 }();
 
-std::array<std::array<U64, 1024>, 64> PieceAttacks::s_BishopAttacks{};
+std::array<std::array<U64, 1024>, SQUARE_NB> PieceAttacks::s_BishopAttacks{};
 
-std::array<std::array<U64, 4096>, 64> PieceAttacks::s_RookAttacks{};
+std::array<std::array<U64, 4096>, SQUARE_NB> PieceAttacks::s_RookAttacks{};
 
-const std::array<U64, 64> PieceAttacks::s_KingAttacks = [] {
-	std::array<U64, 64> moves{};
+const std::array<U64, SQUARE_NB> PieceAttacks::s_KingAttacks = [] {
+	std::array<U64, SQUARE_NB> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
 		const Pos pos(col(startSquare) + x, row(startSquare) + y);
@@ -226,7 +223,7 @@ const std::array<U64, 64> PieceAttacks::s_KingAttacks = [] {
 			moves[startSquare] |= pos.toBitboard();
 	};
 
-	for (byte i = 0u; i < 64u; i++)
+	for (byte i = 0u; i < SQUARE_NB; i++)
 	{
 		// Vertical and Horizontal
 		addAttack(i, -1, 0u);
@@ -251,7 +248,7 @@ void PieceAttacks::init() noexcept
 	initialized = true;
 
 	// Init Bishop Moves
-	for (byte square = 0u; square < 64u; square++)
+	for (byte square = 0u; square < SQUARE_NB; square++)
 	{
 		const int indexBit = bishopIndexBits[square];
 		
@@ -267,7 +264,7 @@ void PieceAttacks::init() noexcept
 	}
 
 	// Init Rook Moves
-	for (byte square = 0u; square < 64u; square++)
+	for (byte square = 0u; square < SQUARE_NB; square++)
 	{
 		const int indexBit = rookIndexBits[square];
 

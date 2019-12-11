@@ -9,6 +9,8 @@
 #  include <intrin.h> // Microsoft header for _BitScanForward64()
 #endif
 
+#define USE_CUSTOM_POPCNT
+
 namespace Bitboard
 {
 	constexpr U64 eastN(U64 board, const int n) noexcept
@@ -96,7 +98,21 @@ namespace Bitboard
 #	endif
 	}
 
-#else
+#else // No specific compiler found, fallback to general functions
+#	undef USE_CUSTOM_POPCNT
+#	define USE_CUSTOM_POPCNT
+
+	constexpr static U64 debruijn64{ 0x03f79d71b4cb0a89 };
+	constexpr static byte bitScanIndex64[64] = {
+		0, 47,  1, 56, 48, 27,  2, 60,
+		57, 49, 41, 37, 28, 16,  3, 61,
+		54, 58, 35, 52, 50, 42, 21, 44,
+		38, 32, 29, 23, 17, 11,  4, 62,
+		46, 55, 26, 59, 40, 36, 15, 53,
+		34, 51, 20, 43, 31, 22, 10, 45,
+		25, 39, 14, 33, 19, 30,  9, 24,
+		13, 18,  8, 12,  7,  6,  5, 63
+	};
 
 	/**
 	 * @author Kim Walisch (2012)
@@ -107,20 +123,7 @@ namespace Bitboard
 	inline byte bitScanForward(const U64 bb) noexcept
 	{
 		assert(bb);
-
-		constexpr U64 debruijn64{ 0x03f79d71b4cb0a89 };
-		constexpr byte index64[64] = {
-			0, 47,  1, 56, 48, 27,  2, 60,
-			57, 49, 41, 37, 28, 16,  3, 61,
-			54, 58, 35, 52, 50, 42, 21, 44,
-			38, 32, 29, 23, 17, 11,  4, 62,
-			46, 55, 26, 59, 40, 36, 15, 53,
-			34, 51, 20, 43, 31, 22, 10, 45,
-			25, 39, 14, 33, 19, 30,  9, 24,
-			13, 18,  8, 12,  7,  6,  5, 63
-		};
-
-		return index64[((bb ^ (bb - 1)) * debruijn64) >> 58];
+		return bitScanIndex64[((bb ^ (bb - 1)) * debruijn64) >> 58];
 	}
 
 	/**
@@ -133,18 +136,6 @@ namespace Bitboard
 	{
 		assert(bb);
 
-		constexpr U64 debruijn64{ 0x03f79d71b4cb0a89 };
-		constexpr byte index64[64] = {
-			0, 47,  1, 56, 48, 27,  2, 60,
-			57, 49, 41, 37, 28, 16,  3, 61,
-			54, 58, 35, 52, 50, 42, 21, 44,
-			38, 32, 29, 23, 17, 11,  4, 62,
-			46, 55, 26, 59, 40, 36, 15, 53,
-			34, 51, 20, 43, 31, 22, 10, 45,
-			25, 39, 14, 33, 19, 30,  9, 24,
-			13, 18,  8, 12,  7,  6,  5, 63
-		};
-
 		bb |= bb >> 1;
 		bb |= bb >> 2;
 		bb |= bb >> 4;
@@ -152,10 +143,48 @@ namespace Bitboard
 		bb |= bb >> 16;
 		bb |= bb >> 32;
 
-		return index64[(bb * debruijn64) >> 58];
+		return bitScanIndex64[(bb * debruijn64) >> 58];
 	}
 
 #endif
+
+#if defined(USE_CUSTOM_POPCNT)
+	/**
+	 * @author Brian Kernighan
+	 * @param x bitboard to count the bits from
+	 * @return number of 1 bits in the bitboard
+	 */
+	inline int popCount(U64 bb) noexcept
+	{
+		int count = 0;
+
+		while (bb)
+		{
+			bb &= bb - 1; // clear the least significant bit set
+			++count;
+		}
+
+		return count;
+	}
+#	elif defined(__GNUC__)  // GCC, Clang
+
+	inline int popCount(const U64 bb) noexcept
+	{
+		return __builtin_popcountll(bb);
+	}
+
+#	elif defined(_MSC_VER)
+
+	inline int popCount(const U64 bb) noexcept
+	{
+#	ifdef _WIN64 // 64-bit
+		return static_cast<int>(__popcnt64(bb));
+#	else // 32-bit
+		return static_cast<int>(__popcnt(unsigned(bb)) + __popcnt(unsigned(bb >> 32u)));
+#	endif
+	}
+
+#	endif
 
 	inline byte popLsb(U64 &bb) noexcept
 	{
@@ -164,29 +193,102 @@ namespace Bitboard
 		return lsbIndex;
 	}
 
-	/**
-	 * popCount
-	 * @author Brian Kernighan
-	 * @param x bitboard to count the bits from
-	 * @return number of 1 bits in the bitboard
-	 */
-	inline int popCount(U64 x) noexcept
-	{
-		int count = 0;
-
-		while (x)
-		{
-			x &= x - 1; // clear the least significant bit set
-			++count;
-		}
-
-		return count;
-	}
-
 	inline byte findNextSquare(U64 &bb)
 	{
 		const byte square = Bitboard::bitScanForward(bb);
 		bb ^= Bitboard::shiftedBoards[square];
 		return square;
 	}
+
+// region Rays
+	/**
+	* Table of precalculated ray bitboards indexed by direction and square
+	*/
+	constexpr static auto rays = [] {
+		std::array<std::array<U64, SQUARE_NB>, 8> rays{};
+
+		using namespace Bitboard;
+
+		for (byte square = 0u; square < SQUARE_NB; ++square)
+		{
+			rays[NORTH][square] = 0x0101010101010100ULL << square;
+
+			rays[SOUTH][square] = 0x0080808080808080ULL >> (63u - square);
+
+			rays[EAST][square] = 2u * (shiftedBoards[square | 7u] - shiftedBoards[square]);
+
+			rays[WEST][square] = shiftedBoards[square] - shiftedBoards[square & 56u];
+
+			rays[NORTH_WEST][square] = westN(0x102040810204000ULL, 7u - col(square)) << (row(square) * 8u);
+
+			rays[NORTH_EAST][square] = eastN(0x8040201008040200ULL, col(square)) << (row(square) * 8u);
+
+			rays[SOUTH_WEST][square] = westN(0x40201008040201ULL, 7u - col(square)) >> ((7u - row(square)) * 8u);
+
+			rays[SOUTH_EAST][square] = eastN(0x2040810204080ULL, col(square)) >> ((7u - row(square)) * 8u);
+		}
+
+		return rays;
+	}();
+
+	constexpr static auto ranks = [] {
+		std::array<U64, 8> ranks{};
+
+		for (byte r = 0u; r < 8u; ++r)
+			ranks[r] = 0b1111'1111ull << (8u * r);
+
+		return ranks;
+	}();
+
+	constexpr static auto files = [] {
+		std::array<U64, 8> files{};
+
+		for (byte f = 0u; f < 8u; ++f)
+			files[f] = 0x101010101010101ull << f;
+
+		return files;
+	}();
+
+	template <Dir D>
+	constexpr U64 shift(const U64 bb) noexcept
+	{
+		if constexpr (D == NORTH)
+			return bb << 8u;
+		else if (D == SOUTH)
+			return bb >> 8u;
+		else if (D == EAST)
+			return (bb & ~FILE_H) << 1u;
+		else if (D == WEST)
+			return (bb & ~FILE_A) >> 1u;
+
+		return {};
+	}
+
+	/**
+	 * Returns a bitboard containing the given ray in the given direction.
+	 *
+	 * @param direction Direction of ray to return
+	 * @param square Square to get ray starting from (in little endian rank file mapping form)
+	 */
+	constexpr U64 getRay(const Dir direction, const byte square) noexcept
+	{
+		return rays[direction][square];
+	}
+
+	constexpr U64 getRank(const byte square) noexcept
+	{
+		return ranks[row(square)];
+	}
+
+	constexpr U64 getFile(const byte square) noexcept
+	{
+		return files[col(square)];
+	}
+
+	constexpr U64 getAdjacentFiles(const byte square) noexcept
+	{
+		return shift<WEST>(getFile(square)) | shift<EAST>(getFile(square));
+	}
+
+// endregion Rays
 }

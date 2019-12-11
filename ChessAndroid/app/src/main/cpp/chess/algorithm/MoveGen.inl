@@ -9,6 +9,7 @@
 template <GenType T>
 U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const Board &board)
 {
+	using namespace Bitboard;
 	U64 attacks = PieceAttacks::getPawnAttacks(piece.color, square);
 
 	if constexpr (T == ALL || T == CAPTURES)
@@ -20,7 +21,8 @@ U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const B
 			Pos capturedPos(board.enPassantSq);
 			capturedPos.y += static_cast<byte>(piece.color ? -1 : 1);
 			// Keep the en-passant capture if it intersect with one of our potential attacks
-			captures |= attacks & Bitboard::shiftedBoards[board.enPassantSq];
+			if (attacks & Bitboard::shiftedBoards[capturedPos.toSquare()])
+				captures |= Bitboard::shiftedBoards[board.enPassantSq];
 		}
 		
 		attacks = captures;
@@ -30,22 +32,20 @@ U64 MoveGen<T>::generatePawnMoves(const Piece &piece, const byte square, const B
 
 	if constexpr (T == ALL)
 	{
-		const U64 initialBb = Bitboard::shiftedBoards[square];
-		Pos pos(square);
-		piece.color ? pos.y++ : pos.y--;
+		const U64 bitboard = Bitboard::shiftedBoards[square];
+		const U64 move = piece.color ? shift<NORTH>(bitboard) : shift<SOUTH>(bitboard);
 
-		if (!board[pos])
+		if (!(board.occupied & move))
 		{
-			attacks |= pos.toBitboard();
+			attacks |= move;
 
 			const U64 initialRank = piece.color ? RANK_2 : RANK_7;
-			if (initialRank & initialBb)
+			if (initialRank & bitboard)
 			{
-				byte y = pos.y;
+				const U64 doubleMove = piece.color ? shift<NORTH>(bitboard) : shift<SOUTH>(bitboard);
 
-				piece.color ? y++ : y--;
-				if (y < 8u && !board.getPiece(pos.x, y))
-					attacks |= Pos(pos.x, y).toBitboard();
+				if (!(board.occupied & doubleMove))
+					attacks |= move;
 			}
 		}
 	}
