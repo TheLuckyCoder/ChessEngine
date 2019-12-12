@@ -65,9 +65,9 @@ constexpr std::array<U64, 64> rookMagics = {
  */
 constexpr auto bishopMasks = [] {
 	using namespace Bitboard;
-	
+
 	const U64 edgeSquares = FILE_A | FILE_H | RANK_1 | RANK_8;
-	std::array<U64, 64> masks{};
+	std::array<U64, SQUARE_NB> masks{};
 
 	for (byte square = 0u; square < SQUARE_NB; ++square)
 	{
@@ -83,7 +83,7 @@ constexpr auto bishopMasks = [] {
 constexpr auto rookMasks = [] {
 	using namespace Bitboard;
 
-	std::array<U64, 64> masks{};
+	std::array<U64, SQUARE_NB> masks{};
 
 	for (byte square = 0u; square < 64u; ++square)
 	{
@@ -129,7 +129,6 @@ U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Dir dire
 
 U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
 {
-	using namespace Bitboard;
 	return getRayAttacksForwards(square, blockers, NORTH_WEST)
 		   | getRayAttacksForwards(square, blockers, NORTH_EAST)
 		   | getRayAttacksBackwards(square, blockers, SOUTH_EAST)
@@ -138,7 +137,6 @@ U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
 
 U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 {
-	using namespace Bitboard;
 	return getRayAttacksForwards(square, blockers, NORTH)
 		   | getRayAttacksForwards(square, blockers, EAST)
 		   | getRayAttacksBackwards(square, blockers, SOUTH)
@@ -146,36 +144,16 @@ U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 }
 
 const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
+	using namespace Bitboard;
 	std::array<std::array<U64, 64>, 2> moves{};
 
-	for (byte i = 0u; i < 64u; i++)
+	for (byte i = 0u; i < SQUARE_NB; i++)
 	{
-		const Pos start(i);
+		const U64 bb = shiftedBoards[i];
+		const U64 attacks = shift<EAST>(bb) | shift<WEST>(bb);
 
-		U64 whiteAttackBb{};
-		{
-			const Pos leftPos = start + Pos(-1, 1u);
-			const Pos rightPos = start + Pos(1u, 1u);
-
-			if (leftPos.isValid())
-				whiteAttackBb |= leftPos.toBitboard();
-			if (rightPos.isValid())
-				whiteAttackBb |= rightPos.toBitboard();
-		}
-		
-		U64 blackAttackBb{};
-		{
-			const Pos leftPos = start + Pos(-1, -1);
-			const Pos rightPos = start + Pos(1u, -1);
-
-			if (leftPos.isValid())
-				blackAttackBb |= leftPos.toBitboard();
-			if (rightPos.isValid())
-				blackAttackBb |= rightPos.toBitboard();
-		}
-
-	    moves[true][i] = whiteAttackBb;
-	    moves[false][i] = blackAttackBb;
+	    moves[true][i] = shift<NORTH>(attacks);
+	    moves[false][i] = shift<SOUTH>(attacks);
 	}
 
 	return moves;
@@ -191,7 +169,7 @@ const std::array<U64, 64> PieceAttacks::s_KnightAttacks = [] {
 			moves[startSquare] |= pos.toBitboard();
 	};
 
-	for (byte i = 0u; i < 64u; i++)
+	for (byte i = 0u; i < SQUARE_NB; i++)
 	{
 		addAttack(i, -2, -1);
 		addAttack(i, -2, 1u);
@@ -214,28 +192,21 @@ std::array<std::array<U64, 1024>, SQUARE_NB> PieceAttacks::s_BishopAttacks{};
 std::array<std::array<U64, 4096>, SQUARE_NB> PieceAttacks::s_RookAttacks{};
 
 const std::array<U64, SQUARE_NB> PieceAttacks::s_KingAttacks = [] {
+	using namespace Bitboard;
+
 	std::array<U64, SQUARE_NB> moves{};
-
-	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
-		const Pos pos(col(startSquare) + x, row(startSquare) + y);
-
-		if (pos.isValid())
-			moves[startSquare] |= pos.toBitboard();
-	};
 
 	for (byte i = 0u; i < SQUARE_NB; i++)
 	{
+		const U64 bb = shiftedBoards[i];
+
 		// Vertical and Horizontal
-		addAttack(i, -1, 0u);
-		addAttack(i, 1u, 0u);
-		addAttack(i, 0u, -1);
-		addAttack(i, 0u, 1u);
+		U64 attacks = shift<NORTH>(bb) | shift<SOUTH>(bb) | shift<EAST>(bb) | shift<WEST>(bb);
 
 		// Diagonals
-		addAttack(i, 1u, -1);
-		addAttack(i, 1u, 1u);
-		addAttack(i, -1, -1);
-		addAttack(i, -1, 1u);
+		attacks |= shift<NORTH_EAST>(bb) | shift<NORTH_WEST>(bb) | shift<SOUTH_EAST>(bb) | shift<SOUTH_WEST>(bb);
+
+		moves[i] = attacks;
 	}
 
 	return moves;

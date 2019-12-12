@@ -40,9 +40,6 @@ public:
 	Board &operator=(Board&&) noexcept = default;
 	Board &operator=(const Board &other) = default;
 
-	Piece &operator[](const Pos &pos) noexcept;
-	const Piece &operator[](const Pos &pos) const noexcept;
-
 	bool operator<(const Board &other) const noexcept;
 	bool operator>(const Board &other) const noexcept;
 
@@ -73,7 +70,7 @@ public:
 	std::vector<Board> listQuiescenceMoves() const;
 
 private:
-	bool movePawn(byte startSq, byte destSq);
+	void movePawn(byte startSq, byte destSq);
 	void moveRook(byte startSq);
 	void moveKing(const Piece &king, byte startSq, byte destSq);
 

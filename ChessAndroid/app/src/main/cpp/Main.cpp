@@ -306,4 +306,6 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv */*pEnv*/, jclass /*type*/, jin
 		if (nodesCount != perftResults[i])
 			LOGE(TAG, "Nodes count do not match at depth %d", i);
 	}
+
+	LOGV(TAG, "Test Finished");
 }

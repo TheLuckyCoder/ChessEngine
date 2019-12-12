@@ -75,16 +75,6 @@ U64 Board::getType(const Color color, const PieceType type) const noexcept
 	return pieces[color][type];
 }
 
-Piece &Board::operator[](const Pos &pos) noexcept
-{
-	return data[pos.toSquare()];
-}
-
-const Piece &Board::operator[](const Pos &pos) const noexcept
-{
-	return data[pos.toSquare()];
-}
-
 bool Board::operator<(const Board &other) const noexcept
 {
 	return score < other.score;
@@ -256,7 +246,7 @@ std::vector<Board> Board::listQuiescenceMoves() const
 	return moves;
 }
 
-bool Board::movePawn(const byte startSq, const byte destSq)
+void Board::movePawn(const byte startSq, const byte destSq)
 {
 	Piece &pawn = getPiece(startSq);
 
@@ -272,25 +262,20 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 
 		getType(pawn.color, PieceType::PAWN) &= ~destBb;
 		getType(pawn.color, newPieceType) |= destBb;
-		return true;
 	}
 
-	if (enPassantSq < 64u)
+	if (enPassantSq < 64u && destSq == enPassantSq)
 	{
-		if (destSq == enPassantSq)
-		{
-			isCapture = true;
+		isCapture = true;
 
-			Pos capturedPos(enPassantSq);
-			capturedPos.y += static_cast<byte>(pawn.color ? -1 : 1);
-			Piece &capturedPiece = getPiece(capturedPos.toSquare());
+		Pos capturedPos(enPassantSq);
+		capturedPos.y += static_cast<byte>(pawn.color ? -1 : 1);
+		Piece &capturedPiece = getPiece(capturedPos.toSquare());
 
-			// Remove the captured Pawn
-			Hash::xorPiece(zKey, capturedPos.toSquare(), capturedPiece);
-			getType(capturedPiece.color, capturedPiece.type) &= ~capturedPos.toBitboard();
-			capturedPiece = Piece();
-			return true;
-		}
+		// Remove the captured Pawn
+		Hash::xorPiece(zKey, capturedPos.toSquare(), capturedPiece);
+		getType(capturedPiece.color, capturedPiece.type) &= ~capturedPos.toBitboard();
+		capturedPiece = Piece();
 	}
 
 	enPassantSq = 64u;
@@ -302,8 +287,6 @@ bool Board::movePawn(const byte startSq, const byte destSq)
 		newEnPassant.y -= static_cast<byte>(distance / 2);
 		enPassantSq = newEnPassant.toSquare();
 	}
-
-	return false;
 }
 
 void Board::moveRook(const byte startSq)

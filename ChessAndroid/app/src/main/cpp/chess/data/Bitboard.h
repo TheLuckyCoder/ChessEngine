@@ -254,12 +254,21 @@ namespace Bitboard
 	{
 		if constexpr (D == NORTH)
 			return bb << 8u;
-		else if (D == SOUTH)
+		else if constexpr (D == SOUTH)
 			return bb >> 8u;
-		else if (D == EAST)
+		else if constexpr (D == EAST)
 			return (bb & ~FILE_H) << 1u;
-		else if (D == WEST)
+		else if constexpr (D == WEST)
 			return (bb & ~FILE_A) >> 1u;
+
+		else if constexpr (D == NORTH_EAST)
+			return (bb & ~FILE_H) << 9u;
+		else if constexpr (D == NORTH_WEST)
+			return (bb & ~FILE_A) << 7u;
+		else if constexpr (D == SOUTH_EAST)
+			return (bb & ~FILE_H) >> 7u;
+		else if constexpr (D == SOUTH_WEST)
+			return (bb & ~FILE_A) >> 9u;
 
 		return {};
 	}

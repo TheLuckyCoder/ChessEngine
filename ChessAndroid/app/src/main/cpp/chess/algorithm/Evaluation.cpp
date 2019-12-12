@@ -344,7 +344,7 @@ Score Evaluation::evaluateQueen(const Piece &piece, const byte square, const Boa
 				Pos dPos(pos, d * ix, d * iy);
 				if (dPos.isValid())
 				{
-					const Piece &other = board[dPos];
+					const Piece &other = board.getPiece(dPos.toSquare());
 					if (other.type == ROOK && (ix == 0 || iy == 0) && count == 1) return true;
 					if (other.type == BISHOP && (ix != 0 && iy != 0) && count == 1) return true;
 					if (other) count++;
