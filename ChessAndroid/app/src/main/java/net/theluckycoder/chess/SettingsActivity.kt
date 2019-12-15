@@ -3,11 +3,9 @@ package net.theluckycoder.chess
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SeekBarPreference
-import androidx.preference.SwitchPreferenceCompat
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.getColor
 import kotlin.concurrent.thread
@@ -47,28 +45,16 @@ class SettingsActivity : AppCompatActivity() {
             val threadCountPref = findPreference<SeekBarPreference>(AppPreferences.KEY_THREAD_COUNT)
             if (threadCountPref != null) {
                 val defaultValue = min(Runtime.getRuntime().availableProcessors() - 1, 1)
+
                 threadCountPref.setDefaultValue(defaultValue)
                 threadCountPref.max = Runtime.getRuntime().availableProcessors()
-            }
-
-            val darkThemePref =
-                findPreference<SwitchPreferenceCompat>(AppPreferences.KEY_DARK_THEME)
-            if (darkThemePref != null) {
-                darkThemePref.onPreferenceChangeListener =
-                    Preference.OnPreferenceChangeListener { _, newValue ->
-                        val delegateValue = if (newValue == true)
-                            AppCompatDelegate.MODE_NIGHT_YES
-                        else
-                            AppCompatDelegate.MODE_NIGHT_NO
-
-                        AppCompatDelegate.setDefaultNightMode(delegateValue)
-                        true
-                    }
+                if (threadCountPref.value == 0)
+                    threadCountPref.value = defaultValue
             }
 
             findPreference<Preference>(AppPreferences.KEY_PERFT_TEST)?.setOnPreferenceClickListener {
                 thread {
-                    Native.perft(5)
+                    Native.perft(6)
                 }
                 true
             }

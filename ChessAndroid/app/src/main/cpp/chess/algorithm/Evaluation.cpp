@@ -75,7 +75,7 @@ short Evaluation::simpleEvaluation(const Board &board) noexcept
 		return VALUE_WINNER_WHITE;
 	if (board.state == State::WINNER_BLACK)
 		return VALUE_WINNER_BLACK;
-	
+
 	Score score[2]{};
 	for (byte i = 0; i < SQUARE_NB; i++)
 	{
@@ -210,7 +210,7 @@ Score Evaluation::evaluatePawn(const Piece &piece, const byte square, const Boar
 	if (support | connected)
 	{
 		const int connectedScore = PAWN_CONNECTED[rank] * (2 + bool(connected) - bool(opposed))
-			+ 21 * Bitboard::popCount(support);
+								   + 21 * Bitboard::popCount(support);
 
 		value += Score(connectedScore, connectedScore * (rank - 2) / 4);
 	} else if (!neighbours)
@@ -256,31 +256,18 @@ inline Score Evaluation::evaluateKnight(const Piece &piece, const byte square, c
 
 Score Evaluation::evaluateBishop(const Piece &piece, const byte square, const Board &board) noexcept
 {
-	const Pos pos(square);
 	Score value = Psqt::s_Bonus[BISHOP][square];
 
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateBishopMoves(piece, square, board));
 	value += BISHOP_MOBILITY[mobility];
 
+	constexpr U64 centerFiles = FILE_D | FILE_E;
+	constexpr U64 center = centerFiles & (RANK_4 | RANK_5);
+
 	// Long Diagonal Bishop
-	const auto isLongDiagonalBishop = [&] {
-		if (pos.y - pos.x == 0 || pos.y - (7 - pos.x) == 0)
-		{
-			auto[x, y] = pos;
-			if (std::min<byte>(x, 7u - x) > 2) return false;
-			for (byte i = std::min<byte>(x, 7u - x); i < 4; i++)
-			{
-				if (board.getPiece(x, y).type == PAWN) return false;
-				if (x < 4) x++; else x--;
-				if (y < 4) y++; else y--;
-			}
-		}
-
-		return true;
-	}();
-
-	if (isLongDiagonalBishop)
-		value.mg += 44;
+	const U64 centerAttacks = PieceAttacks::getBishopAttacks(square, board.getType(~piece.color, PAWN)) & center;
+	if (Bitboard::popCount(centerAttacks) > 1)
+		value.mg += 45;
 
 	return value;
 }
@@ -320,6 +307,10 @@ Score Evaluation::evaluateRook(const Piece &piece, const byte square, const Boar
 	}();
 	value += ROOK_ON_FILE[rookOnFile];
 
+	const U64 queens = board.getType(piece.color, QUEEN) | board.getType(~piece.color, QUEEN);
+	if (Bitboard::getFile(square) & queens)
+		value += ROOK_ON_QUEEN_FILE;
+
 	return value;
 }
 
@@ -331,8 +322,8 @@ Score Evaluation::evaluateQueen(const Piece &piece, const byte square, const Boa
 	const int mobility = Bitboard::popCount(MoveGen<ALL>::generateQueenMoves(piece, square, board));
 	value += QUEEN_MOBILITY[mobility];
 
-	if (const U64 originalPosition = FILE_D & (piece.color ? RANK_1 : RANK_8);
-		(originalPosition & Bitboard::shiftedBoards[square]) == 0ull)
+	if (const U64 initialPosition = FILE_D & (piece.color ? RANK_1 : RANK_8);
+		(initialPosition & Bitboard::shiftedBoards[square]) == 0ull)
 		value.mg -= 30;
 
 	const auto weak = [&] {

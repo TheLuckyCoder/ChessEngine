@@ -11,7 +11,6 @@ class AppPreferences(private val context: Context) {
     companion object {
         const val KEY_FIRST_START = "key_first_start"
 
-        const val KEY_DARK_THEME = "key_dark_theme"
         const val KEY_TILE_WHITE = "key_tile_white"
         const val KEY_TILE_BLACK = "key_tile_black"
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
@@ -35,9 +34,6 @@ class AppPreferences(private val context: Context) {
     var firstStart
         get() = manager.getBoolean(KEY_FIRST_START, true)
         set(value) = manager.edit().putBoolean(KEY_FIRST_START, value).apply()
-
-    val darkTheme
-        get() = manager.getBoolean(KEY_DARK_THEME, false)
 
     var whiteTileColor
         get() = manager.getInt(KEY_TILE_WHITE, getColor(context, R.color.tile_white))

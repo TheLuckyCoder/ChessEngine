@@ -9,7 +9,7 @@
 #  include <intrin.h> // Microsoft header for _BitScanForward64()
 #endif
 
-#define USE_CUSTOM_POPCNT
+//#define USE_CUSTOM_POPCNT
 
 namespace Bitboard
 {

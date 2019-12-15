@@ -9,7 +9,6 @@ import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import kotlinx.android.synthetic.main.activity_chess.*
 import kotlinx.android.synthetic.main.dialog_restart.view.*
 import net.theluckycoder.chess.utils.AppPreferences
@@ -88,13 +87,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             preferences.settings =
                 Settings(4, Runtime.getRuntime().availableProcessors() - 1, 100, true)
         }
-
-        val delegateThemeValue = if (preferences.darkTheme)
-            AppCompatDelegate.MODE_NIGHT_YES
-        else
-            AppCompatDelegate.MODE_NIGHT_NO
-
-        AppCompatDelegate.setDefaultNightMode(delegateThemeValue)
 
         gameManager.initBoard(false)
     }

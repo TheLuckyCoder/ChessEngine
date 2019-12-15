@@ -258,7 +258,7 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jclass /*type*/)
 	return pEnv->NewStringUTF(string.c_str());
 }
 
-static U64 perft(const Board &board, int depth)
+static U64 perft(const Board &board, const int depth)
 {
 	if (depth == 0) return 1;
 

@@ -3,13 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory android:title="@string/pref_category_appearance">
-
-        <SwitchPreferenceCompat
-            android:key="key_dark_theme"
-            android:summary="An app restart might be needed to fully apply the theme"
-            android:title="Dark Theme"
-            app:defaultValue="false" />
-
+        p
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_white"
             android:key="key_tile_white"
@@ -62,7 +56,7 @@
 
         <SeekBarPreference
             android:key="key_search_depth"
-            android:max="9"
+            android:max="8"
             android:summary="Base Search Depth of the Algorithm. The value can be tweaked by the engine"
             android:title="Search Depth"
             app:defaultValue="4"
