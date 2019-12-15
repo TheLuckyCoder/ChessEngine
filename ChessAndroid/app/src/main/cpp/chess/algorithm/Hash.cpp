@@ -4,9 +4,9 @@
 
 #include "../data/Board.h"
 
-Hash::HashArray Hash::array{};
-std::array<U64, 4> Hash::castlingRights;
-U64 Hash::whiteToMove;
+Hash::HashArray Hash::s_Pieces{};
+std::array<U64, 4> Hash::s_CastlingRights;
+U64 Hash::s_WhiteToMove;
 
 void Hash::init()
 {
@@ -18,71 +18,73 @@ void Hash::init()
 	std::mt19937_64 mt(rd());
 	std::uniform_int_distribution<U64> dist(0, UINT64_MAX);
 
-	for (byte x = 0; x < 8; x++)
-		for (byte y = 0; y < 8; y++)
-			for (byte p = 0; p < 8; p++)
-                array[x][y][p] = dist(mt);
+	for (auto &i : s_Pieces)
+		for (auto &color : i)
+			for (auto &piece : color)
+				piece = dist(mt);
 
-    for (byte i = 0; i < 4; i++)
-        castlingRights[i] = dist(mt);
+	for (auto &rights : s_CastlingRights)
+		rights = dist(mt);
 
-	whiteToMove = dist(mt);
-}
-
-U64 Hash::getHash(const Pos &pos, const Piece &piece)
-{
-	return array[pos.x][pos.y][indexOf(piece)];
+	s_WhiteToMove = dist(mt);
 }
 
 U64 Hash::compute(const Board &board)
 {
 	U64 hash{};
 
-	for (byte x = 0; x < 8; x++)
-		for (byte y = 0; y < 8; y++)
-			if (const Piece &piece = board.getPiece(x, y); piece)
-				hash ^= array[x][y][indexOf(piece)];
+	for (byte i = 0; i < SQUARE_NB; ++i)
+		if (const Piece &piece = board.getPiece(i); piece)
+			hash ^= s_Pieces[i][piece.color()][piece.type()];
 
-	if (board.whiteToMove)
-		hash ^= whiteToMove;
+	if (board.colorToMove)
+		hash ^= s_WhiteToMove;
+
+	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
 
 	return hash;
 }
 
-byte Hash::indexOf(const Piece& piece)
-{
-	byte type = static_cast<byte>(piece.type) - 1u;
-	if (piece.isWhite) type += 6u;
-	return type;
-}
-
-void Hash::makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece)
+void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece, const Piece &destPiece)
 {
 	// Remove Selected Piece
-	key ^= Hash::getHash(selectedPos, selectedPiece);
+	Hash::xorPiece(key, selectedSq, selectedPiece);
 
 	if (destPiece) // Remove Destination Piece if any
-		key ^= Hash::getHash(destPos, destPiece);
+		Hash::xorPiece(key, destSq, destPiece);
 
 	// Add Selected Piece to Destination
-	key ^= Hash::getHash(destPos, selectedPiece);
+	Hash::xorPiece(key, destSq, selectedPiece);
 }
 
-void Hash::promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, const bool isWhite, const Type promotedType)
+void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceType promotedType)
 {
 	// Remove the Pawn
-	key ^= array[startPos.x][startPos.y][indexOf(Piece(Type::PAWN, isWhite))];
+	key ^= s_Pieces[sq][color][PAWN];
 
-	// Add Promoted Piece
-	key ^= array[destPos.x][destPos.y][indexOf(Piece(promotedType, isWhite))];
+	// Add the Promoted Piece
+	key ^= s_Pieces[sq][color][promotedType];
 }
 
-void Hash::xorPiece(U64 &key, const Pos &pos, const Piece &piece)
+void Hash::xorPiece(U64 &key, const byte sq, const Piece &piece)
 {
-	key ^= array[pos.x][pos.y][indexOf(piece)];
+	key ^= s_Pieces[sq][piece.color()][piece.type()];
 }
 
 void Hash::flipSide(U64 &key)
 {
-	key ^= Hash::whiteToMove;
+	key ^= Hash::s_WhiteToMove;
+}
+
+void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
+{
+	if (rights & CASTLE_WHITE_KING)
+		key ^= s_CastlingRights[0];
+	if (rights & CASTLE_WHITE_QUEEN)
+		key ^= s_CastlingRights[1];
+
+	if (rights & CASTLE_BLACK_KING)
+		key ^= s_CastlingRights[2];
+	if (rights & CASTLE_BLACK_QUEEN)
+		key ^= s_CastlingRights[3];
 }

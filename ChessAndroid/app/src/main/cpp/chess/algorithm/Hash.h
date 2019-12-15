@@ -2,35 +2,33 @@
 
 #include <array>
 
-#include "../data/Pos.h"
+#include "../data/Defs.h"
 #include "../data/Piece.h"
 
 using U64 = std::uint64_t;
 
 class Hash final
 {
-private:
-	using HashArray = std::array<std::array<std::array<U64, 12>, 8>, 8>;
+	using HashArray = std::array<std::array<std::array<U64, 7>, 2>, 64>;
 
-	static HashArray array;
-	static U64 whiteToMove;
+	static HashArray s_Pieces;
+	static U64 s_WhiteToMove;
+	static std::array<U64, 4> s_CastlingRights;
 
 public:
-	static std::array<U64, 4> castlingRights;
-
 	Hash() = delete;
 	Hash(const Hash&) = delete;
 	Hash(Hash&&) = delete;
 
+	Hash &operator=(const Hash&) = delete;
+	Hash &operator=(Hash&&) = delete;
+
 	static void init();
-	static U64 getHash(const Pos &pos, const Piece &piece);
 	static U64 compute(const Board &board);
 
-	static void makeMove(U64 &key, const Pos &selectedPos, const Pos &destPos, const Piece &selectedPiece, const Piece &destPiece = Piece::EMPTY);
-	static void promotePawn(U64 &key, const Pos &startPos, const Pos &destPos, bool isWhite, Type promotedType);
-	static void xorPiece(U64 &key, const Pos &pos, const Piece &piece);
+	static void makeMove(U64 &key, byte selectedSq, byte destSq, const Piece &selectedPiece, const Piece &destPiece = Piece::EMPTY);
+	static void promotePawn(U64 &key, byte sq, Color color, PieceType promotedType);
+	static void xorPiece(U64 &key, byte sq, const Piece &piece);
 	static void flipSide(U64 &key);
-
-private:
-	static byte indexOf(const Piece &piece);
+	static void xorCastlingRights(U64 &key, const CastlingRights rights);
 };

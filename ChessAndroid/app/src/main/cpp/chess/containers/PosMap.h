@@ -1,8 +1,6 @@
 #pragma once
 
-using byte = unsigned char;
-
-class Pos;
+#include "../data/Pos.h"
 
 class PosMap
 {

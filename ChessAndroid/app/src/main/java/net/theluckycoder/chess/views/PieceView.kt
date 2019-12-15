@@ -6,7 +6,7 @@ import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Paint
 import net.theluckycoder.chess.ChessActivity
-import net.theluckycoder.chess.PieceResourceManager
+import net.theluckycoder.chess.utils.PieceResourceManager
 import net.theluckycoder.chess.Pos
 
 @SuppressLint("ViewConstructor")
@@ -31,14 +31,14 @@ class PieceView(
     private val redBlurPaint = Paint().apply {
         maskFilter = BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL)
     }
-    var isInChess = false
+    var isInCheck = false
         set(value) {
             field = value
             invalidate()
         }
 
     override fun onDraw(canvas: Canvas) {
-        if (isInChess) {
+        if (isInCheck) {
             redBlurPaint.color = activity.preferences.kingInChessColor
             canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, redBlurPaint)
         }

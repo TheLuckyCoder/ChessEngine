@@ -3,7 +3,7 @@
 class Score final
 {
 public:
-	short mg = 0, eg = 0;
+	short mg{}, eg{};
 
 	Score() = default;
 

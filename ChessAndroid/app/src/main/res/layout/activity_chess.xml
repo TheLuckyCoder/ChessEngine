@@ -23,12 +23,12 @@
         android:id="@+id/tv_debug"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_above="@id/btn_restart_game"
         android:layout_below="@id/pb_loading"
         android:gravity="center_horizontal"
-        android:textColor="@android:color/black"
-        android:textSize="15.5sp"
         android:scrollbars="vertical"
-        android:layout_above="@id/btn_restart_game"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="15.5sp"
         tools:text="Stats:" />
 
     <ImageView
@@ -53,7 +53,7 @@
         android:layout_marginBottom="8dp"
         android:layout_toStartOf="@+id/iv_settings"
         android:layout_toEndOf="@+id/iv_undo"
-        android:text="@string/restart_game" />
+        android:text="@string/new_game" />
 
     <ImageView
         android:id="@+id/iv_settings"

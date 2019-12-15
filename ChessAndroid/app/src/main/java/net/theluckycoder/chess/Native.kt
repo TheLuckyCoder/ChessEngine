@@ -7,11 +7,21 @@ object Native {
     @JvmStatic
     external fun isPlayerWhite(): Boolean
 
-    @JvmStatic
-    external fun getStats(): String
+    // region Stats
 
     @JvmStatic
-    external fun getBoardValue(): Int
+    external fun getSearchTime(): Double
+
+    @JvmStatic
+    external fun getCurrentBoardValue(): Int
+
+    @JvmStatic
+    external fun getBestMoveFound(): Int
+
+    @JvmStatic
+    external fun getAdvancedStats(): String
+
+    // endregion Stats
 
     @JvmStatic
     external fun getPieces(): Array<Piece>
@@ -32,9 +42,6 @@ object Native {
         cacheSizeInMb: Int,
         performQuiescenceSearch: Boolean
     )
-
-    @JvmStatic
-    external fun getBestMoveFound(): Int
 
     @JvmStatic
     external fun undoMoves()

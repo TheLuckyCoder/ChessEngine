@@ -18,12 +18,12 @@ public:
 	MovesPersistence(std::string content);
 
 	bool isPlayerWhite() const;
-	std::vector<PosPair> getMoves() const;
+	std::vector<std::pair<byte, byte>> getMoves() const;
 
 	static std::string saveToString(const std::vector<RootMove> &movesHistory, bool isPlayerWhite);
 
 private:
-	static Pos getPos(std::string_view str);
-	static void parsePosPair(std::vector<PosPair> &moves, std::string_view str);
-	static void savePosPair(std::ostringstream &stream, const PosPair &pair);
+	static byte getSquare(std::string_view str);
+	static void parsePosPair(std::vector<std::pair<byte, byte>> &moves, std::string_view str);
+	static void savePosPair(std::ostringstream &stream, const std::pair<byte, byte> &pair);
 };

@@ -1,7 +1,6 @@
 #include "MovesPersistence.h"
 
-#include <algorithm>
-#include <cctype>
+#include <charconv>
 
 #include "../data/Board.h"
 
@@ -17,9 +16,9 @@ bool MovesPersistence::isPlayerWhite() const
 	return m_Content[0] != 'B';
 }
 
-std::vector<PosPair> MovesPersistence::getMoves() const
+std::vector<std::pair<byte, byte>> MovesPersistence::getMoves() const
 {
-	std::vector<PosPair> moves;
+	std::vector<std::pair<byte, byte>> moves;
 	moves.reserve(20);
 
 	size_t prefix = 1;
@@ -44,20 +43,20 @@ std::string MovesPersistence::saveToString(const std::vector<RootMove> &movesHis
 	stream << (isPlayerWhite ? 'W' : 'B');
 
 	for (const RootMove &moves : movesHistory)
-		savePosPair(stream, std::make_pair(moves.start, moves.dest));
+		savePosPair(stream, std::make_pair(moves.startSq, moves.destSq));
 
 	return stream.str();
 }
 
-Pos MovesPersistence::getPos(const std::string_view str)
+byte MovesPersistence::getSquare(std::string_view str)
 {
-	const byte x = static_cast<byte>(str[0] - 48);
-	const byte y = static_cast<byte>(str[2] - 48);
+	int value = -1;
+	std::from_chars(str.data(), str.data() + str.size(), value);
 
-	return Pos(x, y);
+	return static_cast<byte>(value);
 }
 
-void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_view str)
+void MovesPersistence::parsePosPair(std::vector<std::pair<byte, byte>> &moves, std::string_view str)
 {
 	const auto selectedEnd = str.find(';');
 	auto destEnd = str.find(')', selectedEnd + 1);
@@ -65,16 +64,18 @@ void MovesPersistence::parsePosPair(std::vector<PosPair> &moves, std::string_vie
 	if (destEnd == std::string_view::npos)
 		destEnd = str.size() - 1;
 
-	moves.emplace_back(getPos(str.substr(0, selectedEnd)), getPos(str.substr(selectedEnd + 1, destEnd)));
+	moves.emplace_back(getSquare(str.substr(0, selectedEnd)),
+					   getSquare(str.substr(selectedEnd + 1, destEnd)));
 }
 
-void MovesPersistence::savePosPair(std::ostringstream &stream, const PosPair &pair)
+void MovesPersistence::savePosPair(std::ostringstream &stream, const std::pair<byte, byte> &pair)
 {
-	if (pair.first.isValid() && pair.second.isValid())
+	if (pair.first < 64 && pair.second < 64)
 	{
 		stream << '('
-			   << static_cast<int>(pair.first.x) << ',' << static_cast<int>(pair.first.y) << ';'
-			   << static_cast<int>(pair.second.x) << ',' << static_cast<int>(pair.second.y)
+			   << static_cast<int>(pair.first)
+			   << ';'
+			   << static_cast<int>(pair.second)
 			   << ')';
 	}
 }

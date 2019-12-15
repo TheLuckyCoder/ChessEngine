@@ -26,7 +26,8 @@ class GameManager(
     private var initialized = false
     private var isPlayerWhite = true
 
-    var statsEnabled = false
+    var basicStatsEnabled = false
+    var advancedStatsEnabled = false
     val isWorking
         get() = Native.isWorking()
 
@@ -34,6 +35,7 @@ class GameManager(
 
     fun initBoard(restartGame: Boolean, playerWhite: Boolean = true) {
         initBoardNative(restartGame, playerWhite)
+        Native.enableStats(advancedStatsEnabled)
 
         if (initialized) {
             if (isPlayerWhite != playerWhite) {
@@ -67,8 +69,13 @@ class GameManager(
     }
 
     fun makeMove(startPos: Pos, destPos: Pos) {
-        Native.enableStats(statsEnabled)
-        Native.movePiece(startPos.x, startPos.y, destPos.x, destPos.y)
+        Native.enableStats(advancedStatsEnabled)
+        Native.movePiece(
+            startPos.x.toByte(),
+            startPos.y.toByte(),
+            destPos.x.toByte(),
+            destPos.y.toByte()
+        )
     }
 
     private fun getPiecesList() = Native.getPieces().filter { it.type.toInt() != 0 }

@@ -1,16 +1,13 @@
 #pragma once
 
-#include "../containers/Containers.h"
-
 enum GenType : unsigned char
 {
 	ALL,
 	CAPTURES,
-	ATTACKS_DEFENSES,
-	KING_DANGER
+	ATTACKS_DEFENSES
 };
 
-template<GenType T, bool ToList = true>
+template<GenType T>
 class MoveGen final
 {
 public:
@@ -18,16 +15,12 @@ public:
 	MoveGen(const MoveGen&) = delete;
 	MoveGen(MoveGen&&) = delete;
 
-	static auto generatePawnMoves(const Piece &piece, Pos pos, const Board &board);
-	static auto generateKnightMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static auto generateBishopMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static auto generateRookMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static auto generateQueenMoves(const Piece &piece, const Pos &pos, const Board &board);
-	static auto generateKingMoves(const Piece &piece, const Pos &pos, const Board &board);
-
-	template <class Func>
-	static void forEachAttack(bool white, const Board &board, Func &&func);
-	static Attacks getAttacksPerColor(bool white, const Board &board);
+	static U64 getPawnMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getKnightMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getBishopMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getRookMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getQueenMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getKingMoves(Color color, byte square, const Board &board) noexcept;
 };
 
 #include "MoveGen.inl"

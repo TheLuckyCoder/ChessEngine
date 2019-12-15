@@ -1,14 +1,15 @@
 #pragma once
 
-#include "PosMap.h"
-#include "StackVector.h"
+#include <array>
 
-class Attacks
+#include "PosMap.h"
+
+using U64 = std::uint64_t;
+
+class AttacksMap
 {
 public:
-	U64 board[2][6]{}; // Color[2] and Piece Types[6]
+	std::array<std::array<U64, 6>, 2> board{}; // Color[2] and Piece Types[6]
 	PosMap map;
 };
 
-template<std::size_t N>
-using PosVector = StackVector<Pos, N>;
