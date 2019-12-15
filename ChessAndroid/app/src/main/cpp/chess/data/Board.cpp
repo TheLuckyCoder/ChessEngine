@@ -368,7 +368,7 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 
 	if (castled)
 	{
-		Hash::removeCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+		Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 		
 		if (color)
 		{
