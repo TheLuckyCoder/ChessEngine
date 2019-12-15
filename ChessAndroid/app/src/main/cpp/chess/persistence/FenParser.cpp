@@ -121,9 +121,9 @@ void FenParser::parsePieces(std::istringstream &stream)
 		const Piece &piece = board.data[i];
 		const U64 bb = Bitboard::shiftedBoards[i];
 
-		board.getType(piece.color, piece.type) |= bb;
+		board.getType(piece) |= bb;
 
-		if (piece.type != PAWN)
-			board.npm += Evaluation::getPieceValue(piece.type);
+		if (piece.type() != PAWN)
+			board.npm += Evaluation::getPieceValue(piece.type());
 	}
 }

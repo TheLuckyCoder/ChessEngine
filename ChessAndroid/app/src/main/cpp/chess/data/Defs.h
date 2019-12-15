@@ -11,7 +11,7 @@ enum Color : bool
 	WHITE = true
 };
 
-constexpr Color operator~(Color c)
+constexpr Color operator~(const Color c) noexcept
 {
 	return Color(c ^ WHITE); // Toggle color
 }
@@ -88,14 +88,6 @@ enum PieceType : unsigned char
 
 	PIECE_TYPE_NB = 8
 };
-
-/*enum Piece : byte
-{
-	NO_PIECE,
-	W_PAWN = 1, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
-	B_PAWN = 9, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
-	PIECE_NB = 16
-};*/
 
 constexpr U64 RANK_1 = 0xffull;
 constexpr U64 RANK_2 = 0xff00ull;

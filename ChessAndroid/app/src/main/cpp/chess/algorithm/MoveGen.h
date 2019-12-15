@@ -15,12 +15,12 @@ public:
 	MoveGen(const MoveGen&) = delete;
 	MoveGen(MoveGen&&) = delete;
 
-	static U64 generatePawnMoves(const Piece &piece, byte square, const Board &board);
-	static U64 generateKnightMoves(const Piece &piece, byte square, const Board &board);
-	static U64 generateBishopMoves(const Piece &piece, byte square, const Board &board);
-	static U64 generateRookMoves(const Piece &piece, byte square, const Board &board);
-	static U64 generateQueenMoves(const Piece &piece, byte square, const Board &board);
-	static U64 generateKingMoves(const Piece &piece, byte square, const Board &board);
+	static U64 getPawnMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getKnightMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getBishopMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getRookMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getQueenMoves(Color color, byte square, const Board &board) noexcept;
+	static U64 getKingMoves(Color color, byte square, const Board &board) noexcept;
 };
 
 #include "MoveGen.inl"

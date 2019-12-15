@@ -31,7 +31,7 @@ bool Player::onlyKingsLeft(const Board &board)
 		return false;
 
 	for (const Piece &piece : board.data)
-		if (piece && piece.type != PieceType::KING)
+		if (piece && piece.type() != PieceType::KING)
 			return false;
 
 	return true;
@@ -42,16 +42,15 @@ bool Player::hasNoValidMoves(const Color color, const Board &board)
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &attacker = board.getPiece(startSq);
-		if (attacker.type == NO_PIECE_TYPE || attacker.color != board.colorToMove)
+		if (!attacker || attacker.color() != board.colorToMove)
 			continue;
 
 		U64 possibleMoves = attacker.getPossibleMoves(startSq, board);
+		possibleMoves &= ~board.getType(~color, KING);
 
 		while (possibleMoves)
 		{
 			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-			if (board.getPiece(destSq).type == PieceType::KING)
-				continue;
 
 			Board tempBoard = board;
 			tempBoard.doMove(startSq, destSq, false);
@@ -81,30 +80,31 @@ AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &piece = board.getPiece(startSq);
-		if (piece && piece.color == white)
+		if (piece && piece.color() == white)
 		{
+			const Color color = piece.color();
 			U64 moves{};
 			using Generator = MoveGen<ATTACKS_DEFENSES>;
 
-			switch (piece.type)
+			switch (piece.type())
 			{
 				case PieceType::PAWN:
-					moves = Generator::generatePawnMoves(piece, startSq, board);
+					moves = Generator::getPawnMoves(color, startSq, board);
 					break;
 				case PieceType::KNIGHT:
-					moves = Generator::generateKnightMoves(piece, startSq, board);
+					moves = Generator::getKnightMoves(color, startSq, board);
 					break;
 				case PieceType::BISHOP:
-					moves = Generator::generateBishopMoves(piece, startSq, board);
+					moves = Generator::getBishopMoves(color, startSq, board);
 					break;
 				case PieceType::ROOK:
-					moves = Generator::generateRookMoves(piece, startSq, board);
+					moves = Generator::getRookMoves(color, startSq, board);
 					break;
 				case PieceType::QUEEN:
-					moves = Generator::generateQueenMoves(piece, startSq, board);
+					moves = Generator::getQueenMoves(color, startSq, board);
 					break;
 				case PieceType::KING:
-					moves = Generator::generateKingMoves(piece, startSq, board);
+					moves = Generator::getKingMoves(color, startSq, board);
 					break;
 				default:
 					break;
@@ -114,7 +114,7 @@ AttacksMap Player::getAttacksPerColor(const bool white, const Board &board)
 			{
 				const byte destSq = Bitboard::findNextSquare(moves);
 				attacks.map[destSq]++;
-				attacks.board[piece.color][piece.type - 1u] |= Bitboard::shiftedBoards[destSq];
+				attacks.board[piece.color()][piece.type() - 1u] |= Bitboard::getSquare64(destSq);
 			}
 		}
 	}

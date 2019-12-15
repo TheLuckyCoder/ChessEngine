@@ -32,15 +32,20 @@ namespace Bitboard
 	/**
 	 * Table of precalculated shifted bitboards indexed by the times 1 has been shifted to the left
 	 */
-	constexpr std::array<U64, 64> shiftedBoards = []
+	constexpr auto shiftedBoards = []
 	{
 		std::array<U64, 64> array{};
 
-		for (auto i = 0u; i < 64u; ++i)
+		for (auto i = 0u; i < SQUARE_NB; ++i)
 			array[i] = 1ULL << i;
 
 		return array;
 	}();
+
+	constexpr U64 getSquare64(const byte square) noexcept
+	{
+		return shiftedBoards[square];
+	}
 
 #if defined(__GNUC__)  // GCC, Clang
 

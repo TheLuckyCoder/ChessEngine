@@ -31,7 +31,6 @@ public:
 	byte halfMoveClock{};
 	byte enPassantSq{};
 
-
 	Board() = default;
 	Board(Board&&) noexcept = default;
 	Board(const Board &board) = default;
@@ -56,6 +55,8 @@ public:
 	Piece &getPiece(byte x, byte y) noexcept;
 	const Piece &getPiece(byte x, byte y) const noexcept;
 	const Piece &at(byte x, byte y) const noexcept;
+	U64 &getType(Piece piece) noexcept;
+	U64 getType(Piece piece) const noexcept;
 	U64 &getType(Color color, PieceType type) noexcept;
 	U64 getType(Color color, PieceType type) const noexcept;
 
@@ -109,18 +110,17 @@ std::vector<T> Board::listValidMoves() const noexcept
 	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
 	{
 		const Piece &attacker = getPiece(startSq);
-		if (attacker.type == NO_PIECE_TYPE || attacker.color != colorToMove)
+		if (!attacker || attacker.color() != colorToMove)
 			continue;
 
 		U64 possibleMoves = attacker.getPossibleMoves(startSq, *this);
 
 		// Make sure we are not capturing the king
-		possibleMoves &= ~getType(colorToMove, KING);
+		possibleMoves &= ~getType(~colorToMove, KING);
 
 		while (possibleMoves)
 		{
 			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-			//const Piece victim = getPiece(destSq);
 
 			Board board = *this;
 			board.doMove(startSq, destSq);

@@ -6,58 +6,60 @@ const Piece Piece::EMPTY{};
 
 U64 Piece::getPossibleMoves(const byte square, const Board &board) const noexcept
 {
+	const Color c = color();
 	U64 result{};
 
-	switch (type)
+	switch (type())
 	{
 	case PieceType::PAWN:
-		result = MoveGen<ALL>::generatePawnMoves(*this, square, board);
+		result = MoveGen<ALL>::getPawnMoves(c, square, board);
 		break;
 	case PieceType::KNIGHT:
-		result = MoveGen<ALL>::generateKnightMoves(*this, square, board);
+		result = MoveGen<ALL>::getKnightMoves(c, square, board);
 		break;
 	case PieceType::BISHOP:
-		result = MoveGen<ALL>::generateBishopMoves(*this, square, board);
+		result = MoveGen<ALL>::getBishopMoves(c, square, board);
 		break;
 	case PieceType::ROOK:
-		result = MoveGen<ALL>::generateRookMoves(*this, square, board);
+		result = MoveGen<ALL>::getRookMoves(c, square, board);
 		break;
 	case PieceType::QUEEN:
-		result = MoveGen<ALL>::generateQueenMoves(*this, square, board);
+		result = MoveGen<ALL>::getQueenMoves(c, square, board);
 		break;
 	case PieceType::KING:
-		result = MoveGen<ALL>::generateKingMoves(*this, square, board);
+		result = MoveGen<ALL>::getKingMoves(c, square, board);
 		break;
 	default:
 		break;
 	}
-
+	
 	return result;
 }
 
 U64 Piece::getPossibleCaptures(const byte square, const Board &board) const noexcept
 {
+	const Color c = color();
 	U64 result{};
 
-	switch (type)
+	switch (type())
 	{
 	case PieceType::PAWN:
-		result = MoveGen<CAPTURES>::generatePawnMoves(*this, square, board);
+		result = MoveGen<CAPTURES>::getPawnMoves(c, square, board);
 		break;
 	case PieceType::KNIGHT:
-		result = MoveGen<CAPTURES>::generateKnightMoves(*this, square, board);
+		result = MoveGen<CAPTURES>::getKnightMoves(c, square, board);
 		break;
 	case PieceType::BISHOP:
-		result = MoveGen<CAPTURES>::generateBishopMoves(*this, square, board);
+		result = MoveGen<CAPTURES>::getBishopMoves(c, square, board);
 		break;
 	case PieceType::ROOK:
-		result = MoveGen<CAPTURES>::generateRookMoves(*this, square, board);
+		result = MoveGen<CAPTURES>::getRookMoves(c, square, board);
 		break;
 	case PieceType::QUEEN:
-		result = MoveGen<CAPTURES>::generateQueenMoves(*this, square, board);
+		result = MoveGen<CAPTURES>::getQueenMoves(c, square, board);
 		break;
 	case PieceType::KING:
-		result = MoveGen<CAPTURES>::generateKingMoves(*this, square, board);
+		result = MoveGen<CAPTURES>::getKingMoves(c, square, board);
 		break;
 	default:
 		break;
