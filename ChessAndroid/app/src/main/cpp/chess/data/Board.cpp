@@ -304,14 +304,14 @@ void Board::moveRook(const byte startSq)
 {
 	const bool pieceColor = getPiece(startSq).color();
 
-	Hash::removeCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+	Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 
 	if (col(startSq) == 0u)
 		castlingRights &= ~(pieceColor ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 	else if (col(startSq) == 7u)
 		castlingRights &= ~(pieceColor ? ~CASTLE_WHITE_KING : CASTLE_BLACK_KING);
 
-	Hash::addCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+	Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 }
 
 void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
@@ -378,8 +378,8 @@ void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
 			castlingRights &= ~CASTLE_BLACK_BOTH;
 			castlingRights |= CASTLED_BLACK;
 		}
-		
-		Hash::addCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+
+		Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
 	} else {
 		castlingRights &= ~(color ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	}

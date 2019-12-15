@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory android:title="@string/pref_category_appearance">
-        p
+
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_white"
             android:key="key_tile_white"

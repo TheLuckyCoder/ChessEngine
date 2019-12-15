@@ -29,11 +29,6 @@ void Hash::init()
 	s_WhiteToMove = dist(mt);
 }
 
-U64 Hash::movePiece(const byte sq, const Piece &piece)
-{
-	return s_Pieces[sq][piece.color()][piece.type()];
-}
-
 U64 Hash::compute(const Board &board)
 {
 	U64 hash{};
@@ -45,7 +40,7 @@ U64 Hash::compute(const Board &board)
 	if (board.colorToMove)
 		hash ^= s_WhiteToMove;
 
-	addCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
+	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
 
 	return hash;
 }
@@ -53,13 +48,13 @@ U64 Hash::compute(const Board &board)
 void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece, const Piece &destPiece)
 {
 	// Remove Selected Piece
-	key ^= Hash::movePiece(selectedSq, selectedPiece);
+	Hash::xorPiece(key, selectedSq, selectedPiece);
 
 	if (destPiece) // Remove Destination Piece if any
-		key ^= Hash::movePiece(destSq, destPiece);
+		Hash::xorPiece(key, destSq, destPiece);
 
 	// Add Selected Piece to Destination
-	key ^= Hash::movePiece(destSq, selectedPiece);
+	Hash::xorPiece(key, destSq, selectedPiece);
 }
 
 void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceType promotedType)
@@ -81,7 +76,7 @@ void Hash::flipSide(U64 &key)
 	key ^= Hash::s_WhiteToMove;
 }
 
-void Hash::addCastlingRights(U64 &key, const CastlingRights rights)
+void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
 {
 	if (rights & CASTLE_WHITE_KING)
 		key ^= s_CastlingRights[0];
@@ -92,18 +87,4 @@ void Hash::addCastlingRights(U64 &key, const CastlingRights rights)
 		key ^= s_CastlingRights[2];
 	if (rights & CASTLE_BLACK_QUEEN)
 		key ^= s_CastlingRights[3];
-}
-
-void Hash::removeCastlingRights(U64 &key, const CastlingRights rights)
-{
-	// Remove them in the opposite order they were added in
-	if (rights & CASTLE_BLACK_QUEEN)
-		key ^= s_CastlingRights[3];
-	if (rights & CASTLE_BLACK_KING)
-		key ^= s_CastlingRights[2];
-
-	if (rights & CASTLE_WHITE_QUEEN)
-		key ^= s_CastlingRights[1];
-	if (rights & CASTLE_WHITE_KING)
-		key ^= s_CastlingRights[0];
 }

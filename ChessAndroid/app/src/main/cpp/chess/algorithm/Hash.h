@@ -24,13 +24,11 @@ public:
 	Hash &operator=(Hash&&) = delete;
 
 	static void init();
-	static U64 movePiece(byte sq, const Piece &piece);
 	static U64 compute(const Board &board);
 
 	static void makeMove(U64 &key, byte selectedSq, byte destSq, const Piece &selectedPiece, const Piece &destPiece = Piece::EMPTY);
 	static void promotePawn(U64 &key, byte sq, Color color, PieceType promotedType);
 	static void xorPiece(U64 &key, byte sq, const Piece &piece);
 	static void flipSide(U64 &key);
-	static void addCastlingRights(U64 &key, CastlingRights rights);
-	static void removeCastlingRights(U64 &key, CastlingRights rights);
+	static void xorCastlingRights(U64 &key, const CastlingRights rights);
 };
