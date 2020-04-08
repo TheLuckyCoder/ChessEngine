@@ -275,6 +275,11 @@ U64 PieceAttacks::getRookAttacks(const byte square, U64 blockers) noexcept
 	return s_RookAttacks[square][key];
 }
 
+U64 PieceAttacks::getQueenAttacks(const byte square, const U64 blockers) noexcept
+{
+	return getBishopAttacks(square, blockers) | getRookAttacks(square, blockers);
+}
+
 U64 PieceAttacks::getKingAttacks(const byte square) noexcept
 {
 	return s_KingAttacks[square];

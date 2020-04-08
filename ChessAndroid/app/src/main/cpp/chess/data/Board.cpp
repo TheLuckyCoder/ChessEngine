@@ -1,6 +1,10 @@
 #include "Board.h"
 
+#include "Pos.h"
 #include "../algorithm/Hash.h"
+#include "../algorithm/Evaluation.h"
+#include "../algorithm/MoveGen.h"
+#include "../algorithm/PieceAttacks.h"
 #include "../persistence/FenParser.h"
 
 void Board::initDefaultBoard()
@@ -39,7 +43,7 @@ Piece &Board::getPiece(const byte squareIndex) noexcept
 	return data[squareIndex];
 }
 
-const Piece &Board::getPiece(const byte squareIndex) const noexcept
+Piece Board::getPiece(const byte squareIndex) const noexcept
 {
 	return data[squareIndex];
 }
@@ -49,20 +53,20 @@ Piece &Board::getPiece(const byte x, const byte y) noexcept
 	return data[toSquare(x, y)];
 }
 
-const Piece &Board::getPiece(const byte x, const byte y) const noexcept
+Piece Board::getPiece(const byte x, const byte y) const noexcept
 {
 	return data[toSquare(x, y)];
 }
 
 /*
- * Returns Piece::EMPTY if the x or y parameters are wrong
+ * Returns an empty Piece if the x or y parameters are wrong
  */
-const Piece &Board::at(const byte x, const byte y) const noexcept
+Piece Board::at(const byte x, const byte y) const noexcept
 {
 	const Pos pos(x, y);
 	if (pos.isValid())
 		return data[pos.toSquare()];
-	return Piece::EMPTY;
+	return Piece();
 }
 
 U64 &Board::getType(const Piece piece) noexcept
@@ -85,49 +89,13 @@ U64 Board::getType(const Color color, const PieceType type) const noexcept
 	return pieces[color][type];
 }
 
-bool Board::operator<(const Board &other) const noexcept
+bool Board::isRepetition() const noexcept
 {
-	return score < other.score;
-}
+	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
+		if (zKey == history[i].zKey)
+			return true;
 
-bool Board::operator>(const Board &other) const noexcept
-{
-	return score > other.score;
-}
-
-void Board::updateState() noexcept
-{
-	state = State::NONE;
-	if (Player::onlyKingsLeft(*this) || halfMoveClock == 50u)
-	{
-		state = State::DRAW;
-		return;
-	}
-
-	const bool whiteInCheck = Player::isInCheck(WHITE, *this);
-    const bool blackInCheck = Player::isInCheck(BLACK, *this);
-
-	if (whiteInCheck && blackInCheck)
-    {
-        state = State::INVALID;
-        return;
-    }
-
-	if (whiteInCheck)
-        state = State::WHITE_IN_CHECK;
-	else if (blackInCheck)
-        state = State::BLACK_IN_CHECK;
-
-	if (colorToMove)
-	{
-		if (Player::hasNoValidMoves(WHITE, *this))
-			state = whiteInCheck ? State::WINNER_BLACK : State::DRAW;
-	}
-	else
-    {
-        if (Player::hasNoValidMoves(BLACK, *this))
-            state = blackInCheck ? State::WINNER_WHITE : State::DRAW;
-    }
+	return false;
 }
 
 Phase Board::getPhase() const noexcept
@@ -139,253 +107,364 @@ Phase Board::getPhase() const noexcept
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
-bool Board::hasValidState() const noexcept
+bool Board::makeMove(const Move move) noexcept
 {
-	const Color previousPlayer = ~colorToMove;
+	assert(!move.empty());
+	const byte from = move.from();
+	const byte to = move.to();
+	const Color side = colorToMove;
+	const auto flags = move.flags();
+	const U64 posKey = zKey;
+	const PieceType movedPiece = move.piece();
 
-    if (state == State::INVALID)
-        return false;
-    if (previousPlayer == WHITE && (state == State::WHITE_IN_CHECK || state == State::WINNER_BLACK))
-        return false;
-    if (previousPlayer == BLACK && (state == State::BLACK_IN_CHECK || state == State::WINNER_WHITE))
-        return false;
+	assert(from < SQUARE_NB);
+	assert(to < SQUARE_NB);
+	assert(Piece::isValid(movedPiece));
+	{
+		const auto p = getPiece(from);
+		assert(p.isValid());
+	}
+	
+	assert(getPiece(from).type() == movedPiece); // TODO
 
-    return true;
-}
+	// Handle en passant capture and castling
+	if (flags & Move::EN_PASSANT)
+	{
+		Pos capturedPos(to);
+		capturedPos.y += static_cast<byte>(side ? -1 : 1);
+		removePiece(capturedPos.toSquare());
+	} else if (flags & Move::KSIDE_CASTLE) {
+		switch (to)
+		{
+		case SQ_G1: movePiece(SQ_H1, SQ_F1); break;
+		case SQ_G8: movePiece(SQ_H8, SQ_F8); break;
+		default: assert(false);
+		}
 
-std::vector<std::pair<Pos, Piece>> Board::getAllPieces() const
-{
-	std::vector<std::pair<Pos, Piece>> pieces;
-	pieces.reserve(32);
+		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
+	} else if (flags & Move::QSIDE_CASTLE) {
+		switch (to)
+		{
+		case SQ_C1: movePiece(SQ_A1, SQ_D1); break;
+		case SQ_C8: movePiece(SQ_A8, SQ_D8); break;
+		default: assert(false);
+		}
 
-	for (byte square = 0u; square < 64u; ++square)
-		if (const Piece &piece = data[square])
-			pieces.emplace_back(Pos(square), piece);
+		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
+	}
 
-	return pieces;
-}
+	Hash::xorEnPassant(zKey, enPassantSq);
+	Hash::xorCastlingRights(zKey, CastlingRights(castlingRights));
 
-void Board::doMove(const byte startSq, const byte destSq, const bool updateState) noexcept
-{
-	const Piece &startPiece = getPiece(startSq);
-	const Piece &destPiece = getPiece(destSq);
-	const U64 startBb = Bitboard::shiftedBoards[startSq];
-	const U64 destBb = Bitboard::shiftedBoards[destSq];
+	// Store the position info in history
+	history[historyPly] = { posKey, move, castlingRights, enPassantSq, fiftyMoveRule };
 
-	score = 0;
-	state = State::NONE;
-	isPromotion = isCapture = false;
-	++halfMoveClock;
+	if (movedPiece == KING && canCastle(side)) // Remove all castling rights if the king is moved
+		castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
+	else if (movedPiece == ROOK && canCastle(side))
+	{
+		const U64 rookFile = Bitboard::getFile(from);
+		if (rookFile == FILE_A)
+			castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
+		else if (rookFile == FILE_H)
+			castlingRights &= ~(side ? CASTLE_WHITE_KING : CASTLE_BLACK_KING);
+	}
 
-	getType(colorToMove, startPiece.type()) &= ~startBb;
-	getType(~colorToMove, destPiece.type()) &= ~destBb;
-	getType(colorToMove, startPiece.type()) |= destBb;
+	enPassantSq = SQ_NONE;
+	++fiftyMoveRule;
 
+	if (const PieceType capturedType = move.capturedPiece();
+		capturedType != PieceType::NO_PIECE_TYPE)
+	{
+		if (capturedType == ROOK && canCastle(~side))
+		{
+			const U64 rookFile = Bitboard::getFile(to);
+			if (rookFile == FILE_A)
+				castlingRights &= ~(~side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
+			else if (rookFile == FILE_H)
+				castlingRights &= ~(~side ? CASTLE_WHITE_KING : CASTLE_BLACK_KING);
+		}
+		removePiece(to);
+		fiftyMoveRule = 0;
+	}
+
+	++historyPly;
+	++ply;
+
+	if (movedPiece == PAWN)
+	{
+		fiftyMoveRule = 0;
+
+		if (move.flags() & Move::DOUBLE_PAWN_PUSH)
+		{
+			Pos enPassantPos(from);
+			enPassantPos.y += static_cast<byte>(side ? 1 : -1);
+			enPassantSq = enPassantPos.toSquare();
+			
+			Hash::xorEnPassant(zKey, enPassantSq);
+			const U64 enPassantRank = Bitboard::getRank(enPassantSq);
+			assert(enPassantRank == RANK_3 || enPassantRank == RANK_6);
+		}
+	}
+
+	movePiece(from, to);
+
+	if (move.flags() & Move::PROMOTION)
+	{
+		const PieceType promotedPiece = move.promotedPiece();
+		assert(promotedPiece != NO_PIECE_TYPE && promotedPiece != PAWN);
+
+		removePiece(to); // Remove Pawn
+		addPiece(to, Piece(promotedPiece, side));
+	}
+
+	colorToMove = ~colorToMove;
 	Hash::flipSide(zKey);
-	Hash::makeMove(zKey, startSq, destSq, startPiece, destPiece);
-
-	if (startPiece.type() == PieceType::PAWN)
-	{
-		movePawn(startSq, destSq);
-		halfMoveClock = 0u;
-	}
-	else
-	{
-		enPassantSq = 64u;
-		if (startPiece.type() == PieceType::ROOK)
-			moveRook(startSq);
-		else if (startPiece.type() == PieceType::KING)
-			moveKing(startPiece, startSq, destSq);
-	}
-
-	if (destPiece)
-	{
-		if (destPiece.type() != PAWN)
-			npm -= Evaluation::getPieceValue(destPiece.type());
-		isCapture = true;
-		halfMoveClock = 0u;
-	}
-
-	getPiece(destSq) = startPiece;
-	getPiece(startSq) = Piece();
+	
 	updateNonPieceBitboards();
+
+	if (isInCheck(side))
+	{
+		undoMove();
+		return false;
+	}
+
+	return true;
+}
+
+void Board::undoMove() noexcept
+{
+	--historyPly;
+	--ply;
+
+	const UndoMove &previousMove = history[historyPly];
+	const Move move = previousMove.move;
+	const byte from = move.from();
+	const byte to = move.to();
+	const auto flags = move.flags();
+
+	assert(from < SQUARE_NB);
+	assert(to < SQUARE_NB);
+
+	castlingRights = previousMove.castlingRights;
+	fiftyMoveRule = previousMove.fiftyMoveRule;
+	enPassantSq = previousMove.enPassantSq;
 
 	colorToMove = ~colorToMove;
 
-	if (updateState)
-		this->updateState();
-}
-
-std::vector<Board> Board::listQuiescenceMoves() const
-{
-	std::vector<Board> moves;
-	moves.reserve(50);
-
-	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
+	if (flags & Move::EN_PASSANT)
 	{
-		const Piece &attacker = getPiece(startSq);
-		if (!attacker || attacker.color() != colorToMove)
-			continue;
-
-		U64 possibleMoves = attacker.getPossibleCaptures(startSq, *this);
-
-		// Make sure we are not capturing the king
-		possibleMoves &= ~getType(~colorToMove, KING);
-
-		while (possibleMoves)
+		Pos capturedPos(to);
+		capturedPos.y += static_cast<byte>(colorToMove ? -1 : 1);
+		addPiece(capturedPos.toSquare(), Piece(PAWN, ~colorToMove));
+	} else if (flags & Move::KSIDE_CASTLE) {
+		switch (to)
 		{
-			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-
-			Board board = *this;
-			board.doMove(startSq, destSq);
-
-			if (!board.hasValidState())
-				continue;
-
-			board.score = Evaluation::simpleEvaluation(board);
-
-			moves.push_back(board);
+		case SQ_G1: movePiece(SQ_F1, SQ_H1); break;
+		case SQ_G8: movePiece(SQ_F8, SQ_H8); break;
+		default: assert(false);
+		}
+	} else if (flags & Move::QSIDE_CASTLE) {
+		switch (to)
+		{
+		case SQ_C1: movePiece(SQ_D1, SQ_A1); break;
+		case SQ_C8: movePiece(SQ_D8, SQ_A8); break;
+		default: assert(false);
 		}
 	}
 
-	if (colorToMove)
-		std::sort(moves.begin(), moves.end(), std::greater<>());
-	else
-		std::sort(moves.begin(), moves.end());
+	movePiece(to, from);
+	
+	if (const PieceType capturedType = move.capturedPiece();
+		capturedType != NO_PIECE_TYPE)
+		addPiece(to, Piece(capturedType, ~colorToMove));
 
-	return moves;
-}
-
-void Board::movePawn(const byte startSq, const byte destSq)
-{
-	Piece &pawn = getPiece(startSq);
-
-	if (const byte y = row(destSq);
-		y == 0u || y == 7u)
+	if (flags & Move::PROMOTION)
 	{
-		const PieceType newPieceType = PieceType::QUEEN;
-		isPromotion = true;
-
-		Hash::promotePawn(zKey, destSq, pawn.color(), newPieceType);
-		const U64 destBb = Bitboard::shiftedBoards[destSq];
-
-		getType(pawn.color(), PieceType::PAWN) &= ~destBb;
-		getType(pawn.color(), newPieceType) |= destBb;
-
-		getPiece(startSq) = Piece(newPieceType, pawn.color());
+		removePiece(from);
+		addPiece(from, Piece(PAWN, colorToMove));
 	}
 
-	if (enPassantSq < 64u && destSq == enPassantSq)
-	{
-		isCapture = true;
-
-		Pos capturedPos(enPassantSq);
-		capturedPos.y += static_cast<byte>(pawn.color() ? -1 : 1);
-		Piece &capturedPiece = getPiece(capturedPos.toSquare());
-
-		// Remove the captured Pawn
-		Hash::xorPiece(zKey, capturedPos.toSquare(), capturedPiece);
-		getType(capturedPiece) &= ~capturedPos.toBitboard();
-		capturedPiece = Piece();
-	}
-
-	enPassantSq = 64u;
-
-	const int distance = static_cast<int>(row(destSq)) - static_cast<int>(row(startSq));
-	if (distance == 2 || distance == -2)
-	{
-		Pos newEnPassant(destSq);
-		newEnPassant.y -= static_cast<byte>(distance / 2);
-		enPassantSq = newEnPassant.toSquare();
-	}
+	zKey = previousMove.zKey;
+	updateNonPieceBitboards();
 }
 
-void Board::moveRook(const byte startSq)
+void Board::makeNullMove() noexcept
 {
-	const bool pieceColor = getPiece(startSq).color();
+	assert(isInCheck(colorToMove));
+	
+	++ply;
+	history[historyPly++] = { zKey, Move(), castlingRights, enPassantSq, fiftyMoveRule };
 
-	Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+	if (enPassantSq != SQ_NONE)
+	{
+		Hash::xorEnPassant(zKey, enPassantSq);
+		enPassantSq = SQ_NONE;
+	}
 
-	if (col(startSq) == 0u)
-		castlingRights &= ~(pieceColor ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
-	else if (col(startSq) == 7u)
-		castlingRights &= ~(pieceColor ? ~CASTLE_WHITE_KING : CASTLE_BLACK_KING);
-
-	Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
+	colorToMove = ~colorToMove;
+	Hash::flipSide(zKey);
 }
 
-void Board::moveKing(const Piece &king, const byte startSq, const byte destSq)
+void Board::undoNullMove() noexcept
 {
-	const Color color = king.color();
-	if (!canCastle(color)) return;
+	--historyPly;
+	--ply;
 
-	bool castled = false;
+	const UndoMove &previousMove = history[historyPly];
+	zKey = previousMove.zKey;
+	castlingRights = previousMove.castlingRights;
+	fiftyMoveRule = previousMove.fiftyMoveRule;
+	enPassantSq = previousMove.enPassantSq;
 
-	if (col(destSq) == 6u)
+	colorToMove = ~colorToMove;
+}
+
+template <PieceType P>
+bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) const noexcept
+{
+	static_assert(PAWN <= P);
+	static_assert(P <= KING);
+	
+	const U64 type = getType(colorAttacking, P);
+	
+	if constexpr (P == PAWN)
+		return type & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare);
+	else if constexpr (P == KNIGHT)
+		return type & PieceAttacks::getKnightAttacks(targetSquare);
+	else if constexpr (P == BISHOP)
+		return type & PieceAttacks::getBishopAttacks(targetSquare, occupied);
+	else if constexpr (P == ROOK)
+		return type & PieceAttacks::getRookAttacks(targetSquare, occupied);
+	else if constexpr (P == QUEEN)
+		return type & PieceAttacks::getQueenAttacks(targetSquare, occupied);
+	else if constexpr (P == KING)
+		return type & PieceAttacks::getKingAttacks(targetSquare);
+
+	assert(false);
+	return false;
+}
+
+bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare) const noexcept
+{
+	return isAttacked<PAWN>(colorAttacking, targetSquare)
+		|| isAttacked<KNIGHT>(colorAttacking, targetSquare)
+		|| isAttacked<BISHOP>(colorAttacking, targetSquare)
+		|| isAttacked<ROOK>(colorAttacking, targetSquare)
+		|| isAttacked<QUEEN>(colorAttacking, targetSquare);
+}
+
+int Board::attackCount(const Color colorAttacking, const byte targetSquare) const noexcept
+{
+	using namespace Bitboard;
+	int count{};
+    count += popCount(getType(colorAttacking, PAWN) & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare));
+
+    count += popCount(getType(colorAttacking, KNIGHT) & PieceAttacks::getKnightAttacks(targetSquare));
+
+	count += popCount(getType(colorAttacking, KING) & PieceAttacks::getKingAttacks(targetSquare));
+
+	const U64 bishopsQueens = getType(colorAttacking, BISHOP) | getType(colorAttacking, QUEEN);
+	count += popCount(bishopsQueens & PieceAttacks::getBishopAttacks(targetSquare, occupied));
+
+	const U64 rooksQueens = getType(colorAttacking, ROOK) | getType(colorAttacking, QUEEN);
+	count += popCount(rooksQueens & PieceAttacks::getRookAttacks(targetSquare, occupied));
+	
+	return count;
+}
+
+bool Board::isInCheck(const Color color) const noexcept
+{
+	const U64 king = getType(color, KING);
+	if (!king) return false;
+	const byte kingSq = Bitboard::bitScanForward(king);
+
+	return isAttackedByAny(~color, kingSq);
+}
+
+void Board::addPiece(const byte square, const Piece piece) noexcept
+{
+	assert(piece.isValid());
+
+	Hash::xorPiece(zKey, square, piece);
+	getType(piece) |= Bitboard::getSquare64(square);
+	getPiece(square) = piece;
+	if (piece.type() != PAWN)
+		npm += Evaluation::getPieceValue(piece.type());
+
+	pieceList[piece][pieceCount[piece]++] = square;
+}
+
+void Board::movePiece(const byte from, const byte to) noexcept
+{
+	assert(from < SQUARE_NB);
+	assert(to < SQUARE_NB);
+
+	const Piece piece = getPiece(from);
+	assert(piece.isValid());
+
+	Hash::xorPiece(zKey, from, piece);
+	getPiece(from) = Piece();
+	getType(piece) &= ~Bitboard::getSquare64(from);
+
+	Hash::xorPiece(zKey, to, piece);
+	getPiece(to) = piece;
+	getType(piece) |= Bitboard::getSquare64(to);
+
+	bool pieceMoved = false;
+	for (byte &sq : pieceList[piece])
 	{
-		constexpr byte startX = 7u;
-		const byte y = row(startSq);
-
-		Piece &rook = getPiece(startX, y);
-		if (canCastleKs(color) && rook == Piece(ROOK, color))
+		if (sq == from)
 		{
-			constexpr byte destX = 5;
-			getPiece(destX, y) = rook;
-
-			const Pos startPos(startX, y);
-			const Pos destPos(destX, y);
-
-			getType(color, ROOK) &= ~startPos.toBitboard();
-			getType(color, ROOK) |= destPos.toBitboard();
-
-			castled = true;
-			Hash::makeMove(zKey, startPos.toSquare(), destPos.toSquare(), rook);
-			rook = Piece::EMPTY;
+			sq = to;
+			pieceMoved = true;
+			break;
 		}
 	}
-	else if (col(destSq) == 2u)
-	{
-		constexpr byte startX = 0u;
-		const byte y = row(startSq);
-
-		Piece &rook = getPiece(startX, y);
-		if (canCastleQs(color) && rook == Piece(ROOK, color))
-		{
-			constexpr byte destX = 3u;
-			getPiece(destX, y) = rook;
-
-			const Pos startPos(startX, y);
-			const Pos destPos(destX, y);
-
-			getType(color, ROOK) &= ~startPos.toBitboard();
-			getType(color, ROOK) |= destPos.toBitboard();
-
-			castled = true;
-			Hash::makeMove(zKey, startPos.toSquare(), destPos.toSquare(), rook);
-			rook = Piece::EMPTY;
-		}
-	}
-
-	if (castled)
-	{
-		Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
-		
-		if (color)
-		{
-			castlingRights &= ~CASTLE_WHITE_BOTH;
-			castlingRights |= CASTLED_WHITE;
-		} else {
-			castlingRights &= ~CASTLE_BLACK_BOTH;
-			castlingRights |= CASTLED_BLACK;
-		}
-
-		Hash::xorCastlingRights(zKey, static_cast<CastlingRights>(castlingRights));
-	} else {
-		castlingRights &= ~(color ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
-	}
+	assert(pieceMoved);
 }
 
-void Board::updateNonPieceBitboards()
+void Board::removePiece(const byte square) noexcept
+{
+	assert(square < SQUARE_NB);
+	
+	const Piece piece = getPiece(square);
+	assert(piece.isValid());
+
+	Hash::xorPiece(zKey, square, piece);
+	getType(piece) &= ~Bitboard::getSquare64(square);
+	getPiece(square) = Piece();
+	
+	if (piece.type() != PAWN)
+		npm -= Evaluation::getPieceValue(piece.type());
+
+	byte pieceIndex = -1;
+	for (byte i = 0; i < pieceCount[piece]; ++i)
+	{
+		if (pieceList[piece][i] == square)
+		{
+			pieceIndex = i;
+			break;
+		}
+	}
+
+	assert(pieceIndex < SQUARE_NB);
+	
+	pieceCount[piece]--;
+	// Move the last square in this unused index
+	pieceList[piece][pieceIndex] = pieceList[piece][pieceCount[piece]];
+}
+
+void Board::updatePieceList() noexcept
+{
+	pieceCount.fill(0);
+	
+	for (byte square = 0u; square < SQUARE_NB; ++square)
+		if (const Piece piece = getPiece(square))
+			pieceList[piece][pieceCount[piece]++] = square;
+}
+
+void Board::updateNonPieceBitboards() noexcept
 {
 	allPieces[BLACK] = getType(BLACK, PAWN)
 					 | getType(BLACK, KNIGHT)

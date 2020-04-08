@@ -2,7 +2,6 @@
 
 #include "../data/Piece.h"
 #include "../data/Score.h"
-#include "../containers/Containers.h"
 
 class Board;
 
@@ -15,7 +14,6 @@ public:
 	Evaluation(const Evaluation&) = delete;
 	Evaluation(Evaluation&&) = delete;
 
-	static short simpleEvaluation(const Board &board) noexcept;
 	static short evaluate(const Board &board) noexcept;
 	static short getPieceValue(const PieceType type) noexcept
 	{
@@ -23,8 +21,7 @@ public:
 	}
 
 private:
-	static Score evaluatePawn(const Piece &piece, byte square, const Board &board,
-							  const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept;
+	static Score evaluatePawn(const Piece &piece, byte square, const Board &board) noexcept;
 	inline static Score evaluateKnight(const Piece &piece, byte square, const Board &board) noexcept;
 	static Score evaluateBishop(const Piece &piece, byte square, const Board &board) noexcept;
 	static Score evaluateRook(const Piece &piece, byte square, const Board &board) noexcept;

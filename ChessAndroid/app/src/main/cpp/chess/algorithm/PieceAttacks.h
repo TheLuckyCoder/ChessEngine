@@ -24,5 +24,6 @@ public:
 	static U64 getKnightAttacks(byte square) noexcept;
 	static U64 getBishopAttacks(byte square, U64 blockers) noexcept;
 	static U64 getRookAttacks(byte square, U64 blockers) noexcept;
+	static U64 getQueenAttacks(byte square, U64 blockers) noexcept;
 	static U64 getKingAttacks(byte square) noexcept;
 };

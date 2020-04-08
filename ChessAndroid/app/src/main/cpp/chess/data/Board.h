@@ -2,14 +2,19 @@
 
 #include <array>
 #include <string>
-#include <vector>
 
-#include "../algorithm/Player.h"
 #include "Piece.h"
-#include "../BoardManager.h"
-#include "../algorithm/Evaluation.h"
+#include "Move.h"
 
-using U64 = std::uint64_t;
+class UndoMove final
+{
+public:
+	U64 zKey{};
+	Move move{};
+	byte castlingRights{};
+	byte enPassantSq{};
+	byte fiftyMoveRule{};
+};
 
 class Board final
 {
@@ -21,26 +26,19 @@ public:
 	U64 occupied{};
 	std::array<U64, 2> allPieces{};
 	std::array<std::array<U64, 7>, 2> pieces{};
-	short score{};
+	
+	std::array<std::array<byte, 16>, 15> pieceList{};
+	std::array<byte, 15> pieceCount{};
+	
 	short npm{};
-	State state = State::NONE;
 	Color colorToMove = WHITE;
-	bool isPromotion = false;
-	bool isCapture = false;
 	byte castlingRights = CastlingRights::CASTLE_WHITE_BOTH | CastlingRights::CASTLE_BLACK_BOTH;
-	byte halfMoveClock{};
+	byte fiftyMoveRule{};
 	byte enPassantSq{};
 
-	Board() = default;
-	Board(Board&&) noexcept = default;
-	Board(const Board &board) = default;
-	~Board() = default;
-
-	Board &operator=(Board&&) noexcept = default;
-	Board &operator=(const Board &other) = default;
-
-	bool operator<(const Board &other) const noexcept;
-	bool operator>(const Board &other) const noexcept;
+	short ply{};
+	short historyPly{};
+	UndoMove history[MAX_MOVES]{};
 
 	void initDefaultBoard();
 	void setToFen(const std::string &fen);
@@ -51,115 +49,34 @@ public:
 	bool isCastled(Color color) const noexcept;
 
 	Piece &getPiece(byte squareIndex) noexcept;
-	const Piece &getPiece(byte squareIndex) const noexcept;
+	Piece getPiece(byte squareIndex) const noexcept;
 	Piece &getPiece(byte x, byte y) noexcept;
-	const Piece &getPiece(byte x, byte y) const noexcept;
-	const Piece &at(byte x, byte y) const noexcept;
+	Piece getPiece(byte x, byte y) const noexcept;
+	Piece at(byte x, byte y) const noexcept;
 	U64 &getType(Piece piece) noexcept;
 	U64 getType(Piece piece) const noexcept;
 	U64 &getType(Color color, PieceType type) noexcept;
 	U64 getType(Color color, PieceType type) const noexcept;
 
-	void updateState() noexcept;
-	bool hasValidState() const noexcept;
+	bool isRepetition() const noexcept;
 	Phase getPhase() const noexcept;
-	std::vector<std::pair<Pos, Piece>> getAllPieces() const;
 
-	void doMove(byte startSq, byte destSq, bool updateState = true) noexcept;
-	template<class T> // RootMove or Board
-	std::vector<T> listValidMoves() const noexcept;
-	std::vector<Board> listQuiescenceMoves() const;
+	bool makeMove(Move move) noexcept;
+	void undoMove() noexcept;
+	void makeNullMove() noexcept;
+	void undoNullMove() noexcept;
+
+	template <PieceType>
+	bool isAttacked(Color colorAttacking, byte targetSquare) const noexcept;
+	bool isAttackedByAny(Color colorAttacking, byte targetSquare) const noexcept;
+	int attackCount(Color colorAttacking, byte targetSquare) const noexcept;
+	bool isInCheck(Color color) const noexcept;
 
 private:
-	void movePawn(byte startSq, byte destSq);
-	void moveRook(byte startSq);
-	void moveKing(const Piece &king, byte startSq, byte destSq);
-
-	void updateNonPieceBitboards();
+	void addPiece(byte square, Piece piece) noexcept;
+	void movePiece(byte from, byte to) noexcept;
+	void removePiece(byte square) noexcept;
+	
+	void updatePieceList() noexcept;
+	void updateNonPieceBitboards() noexcept;
 };
-
-class RootMove final
-{
-public:
-	byte startSq;
-	byte destSq;
-	Board board;
-
-	RootMove() = default;
-
-	RootMove(const byte startSq, const byte destSq, const Board &board) noexcept
-		: startSq(startSq), destSq(destSq), board(board) {}
-
-	bool operator<(const RootMove &other) const noexcept
-	{
-		return board < other.board;
-	}
-
-	bool operator>(const RootMove &other) const noexcept
-	{
-		return board > other.board;
-	}
-};
-
-template<class T>
-std::vector<T> Board::listValidMoves() const noexcept
-{
-	std::vector<T> moves;
-	moves.reserve(100);
-
-	for (byte startSq = 0u; startSq < SQUARE_NB; ++startSq)
-	{
-		const Piece &attacker = getPiece(startSq);
-		if (!attacker || attacker.color() != colorToMove)
-			continue;
-
-		U64 possibleMoves = attacker.getPossibleMoves(startSq, *this);
-
-		// Make sure we are not capturing the king
-		possibleMoves &= ~getType(~colorToMove, KING);
-
-		while (possibleMoves)
-		{
-			const byte destSq = Bitboard::findNextSquare(possibleMoves);
-
-			Board board = *this;
-			board.doMove(startSq, destSq);
-
-			if (!board.hasValidState())
-				continue;
-
-			board.score = Evaluation::simpleEvaluation(board);
-
-			if constexpr (std::is_same_v<T, RootMove>)
-			{
-				int count = 1;
-
-				for (const auto &game : BoardManager::getMovesHistory())
-				{
-					if (board.colorToMove == game.board.colorToMove &&
-						board.state == game.board.state &&
-						board.zKey == game.board.zKey)
-						count++;
-
-					if (count == 3)
-					{
-						board.score = 0;
-						board.state = State::DRAW;
-						break;
-					}
-				}
-
-				moves.emplace_back(startSq, destSq, board);
-			}
-			else if (std::is_same_v<T, Board>)
-				moves.push_back(board);
-		}
-	}
-
-	if (colorToMove)
-		std::sort(moves.begin(), moves.end(), std::greater<>());
-	else
-		std::sort(moves.begin(), moves.end());
-
-	return moves;
-}

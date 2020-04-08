@@ -41,6 +41,7 @@ class TileView(
             field = value
             invalidate()
         }
+    var storedMove: Long = 0L
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -56,7 +57,13 @@ class TileView(
             State.SELECTED -> {
                 selectedStatePaint.color = activity.preferences.selectedTileColor
 
-                canvas.drawRect(0f, 0f, measuredWidth.toFloat(), measuredHeight.toFloat(), selectedStatePaint)
+                canvas.drawRect(
+                    0f,
+                    0f,
+                    measuredWidth.toFloat(),
+                    measuredHeight.toFloat(),
+                    selectedStatePaint
+                )
             }
             State.POSSIBLE -> {
                 possibleStatePaint.color = activity.preferences.possibleTileColor

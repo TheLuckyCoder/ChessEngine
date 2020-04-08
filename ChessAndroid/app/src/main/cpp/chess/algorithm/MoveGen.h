@@ -1,26 +1,54 @@
 #pragma once
 
-enum GenType : unsigned char
+#include "../data/Move.h"
+#include "../data/Board.h"
+
+enum GenType : byte
 {
 	ALL,
 	CAPTURES,
 	ATTACKS_DEFENSES
 };
 
-template<GenType T>
-class MoveGen final
+template <GenType T>
+Move *generateMoves(const Board &board, Move *moveList) noexcept;
+
+template <GenType T>
+class MoveList
 {
 public:
-	MoveGen() = delete;
-	MoveGen(const MoveGen&) = delete;
-	MoveGen(MoveGen&&) = delete;
+	explicit MoveList(const Board& board) : _last(generateMoves<T>(board, _moveList)) {}
+	
+	constexpr const Move *begin() const noexcept { return _moveList; }
+	constexpr const Move *end() const noexcept { return _last; }
 
-	static U64 getPawnMoves(Color color, byte square, const Board &board) noexcept;
-	static U64 getKnightMoves(Color color, byte square, const Board &board) noexcept;
-	static U64 getBishopMoves(Color color, byte square, const Board &board) noexcept;
-	static U64 getRookMoves(Color color, byte square, const Board &board) noexcept;
-	static U64 getQueenMoves(Color color, byte square, const Board &board) noexcept;
-	static U64 getKingMoves(Color color, byte square, const Board &board) noexcept;
+	constexpr Move *begin() noexcept { return _moveList; }
+	constexpr Move *end() noexcept { return _last; }
+	
+	constexpr size_t size() const noexcept { return _last - _moveList; }
+	constexpr bool empty() const noexcept { return (_last - _moveList) == 0u; }
+
+private:
+	Move _moveList[MAX_MOVES];
+	Move *_last;
 };
 
-#include "MoveGen.inl"
+inline bool moveExists(Board &board, const Move &move)
+{
+	const MoveList<ALL> allMoves(board);
+
+	for (const Move &m : allMoves)
+	{
+		if (m == move)
+		{
+			if (board.makeMove(m))
+			{
+				board.undoMove();
+				return true;
+			}
+			return false;
+		}
+	}
+	
+	return false;
+}

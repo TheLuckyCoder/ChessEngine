@@ -1,6 +1,8 @@
 #include "FenParser.h"
 
+#include "../data/Bitboard.h"
 #include "../data/Board.h"
+#include "../algorithm/Evaluation.h"
 #include "../algorithm/Hash.h"
 
 FenParser::FenParser(Board &board)
@@ -28,7 +30,7 @@ void FenParser::parseFen(const std::string &fen)
 	// Castling availability
 	fenStream >> token;
 	board.castlingRights = CastlingRights::CASTLE_NONE;
-	for (auto &currChar : token) {
+	for (char currChar : token) {
 		switch (currChar) {
 			case 'K': board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
@@ -52,8 +54,9 @@ void FenParser::parseFen(const std::string &fen)
 	// Halfmove Clock
 	int halfMove;
 	fenStream >> halfMove;
-	board.halfMoveClock = static_cast<byte>(halfMove);
+	board.fiftyMoveRule = static_cast<byte>(halfMove);
 
+	board.updatePieceList();
 	board.updateNonPieceBitboards();
 	board.zKey = Hash::compute(board);
 }
@@ -63,7 +66,7 @@ std::string FenParser::exportToFen()
 	return std::string();
 }
 
-void FenParser::parsePieces(std::istringstream &stream)
+void FenParser::parsePieces(std::istringstream &stream) const
 {
 	std::string token;
 
@@ -116,10 +119,10 @@ void FenParser::parsePieces(std::istringstream &stream)
 		}
 	}
 
-	for (byte i = 0u; i < 64u; ++i)
+	for (byte square = 0u; square < SQUARE_NB; ++square)
 	{
-		const Piece &piece = board.data[i];
-		const U64 bb = Bitboard::shiftedBoards[i];
+		const Piece piece = board.data[square];
+		const U64 bb = Bitboard::shiftedBoards[square];
 
 		board.getType(piece) |= bb;
 

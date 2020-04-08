@@ -1,32 +1,40 @@
 #pragma once
 
+#include <array>
+
+#include "../Settings.h"
+#include "../data/Move.h"
 #include "../containers/TranspositionTable.h"
-#include "../threads/ThreadPool.h"
+#include "../containers/ThreadPool.h"
 
 class Board;
-class RootMove;
-class Settings;
 
 class Search final
 {
-	static ThreadPool s_ThreadPool;
-	static TranspositionTable s_SearchCache;
-	static bool s_QuiescenceSearchEnabled;
-	static short s_BestMoveFound;
+	static TranspositionTable _transpTable;
+	static std::array<std::array<Move, MAX_DEPTH>, 2> _searchKillers;
+	static std::array<std::array<int, 64>, 64> _searchHistory;
+	static ThreadPool _threadPool;
+	static bool _quiescenceSearchEnabled;
 
 public:
 	Search() = delete;
 	Search(const Search&) = delete;
 	Search(Search&&) = delete;
 
-	static RootMove findBestMove(const Board &board, const Settings &settings);
-	static short getBestMoveFound();
+	Search &operator=(const Search&) = delete;
+	Search &operator=(Search&&) = delete;
+
+	static Move getBestMove(Board &board, const Settings &settings);
+	
+	static auto &getTranspTable() noexcept { return _transpTable; }
+	static auto &getSearchKillers() noexcept { return _searchKillers; }
+	static auto &getSearchHistory() noexcept { return _searchHistory; }
 
 private:
-	static RootMove negaMaxRoot(const std::vector<RootMove> &validMoves, unsigned int jobCount, short ply);
-	static short negaMax(const Board &board, short ply, short alpha, short beta, short depth, bool moveCountPruning);
-	static short quiescence(const Board &board, short alpha, short beta);
-	static short negaScout(const Board &board, short ply, short alpha, short beta, bool isWhite, short depth);
+	static Move searchRoot(Board &board, int depth);
+	static int search(Board &board, int alpha, int beta, int depth, bool doNull);
+	static int searchCaptures(Board &board, int alpha, int beta);
 
-	inline static short sideToMove(const Board &board);
+	inline static int sideToMove(const Board &board);
 };

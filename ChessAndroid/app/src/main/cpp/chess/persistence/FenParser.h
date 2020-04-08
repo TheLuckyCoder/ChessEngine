@@ -15,5 +15,5 @@ public:
 	std::string exportToFen();
 
 private:
-	void parsePieces(std::istringstream &stream);
+	void parsePieces(std::istringstream &stream) const;
 };

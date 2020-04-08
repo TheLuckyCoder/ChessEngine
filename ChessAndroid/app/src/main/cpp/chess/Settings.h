@@ -1,17 +1,46 @@
 #pragma once
 
+#include <algorithm>
+#include <thread>
+
+#include "data/Defs.h"
+
 class Settings final
 {
-    short baseSearchDepth;
-    unsigned int threadCount;
-    unsigned int cacheTableSizeMb;
-    bool quiescenceSearch;
+	std::size_t _baseSearchDepth;
+	std::size_t _threadCount;
+	std::size_t _cacheTableSizeMb;
+	bool _quiescenceSearch;
 
 public:
-    Settings(short baseSearchDepth, unsigned int threadCount, unsigned int cacheTableSizeMb, bool performQuiescenceSearch) noexcept;
+	Settings(const std::size_t baseSearchDepth,
+	         const std::size_t threadCount,
+	         const std::size_t cacheTableSizeMb,
+	         const bool performQuiescenceSearch) noexcept
+		: _baseSearchDepth(std::clamp<std::size_t>(baseSearchDepth, 1u, MAX_DEPTH)),
+		  _threadCount(std::clamp<std::size_t>(threadCount, 1u, std::thread::hardware_concurrency())),
+		  _cacheTableSizeMb(std::max<std::size_t>(cacheTableSizeMb, 1u)),
+		  _quiescenceSearch(performQuiescenceSearch)
+	{
+	}
 
-    short getBaseSearchDepth() const noexcept;
-    unsigned int getThreadCount() const noexcept;
-    unsigned int getCacheTableSizeMb() const noexcept;
-    bool performQuiescenceSearch() const noexcept;
+	std::size_t getBaseSearchDepth() const noexcept
+	{
+		return _baseSearchDepth;
+	}
+
+	std::size_t getThreadCount() const noexcept
+	{
+		return _threadCount;
+	}
+
+	std::size_t getCacheTableSizeMb() const noexcept
+	{
+		return _cacheTableSizeMb;
+	}
+
+	bool performQuiescenceSearch() const noexcept
+	{
+		return _quiescenceSearch;
+	}
 };

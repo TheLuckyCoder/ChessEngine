@@ -1,63 +1,49 @@
 #pragma once
 
-#include "Pos.h"
-
-class Board;
+#include "Defs.h"
 
 class Piece final
 {
-public:
-	enum Type : byte
-	{
-		NO_PIECE,
-		W_PAWN = 1, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
-		B_PAWN = 9, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
-		PIECE_NB = 16
-	};
-
-private:
 	/*
 	 * The first 3 bits are use to store the specific Piece Type, eg. PAWN, KNIGHT, BISHOP
 	 * The 4-th bit is use to indicate the color of this piece
 	 */
-	Type content;
+	byte _piece{};
+	
 public:
-	const static Piece EMPTY;
-
-	constexpr Piece() noexcept
-		: content(NO_PIECE) {}
+	Piece() noexcept = default;
 	
 	constexpr Piece(const PieceType type, const Color color) noexcept
-		: content(static_cast<Type>((color << 3u) | type)) {}
+		: _piece((color << 3u) | type) {}
 
-	explicit constexpr Piece(const Type type) noexcept
-		: content(type) {}
+	explicit constexpr Piece(const byte type) noexcept
+		: _piece(type) {}
 	
-	Piece(Piece&&) = default;
-	Piece(const Piece&) = default;
-	~Piece() = default;
+	Piece(Piece&&) noexcept = default;
+	Piece(const Piece&) noexcept = default;
+	~Piece() noexcept = default;
 
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
 	constexpr bool operator==(const Piece &other) const noexcept
 	{
-		return content == other.content;
+		return _piece == other._piece;
 	}
 
-	constexpr bool operator==(const Type type) const noexcept
+	constexpr bool operator==(const byte type) const noexcept
 	{
-		return content == type;
+		return _piece == type;
 	}
 
 	constexpr Color color() const noexcept
 	{
-		return static_cast<Color>(content >> 3u);
+		return static_cast<Color>(_piece >> 3u);
 	}
 
 	constexpr PieceType type() const noexcept
 	{
-		return static_cast<PieceType>(content & 7u);
+		return static_cast<PieceType>(_piece & 7u);
 	}
 
 	constexpr bool isSameColor(const Piece &other) const noexcept
@@ -65,22 +51,29 @@ public:
 		return color() == other.color();
 	}
 
+	constexpr bool isValid() const noexcept
+	{
+		return isValid(type());
+	}
+
+	/*
+	 * Flip the color of the piece
+	 */
 	constexpr Piece operator~() const noexcept
 	{
 		// Flip the 4-th bit
-		return Piece(static_cast<Type>(content ^ 8u));
+		return Piece(_piece ^ 8u);
 	}
 
 	constexpr operator byte() const noexcept
 	{
-		return static_cast<byte>(content);
+		return static_cast<byte>(_piece);
 	}
 
-	constexpr operator bool() const noexcept
+	static constexpr bool isValid(const PieceType type) noexcept
 	{
-		return content != Type::NO_PIECE;
+		return PAWN <= type && type <= KING;
 	}
-
-	U64 getPossibleMoves(byte square, const Board &board) const noexcept;
-	U64 getPossibleCaptures(byte square, const Board &board) const noexcept;
 };
+
+constexpr Piece EMPTY_PIECE{};

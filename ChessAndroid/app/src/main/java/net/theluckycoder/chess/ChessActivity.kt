@@ -117,6 +117,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             if (clearMoved && it.value.lastMoved)
                 it.value.lastMoved = false
             it.value.state = TileView.State.NONE
+            it.value.storedMove = 0
         }
     }
 
@@ -131,12 +132,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
     private fun movePiece(view: TileView) {
         if (!selectedPos.isValid || !canMove) return
+        if (view.storedMove != 0L) {
+            gameManager.makeMove(view.storedMove)
+            clearTiles(true)
+            selectedPos = Pos()
 
-        gameManager.makeMove(selectedPos, view.pos)
-        clearTiles(true)
-        selectedPos = Pos()
-
-        pb_loading.visibility = View.VISIBLE
+            pb_loading.visibility = View.VISIBLE
+        }
     }
 
     private fun selectPiece(view: PieceView) {
@@ -147,8 +149,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         val possibleMoves = gameManager.selectPiece(selectedPos)
 
-        possibleMoves.forEach {
-            tiles[it]?.state = TileView.State.POSSIBLE
+        possibleMoves.forEach { move ->
+            val to = (move ushr 15).toInt() and 0x3F
+
+            tiles[Pos(to.toByte())]?.let {
+                it.state = TileView.State.POSSIBLE
+                it.storedMove = move
+            }
         }
     }
 

@@ -6,20 +6,20 @@
 
 class Stats final
 {
-	inline static bool s_StatsEnabled = false;
-	inline static double s_ElapsedTime = 0;
-	static std::chrono::time_point<std::chrono::steady_clock> s_StartTime;
+	inline static bool _statsEnabled = false;
+	inline static double _elapsedTime = 0;
+	static std::chrono::time_point<std::chrono::steady_clock> _startTime;
 
-	static std::atomic_size_t s_BoardsEvaluated;
-	static std::atomic_size_t s_NodesSearched;
-	static std::atomic_size_t s_NodesGenerated;
+	static std::atomic_size_t _boardsEvaluated;
+	static std::atomic_size_t _nodesSearched;
+	static std::atomic_size_t _nodesGenerated;
 
 public:
 	Stats() = delete;
 	Stats(const Stats&) = delete;
 	Stats(Stats&&) = delete;
 
-	static bool isEnabled() noexcept { return s_StatsEnabled; }
+	static bool isEnabled() noexcept { return _statsEnabled; }
 	static void setEnabled(bool enabled) noexcept;
 	static void resetStats() noexcept;
 
