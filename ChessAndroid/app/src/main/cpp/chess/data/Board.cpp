@@ -163,7 +163,7 @@ bool Board::makeMove(const Move move) noexcept
 		castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	else if (movedPiece == ROOK && canCastle(side))
 	{
-		const U64 rookFile = Bitboard::getFile(from);
+		const U64 rookFile = Bits::getFile(from);
 		if (rookFile == FILE_A)
 			castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 		else if (rookFile == FILE_H)
@@ -178,7 +178,7 @@ bool Board::makeMove(const Move move) noexcept
 	{
 		if (capturedType == ROOK && canCastle(~side))
 		{
-			const U64 rookFile = Bitboard::getFile(to);
+			const U64 rookFile = Bits::getFile(to);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(~side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -202,7 +202,7 @@ bool Board::makeMove(const Move move) noexcept
 			enPassantSq = enPassantPos.toSquare();
 			
 			Hash::xorEnPassant(zKey, enPassantSq);
-			const U64 enPassantRank = Bitboard::getRank(enPassantSq);
+			const U64 enPassantRank = Bits::getRank(enPassantSq);
 			assert(enPassantRank == RANK_3 || enPassantRank == RANK_6);
 		}
 	}
@@ -291,7 +291,7 @@ void Board::undoMove() noexcept
 
 void Board::makeNullMove() noexcept
 {
-	assert(isInCheck(colorToMove));
+	assert(!isInCheck(colorToMove));
 	
 	++ply;
 	history[historyPly++] = { zKey, Move(), castlingRights, enPassantSq, fiftyMoveRule };
@@ -356,7 +356,7 @@ bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare)
 
 int Board::attackCount(const Color colorAttacking, const byte targetSquare) const noexcept
 {
-	using namespace Bitboard;
+	using namespace Bits;
 	int count{};
     count += popCount(getType(colorAttacking, PAWN) & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare));
 
@@ -377,7 +377,7 @@ bool Board::isInCheck(const Color color) const noexcept
 {
 	const U64 king = getType(color, KING);
 	if (!king) return false;
-	const byte kingSq = Bitboard::bitScanForward(king);
+	const byte kingSq = Bits::bitScanForward(king);
 
 	return isAttackedByAny(~color, kingSq);
 }
@@ -387,7 +387,7 @@ void Board::addPiece(const byte square, const Piece piece) noexcept
 	assert(piece.isValid());
 
 	Hash::xorPiece(zKey, square, piece);
-	getType(piece) |= Bitboard::getSquare64(square);
+	getType(piece) |= Bits::getSquare64(square);
 	getPiece(square) = piece;
 	if (piece.type() != PAWN)
 		npm += Evaluation::getPieceValue(piece.type());
@@ -405,11 +405,11 @@ void Board::movePiece(const byte from, const byte to) noexcept
 
 	Hash::xorPiece(zKey, from, piece);
 	getPiece(from) = Piece();
-	getType(piece) &= ~Bitboard::getSquare64(from);
+	getType(piece) &= ~Bits::getSquare64(from);
 
 	Hash::xorPiece(zKey, to, piece);
 	getPiece(to) = piece;
-	getType(piece) |= Bitboard::getSquare64(to);
+	getType(piece) |= Bits::getSquare64(to);
 
 	bool pieceMoved = false;
 	for (byte &sq : pieceList[piece])
@@ -432,7 +432,7 @@ void Board::removePiece(const byte square) noexcept
 	assert(piece.isValid());
 
 	Hash::xorPiece(zKey, square, piece);
-	getType(piece) &= ~Bitboard::getSquare64(square);
+	getType(piece) &= ~Bits::getSquare64(square);
 	getPiece(square) = Piece();
 	
 	if (piece.type() != PAWN)

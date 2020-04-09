@@ -8,7 +8,7 @@ namespace
 	template <Color Us, GenType Type>
 	Move *generatePawnMoves(const Board &board, Move *moveList, const U64 targets)
 	{
-		using namespace Bitboard;
+		using namespace Bits;
 
 		constexpr Piece piece(PAWN, Us);
 		constexpr Color Them = ~Us;
@@ -126,7 +126,7 @@ namespace
 
 			while (attacks)
 			{
-				const byte to = Bitboard::findNextSquare(attacks);
+				const byte to = Bits::findNextSquare(attacks);
 				const PieceType capturedPiece = board.getPiece(to).type();
 
 				Move move(from, to, P);
@@ -163,7 +163,7 @@ namespace
 			U64 attacks = PieceAttacks::getKingAttacks(kingSquare) & targets;
 			while (attacks)
 			{
-				const byte to = Bitboard::findNextSquare(attacks);
+				const byte to = Bits::findNextSquare(attacks);
 				const PieceType captured = board.getPiece(to).type();
 
 				Move move(kingSquare, to, KING);
@@ -183,7 +183,7 @@ namespace
 				const byte y = row(kingSquare);
 				const auto isEmptyAndCheckFree = [&, y](const byte x)
 				{
-					return !board.getPiece(x, y) && !board.attackCount(Them, toSquare(x, y));
+					return !board.getPiece(x, y) && !board.isAttackedByAny(Them, toSquare(x, y));
 				};
 
 				// King Side

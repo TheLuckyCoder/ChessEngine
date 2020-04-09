@@ -18,14 +18,14 @@ class Move final
 public:
 	Move() = default;
 
-	constexpr Move(const unsigned int move, const int score) noexcept
+	explicit constexpr Move(const unsigned int move, const int score = 0) noexcept
 		: _move(move), _score(score)
 	{
 	}
 	
 	constexpr Move(const byte from, const byte to, const PieceType piece, const unsigned int flags = 0) noexcept
+		: _move(((flags & 0x7F) << 22u) | ((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
 	{
-		_move = ((flags & 0x7F) << 22u) | ((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7);
 	}
 
 	constexpr bool empty() const noexcept

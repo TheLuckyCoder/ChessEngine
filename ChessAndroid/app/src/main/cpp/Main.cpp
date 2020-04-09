@@ -11,6 +11,7 @@
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/algorithm/Evaluation.h"
 #include "chess/algorithm/MoveGen.h"
+#include "chess/data/Pos.h"
 
 static JavaVM *jvm = nullptr;
 static jobject gameManagerInstance;
@@ -35,8 +36,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 
 	for (unsigned i = 0; i < moved.size(); ++i)
 	{
-		const Pos &startPos = Pos(moved[i].first);
-		const Pos &destPos = Pos(moved[i].second);
+		const Pos &startPos{ moved[i].first };
+		const Pos &destPos{ moved[i].second };
 		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
 									 startPos.x, startPos.y, destPos.x, destPos.y);
 

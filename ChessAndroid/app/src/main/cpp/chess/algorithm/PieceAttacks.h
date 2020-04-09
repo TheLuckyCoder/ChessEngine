@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "../data/Bitboard.h"
+#include "../data/Bits.h"
 
 using byte = unsigned char;
 

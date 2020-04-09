@@ -76,16 +76,19 @@ Move Search::getBestMove(Board &board, const Settings &settings)
 {
 	// Apply Settings
 	int depth = settings.getBaseSearchDepth();
-	const auto threadCount = settings.getThreadCount();
+//	const auto threadCount = settings.getThreadCount();
 	_quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
+	const size_t pawnTableSize = settings.getCacheTableSizeMb() / 10;
+	Evaluation::getPawnTable().setSize(pawnTableSize);
+	
 	// If the Transposition Table wasn't resized, increment its age
-	if (!_transpTable.setSize(settings.getCacheTableSizeMb()))
+	if (!_transpTable.setSize(settings.getCacheTableSizeMb() - pawnTableSize))
 		_transpTable.incrementAge();
 
 	// Update ThreadPool size if needed
-	if (_threadPool.getThreadCount() != threadCount)
-		_threadPool.updateThreadCount(threadCount);
+//	if (_threadPool.getThreadCount() != threadCount)
+//		_threadPool.updateThreadCount(threadCount);
 
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
@@ -142,23 +145,22 @@ Move Search::searchRoot(Board &board, const int depth)
 	return bestMove;
 }
 
-Board *historyBoard = new Board[MAX_DEPTH]{};
+std::vector<Board> historyBoard(MAX_DEPTH);
 
 int Search::search(Board &board, int alpha, int beta, const int depth, const bool doNull)
 {
 	historyBoard[board.ply] = board;
 	if (board.ply && (board.fiftyMoveRule == 100 || board.isRepetition()))
 		return 0;
-	
-	if (depth <= 0 || board.ply == MAX_DEPTH)
-	{
-		if (depth == -1 || board.isInCheck(board.colorToMove))
-		{
-			// Switch to Quiescence Search if enabled
-			return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta) : sideToMove(board);
-		}
 
-		// If in check, allow the search to be extended to depth -1
+	if (board.ply == MAX_DEPTH )
+		return sideToMove(board);
+	
+	if (depth <= 0)
+	{
+		// If in check and not already extended, allow the search to be extended to depth -1
+		if (depth < 0 || !board.isInCheck(board.colorToMove))
+			return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta) : sideToMove(board);
 	}
 
 	const int originalAlpha = alpha;
@@ -182,7 +184,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	// Null Move
 	const Color color = board.colorToMove;
-	if (doNull && board.ply && depth >= 4 && board.pieceCount[Piece(QUEEN, color)] + board.pieceCount[Piece(ROOK, color)] > 0 && board.isInCheck(color))
+	if (doNull && board.ply && depth >= 4 && board.pieceCount[Piece(QUEEN, color)] + board.pieceCount[Piece(ROOK, color)] > 0 && !board.isInCheck(color))
 	{
 		board.makeNullMove();
 		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false);

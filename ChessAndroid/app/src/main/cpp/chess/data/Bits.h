@@ -11,7 +11,7 @@
 
 //#define USE_CUSTOM_POPCNT
 
-namespace Bitboard
+namespace Bits
 {
 	constexpr U64 eastN(U64 board, const int n) noexcept
 	{
@@ -191,6 +191,31 @@ namespace Bitboard
 
 #	endif
 
+#if defined(_MSC_VER) && defined(_WIN64)
+
+	inline U64 flipVertical(const U64 bb)
+	{
+		return _byteswap_uint64(bb);
+	}
+	
+#else
+	/**
+	 * Flip a bitboard vertically about the centre ranks.
+	 * Rank 1 is mapped to rank 8 and vice versa.
+	 * @param bb any bitboard
+	 * @return bitboard bb flipped vertically
+	 */
+	inline U64 flipVertical(U64 bb)
+	{
+		const U64 k1{ 0x00FF00FF00FF00FF };
+		const U64 k2{ 0x0000FFFF0000FFFF };
+		bb = ((bb >>  8) & k1) | ((bb & k1) <<  8);
+		bb = ((bb >> 16) & k2) | ((bb & k2) << 16);
+		bb = ( bb >> 32)       | ( bb       << 32);
+		return bb;
+	}
+#endif
+
 	inline byte popLsb(U64 &bb) noexcept
 	{
 		const byte lsbIndex = bitScanForward(bb);
@@ -200,8 +225,8 @@ namespace Bitboard
 
 	inline byte findNextSquare(U64 &bb)
 	{
-		const byte square = Bitboard::bitScanForward(bb);
-		bb ^= Bitboard::shiftedBoards[square];
+		const byte square = Bits::bitScanForward(bb);
+		bb ^= Bits::shiftedBoards[square];
 		return square;
 	}
 
@@ -209,10 +234,11 @@ namespace Bitboard
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square
 	*/
-	constexpr static auto rays = [] {
+	constexpr static auto rays = []
+	{
 		std::array<std::array<U64, SQUARE_NB>, 8> rays{};
 
-		using namespace Bitboard;
+		using namespace Bits;
 
 		for (byte square = 0u; square < SQUARE_NB; ++square)
 		{
@@ -236,7 +262,8 @@ namespace Bitboard
 		return rays;
 	}();
 
-	constexpr static auto ranks = [] {
+	constexpr static auto ranks = []
+	{
 		std::array<U64, 8> ranks{};
 
 		for (byte r = 0u; r < 8u; ++r)
@@ -245,7 +272,8 @@ namespace Bitboard
 		return ranks;
 	}();
 
-	constexpr static auto files = [] {
+	constexpr static auto files = []
+	{
 		std::array<U64, 8> files{};
 
 		for (byte f = 0u; f < 8u; ++f)
@@ -306,3 +334,5 @@ namespace Bitboard
 
 // endregion Rays
 }
+
+#undef USE_CUSTOM_POPCNT

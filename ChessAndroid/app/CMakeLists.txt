@@ -10,8 +10,6 @@ add_library(
         src/main/cpp/Main.cpp
         ${cpp_srcs})
 
-set(ANDROID_TOOLCHAIN_NAME "arm64-v8a")
-
 find_library(
         log-lib
         log)

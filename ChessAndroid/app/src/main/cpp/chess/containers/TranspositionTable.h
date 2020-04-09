@@ -22,7 +22,7 @@ struct SearchEntry
 
 class TranspositionTable
 {
-	constexpr static int MUTEX_COUNT = 1024;
+	static constexpr int MUTEX_COUNT = 1024;
 
 public:
     explicit TranspositionTable(std::size_t sizeMb) noexcept;

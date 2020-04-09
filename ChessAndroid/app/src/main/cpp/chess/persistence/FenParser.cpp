@@ -1,6 +1,6 @@
 #include "FenParser.h"
 
-#include "../data/Bitboard.h"
+#include "../data/Bits.h"
 #include "../data/Board.h"
 #include "../algorithm/Evaluation.h"
 #include "../algorithm/Hash.h"
@@ -49,7 +49,6 @@ void FenParser::parseFen(const std::string &fen)
 	fenStream >> token;
 	board.enPassantSq = 64u;
 	//board.enPassant = token == "-" ? 0ull : 1 << x;
-
 
 	// Halfmove Clock
 	int halfMove;
@@ -122,7 +121,7 @@ void FenParser::parsePieces(std::istringstream &stream) const
 	for (byte square = 0u; square < SQUARE_NB; ++square)
 	{
 		const Piece piece = board.data[square];
-		const U64 bb = Bitboard::shiftedBoards[square];
+		const U64 bb = Bits::shiftedBoards[square];
 
 		board.getType(piece) |= bb;
 

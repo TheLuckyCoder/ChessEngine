@@ -9,8 +9,8 @@ android {
         applicationId "net.theluckycoder.chess"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 110
-        versionName "1.1"
+        versionCode 101
+        versionName "1.0.1"
     }
 
     buildTypes {
@@ -31,7 +31,7 @@ android {
     defaultConfig {
         externalNativeBuild {
             cmake {
-                abiFilters "arm64-v8a", "x86_64"
+                //abiFilters "arm64-v8a", "x86_64"
             }
         }
     }

@@ -1,30 +1,51 @@
 #pragma once
 
-#include "../data/Piece.h"
 #include "../data/Score.h"
+#include "../containers/PawnStructureTable.h"
 
 class Board;
 
 class Evaluation final
 {
-	constexpr static short PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
+	static constexpr short PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
+	inline static PawnStructureTable _pawnTable{ 1 };
 
 public:
 	Evaluation() = delete;
 	Evaluation(const Evaluation&) = delete;
 	Evaluation(Evaluation&&) = delete;
 
+	Evaluation &operator=(const Evaluation&) = delete;
+	Evaluation &operator=(Evaluation&&) = delete;
+
 	static short evaluate(const Board &board) noexcept;
+	template <Color Us>
+	static Score evaluatePieces(const Board &board) noexcept;
 	static short getPieceValue(const PieceType type) noexcept
 	{
 		return PIECE_VALUE[type];
 	}
+	static PawnStructureTable &getPawnTable() noexcept
+	{
+		return _pawnTable;
+	}
 
 private:
-	static Score evaluatePawn(const Piece &piece, byte square, const Board &board) noexcept;
-	inline static Score evaluateKnight(const Piece &piece, byte square, const Board &board) noexcept;
-	static Score evaluateBishop(const Piece &piece, byte square, const Board &board) noexcept;
-	static Score evaluateRook(const Piece &piece, byte square, const Board &board) noexcept;
-	static Score evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept;
-	inline static Score evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept;
+	template <Color Us>
+	static Score evaluatePawn(const Board &board, byte square) noexcept;
+	
+	template <Color Us>
+	static Score evaluateKnight(const Board &board, byte square) noexcept;
+	
+	template <Color Us>
+	static Score evaluateBishop(const Board &board, byte square) noexcept;
+	
+	template <Color Us>
+	static Score evaluateRook(const Board &board, byte square) noexcept;
+	
+	template <Color Us>
+	static Score evaluateQueen(const Board &board, byte square) noexcept;
+	
+	template <Color Us>
+	static Score evaluateKing(const Board &board, byte square) noexcept;
 };

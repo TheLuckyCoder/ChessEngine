@@ -51,7 +51,7 @@ public:
 	}
 };
 
-constexpr Score operator*(Score score, const int rhs) noexcept
+constexpr Score operator*(Score score, const short rhs) noexcept
 {
 	score.mg *= rhs;
 	score.eg *= rhs;

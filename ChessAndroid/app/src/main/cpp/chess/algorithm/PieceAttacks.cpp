@@ -64,7 +64,7 @@ constexpr std::array<U64, 64> rookMagics = {
  * These do not include edge squares
  */
 constexpr auto bishopMasks = [] {
-	using namespace Bitboard;
+	using namespace Bits;
 
 	const U64 edgeSquares = FILE_A | FILE_H | RANK_1 | RANK_8;
 	std::array<U64, SQUARE_NB> masks{};
@@ -81,7 +81,7 @@ constexpr auto bishopMasks = [] {
 }();
 
 constexpr auto rookMasks = [] {
-	using namespace Bitboard;
+	using namespace Bits;
 
 	std::array<U64, SQUARE_NB> masks{};
 
@@ -99,13 +99,13 @@ constexpr auto rookMasks = [] {
 U64 getBlockersFromIndex(const int index, U64 mask)
 {
 	U64 blockers{};
-	const int bits = Bitboard::popCount(mask);
+	const int bits = Bits::popCount(mask);
 
 	for (int i = 0; i < bits; i++)
 	{
-		const byte bitPos = Bitboard::popLsb(mask);
+		const byte bitPos = Bits::popLsb(mask);
 		if (index & (1 << i))
-			blockers |= Bitboard::shiftedBoards[bitPos];
+			blockers |= Bits::shiftedBoards[bitPos];
 	}
 
 	return blockers;
@@ -113,18 +113,18 @@ U64 getBlockersFromIndex(const int index, U64 mask)
 
 U64 getRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
 {
-	const U64 attacks = Bitboard::getRay(direction, square);
+	const U64 attacks = Bits::getRay(direction, square);
 	const U64 blocker = attacks & occupied;
-	const byte index = Bitboard::bitScanForward(blocker | 0x8000000000000000);
-	return attacks ^ Bitboard::getRay(direction, index);
+	const byte index = Bits::bitScanForward(blocker | 0x8000000000000000);
+	return attacks ^ Bits::getRay(direction, index);
 }
 
 U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
 {
-	const U64 attacks = Bitboard::getRay(direction, square);
+	const U64 attacks = Bits::getRay(direction, square);
 	const U64 blocker = attacks & occupied;
-	const byte index = Bitboard::bitScanReverse(blocker | 1ULL);
-	return attacks ^ Bitboard::getRay(direction, index);
+	const byte index = Bits::bitScanReverse(blocker | 1ULL);
+	return attacks ^ Bits::getRay(direction, index);
 }
 
 U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
@@ -144,7 +144,7 @@ U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 }
 
 const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
-	using namespace Bitboard;
+	using namespace Bits;
 	std::array<std::array<U64, 64>, 2> moves{};
 
 	for (byte i = 0u; i < SQUARE_NB; i++)
@@ -192,7 +192,7 @@ std::array<std::array<U64, 1024>, SQUARE_NB> PieceAttacks::s_BishopAttacks{};
 std::array<std::array<U64, 4096>, SQUARE_NB> PieceAttacks::s_RookAttacks{};
 
 const std::array<U64, SQUARE_NB> PieceAttacks::s_KingAttacks = [] {
-	using namespace Bitboard;
+	using namespace Bits;
 
 	std::array<U64, SQUARE_NB> moves{};
 

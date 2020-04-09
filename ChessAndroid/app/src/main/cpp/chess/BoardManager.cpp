@@ -6,6 +6,7 @@
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
 #include "algorithm/PieceAttacks.h"
+#include "../Log.h"
 
 Settings BoardManager::_settings(4u, std::thread::hardware_concurrency() - 1u, 100, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
@@ -110,13 +111,14 @@ void BoardManager::forceMove()
 // This function should only be called through the Worker Thread
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
+	LOGV("SEARCH", "Started Searching");
 	_isWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();
 
 	Board tempBoard = _board;
 	const Move bestMove = Search::getBestMove(tempBoard, settings);
-
+	LOGV("SEARCH", "Started Searching");
 	Stats::stopTimer();
 	makeMove(bestMove, false);
 

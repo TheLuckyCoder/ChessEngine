@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Bitboard.h"
+#include "Bits.h"
 
 class Pos
 {
@@ -74,6 +74,6 @@ public:
 
 	constexpr U64 toBitboard() const noexcept
 	{
-		return Bitboard::shiftedBoards[toSquare()];
+		return Bits::shiftedBoards[toSquare()];
 	}
 };

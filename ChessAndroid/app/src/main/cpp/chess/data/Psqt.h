@@ -13,5 +13,5 @@ public:
 	Psqt(const Psqt&) = delete;
 	Psqt(Psqt&&) = delete;
 
-	const static ScoreArray s_Bonus;
+	const static ScoreArray BONUS;
 };
