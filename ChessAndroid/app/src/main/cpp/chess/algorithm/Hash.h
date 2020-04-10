@@ -11,15 +11,16 @@ class Hash final
 {
 	using HashArray = std::array<std::array<std::array<U64, 7>, 2>, SQUARE_NB>;
 
-	static HashArray s_Pieces;
-	static U64 s_WhiteToMove;
-	static std::array<U64, 4> s_CastlingRights;
-	static std::array<U64, SQUARE_NB> s_EnPassant;
+	static HashArray _pieces;
+	static U64 _side;
+	static std::array<U64, 4> _castlingRights;
+	static std::array<U64, SQUARE_NB> _enPassant;
 
 public:
 	Hash() = delete;
 	Hash(const Hash&) = delete;
 	Hash(Hash&&) = delete;
+	~Hash() = delete;
 
 	Hash &operator=(const Hash&) = delete;
 	Hash &operator=(Hash&&) = delete;

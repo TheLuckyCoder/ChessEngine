@@ -18,6 +18,10 @@ public:
 	PieceAttacks() = delete;
 	PieceAttacks(const PieceAttacks&) = delete;
 	PieceAttacks(PieceAttacks&&) = delete;
+	~PieceAttacks() = delete;
+
+	PieceAttacks &operator=(const PieceAttacks&) = delete;
+	PieceAttacks &operator=(PieceAttacks&&) = delete;
 
 	static void init() noexcept;
 	static U64 getPawnAttacks(bool isWhite, byte square) noexcept;

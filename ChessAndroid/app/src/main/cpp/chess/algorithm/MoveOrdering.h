@@ -8,9 +8,12 @@
 
 namespace MoveOrdering
 {
-	static constexpr std::array VictimScore = { 0, 100, 200, 300, 400, 500, 600 };
+	static constexpr int NORMAL_SCORE_BONUS = 1000000;
+	static constexpr int PV_BONUS = NORMAL_SCORE_BONUS * 2;
+	static constexpr int EN_PASSANT_BONUS = 105;
+	static constexpr std::array VICTIM_SCORE = { 0, 100, 200, 300, 400, 500, 600 };
 	
-	static constexpr auto MvaLvv = []
+	static constexpr auto MVA_LVV = []
 	{
 		std::array<std::array<int, 7>, 7> array{};
 
@@ -18,7 +21,7 @@ namespace MoveOrdering
 		{
 			for (int victim = PAWN; victim <= KING; ++victim)
 			{
-				array[victim][attacker] = VictimScore[victim] + 6 - VictimScore[attacker] / 100;
+				array[victim][attacker] = VICTIM_SCORE[victim] + 6 - VICTIM_SCORE[attacker] / 100;
 			}
 		}
 
@@ -26,11 +29,7 @@ namespace MoveOrdering
 	}();
 
 	inline void sortMoves(const Board &board, Move *begin, Move *end) noexcept
-	{
-		constexpr int NORMAL_SCORE_BONUS = 1000000;
-		constexpr int PV_BONUS = NORMAL_SCORE_BONUS * 2;
-		constexpr int EN_PASSANT_BONUS = NORMAL_SCORE_BONUS + 105;
-		
+	{		
 		const Move pvMove = Search::getTranspTable()[board.zKey].move;
 		auto &searchKillers = Search::getSearchKillers();
 		auto &searchHistory = Search::getSearchHistory();
@@ -43,17 +42,35 @@ namespace MoveOrdering
 			if (move == pvMove)
 				move.setScore(PV_BONUS);
 			else if (flags & Move::Flag::CAPTURE)
-				move.setScore(MvaLvv[move.capturedPiece()][move.piece()] + NORMAL_SCORE_BONUS);
+				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()] + NORMAL_SCORE_BONUS);
 			else if (flags & Move::PROMOTION)
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE_BONUS);
 			else if (flags & Move::Flag::EN_PASSANT)
-				move.setScore(EN_PASSANT_BONUS);
+				move.setScore(EN_PASSANT_BONUS + NORMAL_SCORE_BONUS);
 			else if (searchKillers[0][board.ply] == move)
-					move.setScore(900000);
+				move.setScore(900000);
 			else if (searchKillers[1][board.ply] == move)
 				move.setScore(800000);
 			else
 				move.setScore(searchHistory[move.from()][move.to()]);
+		}
+		
+		std::sort(begin, end, std::greater<>());
+	}
+
+	inline void sortQMoves(Move *begin, Move *end) noexcept
+	{
+		for (Move *it = begin; it != end; ++it)
+		{
+			Move &move = *it;
+			const auto flags = move.flags(); 
+			
+			if (flags & Move::Flag::CAPTURE)
+				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()]);
+			else if (flags & Move::PROMOTION)
+				move.setScore(Evaluation::getPieceValue(move.promotedPiece()));
+			else if (flags & Move::Flag::EN_PASSANT)
+				move.setScore(EN_PASSANT_BONUS);
 		}
 		
 		std::sort(begin, end, std::greater<>());

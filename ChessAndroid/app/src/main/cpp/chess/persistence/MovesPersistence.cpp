@@ -6,31 +6,31 @@
 #include "../data/Board.h"
 
 MovesPersistence::MovesPersistence(std::string content)
-	: m_Content(std::move(content))
+	: _content(std::move(content))
 {
-	m_Content.erase(std::remove_if(m_Content.begin(), m_Content.end(),
-			[](const char c) { return std::isspace(c); }), m_Content.end());
+	_content.erase(std::remove_if(_content.begin(), _content.end(),
+			[](const char c) { return std::isspace(c); }), _content.end());
 }
 
 bool MovesPersistence::isPlayerWhite() const
 {
-	return m_Content[0] != 'B';
+	return _content[0] != 'B';
 }
 
 std::vector<Move> MovesPersistence::getMoves() const
 {
 	std::vector<Move> moves;
-	moves.reserve(100);
+	moves.reserve(MAX_MOVES / 2);
 
 	size_t prefix = 1u;
 	while (true)
 	{
-		const auto end = m_Content.find(';', prefix);
+		const auto end = _content.find(';', prefix);
 
 		if (end == std::string_view::npos)
 			break;
 
-		const auto moveStr = m_Content.substr(prefix + 1, end - prefix);
+		const auto moveStr = _content.substr(prefix, end - prefix);
 
 		const auto moveContents = std::stoul(moveStr);
 		moves.emplace_back(static_cast<unsigned int>(moveContents), 0);

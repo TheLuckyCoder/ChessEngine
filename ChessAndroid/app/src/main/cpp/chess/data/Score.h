@@ -3,8 +3,6 @@
 class Score final
 {
 public:
-	short mg{}, eg{};
-
 	Score() = default;
 
 	constexpr Score(const short mg, const short eg) noexcept
@@ -49,6 +47,8 @@ public:
 		lhs.eg -= rhs.eg;
 		return lhs;
 	}
+
+	short mg{}, eg{};
 };
 
 constexpr Score operator*(Score score, const short rhs) noexcept

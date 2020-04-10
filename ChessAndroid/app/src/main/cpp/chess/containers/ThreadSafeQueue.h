@@ -22,13 +22,13 @@ public:
 	 */
 	bool tryPop(T &out)
 	{
-		std::lock_guard lock(m_Mutex);
-		if (m_Queue.empty() || !m_Valid)
+		std::lock_guard lock(_mutex);
+		if (_queue.empty() || !_valid)
 		{
 			return false;
 		}
-		out = std::move(m_Queue.front());
-		m_Queue.pop();
+		out = std::move(_queue.front());
+		_queue.pop();
 		return true;
 	}
 
@@ -39,51 +39,51 @@ public:
 	 */
 	bool waitPop(T &out)
 	{
-		std::unique_lock lock(m_Mutex);
-		m_Condition.wait(lock, [this]()
+		std::unique_lock lock(_mutex);
+		_condition.wait(lock, [this]()
 		{
-			return !m_Queue.empty() || !m_Valid;
+			return !_queue.empty() || !_valid;
 		});
 		/*
 		 * Using the condition in the predicate ensures that spurious wakeups with a valid
 		 * but empty queue will not proceed, so only need to check for validity before proceeding.
 		 */
-		if (!m_Valid)
+		if (!_valid)
 			return false;
 		
-		out = std::move(m_Queue.front());
-		m_Queue.pop();
+		out = std::move(_queue.front());
+		_queue.pop();
 		return true;
 	}
 
 	void push(const T &value)
 	{
-		std::lock_guard lock(m_Mutex);
-		m_Queue.push(value);
-		m_Condition.notify_one();
+		std::lock_guard lock(_mutex);
+		_queue.push(value);
+		_condition.notify_one();
 	}
 	
 	void push(T &&value)
 	{
-		std::lock_guard lock(m_Mutex);
-		m_Queue.push(std::move(value));
-		m_Condition.notify_one();
+		std::lock_guard lock(_mutex);
+		_queue.push(std::move(value));
+		_condition.notify_one();
 	}
 
 	bool empty() const
 	{
-		std::lock_guard lock(m_Mutex);
-		return m_Queue.empty();
+		std::lock_guard lock(_mutex);
+		return _queue.empty();
 	}
 
 	void clear()
 	{
-		std::lock_guard lock(m_Mutex);
-		while (!m_Queue.empty())
+		std::lock_guard lock(_mutex);
+		while (!_queue.empty())
 		{
-			m_Queue.pop();
+			_queue.pop();
 		}
-		m_Condition.notify_all();
+		_condition.notify_all();
 	}
 
 	/**
@@ -93,20 +93,20 @@ public:
 	 */
 	void invalidate()
 	{
-		std::lock_guard lock(m_Mutex);
-		m_Valid = false;
-		m_Condition.notify_all();
+		std::lock_guard lock(_mutex);
+		_valid = false;
+		_condition.notify_all();
 	}
 
 	bool isValid() const
 	{
-		std::lock_guard lock(m_Mutex);
-		return m_Valid;
+		std::lock_guard lock(_mutex);
+		return _valid;
 	}
 
 private:
-	std::atomic_bool m_Valid = true;
-	mutable std::mutex m_Mutex;
-	std::queue<T> m_Queue;
-	std::condition_variable m_Condition;
+	std::atomic_bool _valid = true;
+	mutable std::mutex _mutex;
+	std::queue<T> _queue;
+	std::condition_variable _condition;
 };

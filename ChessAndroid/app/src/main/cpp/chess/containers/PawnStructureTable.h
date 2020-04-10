@@ -33,4 +33,3 @@ private:
     std::size_t _size;
 	PawnStructureEntry *_entries = new PawnStructureEntry[_size]{};
 };
-

@@ -10,7 +10,7 @@ object SaveManager {
     fun saveToFile(context: Context) {
         val moves = Native.saveMoves()
 
-        if (moves.length <= 2) return
+        if (moves.length <= 1) return
 
         context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
             it.write(moves)

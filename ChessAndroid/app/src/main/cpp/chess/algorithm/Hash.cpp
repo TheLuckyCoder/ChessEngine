@@ -4,10 +4,10 @@
 
 #include "../data/Board.h"
 
-Hash::HashArray Hash::s_Pieces{};
-U64 Hash::s_WhiteToMove;
-std::array<U64, 4> Hash::s_CastlingRights;
-std::array<U64, SQUARE_NB> Hash::s_EnPassant;
+Hash::HashArray Hash::_pieces{};
+U64 Hash::_side;
+std::array<U64, 4> Hash::_castlingRights;
+std::array<U64, SQUARE_NB> Hash::_enPassant;
 
 void Hash::init()
 {
@@ -19,18 +19,18 @@ void Hash::init()
 	std::mt19937_64 mt(rd());
 	std::uniform_int_distribution<U64> dist(0, UINT64_MAX);
 
-	for (auto &i : s_Pieces)
+	for (auto &i : _pieces)
 		for (auto &color : i)
 			for (auto &piece : color)
 				piece = dist(mt);
 
-	for (auto &rights : s_CastlingRights)
+	for (auto &rights : _castlingRights)
 		rights = dist(mt);
 
-	for (auto &square : s_EnPassant)
+	for (auto &square : _enPassant)
 		square = dist(mt);
 
-	s_WhiteToMove = dist(mt);
+	_side = dist(mt);
 }
 
 U64 Hash::compute(const Board &board)
@@ -39,7 +39,7 @@ U64 Hash::compute(const Board &board)
 
 	for (byte i = 0; i < SQUARE_NB; ++i)
 		if (const Piece &piece = board.getPiece(i); piece)
-			hash ^= s_Pieces[i][piece.color()][piece.type()];
+			hash ^= _pieces[i][piece.color()][piece.type()];
 
 	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
 
@@ -67,37 +67,37 @@ void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Pi
 void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceType promotedType)
 {
 	// Remove the Pawn
-	key ^= s_Pieces[sq][color][PAWN];
+	key ^= _pieces[sq][color][PAWN];
 
 	// Add the Promoted Piece
-	key ^= s_Pieces[sq][color][promotedType];
+	key ^= _pieces[sq][color][promotedType];
 }
 
 void Hash::xorPiece(U64 &key, const byte sq, const Piece piece)
 {
-	key ^= s_Pieces[sq][piece.color()][piece.type()];
+	key ^= _pieces[sq][piece.color()][piece.type()];
 }
 
 void Hash::flipSide(U64 &key)
 {
-	key ^= Hash::s_WhiteToMove;
+	key ^= Hash::_side;
 }
 
 void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
 {
 	if (rights & CASTLE_WHITE_KING)
-		key ^= s_CastlingRights[0];
+		key ^= _castlingRights[0];
 	if (rights & CASTLE_WHITE_QUEEN)
-		key ^= s_CastlingRights[1];
+		key ^= _castlingRights[1];
 
 	if (rights & CASTLE_BLACK_KING)
-		key ^= s_CastlingRights[2];
+		key ^= _castlingRights[2];
 	if (rights & CASTLE_BLACK_QUEEN)
-		key ^= s_CastlingRights[3];
+		key ^= _castlingRights[3];
 }
 
 void Hash::xorEnPassant(U64 &key, const byte square)
 {
 	if (square != SQ_NONE)
-		key ^= s_EnPassant[square];
+		key ^= _enPassant[square];
 }

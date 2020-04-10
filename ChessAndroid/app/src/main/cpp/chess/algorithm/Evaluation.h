@@ -14,6 +14,7 @@ public:
 	Evaluation() = delete;
 	Evaluation(const Evaluation&) = delete;
 	Evaluation(Evaluation&&) = delete;
+	~Evaluation() = delete;
 
 	Evaluation &operator=(const Evaluation&) = delete;
 	Evaluation &operator=(Evaluation&&) = delete;

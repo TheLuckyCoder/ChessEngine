@@ -7,11 +7,6 @@
 
 class Settings final
 {
-	std::size_t _baseSearchDepth;
-	std::size_t _threadCount;
-	std::size_t _cacheTableSizeMb;
-	bool _quiescenceSearch;
-
 public:
 	Settings(const std::size_t baseSearchDepth,
 	         const std::size_t threadCount,
@@ -43,4 +38,10 @@ public:
 	{
 		return _quiescenceSearch;
 	}
+
+private:
+	std::size_t _baseSearchDepth;
+	std::size_t _threadCount;
+	std::size_t _cacheTableSizeMb;
+	bool _quiescenceSearch;
 };

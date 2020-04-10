@@ -5,9 +5,6 @@
 class Pos
 {
 public:
-	byte x;
-	byte y;
-
 	constexpr Pos() noexcept
 		: x(8), y(8) {}
 
@@ -76,4 +73,7 @@ public:
 	{
 		return Bits::shiftedBoards[toSquare()];
 	}
+
+	byte x;
+	byte y;
 };

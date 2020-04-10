@@ -6,7 +6,7 @@
 #include "../algorithm/Hash.h"
 
 FenParser::FenParser(Board &board)
-	: board(board)
+	: _board(board)
 {
 }
 
@@ -15,30 +15,30 @@ void FenParser::parseFen(const std::string &fen)
 	std::istringstream fenStream(fen);
 
 	// Clean board
-	board.data.fill({});
-	board.pieces.fill({});
-	board.occupied = 0ull;
-	board.npm = 0;
+	_board.data.fill({});
+	_board.pieces.fill({});
+	_board.occupied = 0ull;
+	_board.npm = 0;
 
 	parsePieces(fenStream);
 
 	// Next to move
 	std::string token;
 	fenStream >> token;
-	board.colorToMove = token == "w" ? WHITE : BLACK;
+	_board.colorToMove = token == "w" ? WHITE : BLACK;
 
 	// Castling availability
 	fenStream >> token;
-	board.castlingRights = CastlingRights::CASTLE_NONE;
+	_board.castlingRights = CastlingRights::CASTLE_NONE;
 	for (char currChar : token) {
 		switch (currChar) {
-			case 'K': board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
+			case 'K': _board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
-			case 'Q': board.castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
+			case 'Q': _board.castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
 				break;
-			case 'k': board.castlingRights |= CastlingRights::CASTLE_BLACK_KING;
+			case 'k': _board.castlingRights |= CastlingRights::CASTLE_BLACK_KING;
 				break;
-			case 'q': board.castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
+			case 'q': _board.castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
 				break;
 			default:
 				break;
@@ -47,17 +47,17 @@ void FenParser::parseFen(const std::string &fen)
 
 	// TODO: En passant target square
 	fenStream >> token;
-	board.enPassantSq = 64u;
-	//board.enPassant = token == "-" ? 0ull : 1 << x;
+	_board.enPassantSq = 64u;
+	//_board.enPassant = token == "-" ? 0ull : 1 << x;
 
 	// Halfmove Clock
 	int halfMove;
 	fenStream >> halfMove;
-	board.fiftyMoveRule = static_cast<byte>(halfMove);
+	_board.fiftyMoveRule = static_cast<byte>(halfMove);
 
-	board.updatePieceList();
-	board.updateNonPieceBitboards();
-	board.zKey = Hash::compute(board);
+	_board.updatePieceList();
+	_board.updateNonPieceBitboards();
+	_board.zKey = Hash::compute(_board);
 }
 
 std::string FenParser::exportToFen()
@@ -76,40 +76,40 @@ void FenParser::parsePieces(std::istringstream &stream) const
 		switch (currChar)
 		{
 			case 'p':
-				board.data[boardPos++] = Piece(PAWN, BLACK);
+				_board.data[boardPos++] = Piece(PAWN, BLACK);
 				break;
 			case 'r':
-				board.data[boardPos++] = Piece(ROOK, BLACK);
+				_board.data[boardPos++] = Piece(ROOK, BLACK);
 				break;
 			case 'n':
-				board.data[boardPos++] = Piece(KNIGHT, BLACK);
+				_board.data[boardPos++] = Piece(KNIGHT, BLACK);
 				break;
 			case 'b':
-				board.data[boardPos++] = Piece(BISHOP, BLACK);
+				_board.data[boardPos++] = Piece(BISHOP, BLACK);
 				break;
 			case 'q':
-				board.data[boardPos++] = Piece(QUEEN, BLACK);
+				_board.data[boardPos++] = Piece(QUEEN, BLACK);
 				break;
 			case 'k':
-				board.data[boardPos++] = Piece(KING, BLACK);
+				_board.data[boardPos++] = Piece(KING, BLACK);
 				break;
 			case 'P':
-				board.data[boardPos++] = Piece(PAWN, WHITE);
+				_board.data[boardPos++] = Piece(PAWN, WHITE);
 				break;
 			case 'R':
-				board.data[boardPos++] = Piece(ROOK, WHITE);
+				_board.data[boardPos++] = Piece(ROOK, WHITE);
 				break;
 			case 'N':
-				board.data[boardPos++] = Piece(KNIGHT, WHITE);
+				_board.data[boardPos++] = Piece(KNIGHT, WHITE);
 				break;
 			case 'B':
-				board.data[boardPos++] = Piece(BISHOP, WHITE);
+				_board.data[boardPos++] = Piece(BISHOP, WHITE);
 				break;
 			case 'Q':
-				board.data[boardPos++] = Piece(QUEEN, WHITE);
+				_board.data[boardPos++] = Piece(QUEEN, WHITE);
 				break;
 			case 'K':
-				board.data[boardPos++] = Piece(KING, WHITE);
+				_board.data[boardPos++] = Piece(KING, WHITE);
 				break;
 			case '/': boardPos -= 16u; // Go down one rank
 				break;
@@ -120,12 +120,12 @@ void FenParser::parsePieces(std::istringstream &stream) const
 
 	for (byte square = 0u; square < SQUARE_NB; ++square)
 	{
-		const Piece piece = board.data[square];
+		const Piece piece = _board.data[square];
 		const U64 bb = Bits::shiftedBoards[square];
 
-		board.getType(piece) |= bb;
+		_board.getType(piece) |= bb;
 
 		if (piece.type() != PAWN)
-			board.npm += Evaluation::getPieceValue(piece.type());
+			_board.npm += Evaluation::getPieceValue(piece.type());
 	}
 }

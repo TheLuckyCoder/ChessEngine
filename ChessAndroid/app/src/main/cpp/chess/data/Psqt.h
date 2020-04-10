@@ -12,6 +12,10 @@ public:
 	Psqt() = delete;
 	Psqt(const Psqt&) = delete;
 	Psqt(Psqt&&) = delete;
+	~Psqt() = delete;
+
+	Psqt &operator=(const Psqt&) = delete;
+	Psqt &operator=(Psqt&&) = delete;
 
 	const static ScoreArray BONUS;
 };

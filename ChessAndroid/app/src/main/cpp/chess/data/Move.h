@@ -6,18 +6,7 @@
 #include "Pos.h"
 
 class Move final
-{	
-	/*
-	 * Bits 0 to 2 (3 bits) store the 'moved' piece type
-	 * Bits 3 to 5 (3 bits) store the 'captured' piece type
-	 * Bits 6 to 8 (3 bits) store the 'promoted' piece type
-	 * Bits 9 to 15 (6 bits) store the 'from' square
-	 * Bits 16 to 22 (6 bits) store the 'to' square
-	 * Bits 23 to 30 (7 bits) store the 'flags'
-	 */
-	unsigned int _move{};
-	int _score{};
-
+{
 public:
 	Move() = default;
 
@@ -171,4 +160,16 @@ public:
 
 		return str;
 	}
+
+private:
+	/*
+	 * Bits 0 to 2 (3 bits) store the 'moved' piece type
+	 * Bits 3 to 5 (3 bits) store the 'captured' piece type
+	 * Bits 6 to 8 (3 bits) store the 'promoted' piece type
+	 * Bits 9 to 15 (6 bits) store the 'from' square
+	 * Bits 16 to 22 (6 bits) store the 'to' square
+	 * Bits 23 to 30 (7 bits) store the 'flags'
+	 */
+	unsigned int _move{};
+	int _score{};
 };

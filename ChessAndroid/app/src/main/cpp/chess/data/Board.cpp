@@ -325,6 +325,7 @@ bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare)
 {
 	return isAttacked<PAWN>(colorAttacking, targetSquare)
 		|| isAttacked<KNIGHT>(colorAttacking, targetSquare)
+		|| isAttacked<KING>(colorAttacking, targetSquare)
 		|| isAttacked<BISHOP>(colorAttacking, targetSquare)
 		|| isAttacked<ROOK>(colorAttacking, targetSquare)
 		|| isAttacked<QUEEN>(colorAttacking, targetSquare);

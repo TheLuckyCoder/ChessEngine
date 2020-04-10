@@ -1,12 +1,13 @@
 #include "BoardManager.h"
 
+#include <iostream>
+
 #include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Hash.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
 #include "algorithm/PieceAttacks.h"
-#include "../Log.h"
 
 Settings BoardManager::_settings(4u, std::thread::hardware_concurrency() - 1u, 100, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
@@ -92,6 +93,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 		|| flags & Move::QSIDE_CASTLE || flags & Move::EN_PASSANT;
 	const State state = getBoardState();
 
+	std::cout << "Made the Move: " << move.toString();
 	_listener(state, shouldRedraw, { { move.from(), move.to() } });
 
 	if (movedByPlayer && (state == State::NONE || state == State::WHITE_IN_CHECK || state == State::BLACK_IN_CHECK))
@@ -111,9 +113,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 	Stats::resetStats();
 	Stats::startTimer();
 
-	LOGV("Search", "Started Searching");
 	const Move bestMove = Search::findBestMove(_board, settings);
-	LOGV("Search", "Finished Searching");
 
 	Stats::stopTimer();
 	makeMove(bestMove, false);

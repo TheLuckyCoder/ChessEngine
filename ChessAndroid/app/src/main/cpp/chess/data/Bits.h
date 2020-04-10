@@ -107,8 +107,8 @@ namespace Bits
 #	undef USE_CUSTOM_POPCNT
 #	define USE_CUSTOM_POPCNT
 
-	constexpr static U64 debruijn64{ 0x03f79d71b4cb0a89 };
-	constexpr static byte bitScanIndex64[64] = {
+	static constexpr U64 debruijn64{ 0x03f79d71b4cb0a89 };
+	static constexpr byte bitScanIndex64[64] = {
 		0, 47,  1, 56, 48, 27,  2, 60,
 		57, 49, 41, 37, 28, 16,  3, 61,
 		54, 58, 35, 52, 50, 42, 21, 44,
@@ -234,7 +234,7 @@ namespace Bits
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square
 	*/
-	constexpr static auto rays = []
+	static constexpr auto RAYS = []
 	{
 		std::array<std::array<U64, SQUARE_NB>, 8> rays{};
 
@@ -262,7 +262,7 @@ namespace Bits
 		return rays;
 	}();
 
-	constexpr static auto ranks = []
+	static constexpr auto RANKS = []
 	{
 		std::array<U64, 8> ranks{};
 
@@ -272,7 +272,7 @@ namespace Bits
 		return ranks;
 	}();
 
-	constexpr static auto files = []
+	static constexpr auto FILES = []
 	{
 		std::array<U64, 8> files{};
 
@@ -314,17 +314,17 @@ namespace Bits
 	 */
 	constexpr U64 getRay(const Dir direction, const byte square) noexcept
 	{
-		return rays[direction][square];
+		return RAYS[direction][square];
 	}
 
 	constexpr U64 getRank(const byte square) noexcept
 	{
-		return ranks[row(square)];
+		return RANKS[row(square)];
 	}
 
 	constexpr U64 getFile(const byte square) noexcept
 	{
-		return files[col(square)];
+		return FILES[col(square)];
 	}
 
 	constexpr U64 getAdjacentFiles(const byte square) noexcept

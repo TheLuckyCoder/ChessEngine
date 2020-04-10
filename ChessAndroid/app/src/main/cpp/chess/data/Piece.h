@@ -4,12 +4,6 @@
 
 class Piece final
 {
-	/*
-	 * The first 3 bits are use to store the specific Piece Type, eg. PAWN, KNIGHT, BISHOP
-	 * The 4-th bit is use to indicate the color of this piece
-	 */
-	byte _piece{};
-	
 public:
 	Piece() noexcept = default;
 	
@@ -74,6 +68,14 @@ public:
 	{
 		return PAWN <= type && type <= KING;
 	}
+
+private:
+	/*
+	 * The first 3 bits are use to store the specific Piece Type, eg. PAWN, KNIGHT, BISHOP
+	 * The 4-th bit is use to indicate the color of this piece
+	 */
+	byte _piece{};
+	
 };
 
 constexpr Piece EMPTY_PIECE{};

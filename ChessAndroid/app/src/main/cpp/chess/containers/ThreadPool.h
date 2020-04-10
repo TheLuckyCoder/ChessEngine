@@ -15,11 +15,11 @@ public:
 
 	explicit ThreadPool(const std::size_t numThreads = std::thread::hardware_concurrency())
 	{
-		m_Threads.reserve(numThreads);
+		_threads.reserve(numThreads);
 		try
 		{
 			for (auto i = 0u; i < numThreads; ++i)
-				m_Threads.emplace_back(&ThreadPool::worker, this);
+				_threads.emplace_back(&ThreadPool::worker, this);
 		}
 		catch (...)
 		{
@@ -39,7 +39,7 @@ public:
 
 	std::size_t getThreadCount() const noexcept
 	{
-		return m_Threads.size();
+		return _threads.size();
 	}
 
 	void updateThreadCount(const std::size_t numThreads) noexcept(false)
@@ -50,31 +50,31 @@ public:
 		{
 			// Destroy all the threads and invalidate the queue
 			{
-				m_Done = true;
-				m_Queue.invalidate();
-				for (auto &thread : m_Threads)
+				_done = true;
+				_queue.invalidate();
+				for (auto &thread : _threads)
 					if (thread.joinable())
 						thread.join();
 
-				m_Threads.clear();
+				_threads.clear();
 			}
 
 			{
-				m_Threads.reserve(numThreads);
-				m_Done = false;
+				_threads.reserve(numThreads);
+				_done = false;
 
-				m_Queue.~ThreadSafeQueue();
-				new(&m_Queue) QueueType();
+				_queue.~ThreadSafeQueue();
+				new(&_queue) QueueType();
 
 				for (auto i = 0u; i < numThreads; ++i)
-					m_Threads.emplace_back(&ThreadPool::worker, this);
+					_threads.emplace_back(&ThreadPool::worker, this);
 			}
 		} else if (numThreads > currentThreadCount) {
 			// Add the extra number of threads necessary
-			m_Threads.reserve(numThreads);
+			_threads.reserve(numThreads);
 
 			for (auto i = currentThreadCount; i < numThreads; ++i)
-				m_Threads.emplace_back(&ThreadPool::worker, this);
+				_threads.emplace_back(&ThreadPool::worker, this);
 		}
 		
 
@@ -85,7 +85,7 @@ public:
 	void submitWork(Func &&func, Args &&...args)
 	{
 		auto work = [func, args...] { func(args...); };
-		m_Queue.push(work);
+		_queue.push(work);
 	}
 
 	template <typename Func, typename... Args>
@@ -99,7 +99,7 @@ public:
 		std::future<ReturnType> result = task->get_future();
 
 		auto work = [task] { (*task)(); };
-		m_Queue.push(work);
+		_queue.push(work);
 
 		return result;
 	}
@@ -110,10 +110,10 @@ private:
 	 */
 	void worker()
 	{
-		while (!m_Done)
+		while (!_done)
 		{
 			Proc func;
-			if (m_Queue.waitPop(func))
+			if (_queue.waitPop(func))
 				func();
 		}
 	}
@@ -123,9 +123,9 @@ private:
 	 */
 	void destroy()
 	{
-		m_Done = true;
-		m_Queue.invalidate();
-		for (auto &thread : m_Threads)
+		_done = true;
+		_queue.invalidate();
+		for (auto &thread : _threads)
 			if (thread.joinable())
 				thread.join();
 	}
@@ -134,7 +134,7 @@ private:
 	using Proc = std::function<void(void)>;
 	using QueueType = ThreadSafeQueue<Proc>;
 
-	std::atomic_bool m_Done = false;
-	QueueType m_Queue;
-	std::vector<std::thread> m_Threads;
+	std::atomic_bool _done = false;
+	QueueType _queue;
+	std::vector<std::thread> _threads;
 };

@@ -28,8 +28,8 @@ public:
 	constexpr bool empty() const noexcept { return (_last - _moveList) == 0u; }
 
 private:
+	Move *_end;
 	Move _moveList[MAX_MOVES];
-	Move *_last;
 };
 
 inline bool moveExists(Board &board, const Move &move)

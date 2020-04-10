@@ -7,8 +7,6 @@
 
 class MovesPersistence final
 {
-	std::string m_Content;
-
 public:
 	explicit MovesPersistence(std::string content);
 
@@ -16,4 +14,7 @@ public:
 	std::vector<Move> getMoves() const;
 
 	static std::string saveToString(const std::vector<Move> &moves, bool isPlayerWhite);
+
+private:
+	std::string _content;
 };
