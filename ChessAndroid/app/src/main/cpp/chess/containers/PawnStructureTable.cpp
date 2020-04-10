@@ -10,17 +10,12 @@ PawnStructureTable::~PawnStructureTable() noexcept
 
 PawnStructureEntry PawnStructureTable::operator[](const U64 key) const noexcept
 {
-	const auto index = key % _size;
-	std::lock_guard lock{ _mutexes[index % MUTEX_COUNT] };
-	return _entries[index];
+	return _entries[key % _size];
 }
 
 void PawnStructureTable::insert(const PawnStructureEntry &value) const noexcept
 {
-	const auto index = value.pawns % _size;
-	std::lock_guard lock{ _mutexes[index % MUTEX_COUNT] };
-
-	_entries[index] = value;
+	_entries[value.pawns % _size] = value;
 }
 
 bool PawnStructureTable::setSize(const std::size_t sizeMb) noexcept(false)

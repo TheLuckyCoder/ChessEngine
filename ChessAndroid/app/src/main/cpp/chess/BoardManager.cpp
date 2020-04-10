@@ -30,7 +30,6 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 
 void BoardManager::loadGame(const std::string &fen)
 {
-	//_board.setToFen("r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1");
 	_board.setToFen(fen);
 	_listener(getBoardState(), true, {});
 }
@@ -41,19 +40,15 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 
 	_board.initDefaultBoard();
 
-	assert(moves.size() < MAX_DEPTH);
+	assert(moves.size() < MAX_MOVES);
 
 	for (const Move &move : moves)
 	{
-		if (move.empty() || !moveExists(_board, move))
-		{
-			// Couldn't load all moves correctly, fallback to the original board
-			_board.initDefaultBoard();
+		if (move.empty() || !moveExists(_board, move) || !_board.makeMove(move))
 			break;
-		}
 	}
 
-	_listener(State::NONE, true, {});
+	_listener(getBoardState(), true, {});
 }
 
 std::vector<Move> BoardManager::getMovesHistory()
@@ -68,11 +63,11 @@ std::vector<Move> BoardManager::getMovesHistory()
 
 std::vector<Move> BoardManager::getPossibleMoves(const byte from)
 {
-	Board tempBoard = _board;
-	const MoveList<ALL> allMoves(tempBoard);
-
 	std::vector<Move> moves;
 	moves.reserve(27);
+
+	Board tempBoard = _board;
+	const MoveList<ALL> allMoves(tempBoard);
 
 	for (const Move &move : allMoves)
 	{
@@ -105,20 +100,21 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 
 void BoardManager::forceMove()
 {
-	_workerThread = std::thread(moveComputerPlayer, _settings);
+	if (!_isWorking)
+		_workerThread = std::thread(moveComputerPlayer, _settings);
 }
 
 // This function should only be called through the Worker Thread
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
-	LOGV("SEARCH", "Started Searching");
 	_isWorking = true;
 	Stats::resetStats();
 	Stats::startTimer();
 
-	Board tempBoard = _board;
-	const Move bestMove = Search::getBestMove(tempBoard, settings);
-	LOGV("SEARCH", "Started Searching");
+	LOGV("Search", "Started Searching");
+	const Move bestMove = Search::findBestMove(_board, settings);
+	LOGV("Search", "Finished Searching");
+
 	Stats::stopTimer();
 	makeMove(bestMove, false);
 
@@ -162,7 +158,7 @@ State BoardManager::getBoardState()
 	else if (blackInCheck)
 		state = State::BLACK_IN_CHECK;
 
-	MoveList<ALL> moveList(_board);
+	const MoveList<ALL> moveList(_board);
 
 	if (moveList.empty())
 	{

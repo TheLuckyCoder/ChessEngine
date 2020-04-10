@@ -56,18 +56,18 @@
 
         <SeekBarPreference
             android:key="key_search_depth"
-            android:max="8"
-            android:summary="Base Search Depth of the Algorithm. The value can be tweaked by the engine"
+            android:max="10"
+            android:summary="Base Search Depth of the Algorithm. The value may be tweaked by the engine"
             android:title="Search Depth"
             app:defaultValue="4"
-            app:min="1"
+            app:min="2"
             app:showSeekBarValue="true" />
 
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="key_quiet_search"
             android:summary="Perform a Quiescence Search at the end of each normal search"
-            android:title="Quiet Search" />
+            android:title="Quiet Search (Recommended)" />
 
     </PreferenceCategory>
 
@@ -78,6 +78,7 @@
             android:summary="Number of Search Threads to be used"
             android:title="Thread Count"
             app:icon="@drawable/ic_pref_thread_count"
+            app:isPreferenceVisible="false"
             app:min="1"
             app:showSeekBarValue="true" />
 

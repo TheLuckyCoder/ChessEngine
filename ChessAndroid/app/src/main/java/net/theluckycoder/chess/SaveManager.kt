@@ -5,10 +5,12 @@ import java.io.FileNotFoundException
 
 object SaveManager {
 
-    private const val SAVE_FILE_NAME = "save.txt"
+    private const val SAVE_FILE_NAME = "moves.txt"
 
     fun saveToFile(context: Context) {
         val moves = Native.saveMoves()
+
+        if (moves.length <= 2) return
 
         context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
             it.write(moves)

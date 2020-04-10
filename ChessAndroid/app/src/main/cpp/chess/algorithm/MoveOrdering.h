@@ -10,7 +10,7 @@ namespace MoveOrdering
 {
 	static constexpr std::array VictimScore = { 0, 100, 200, 300, 400, 500, 600 };
 	
-	constexpr auto MvaLvv = []
+	static constexpr auto MvaLvv = []
 	{
 		std::array<std::array<int, 7>, 7> array{};
 

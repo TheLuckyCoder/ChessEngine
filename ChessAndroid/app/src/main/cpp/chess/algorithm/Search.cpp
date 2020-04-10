@@ -72,32 +72,36 @@ bool Search::_quiescenceSearchEnabled{};
 	return bestMove;
 }*/
 
-Move Search::getBestMove(Board &board, const Settings &settings)
+Move Search::findBestMove(Board board, const Settings &settings)
 {
 	// Apply Settings
 	int depth = settings.getBaseSearchDepth();
 //	const auto threadCount = settings.getThreadCount();
 	_quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
-	const size_t pawnTableSize = settings.getCacheTableSizeMb() / 10;
+	const size_t pawnTableSize = std::min<size_t>(settings.getCacheTableSizeMb() / 10u, 1u);
 	Evaluation::getPawnTable().setSize(pawnTableSize);
 	
 	// If the Transposition Table wasn't resized, increment its age
-	if (!_transpTable.setSize(settings.getCacheTableSizeMb() - pawnTableSize))
+	if (!_transpTable.setSize(std::min<size_t>(settings.getCacheTableSizeMb() - pawnTableSize, 1u)))
 		_transpTable.incrementAge();
 
 	// Update ThreadPool size if needed
 //	if (_threadPool.getThreadCount() != threadCount)
 //		_threadPool.updateThreadCount(threadCount);
 
+	board.ply = 0;
+
+	_searchKillers.fill({ });
+	_searchHistory.fill({ });
+
 	if (board.getPhase() == Phase::ENDING)
 		++depth;
 
-	board.ply = 0;
-	return searchRoot(board, depth);
+	return iterativeDeepening(board, depth);
 }
 
-Move Search::searchRoot(Board &board, const int depth)
+Move Search::iterativeDeepening(Board &board, const int depth)
 {
 	std::array<Move, MAX_DEPTH> pvArray{};
 	
@@ -131,14 +135,14 @@ Move Search::searchRoot(Board &board, const int depth)
 
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
-		const int bestScore = search(board, Value::VALUE_MIN, Value::VALUE_MAX, currentDepth, true);
+		const int bestScore = search(board, Value::VALUE_MIN, Value::VALUE_MAX, currentDepth, true, true);
 		const int pvMoves = getPvLine(board, pvArray, currentDepth);
 		bestMove = pvArray[0];
-		assert(bestMove.getScore() == bestScore);
 		
 		std::cout << "Depth: " << currentDepth << ", Score: " << bestScore << ", PvMoves: ";
 		for (int pvNum = 0; pvNum < pvMoves; ++pvNum)
-			std::cout << int(pvArray[pvNum].from()) << "->" << int(pvArray[pvNum].to()) << ", ";
+			std::cout << pvArray[pvNum].toString() << ", ";
+
 		std::cout << '\n';
 	}
 
@@ -147,21 +151,18 @@ Move Search::searchRoot(Board &board, const int depth)
 
 std::vector<Board> historyBoard(MAX_DEPTH);
 
-int Search::search(Board &board, int alpha, int beta, const int depth, const bool doNull)
+int Search::search(Board &board, int alpha, int beta, const int depth, const bool doNull, const bool doMoveCountPruning)
 {
 	historyBoard[board.ply] = board;
 	if (board.ply && (board.fiftyMoveRule == 100 || board.isRepetition()))
 		return 0;
 
-	if (board.ply == MAX_DEPTH )
-		return sideToMove(board);
+	if (board.ply == MAX_DEPTH)
+		return evaluate(board);
 	
+	// If in check and not already extended, allow the search to be extended to depth -1
 	if (depth <= 0)
-	{
-		// If in check and not already extended, allow the search to be extended to depth -1
-		if (depth < 0 || !board.isInCheck(board.colorToMove))
-			return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta) : sideToMove(board);
-	}
+		return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta) : evaluate(board);
 
 	const int originalAlpha = alpha;
 	if (const SearchEntry entry = _transpTable[board.zKey];
@@ -187,7 +188,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	if (doNull && board.ply && depth >= 4 && board.pieceCount[Piece(QUEEN, color)] + board.pieceCount[Piece(ROOK, color)] > 0 && !board.isInCheck(color))
 	{
 		board.makeNullMove();
-		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false);
+		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false);
 		board.undoNullMove();
 
 		if (nullScore >= beta)
@@ -207,8 +208,23 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		if (!board.makeMove(move))
 			continue;
 
+		int moveScore = alpha + 1;
+
+		// Late Move Reductions
+		if (doNull
+			&& doMoveCountPruning
+			&& legalCount >= 4
+			&& depth >= 3
+			&& board.ply > 4
+			&& !(move.flags() & Move::Flag::CAPTURE)
+			&& !(move.flags() & Move::Flag::PROMOTION)
+			&& !board.isInCheck(board.colorToMove))
+			moveScore = -search(board, -moveScore, -alpha,  depth - 2, false, false);
+
+		if (moveScore > alpha)
+			moveScore = -search(board, -beta, -alpha, depth - 1, true, true);
+
 		++legalCount;
-		const int moveScore = -search(board, -beta, -alpha, depth - 1, true);
 		board.undoMove();
 
 		if (moveScore > bestScore)
@@ -257,9 +273,9 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 {
 	historyBoard[board.ply] = board;
 	if (board.ply == MAX_MOVES)
-		return sideToMove(board);
+		return evaluate(board);
 
-	const int standPat = sideToMove(board);
+	const int standPat = evaluate(board);
 	
 	if (standPat >= beta)
 		return standPat;
@@ -312,7 +328,7 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 	return alpha;
 }
 
-inline int Search::sideToMove(const Board &board)
+inline int Search::evaluate(const Board &board)
 {
 	const int value = Evaluation::evaluate(board);
 	return board.colorToMove ? value : -value;

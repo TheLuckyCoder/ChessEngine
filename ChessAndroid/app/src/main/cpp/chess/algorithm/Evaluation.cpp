@@ -74,6 +74,8 @@ namespace
 
 #undef S
 
+PawnStructureTable Evaluation::_pawnTable{ 1 };
+
 using namespace Bits;
 
 short Evaluation::evaluate(const Board &board) noexcept
@@ -83,13 +85,14 @@ short Evaluation::evaluate(const Board &board) noexcept
 	Score totalScore[2]{};
 	short npm[2]{};
 
-	for (Color color = BLACK; color <= WHITE; color = Color(color + 1))
+	for (byte c = BLACK; c <= WHITE; ++c)
 	{
 		for (byte pieceType = KNIGHT; pieceType <= QUEEN; ++pieceType)
 		{
-			const Piece piece{ PieceType(pieceType), Color(color) };
+			const Piece piece{ PieceType(pieceType), Color(c) };
 			for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 			{
+				const Color color = Color(c);
 				const byte square = board.pieceList[piece][pieceNumber];
 
 				Score points;
@@ -149,6 +152,9 @@ Score Evaluation::evaluatePieces(const Board &board) noexcept
 
 		if (Bits::shift<Behind>(board.getType(Us, PAWN)) & Bits::getSquare64(square))
 			score += MINOR_PAWN_SHIELD;
+
+		// Penalty if the piece is far from the king
+		//score -= KingProtector * distance(pos.square<KING>(Us), square);
 	};
 
 	Piece piece{ KNIGHT, Us };

@@ -8,7 +8,7 @@ class Board;
 class Evaluation final
 {
 	static constexpr short PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
-	inline static PawnStructureTable _pawnTable{ 1 };
+	static PawnStructureTable _pawnTable;
 
 public:
 	Evaluation() = delete;

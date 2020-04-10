@@ -13,8 +13,6 @@ struct PawnStructureEntry
 
 class PawnStructureTable
 {
-	static constexpr int MUTEX_COUNT = 128;
-
 public:
     explicit PawnStructureTable(std::size_t sizeMb) noexcept;
 
@@ -34,6 +32,5 @@ public:
 private:
     std::size_t _size;
 	PawnStructureEntry *_entries = new PawnStructureEntry[_size]{};
-	mutable std::mutex _mutexes[MUTEX_COUNT];
 };
 

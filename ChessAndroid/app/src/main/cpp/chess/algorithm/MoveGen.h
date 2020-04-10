@@ -6,8 +6,7 @@
 enum GenType : byte
 {
 	ALL,
-	CAPTURES,
-	ATTACKS_DEFENSES
+	CAPTURES
 };
 
 template <GenType T>

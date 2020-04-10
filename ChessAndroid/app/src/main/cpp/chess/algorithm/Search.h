@@ -25,16 +25,16 @@ public:
 	Search &operator=(const Search&) = delete;
 	Search &operator=(Search&&) = delete;
 
-	static Move getBestMove(Board &board, const Settings &settings);
+	static Move findBestMove(Board board, const Settings &settings);
 	
 	static auto &getTranspTable() noexcept { return _transpTable; }
 	static auto &getSearchKillers() noexcept { return _searchKillers; }
 	static auto &getSearchHistory() noexcept { return _searchHistory; }
 
 private:
-	static Move searchRoot(Board &board, int depth);
-	static int search(Board &board, int alpha, int beta, int depth, bool doNull);
+	static Move iterativeDeepening(Board &board, const int depth);
+	static int search(Board &board, int alpha, int beta, int depth, bool doNull, bool doMoveCountPruning);
 	static int searchCaptures(Board &board, int alpha, int beta);
 
-	inline static int sideToMove(const Board &board);
+	inline static int evaluate(const Board &board);
 };

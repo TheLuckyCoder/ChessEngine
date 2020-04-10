@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
+
 #include "Defs.h"
+#include "Pos.h"
 
 class Move final
 {	
@@ -121,4 +124,51 @@ public:
 	    DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
 	    EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag additionally)
 	};
+
+	std::string toString() const
+	{
+		std::string str;
+
+		const Pos fromPos { from() };
+		const Pos toPos { to() };
+
+		{
+			const PieceType p = piece();
+			char pChar = 'K';
+			if (p == PAWN)
+				pChar = 'P';
+			else if (p == KNIGHT)
+				pChar = 'N';
+			else if (p == BISHOP)
+				pChar = 'B';
+			else if (p == ROOK)
+				pChar = 'R';
+			else if (p == QUEEN)
+				pChar = 'Q';
+
+			str += pChar;
+		}
+
+		str += 'a' + fromPos.x;
+		str += '1' + fromPos.y;
+		str += 'a' + toPos.x;
+		str += '1' + toPos.y;
+
+		if (flags() & Flag::PROMOTION)
+		{
+			const PieceType promoted = promotedPiece();
+			str.erase(0, 1);
+			char p = 'Q';
+			if (promoted == ROOK)
+				p = 'R';
+			else if (promoted == BISHOP)
+				p = 'B';
+			else if (promoted == KNIGHT)
+				p = 'N';
+			
+			str += p;
+		}
+
+		return str;
+	}
 };

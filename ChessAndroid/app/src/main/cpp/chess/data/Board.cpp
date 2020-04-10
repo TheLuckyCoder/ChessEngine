@@ -4,7 +4,6 @@
 #include "../algorithm/Hash.h"
 #include "../algorithm/Evaluation.h"
 #include "../algorithm/MoveGen.h"
-#include "../algorithm/PieceAttacks.h"
 #include "../persistence/FenParser.h"
 
 void Board::initDefaultBoard()
@@ -125,7 +124,7 @@ bool Board::makeMove(const Move move) noexcept
 		assert(p.isValid());
 	}
 	
-	assert(getPiece(from).type() == movedPiece); // TODO
+	assert(getPiece(from).type() == movedPiece);
 
 	// Handle en passant capture and castling
 	if (flags & Move::EN_PASSANT)
@@ -176,6 +175,7 @@ bool Board::makeMove(const Move move) noexcept
 	if (const PieceType capturedType = move.capturedPiece();
 		capturedType != PieceType::NO_PIECE_TYPE)
 	{
+		assert(Piece::isValid(capturedType));
 		if (capturedType == ROOK && canCastle(~side))
 		{
 			const U64 rookFile = Bits::getFile(to);
@@ -212,7 +212,8 @@ bool Board::makeMove(const Move move) noexcept
 	if (move.flags() & Move::PROMOTION)
 	{
 		const PieceType promotedPiece = move.promotedPiece();
-		assert(promotedPiece != NO_PIECE_TYPE && promotedPiece != PAWN);
+		assert(Piece::isValid(promotedPiece));
+		assert(promotedPiece != PAWN && promotedPiece != KING);
 
 		removePiece(to); // Remove Pawn
 		addPiece(to, Piece(promotedPiece, side));
@@ -223,7 +224,7 @@ bool Board::makeMove(const Move move) noexcept
 	
 	updateNonPieceBitboards();
 
-	if (isInCheck(side))
+	if ((flags & Move::CAPTURE && move.capturedPiece() == KING) || isInCheck(side))
 	{
 		undoMove();
 		return false;
@@ -320,31 +321,6 @@ void Board::undoNullMove() noexcept
 	colorToMove = ~colorToMove;
 }
 
-template <PieceType P>
-bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) const noexcept
-{
-	static_assert(PAWN <= P);
-	static_assert(P <= KING);
-	
-	const U64 type = getType(colorAttacking, P);
-	
-	if constexpr (P == PAWN)
-		return type & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare);
-	else if constexpr (P == KNIGHT)
-		return type & PieceAttacks::getKnightAttacks(targetSquare);
-	else if constexpr (P == BISHOP)
-		return type & PieceAttacks::getBishopAttacks(targetSquare, occupied);
-	else if constexpr (P == ROOK)
-		return type & PieceAttacks::getRookAttacks(targetSquare, occupied);
-	else if constexpr (P == QUEEN)
-		return type & PieceAttacks::getQueenAttacks(targetSquare, occupied);
-	else if constexpr (P == KING)
-		return type & PieceAttacks::getKingAttacks(targetSquare);
-
-	assert(false);
-	return false;
-}
-
 bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare) const noexcept
 {
 	return isAttacked<PAWN>(colorAttacking, targetSquare)
@@ -354,29 +330,10 @@ bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare)
 		|| isAttacked<QUEEN>(colorAttacking, targetSquare);
 }
 
-int Board::attackCount(const Color colorAttacking, const byte targetSquare) const noexcept
-{
-	using namespace Bits;
-	int count{};
-    count += popCount(getType(colorAttacking, PAWN) & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare));
-
-    count += popCount(getType(colorAttacking, KNIGHT) & PieceAttacks::getKnightAttacks(targetSquare));
-
-	count += popCount(getType(colorAttacking, KING) & PieceAttacks::getKingAttacks(targetSquare));
-
-	const U64 bishopsQueens = getType(colorAttacking, BISHOP) | getType(colorAttacking, QUEEN);
-	count += popCount(bishopsQueens & PieceAttacks::getBishopAttacks(targetSquare, occupied));
-
-	const U64 rooksQueens = getType(colorAttacking, ROOK) | getType(colorAttacking, QUEEN);
-	count += popCount(rooksQueens & PieceAttacks::getRookAttacks(targetSquare, occupied));
-	
-	return count;
-}
-
 bool Board::isInCheck(const Color color) const noexcept
 {
 	const U64 king = getType(color, KING);
-	if (!king) return false;
+	if (!king) return true;
 	const byte kingSq = Bits::bitScanForward(king);
 
 	return isAttackedByAny(~color, kingSq);

@@ -219,8 +219,6 @@ Move *generateMoves(const Board &board, Move *moveList) noexcept
 		targets = ~board.allPieces[color]; // Remove our pieces
 	else if constexpr (Type == CAPTURES)
 		targets = board.allPieces[~color]; // Keep only their pieces
-	else if constexpr (Type == ATTACKS_DEFENSES)
-		targets = board.occupied; // Keep only the pieces
 
 	return color == WHITE
 		       ? generateAllMoves<WHITE, Type>(board, moveList, targets)
@@ -230,4 +228,3 @@ Move *generateMoves(const Board &board, Move *moveList) noexcept
 // Explicit template instantiations
 template Move *generateMoves<ALL>(const Board &, Move *) noexcept;
 template Move *generateMoves<CAPTURES>(const Board &, Move *) noexcept;
-template Move *generateMoves<ATTACKS_DEFENSES>(const Board &, Move *) noexcept;

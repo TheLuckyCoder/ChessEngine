@@ -270,7 +270,7 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jobject)
 }
 
 
-static U64 perft(Board &board, const unsigned depth)
+static size_t perft(Board &board, const unsigned depth)
 {
 	if (board.fiftyMoveRule == 100)
 		return 0;
@@ -303,7 +303,7 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject, jint depth)
 	board.setToFen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
 
 	constexpr auto TAG = "Perft Test: ";
-	constexpr std::array<U64, 8> perftResults{
+	constexpr std::array<size_t, 8> perftResults{
 		1, 14, 191, 2812, 43238, 674624, 11030083, 178633661
 	};
 
@@ -312,12 +312,12 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject, jint depth)
 	if (depth > maxSize)
 		depth = maxSize; // Otherwise it will take too long to compute
 
-	for (unsigned i = 0; i < perftResults.size(); ++i)
+	for (size_t i = 0; i < perftResults.size(); ++i)
 	{
 		LOGV(TAG, "Starting Depth %d Test", i);
 
 		const auto startTime = high_resolution_clock::now();
-		const U64 nodesCount = perft(board, i);
+		const size_t nodesCount = perft(board, i);
 
 		const auto currentTime = high_resolution_clock::now();
 		const double timeNeeded = duration<double, std::milli>(currentTime - startTime).count();

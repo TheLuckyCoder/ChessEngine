@@ -5,6 +5,7 @@
 
 #include "Piece.h"
 #include "Move.h"
+#include "../algorithm/PieceAttacks.h"
 
 class UndoMove final
 {
@@ -69,7 +70,6 @@ public:
 	template <PieceType>
 	bool isAttacked(Color colorAttacking, byte targetSquare) const noexcept;
 	bool isAttackedByAny(Color colorAttacking, byte targetSquare) const noexcept;
-	int attackCount(Color colorAttacking, byte targetSquare) const noexcept;
 	bool isInCheck(Color color) const noexcept;
 
 private:
@@ -80,3 +80,28 @@ private:
 	void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
 };
+
+template <PieceType P>
+bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) const noexcept
+{
+	static_assert(PAWN <= P);
+	static_assert(P <= KING);
+
+	const U64 type = getType(colorAttacking, P);
+
+	if constexpr (P == PAWN)
+		return type & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare);
+	else if constexpr (P == KNIGHT)
+		return type & PieceAttacks::getKnightAttacks(targetSquare);
+	else if constexpr (P == BISHOP)
+		return type & PieceAttacks::getBishopAttacks(targetSquare, occupied);
+	else if constexpr (P == ROOK)
+		return type & PieceAttacks::getRookAttacks(targetSquare, occupied);
+	else if constexpr (P == QUEEN)
+		return type & PieceAttacks::getQueenAttacks(targetSquare, occupied);
+	else if constexpr (P == KING)
+		return type & PieceAttacks::getKingAttacks(targetSquare);
+
+	assert(false);
+	return false;
+}
