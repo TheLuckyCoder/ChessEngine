@@ -278,7 +278,7 @@ static size_t perft(Board &board, const unsigned depth)
 	if (depth == 0)
 		return 1;
 
-	MoveList<ALL> moveList(board);
+	MoveList moveList(board);
 
 	size_t legalCount{};
 

@@ -68,7 +68,7 @@ std::vector<Move> BoardManager::getPossibleMoves(const byte from)
 	moves.reserve(27);
 
 	Board tempBoard = _board;
-	const MoveList<ALL> allMoves(tempBoard);
+	const MoveList allMoves(tempBoard);
 
 	for (const Move &move : allMoves)
 	{
@@ -158,7 +158,7 @@ State BoardManager::getBoardState()
 	else if (blackInCheck)
 		state = State::BLACK_IN_CHECK;
 
-	const MoveList<ALL> moveList(_board);
+	const MoveList moveList(_board);
 
 	if (moveList.empty())
 	{

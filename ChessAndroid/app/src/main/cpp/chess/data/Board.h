@@ -62,7 +62,7 @@ public:
 	bool isRepetition() const noexcept;
 	Phase getPhase() const noexcept;
 
-	bool makeMove(Move move) noexcept;
+	bool makeMove(Move move, bool checkLegal = true) noexcept;
 	void undoMove() noexcept;
 	void makeNullMove() noexcept;
 	void undoNullMove() noexcept;

@@ -1,40 +1,47 @@
 #pragma once
 
+#include <algorithm>
+
 #include "../data/Move.h"
 #include "../data/Board.h"
 
-enum GenType : byte
-{
-	ALL,
-	CAPTURES
-};
-
-template <GenType T>
 Move *generateMoves(const Board &board, Move *moveList) noexcept;
 
-template <GenType T>
 class MoveList
 {
 public:
-	explicit MoveList(const Board& board) : _last(generateMoves<T>(board, _moveList)) {}
+	explicit MoveList(const Board& board) : _end(generateMoves(board, _moveList)) {}
 	
 	constexpr const Move *begin() const noexcept { return _moveList; }
-	constexpr const Move *end() const noexcept { return _last; }
+	constexpr const Move *end() const noexcept { return _end; }
 
 	constexpr Move *begin() noexcept { return _moveList; }
-	constexpr Move *end() noexcept { return _last; }
+	constexpr Move *end() noexcept { return _end; }
 	
-	constexpr size_t size() const noexcept { return _last - _moveList; }
-	constexpr bool empty() const noexcept { return (_last - _moveList) == 0u; }
+	constexpr size_t size() const noexcept { return _end - _moveList; }
+	constexpr bool empty() const noexcept { return (_end - _moveList) == 0u; }
+
+	void keepLegalMoves(Board &board) noexcept
+	{
+		_end = std::remove_if(_moveList, _end, [&] (const Move &move) -> bool
+		{
+			if (board.makeMove(move))
+			{
+				board.undoMove();
+				return false;
+			}
+			return true;
+		});
+	}
 
 private:
-	Move *_end;
 	Move _moveList[MAX_MOVES];
+	Move *_end;
 };
 
-inline bool moveExists(Board &board, const Move &move)
+inline bool moveExists(Board &board, const Move &move) noexcept
 {
-	const MoveList<ALL> allMoves(board);
+	const MoveList allMoves(board);
 
 	for (const Move &m : allMoves)
 	{

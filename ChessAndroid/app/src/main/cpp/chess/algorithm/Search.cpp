@@ -195,7 +195,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return beta;
 	}
 
-	MoveList<ALL> moveList(board);
+	MoveList moveList(board);
 	MoveOrdering::sortMoves(board, moveList.begin(), moveList.end());
 	Stats::incrementNodesGenerated(moveList.size());
 
@@ -207,8 +207,10 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	{
 		if (!board.makeMove(move))
 			continue;
+		++legalCount;
 
-		int moveScore = alpha + 1;
+		int moveScore{};
+		bool didLmr = false;
 
 		// Late Move Reductions
 		if (doNull
@@ -219,12 +221,14 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& !(move.flags() & Move::Flag::CAPTURE)
 			&& !(move.flags() & Move::Flag::PROMOTION)
 			&& !board.isInCheck(board.colorToMove))
-			moveScore = -search(board, -moveScore, -alpha,  depth - 2, false, false);
+		{
+			moveScore = -search(board, -alpha - 1, -alpha,  depth - 2, false, false);
+			didLmr = true;
+		}
 
-		if (moveScore > alpha)
+		if (!didLmr || moveScore > alpha)
 			moveScore = -search(board, -beta, -alpha, depth - 1, true, true);
 
-		++legalCount;
 		board.undoMove();
 
 		if (moveScore > bestScore)
@@ -258,6 +262,10 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	
 	Stats::incrementNodesSearched(legalCount);
 
+	// Avoid putting an empty move in the Transposition Table if alpha was not raised
+	if (bestMove.empty())
+		bestMove = *moveList.begin();
+
 	// Store the result in the transposition table
 	auto flag = SearchEntry::Flag::EXACT;
 	if (alpha <= originalAlpha)
@@ -288,10 +296,10 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 	// Delta Pruning
 	if (board.getPhase() != Phase::ENDING) // Turn it off in the Endgame
 	{
-		constexpr short QUEEN_VALUE = 2538;
-		constexpr short PAWN_VALUE = 128;
+		constexpr int QUEEN_VALUE = 2538;
+		constexpr int PAWN_VALUE = 128;
 
-		short bigDelta = QUEEN_VALUE;
+		int bigDelta = QUEEN_VALUE;
 
 		const bool isPromotion =
 			board.history[board.historyPly - 1].move.flags() & Move::Flag::PROMOTION;
@@ -302,18 +310,23 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 			return alpha;
 	}
 
-	MoveList<CAPTURES> moveList(board);
-	MoveOrdering::sortMoves(board, moveList.begin(), moveList.end());
-	Stats::incrementNodesGenerated(moveList.size());
+	MoveList moveList(board);
+	moveList.keepLegalMoves(board);
 
-	size_t legalCount{};
+	if (moveList.empty())
+		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
+	
+	MoveOrdering::sortQMoves(moveList.begin(), moveList.end());
+	Stats::incrementNodesGenerated(moveList.size());
 
 	for (const Move &move : moveList)
 	{
-		if (!board.makeMove(move))
-			continue;
+		if (const auto flags = move.flags();
+			!(flags & Move::CAPTURE || flags & Move::PROMOTION))
+			break; // The moves are sorted so we can break if is not a capture
+		
+		board.makeMove(move, false); // We already checked if they are legal or not
 
-		++legalCount;
 		const int moveScore = -searchCaptures(board, -beta, -alpha);
 		board.undoMove();
 
@@ -322,8 +335,6 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 		if (moveScore > alpha)
 			alpha = moveScore;
 	}
-
-	Stats::incrementNodesSearched(legalCount);
 
 	return alpha;
 }

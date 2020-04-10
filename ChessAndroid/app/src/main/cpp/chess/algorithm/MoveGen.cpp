@@ -5,7 +5,7 @@
 
 namespace
 {
-	template <Color Us, GenType Type>
+	template <Color Us>
 	Move *generatePawnMoves(const Board &board, Move *moveList, const U64 targets)
 	{
 		using namespace Bits;
@@ -55,19 +55,16 @@ namespace
 
 			U64 attacks = PieceAttacks::getPawnAttacks(Us, from);
 
-			if constexpr (Type == ALL || Type == CAPTURES)
+			if (board.enPassantSq < 64u)
 			{
-				if (board.enPassantSq < 64u)
-				{
-					constexpr Dir EN_PASSANT_DIRECTION = (Us == WHITE ? SOUTH : NORTH);
-					const U64 enPassantCapture = getSquare64(board.enPassantSq);
-					const U64 capturedPawn = shift<EN_PASSANT_DIRECTION>(enPassantCapture);
+				constexpr Dir EN_PASSANT_DIRECTION = (Us == WHITE ? SOUTH : NORTH);
+				const U64 enPassantCapture = getSquare64(board.enPassantSq);
+				const U64 capturedPawn = shift<EN_PASSANT_DIRECTION>(enPassantCapture);
 
-					if (board.getType(Them, PAWN) & capturedPawn && (attacks & enPassantCapture))
-					{
-						attacks &= ~enPassantCapture;
-						*moveList++ = { from, board.enPassantSq, PAWN, Move::EN_PASSANT };
-					}
+				if (board.getType(Them, PAWN) & capturedPawn && (attacks & enPassantCapture))
+				{
+					attacks &= ~enPassantCapture;
+					*moveList++ = { from, board.enPassantSq, PAWN, Move::EN_PASSANT };
 				}
 			}
 
@@ -79,23 +76,20 @@ namespace
 				addCaptureMove(from, to, pos);
 			}
 
-			if constexpr (Type == ALL)
+			const U64 moveBB = shift<direction>(pos);
+
+			if (!(board.occupied & moveBB))
 			{
-				const U64 moveBB = shift<direction>(pos);
+				addQuietMove(from, bitScanForward(moveBB), pos);
 
-				if (!(board.occupied & moveBB))
+				if (startingRank & pos)
 				{
-					addQuietMove(from, bitScanForward(moveBB), pos);
+					const U64 doubleMoveBB = shift<direction>(moveBB);
 
-					if (startingRank & pos)
-					{
-						const U64 doubleMoveBB = shift<direction>(moveBB);
-
-						if (!(board.occupied & doubleMoveBB))
-							*moveList++ = { from, bitScanForward(doubleMoveBB), PAWN, Move::DOUBLE_PAWN_PUSH };
-					}
+					if (!(board.occupied & doubleMoveBB))
+						*moveList++ = { from, bitScanForward(doubleMoveBB), PAWN, Move::DOUBLE_PAWN_PUSH };
 				}
-			}
+				}
 		}
 
 		return moveList;
@@ -143,13 +137,13 @@ namespace
 		return moveList;
 	}
 
-	template <Color Us, GenType Type>
+	template <Color Us>
 	Move *generateAllMoves(const Board &board, Move *moveList, const U64 targets)
 	{
 		constexpr Color Them = ~Us;
-		constexpr Piece kingPiece(KING, Us);
+		constexpr Piece kingPiece{ KING, Us };
 
-		moveList = generatePawnMoves<Us, Type>(board, moveList, targets);
+		moveList = generatePawnMoves<Us>(board, moveList, targets);
 		moveList = generatePieceMoves<KNIGHT>(board, Us, moveList, targets);
 		moveList = generatePieceMoves<BISHOP>(board, Us, moveList, targets);
 		moveList = generatePieceMoves<ROOK>(board, Us, moveList, targets);
@@ -176,32 +170,30 @@ namespace
 			}
 		}
 
-		if constexpr (Type == ALL)
+		
+		if (board.canCastle(Us) && !board.isInCheck(Us))
 		{
-			if (board.canCastle(Us) && !board.isInCheck(Us))
+			const byte y = row(kingSquare);
+			const auto isEmptyAndCheckFree = [&, y](const byte x)
 			{
-				const byte y = row(kingSquare);
-				const auto isEmptyAndCheckFree = [&, y](const byte x)
-				{
-					return !board.getPiece(x, y) && !board.isAttackedByAny(Them, toSquare(x, y));
-				};
+				return !board.getPiece(x, y) && !board.isAttackedByAny(Them, toSquare(x, y));
+			};
 
-				// King Side
-				if (board.canCastleKs(Us)
-					&& isEmptyAndCheckFree(5)
-					&& isEmptyAndCheckFree(6))
-				{
-					*moveList++ = { kingSquare, Pos(6, y).toSquare(), KING, Move::Flag::KSIDE_CASTLE };
-				}
+			// King Side
+			if (board.canCastleKs(Us)
+				&& isEmptyAndCheckFree(5)
+				&& isEmptyAndCheckFree(6))
+			{
+				*moveList++ = { kingSquare, Pos(6, y).toSquare(), KING, Move::Flag::KSIDE_CASTLE };
+			}
 
-				// Queen Side
-				if (board.canCastleQs(Us)
-					&& isEmptyAndCheckFree(3)
-					&& isEmptyAndCheckFree(2)
-					&& !board.getPiece(1, y))
-				{
-					*moveList++ = { kingSquare, Pos(2, y).toSquare(), KING, Move::Flag::QSIDE_CASTLE };
-				}
+			// Queen Side
+			if (board.canCastleQs(Us)
+				&& isEmptyAndCheckFree(3)
+				&& isEmptyAndCheckFree(2)
+				&& !board.getPiece(1, y))
+			{
+				*moveList++ = { kingSquare, Pos(2, y).toSquare(), KING, Move::Flag::QSIDE_CASTLE };
 			}
 		}
 
@@ -209,22 +201,12 @@ namespace
 	}
 }
 
-template <GenType Type>
 Move *generateMoves(const Board &board, Move *moveList) noexcept
 {
 	const Color color = board.colorToMove;
-	U64 targets{};
-
-	if constexpr (Type == ALL)
-		targets = ~board.allPieces[color]; // Remove our pieces
-	else if constexpr (Type == CAPTURES)
-		targets = board.allPieces[~color]; // Keep only their pieces
+	const U64 targets = ~board.allPieces[color]; // Remove our pieces
 
 	return color == WHITE
-		       ? generateAllMoves<WHITE, Type>(board, moveList, targets)
-		       : generateAllMoves<BLACK, Type>(board, moveList, targets);
+		       ? generateAllMoves<WHITE>(board, moveList, targets)
+		       : generateAllMoves<BLACK>(board, moveList, targets);
 }
-
-// Explicit template instantiations
-template Move *generateMoves<ALL>(const Board &, Move *) noexcept;
-template Move *generateMoves<CAPTURES>(const Board &, Move *) noexcept;

@@ -106,7 +106,7 @@ Phase Board::getPhase() const noexcept
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
-bool Board::makeMove(const Move move) noexcept
+bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 {
 	assert(!move.empty());
 	const byte from = move.from();
@@ -223,6 +223,9 @@ bool Board::makeMove(const Move move) noexcept
 	Hash::flipSide(zKey);
 	
 	updateNonPieceBitboards();
+
+	if (!checkLegal)
+		return true;
 
 	if ((flags & Move::CAPTURE && move.capturedPiece() == KING) || isInCheck(side))
 	{
