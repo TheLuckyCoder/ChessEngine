@@ -279,8 +279,8 @@ Score Evaluation::evaluateAttacks() const noexcept
         if (weak & _attacks[Us][KING])
             score += THREAT_BY_KING;
 
-		const U64 hangingPieces = ~_attacksAll[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
-		score += HANGING * popCount(weak & hangingPieces);
+		//const U64 hangingPieces = ~_attacksAll[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
+		//score += HANGING * popCount(weak & hangingPieces);
 
         score += WEAK_QUEEN_PROTECTION * popCount(weak & _attacks[Them][QUEEN]);
     }

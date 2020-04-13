@@ -1,6 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 29
@@ -9,8 +8,12 @@ android {
         applicationId "net.theluckycoder.chess"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 101
-        versionName "1.0.1"
+        versionCode 104
+        versionName "1.0.4"
+    }
+
+    viewBinding {
+        enabled = true
     }
 
     buildTypes {

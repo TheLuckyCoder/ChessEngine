@@ -11,8 +11,6 @@ object Native {
 
     external fun getCurrentBoardValue(): Int
 
-    external fun getBestMoveFound(): Int
-
     external fun getAdvancedStats(): String
 
     // endregion Stats

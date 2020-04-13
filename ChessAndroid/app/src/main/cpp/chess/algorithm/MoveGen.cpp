@@ -72,23 +72,23 @@ namespace
 			while (attacks)
 			{
 				const byte to = findNextSquare(attacks);
-				addCaptureMove(from, to, pos);
+				addCaptureMove(from, to, bb);
 			}
 
-			const U64 moveBB = shift<direction>(pos);
+			const U64 moveBB = shift<Forward>(bb);
 
 			if (!(board.occupied & moveBB))
 			{
-				addQuietMove(from, bitScanForward(moveBB), pos);
+				addQuietMove(from, bitScanForward(moveBB), bb);
 
-				if (startingRank & pos)
+				if (StartRank & bb)
 				{
-					const U64 doubleMoveBB = shift<direction>(moveBB);
+					const U64 doubleMoveBB = shift<Forward>(moveBB);
 
 					if (!(board.occupied & doubleMoveBB))
 						*moveList++ = { from, bitScanForward(doubleMoveBB), PAWN, Move::DOUBLE_PAWN_PUSH };
 				}
-				}
+			}
 		}
 
 		return moveList;
@@ -169,7 +169,7 @@ namespace
 			}
 		}
 
-		
+
 		if (board.canCastle(Us) && !board.isInCheck(Us))
 		{
 			const byte y = row(kingSquare);
@@ -206,6 +206,6 @@ Move *generateMoves(const Board &board, Move *moveList) noexcept
 	const U64 targets = ~board.allPieces[color]; // Remove our pieces
 
 	return color == WHITE
-		       ? generateAllMoves<WHITE>(board, moveList, targets)
-		       : generateAllMoves<BLACK>(board, moveList, targets);
+		   ? generateAllMoves<WHITE>(board, moveList, targets)
+		   : generateAllMoves<BLACK>(board, moveList, targets);
 }

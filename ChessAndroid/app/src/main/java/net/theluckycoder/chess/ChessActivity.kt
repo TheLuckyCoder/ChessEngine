@@ -9,10 +9,10 @@ import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
+import android.widget.Spinner
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import kotlinx.android.synthetic.main.activity_chess.*
-import kotlinx.android.synthetic.main.dialog_restart.view.*
+import net.theluckycoder.chess.databinding.ActivityChessBinding
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.CapturedPieces
 import net.theluckycoder.chess.utils.PieceResourceManager
@@ -36,9 +36,12 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     private var canMove = true
     private var restarting = false
 
+    private lateinit var binding: ActivityChessBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_chess)
+        binding = ActivityChessBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val point = Point()
         windowManager.defaultDisplay.getSize(point)
@@ -46,17 +49,17 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         viewSize = point.x / 8
         PieceResourceManager.init(this, viewSize)
 
-        layout_board.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
+        binding.layoutBoard.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
 
-        iv_undo.setOnClickListener {
+        binding.ivUndo.setOnClickListener {
             Native.undoMoves()
         }
 
-        iv_settings.setOnClickListener {
+        binding.ivSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        iv_settings.setOnLongClickListener {
+        binding.ivSettings.setOnLongClickListener {
             val isPlayerWhite = Native.isPlayerWhite()
             redrawBoard(isPlayerWhite)
             redrawPieces(Native.getPieces().toList(), isPlayerWhite)
@@ -64,14 +67,15 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             true
         }
 
-        btn_restart_game.setOnClickListener {
+        binding.btnRestartGame.setOnClickListener {
             val view = View.inflate(this, R.layout.dialog_restart, null)
+            val sideSpinner: Spinner = view.findViewById(R.id.sp_side)
 
             AlertDialog.Builder(this)
                 .setTitle(R.string.new_game)
                 .setView(view)
                 .setPositiveButton(R.string.action_start) { _, _ ->
-                    val playerWhite = when (view.sp_side.selectedItemPosition) {
+                    val playerWhite = when (sideSpinner.selectedItemPosition) {
                         0 -> true
                         1 -> false
                         else -> Random.nextBoolean()
@@ -151,7 +155,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             clearTiles(true)
             selectedPos = Pos()
 
-            pb_loading.visibility = View.VISIBLE
+            binding.pbLoading.visibility = View.VISIBLE
         }
     }
 
@@ -175,22 +179,22 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
     private fun updateState(state: State) {
         canMove = true
+        val tvDebug = binding.tvDebug
 
         if (gameManager.basicStatsEnabled) {
-            tv_debug.visibility = View.VISIBLE
+            tvDebug.visibility = View.VISIBLE
 
             val advancedStats =
                 if (gameManager.advancedStatsEnabled) "\n" + Native.getAdvancedStats() else ""
 
-            tv_debug.text = getString(
+            tvDebug.text = getString(
                 R.string.basic_stats,
                 Native.getSearchTime(),
                 Native.getCurrentBoardValue(),
-                Native.getBestMoveFound(),
                 advancedStats
             )
         } else {
-            tv_debug.visibility = View.GONE
+            tvDebug.visibility = View.GONE
         }
 
         val message = when (state) {
@@ -202,14 +206,14 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         if (message != null) {
             canMove = false
-            pb_loading.visibility = View.INVISIBLE
+            binding.pbLoading.visibility = View.INVISIBLE
 
             AlertDialog.Builder(this)
                 .setTitle(message)
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         } else {
-            pb_loading.visibility = if (gameManager.isWorking) View.VISIBLE else View.INVISIBLE
+            binding.pbLoading.visibility = if (gameManager.isWorking) View.VISIBLE else View.INVISIBLE
         }
 
         if (state == State.WHITE_IN_CHESS || state == State.WINNER_BLACK) {
@@ -235,7 +239,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             capturedPieces.reset()
             canMove = true
             restarting = false
-            tv_debug.text = null
+            binding.tvDebug.text = null
         }
 
         if (gameManager.isWorking) {
@@ -250,7 +254,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
     override fun redrawBoard(isPlayerWhite: Boolean) {
         tiles.forEach {
-            layout_board.removeView(it.value)
+            binding.layoutBoard.removeView(it.value)
         }
         tiles.clear()
 
@@ -268,13 +272,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             }
 
             tiles[pos] = tileView
-            layout_board.addView(tileView)
+            binding.layoutBoard.addView(tileView)
         }
     }
 
     override fun redrawPieces(newPieces: List<Piece>, isPlayerWhite: Boolean) {
         pieces.forEach {
-            layout_board.removeView(it.value)
+            binding.layoutBoard.removeView(it.value)
         }
         pieces.clear()
 
@@ -295,7 +299,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             }
 
             pieces[pos] = pieceView
-            layout_board.addView(pieceView)
+            binding.layoutBoard.addView(pieceView)
         }
     }
 
@@ -325,7 +329,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
             pieces[destPos]?.let { destView ->
                 // Remove the Destination Piece
-                layout_board.removeView(destView)
+                binding.layoutBoard.removeView(destView)
 
                 val type = PieceResourceManager.piecesResources.indexOf(destView.res) + 1
                 val piece = Piece(

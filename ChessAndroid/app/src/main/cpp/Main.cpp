@@ -4,7 +4,6 @@
 
 #include "Log.h"
 #include "Cache.h"
-#include "external.h"
 
 #include "chess/BoardManager.h"
 #include "chess/Stats.h"
@@ -12,6 +11,8 @@
 #include "chess/algorithm/Evaluation.h"
 #include "chess/algorithm/MoveGen.h"
 #include "chess/data/Pos.h"
+
+#define external extern "C"
 
 static JavaVM *jvm = nullptr;
 static jobject gameManagerInstance;
@@ -36,8 +37,8 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 
 	for (unsigned i = 0; i < moved.size(); ++i)
 	{
-		const Pos &startPos{ moved[i].first };
-		const Pos &destPos{ moved[i].second };
+		const Pos startPos{ moved[i].first };
+		const Pos destPos{ moved[i].second };
 		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
 									 startPos.x, startPos.y, destPos.x, destPos.y);
 
@@ -134,12 +135,6 @@ external JNIEXPORT jint JNICALL
 Java_net_theluckycoder_chess_Native_getCurrentBoardValue(JNIEnv *, jobject)
 {
 	return static_cast<jint>(Evaluation::evaluate(BoardManager::getBoard()));
-}
-
-external JNIEXPORT jint JNICALL
-Java_net_theluckycoder_chess_Native_getBestMoveFound(JNIEnv *, jobject)
-{
-	return 0;//static_cast<jint>(Search::getBestMoveFound());
 }
 
 external JNIEXPORT jstring JNICALL
@@ -314,7 +309,7 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject, jint depth)
 
 	for (size_t i = 0; i < perftResults.size(); ++i)
 	{
-		LOGV(TAG, "Starting Depth %d Test", i);
+		LOGV(TAG, "Starting Depth %d Test", int(i));
 
 		const auto startTime = high_resolution_clock::now();
 		const size_t nodesCount = perft(board, i);
@@ -323,9 +318,9 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject, jint depth)
 		const double timeNeeded = duration<double, std::milli>(currentTime - startTime).count();
 
 		LOGV(TAG, "Time needed: %lf", timeNeeded);
-		LOGV(TAG, "Nodes count: %llu/%llu", nodesCount, perftResults[i]);
+		LOGV(TAG, "Nodes count: %lu/%llu", nodesCount, perftResults[i]);
 		if (nodesCount != perftResults[i])
-			LOGE(TAG, "Nodes count do not match at depth %d", i);
+			LOGE(TAG, "Nodes count do not match at depth %lu", i);
 	}
 
 	LOGV(TAG, "Perft Test Finished");
