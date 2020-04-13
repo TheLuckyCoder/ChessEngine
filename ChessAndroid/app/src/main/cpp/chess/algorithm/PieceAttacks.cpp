@@ -152,8 +152,8 @@ const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
 		const U64 bb = shiftedBoards[i];
 		const U64 attacks = shift<EAST>(bb) | shift<WEST>(bb);
 
-	    moves[true][i] = shift<NORTH>(attacks);
-	    moves[false][i] = shift<SOUTH>(attacks);
+	    moves[WHITE][i] = shift<NORTH>(attacks);
+	    moves[BLACK][i] = shift<SOUTH>(attacks);
 	}
 
 	return moves;

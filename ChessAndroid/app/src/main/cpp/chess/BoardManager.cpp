@@ -93,7 +93,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 		|| flags & Move::QSIDE_CASTLE || flags & Move::EN_PASSANT;
 	const State state = getBoardState();
 
-	std::cout << "Made the Move: " << move.toString();
+	std::cout << "Made the Move: " << move.toString() << '\n';
 	_listener(state, shouldRedraw, { { move.from(), move.to() } });
 
 	if (movedByPlayer && (state == State::NONE || state == State::WHITE_IN_CHECK || state == State::BLACK_IN_CHECK))
@@ -158,7 +158,8 @@ State BoardManager::getBoardState()
 	else if (blackInCheck)
 		state = State::BLACK_IN_CHECK;
 
-	const MoveList moveList(_board);
+	MoveList moveList(_board);
+	moveList.keepLegalMoves();
 
 	if (moveList.empty())
 	{

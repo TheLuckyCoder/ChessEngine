@@ -58,6 +58,7 @@ public:
 	U64 getType(Piece piece) const noexcept;
 	U64 &getType(Color color, PieceType type) noexcept;
 	U64 getType(Color color, PieceType type) const noexcept;
+	byte getKingSq(Color color) const noexcept;
 
 	bool isRepetition() const noexcept;
 	Phase getPhase() const noexcept;

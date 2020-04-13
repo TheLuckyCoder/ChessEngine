@@ -14,7 +14,7 @@ namespace
 	constexpr S CHECK_BONUS{ 30, 42 };
 
 	/*
-	 * These values were imported from the Stockfish Chess Engine
+	 * Most of these values were imported from the Stockfish Chess Engine
 	 */
 	constexpr S PAWN_DOUBLED{ 11, 56 };
 	constexpr S PAWN_ISOLATED{ 5, 15 };
@@ -24,14 +24,20 @@ namespace
 	};
 	constexpr S PASSED_PAWN_RANK[]
 	{
-		{ 0, 0 }, { 10, 28 }, { 17, 33 },  { 15, 41 }, {62, 72 }, { 168, 177 }, { 276, 260 }
+		{ }, { 10, 28 }, { 17, 33 },  { 15, 41 }, {62, 72 }, { 168, 177 }, { 276, 260 }
 	};
 
+	constexpr S MINOR_PAWN_SHIELD{ 18,  3 };
 	constexpr S MINOR_THREATS[]
 	{
-		S(0, 0), S(6, 32), S(59, 41), S(79, 56), S(90, 119), S(79, 161), S(0, 0)
+		{ }, { 6, 32 }, { 59, 41 }, { 79, 56 }, { 90, 119 }, { 79, 161 }, { }
 	};
-	constexpr S MINOR_PAWN_SHIELD{ 18,  3 };
+	constexpr S KING_PROTECTOR{ 7, 8 };
+	constexpr S HANGING{ 69, 36 };
+	constexpr S RESTRICTED_PIECE_MOVEMENT{ 7,  7 };
+	constexpr S WEAK_QUEEN_PROTECTION{ 14,  0 };
+	constexpr S THREAT_BY_KING{ 24, 89 };
+	constexpr S THREAT_BY_SAFE_PAWN{ 173, 94 };
 
 	constexpr S ROOK_ON_PAWN{ 10, 28 };
 	constexpr S ROOK_ON_QUEEN_FILE{ 7, 6 };
@@ -42,8 +48,9 @@ namespace
 	};
 	constexpr S ROOK_THREATS[]
 	{
-		{ 0, 0 }, { 3, 44 }, { 38, 71 }, { 38, 61 }, { 0, 38 }, { 51, 38 }, { 0, 0 }
+		{ }, { 3, 44 }, { 38, 71 }, { 38, 61 }, { 0, 38 }, { 51, 38 }, { 0, 0 }
 	};
+	constexpr S KING_PAWN_SHIELD{ 10, 0 };
 
 	constexpr S KNIGHT_MOBILITY[]
 	{
@@ -78,56 +85,76 @@ PawnStructureTable Evaluation::_pawnTable{ 1 };
 
 using namespace Bits;
 
+namespace Masks
+{
+	static auto constexpr PAWN_SHIELD = []
+	{
+		std::array<std::array<U64, SQUARE_NB>, 2> array{};
+
+		for (byte i{}; i < SQUARE_NB; ++i)
+		{
+			const U64 square = 1ull << i;
+
+		    array[WHITE][i] = (square << 8 | (square << 7 & ~FILE_H) | (square << 9 & ~FILE_A)) & RANK_2;
+			array[BLACK][i] = (square >> 8 | (square >> 7 & ~FILE_A) | (square >> 9 & ~FILE_H)) & RANK_7;
+		}
+
+		return array;
+	}();
+}
+
 short Evaluation::evaluate(const Board &board) noexcept
 {
 	Stats::incrementBoardsEvaluated();
 
-	Score totalScore[2]{};
-	short npm[2]{};
+	Evaluation evaluator(board);
 
-	for (byte c = BLACK; c <= WHITE; ++c)
+	const Score piecesScore = evaluator.evaluatePieces<WHITE>() - evaluator.evaluatePieces<BLACK>();
+	const Score attacksScore = evaluator.evaluateAttacks<WHITE>() - evaluator.evaluateAttacks<BLACK>();
+	Score finalScore = piecesScore - attacksScore;
+
+	if (board.colorToMove)
 	{
-		for (byte pieceType = KNIGHT; pieceType <= QUEEN; ++pieceType)
-		{
-			const Piece piece{ PieceType(pieceType), Color(c) };
-			for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
-			{
-				const Color color = Color(c);
-				const byte square = board.pieceList[piece][pieceNumber];
+		finalScore += TEMPO_BONUS;
 
-				Score points;
+		if (Bits::getSquare64(board.getKingSq(BLACK)) & evaluator._attacksAll[WHITE])
+			finalScore += CHECK_BONUS;
+	} else
+	{
+		finalScore -= TEMPO_BONUS;
 
-				if (board.isAttacked<KNIGHT>(~color, square))
-					points -= MINOR_THREATS[piece.type()];
-				if (board.isAttacked<BISHOP>(~color, square))
-					points -= MINOR_THREATS[piece.type()];
-				if (board.isAttacked<ROOK>(~color, square))
-					points -= ROOK_THREATS[piece.type()];
-
-				npm[color] += getPieceValue(piece.type());
-				totalScore[color] += points;
-			}
-		}
+		if (Bits::getSquare64(board.getKingSq(WHITE)) & evaluator._attacksAll[BLACK])
+			finalScore -= CHECK_BONUS;
 	}
-
-	if (board.isInCheck(~board.colorToMove))
-		totalScore[board.colorToMove] += CHECK_BONUS;
-
-	totalScore[board.colorToMove] += TEMPO_BONUS;
-
-	const Score piecesScore = evaluatePieces<WHITE>(board) -  evaluatePieces<BLACK>(board);
-	const Score finalScore = totalScore[WHITE] - totalScore[BLACK] + piecesScore;
+	
 	const Phase phase = board.getPhase();
 	return phase == Phase::MIDDLE ? finalScore.mg : finalScore.eg;
 }
 
-template <Color Us>
-Score Evaluation::evaluatePieces(const Board &board) noexcept
+Evaluation::Evaluation(const Board &board)
+	: board(board)
 {
+}
+
+template <Color Us>
+Score Evaluation::evaluatePieces() noexcept
+{
+	constexpr Color Them = ~Us;
+	Score score;
+	{
+		const byte square = board.getKingSq(Us);
+		score += evaluateKing<Us>(square);
+
+		const U64 attacks = PieceAttacks::getKingAttacks(square);
+		_attacks[Us][KING] = attacks;
+		_attacksAll[Us] = attacks;
+	}
+
 	Score pawnScore;
 
 	{
 		U64 pawns = board.getType(Us, PAWN);
+		
 		if constexpr (Us == BLACK)
 			pawns = flipVertical(pawns);
 
@@ -136,67 +163,144 @@ Score Evaluation::evaluatePieces(const Board &board) noexcept
 		if (pawnsEntry.pawns != pawns)
 		{
 			constexpr Piece piece{ PAWN, Us };
+			
 			for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
-				pawnScore += evaluatePawn<Us>(board, board.pieceList[piece][pieceNumber]);
+			{
+				const byte square = board.pieceList[piece][pieceNumber];
+				pawnScore += evaluatePawn<Us>(square);
+			}
 
 			_pawnTable.insert({ pawns, pawnScore });
 		} else
 			pawnScore = pawnsEntry.score;
 	}
 
-	Score score;
+	{
+		const U64 &pawns = board.getType(Us, PAWN);
+		const U64 pawnsAttacks = PieceAttacks::getPawnAttacks<Us>(pawns);
+		const U64 doublePawnsAttacks = PieceAttacks::getDoublePawnAttacks<Us>(pawns);
+
+		_attacks[Us][PAWN] = pawnsAttacks;
+		_attacksMultiple[Us] = doublePawnsAttacks | (doublePawnsAttacks & _attacksAll[Us]);
+		_attacksAll[Us] |= pawnsAttacks;
+	}
+
+	_mobilityArea[Us] = ~board.allPieces[Us] & ~PieceAttacks::getPawnAttacks<Them>(board.getType(Them, PAWN));
 
 	const auto knightBishop = [&] (const byte square)
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
-		if (Bits::shift<Behind>(board.getType(Us, PAWN)) & Bits::getSquare64(square))
+		if (getSquare64(square) & shift<Behind>(board.getType(Us, PAWN)))
 			score += MINOR_PAWN_SHIELD;
 
-		// Penalty if the piece is far from the king
-		//score -= KingProtector * distance(pos.square<KING>(Us), square);
+		//score -= KING_PROTECTOR * getDistance(square, board.getKingSq(Us));
 	};
 
 	Piece piece{ KNIGHT, Us };
 	for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 	{
 		const byte square = board.pieceList[piece][pieceNumber];
-		score += evaluateKnight<Us>(board, square);
+		score += evaluateKnight<Us>(square);
 		knightBishop(square);
+		
+		const U64 attacks = PieceAttacks::getKnightAttacks(square);
+		_attacks[Us][KNIGHT] |= attacks;
+		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
+		_attacksAll[Us] |= attacks;
 	}
 
 	piece = { BISHOP, Us };
 	for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 	{
 		const byte square = board.pieceList[piece][pieceNumber];
-		score += evaluateBishop<Us>(board, square);
+		score += evaluateBishop<Us>(square);
 		knightBishop(square);
+
+		const U64 attacks = PieceAttacks::getBishopAttacks(square, board.occupied);
+		_attacks[Us][BISHOP] |= attacks;
+		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
+		_attacksAll[Us] |= attacks;
 	}
 
 	if (board.pieceCount[piece] >= 2)
-		score += 10;
+		score += 40;
 
 	piece = { ROOK, Us };
 	for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
-		score += evaluateRook<Us>(board, board.pieceList[piece][pieceNumber]);
+	{
+		const byte square = board.pieceList[piece][pieceNumber];
+		score += evaluateRook<Us>(square);
+		
+		const U64 attacks = PieceAttacks::getRookAttacks(square, board.occupied);
+		_attacks[Us][ROOK] |= attacks;
+		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
+		_attacksAll[Us] |= attacks;
+	}
 
 	piece = { QUEEN, Us };
 	for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
-		score += evaluateQueen<Us>(board, board.pieceList[piece][pieceNumber]);
-
-	piece = { KING, Us };
-	score += evaluateKing<Us>(board, board.pieceList[piece][0]);
+	{
+		const byte square = board.pieceList[piece][pieceNumber];
+		score += evaluateQueen<Us>(square);
+		
+		const U64 attacks = PieceAttacks::getQueenAttacks(square, board.occupied);
+		_attacks[Us][QUEEN] |= attacks;
+		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
+		_attacksAll[Us] |= attacks;
+	}
 
 	return score + pawnScore;
 }
 
 template <Color Us>
-Score Evaluation::evaluatePawn(const Board &board, const byte square) noexcept
+Score Evaluation::evaluateAttacks() const noexcept
 {
 	constexpr Color Them = ~Us;
-	constexpr Dir forwardDir = Us ? NORTH : SOUTH;
-	constexpr byte behind = Us ? -1 : 1;
-	constexpr Piece piece{ PAWN, Us };
+	Score score{};
+
+    const U64 nonPawnEnemies = board.allPieces[Them] & ~board.getType(Us, PAWN);
+    const U64 stronglyProtected = _attacks[Them][PAWN]
+                       | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
+    const U64 defended = nonPawnEnemies & stronglyProtected;
+    const U64 weak = board.allPieces[Them] & ~stronglyProtected & _attacksAll[Us];
+	const U64 safe = ~_attacksAll[Them] | _attacksAll[Us];
+
+    if (defended || weak)
+    {
+        U64 minorThreats = (defended | weak) & (_attacks[Us][KNIGHT] | _attacks[Us][BISHOP]);
+        while (minorThreats)
+            score += MINOR_THREATS[board.getPiece(findNextSquare(minorThreats)).type()];
+
+        U64 rookThreats = weak & _attacks[Us][ROOK];
+        while (rookThreats)
+            score += ROOK_THREATS[board.getPiece(findNextSquare(rookThreats)).type()];
+
+        if (weak & _attacks[Us][KING])
+            score += THREAT_BY_KING;
+
+		const U64 hangingPieces = ~_attacksAll[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
+		score += HANGING * popCount(weak & hangingPieces);
+
+        score += WEAK_QUEEN_PROTECTION * popCount(weak & _attacks[Them][QUEEN]);
+    }
+
+    const U64 restrictedMovement = _attacksAll[Them] & _attacksAll[Us] & ~stronglyProtected;
+    score += RESTRICTED_PIECE_MOVEMENT * short(popCount(restrictedMovement));
+
+	const U64 safePawnsAttacks = PieceAttacks::getPawnAttacks<Us>(board.getType(Us, PAWN) & safe) & nonPawnEnemies;
+    score += THREAT_BY_SAFE_PAWN * short(popCount(safePawnsAttacks));
+
+	return score;
+}
+
+template <Color Us>
+Score Evaluation::evaluatePawn(const byte square) const noexcept
+{
+	constexpr Color Them = ~Us;
+	constexpr Dir ForwardDir = Us ? NORTH : SOUTH;
+	constexpr byte Behind = Us ? -1 : 1;
+	constexpr Piece Piece{ PAWN, Us };
 
 	Score value = Psqt::BONUS[PAWN][square];
 
@@ -204,11 +308,11 @@ Score Evaluation::evaluatePawn(const Board &board, const byte square) noexcept
 	const byte rank = (Us ? pos.y : 7u - pos.y) - 1u;
 
 	const U64 adjacentFiles = getAdjacentFiles(square);
-	const U64 opposed = board.getType(Piece(PAWN, Them)) & getRay(forwardDir, square);
-	const U64 neighbours = board.getType(piece) & adjacentFiles;
+	const U64 opposed = board.getType(Them, PAWN) & getRay(ForwardDir, square);
+	const U64 neighbours = board.getType(Piece) & adjacentFiles;
 	const U64 connected = neighbours & getRank(square);
-	const U64 support = neighbours & getRank(toSquare(pos.x + behind, pos.y));
-	const bool isDoubled = board.at(pos.x, pos.y - behind) == piece;
+	const U64 support = neighbours & getRank(toSquare(pos.x + Behind, pos.y));
+	const bool isDoubled = board.at(pos.x, pos.y - Behind) == Piece;
 
 	if (support | connected)
 	{
@@ -223,7 +327,7 @@ Score Evaluation::evaluatePawn(const Board &board, const byte square) noexcept
 		value -= PAWN_DOUBLED;
 
 	{ // Passed Pawn
-		U64 rays = getRay(forwardDir, square);
+		U64 rays = getRay(ForwardDir, square);
 		const U64 adjacentRays = shift<WEST>(rays) | shift<EAST>(rays);
 		rays |= Us ? shift<NORTH>(adjacentRays) : shift<SOUTH>(adjacentRays);
 
@@ -237,18 +341,18 @@ Score Evaluation::evaluatePawn(const Board &board, const byte square) noexcept
 }
 
 template <Color Us>
-Score Evaluation::evaluateKnight(const Board &board, const byte square) noexcept
+Score Evaluation::evaluateKnight(const byte square) const noexcept
 {
 	Score value = Psqt::BONUS[KNIGHT][square];
 
-	const int mobility = popCount(PieceAttacks::getKnightAttacks(square) & ~board.allPieces[Us]);
+	const int mobility = popCount(PieceAttacks::getKnightAttacks(square) & _mobilityArea[Us]);
 	value += KNIGHT_MOBILITY[mobility];
 
 	return value;
 }
 
 template <Color Us>
-Score Evaluation::evaluateBishop(const Board &board, const byte square) noexcept
+Score Evaluation::evaluateBishop(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
 	constexpr U64 CenterFiles = FILE_D | FILE_E;
@@ -256,7 +360,7 @@ Score Evaluation::evaluateBishop(const Board &board, const byte square) noexcept
 
 	Score value = Psqt::BONUS[BISHOP][square];
 
-	const int mobility = popCount(PieceAttacks::getBishopAttacks(square, board.occupied) & ~board.allPieces[Us]);
+	const int mobility = popCount(PieceAttacks::getBishopAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += BISHOP_MOBILITY[mobility];
 
 	// Long Diagonal Bishop
@@ -268,14 +372,14 @@ Score Evaluation::evaluateBishop(const Board &board, const byte square) noexcept
 }
 
 template <Color Us>
-Score Evaluation::evaluateRook(const Board &board, const byte square) noexcept
+Score Evaluation::evaluateRook(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
 
-	const Pos pos(square);
-	Score value = Psqt::BONUS[ROOK][pos.toSquare()];
+	const Pos pos{ square };
+	Score value = Psqt::BONUS[ROOK][square];
 
-	const int mobility = popCount(PieceAttacks::getRookAttacks(square, board.occupied) & ~board.allPieces[Us]);
+	const int mobility = popCount(PieceAttacks::getRookAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += ROOK_MOBILITY[mobility];
 
 	const int rookOnPawn = [&]
@@ -307,22 +411,22 @@ Score Evaluation::evaluateRook(const Board &board, const byte square) noexcept
 }
 
 template <Color Us>
-Score Evaluation::evaluateQueen(const Board &board, const byte square) noexcept
+Score Evaluation::evaluateQueen(const byte square) const noexcept
 {
 	Score value = Psqt::BONUS[QUEEN][square];
 
-	const int mobility = popCount(PieceAttacks::getQueenAttacks(square, board.occupied) & ~board.allPieces[Us]);
+	const int mobility = popCount(PieceAttacks::getQueenAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += QUEEN_MOBILITY[mobility];
 
 	if (const U64 initialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
 		(initialPosition & shiftedBoards[square]) == 0)
-		value.mg -= 35;
+		value.mg -= 40;
 
 	return value;
 }
 
 template <Color Us>
-Score Evaluation::evaluateKing(const Board &board, const byte square) noexcept
+Score Evaluation::evaluateKing(const byte square) const noexcept
 {
 	Score value = Psqt::BONUS[KNIGHT][square];
 
@@ -332,6 +436,9 @@ Score Evaluation::evaluateKing(const Board &board, const byte square) noexcept
 		const short count = short(board.canCastleKs(Us)) + short(board.canCastleQs(Us));
 		value.mg += count * 19;
 	}
+	
+	value += KING_PAWN_SHIELD * 
+		popCount(Masks::PAWN_SHIELD[Us][square] & board.getType(Us, PAWN));
 
 	return value;
 }

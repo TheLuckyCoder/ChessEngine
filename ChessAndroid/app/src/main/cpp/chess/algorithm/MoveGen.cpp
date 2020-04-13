@@ -10,16 +10,16 @@ namespace
 	{
 		using namespace Bits;
 
-		constexpr Piece piece(PAWN, Us);
+		constexpr Piece piece{ PAWN, Us };
 		constexpr Color Them = ~Us;
-		constexpr Dir direction = (Us == WHITE ? NORTH : SOUTH);
-		constexpr U64 startingRank = (Us == WHITE ? RANK_2 : RANK_7);
-		constexpr U64 lastRank = (Us == WHITE ? RANK_7 : RANK_2);
+		constexpr Dir Forward = Us == WHITE ? NORTH : SOUTH;
+		constexpr U64 StartRank = Us == WHITE ? RANK_2 : RANK_7;
+		constexpr U64 LastRank = Us == WHITE ? RANK_7 : RANK_2;
 
 		const auto addQuietMove = [&](const byte from, const byte to, const U64 pos)
 		{
 			Move move(from, to, PAWN);
-			if (lastRank & pos)
+			if (LastRank & pos)
 			{
 				move.setFlags(Move::PROMOTION);
 				for (byte promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
@@ -36,7 +36,7 @@ namespace
 			Move move(from, to, PAWN);
 			move.setCapturedPiece(board.getPiece(to).type());
 
-			if (lastRank & pos)
+			if (LastRank & pos)
 			{
 				move.setFlags(Move::CAPTURE | Move::PROMOTION);
 				for (byte promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
@@ -51,15 +51,14 @@ namespace
 		for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 		{
 			const byte from = board.pieceList[piece][pieceNumber];
-			const U64 pos = getSquare64(from);
-
+			const U64 bb = getSquare64(from);
 			U64 attacks = PieceAttacks::getPawnAttacks(Us, from);
 
-			if (board.enPassantSq < 64u)
+			if (board.enPassantSq < SQ_NONE)
 			{
-				constexpr Dir EN_PASSANT_DIRECTION = (Us == WHITE ? SOUTH : NORTH);
+				constexpr Dir EnPassantDirection = Us == WHITE ? SOUTH : NORTH;
 				const U64 enPassantCapture = getSquare64(board.enPassantSq);
-				const U64 capturedPawn = shift<EN_PASSANT_DIRECTION>(enPassantCapture);
+				const U64 capturedPawn = shift<EnPassantDirection>(enPassantCapture);
 
 				if (board.getType(Them, PAWN) & capturedPawn && (attacks & enPassantCapture))
 				{
@@ -99,7 +98,7 @@ namespace
 	Move *generatePieceMoves(const Board &board, const Color color, Move *moveList, const U64 targets)
 	{
 		static_assert(P != KING && P != PAWN);
-		const Piece piece(P, color);
+		const Piece piece{ P, color };
 
 		for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 		{

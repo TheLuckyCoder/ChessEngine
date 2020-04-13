@@ -1,7 +1,5 @@
 #pragma once
 
-#include <array>
-
 #include "../data/Bits.h"
 
 using byte = unsigned char;
@@ -30,4 +28,26 @@ public:
 	static U64 getRookAttacks(byte square, U64 blockers) noexcept;
 	static U64 getQueenAttacks(byte square, U64 blockers) noexcept;
 	static U64 getKingAttacks(byte square) noexcept;
+
+	template <Color C>
+	static U64 getPawnAttacks(const U64 pawns) noexcept
+	{
+		static_assert(C == WHITE || C == BLACK);
+		
+		if constexpr (C == WHITE)
+			return Bits::shift<NORTH_WEST>(pawns) | Bits::shift<NORTH_EAST>(pawns);
+		else
+			return Bits::shift<SOUTH_WEST>(pawns) | Bits::shift<SOUTH_EAST>(pawns);
+	}
+
+	template <Color C>
+	static U64 getDoublePawnAttacks(const U64 pawns) noexcept
+	{
+		static_assert(C == WHITE || C == BLACK);
+		
+		if constexpr (C == WHITE)
+			return Bits::shift<NORTH_WEST>(pawns) & Bits::shift<NORTH_EAST>(pawns);
+		else
+			return Bits::shift<SOUTH_WEST>(pawns) & Bits::shift<SOUTH_EAST>(pawns);
+	}
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "../data/Score.h"
 #include "../containers/PawnStructureTable.h"
 
@@ -11,17 +13,8 @@ class Evaluation final
 	static PawnStructureTable _pawnTable;
 
 public:
-	Evaluation() = delete;
-	Evaluation(const Evaluation&) = delete;
-	Evaluation(Evaluation&&) = delete;
-	~Evaluation() = delete;
-
-	Evaluation &operator=(const Evaluation&) = delete;
-	Evaluation &operator=(Evaluation&&) = delete;
-
 	static short evaluate(const Board &board) noexcept;
-	template <Color Us>
-	static Score evaluatePieces(const Board &board) noexcept;
+	
 	static short getPieceValue(const PieceType type) noexcept
 	{
 		return PIECE_VALUE[type];
@@ -32,21 +25,28 @@ public:
 	}
 
 private:
-	template <Color Us>
-	static Score evaluatePawn(const Board &board, byte square) noexcept;
+	explicit Evaluation(const Board &board);
 	
 	template <Color Us>
-	static Score evaluateKnight(const Board &board, byte square) noexcept;
-	
+	Score evaluatePieces() noexcept;
 	template <Color Us>
-	static Score evaluateBishop(const Board &board, byte square) noexcept;
-	
+	Score evaluateAttacks() const noexcept;
 	template <Color Us>
-	static Score evaluateRook(const Board &board, byte square) noexcept;
-	
+	Score evaluatePawn(byte square) const noexcept;
 	template <Color Us>
-	static Score evaluateQueen(const Board &board, byte square) noexcept;
-	
+	Score evaluateKnight(byte square) const noexcept;
 	template <Color Us>
-	static Score evaluateKing(const Board &board, byte square) noexcept;
+	Score evaluateBishop(byte square) const noexcept;
+	template <Color Us>
+	Score evaluateRook(byte square) const noexcept;
+	template <Color Us>
+	Score evaluateQueen(byte square) const noexcept;
+	template <Color Us>
+	Score evaluateKing(byte square) const noexcept;
+
+	const Board &board;
+	std::array<std::array<U64, 7>, 2> _attacks{};
+	std::array<U64, 2> _attacksMultiple{};
+	std::array<U64, 2> _attacksAll{};
+	std::array<U64, 2> _mobilityArea{};
 };

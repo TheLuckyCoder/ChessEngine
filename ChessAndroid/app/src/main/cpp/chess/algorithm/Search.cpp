@@ -79,11 +79,11 @@ Move Search::findBestMove(Board board, const Settings &settings)
 //	const auto threadCount = settings.getThreadCount();
 	_quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
-	const size_t pawnTableSize = std::min<size_t>(settings.getCacheTableSizeMb() / 10u, 1u);
+	const size_t pawnTableSize = std::max<size_t>(settings.getCacheTableSizeMb() / 10u, 1u);
 	Evaluation::getPawnTable().setSize(pawnTableSize);
 	
 	// If the Transposition Table wasn't resized, increment its age
-	if (!_transpTable.setSize(std::min<size_t>(settings.getCacheTableSizeMb() - pawnTableSize, 1u)))
+	if (!_transpTable.setSize(std::max<size_t>(settings.getCacheTableSizeMb() - pawnTableSize, 1u)))
 		_transpTable.incrementAge();
 
 	// Update ThreadPool size if needed
@@ -280,10 +280,10 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 int Search::searchCaptures(Board &board, int alpha, const int beta)
 {
 	historyBoard[board.ply] = board;
-	if (board.ply == MAX_MOVES)
-		return evaluate(board);
-
 	const int standPat = evaluate(board);
+
+	if (board.ply == MAX_MOVES)
+		return standPat;
 	
 	if (standPat >= beta)
 		return standPat;
@@ -311,19 +311,21 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 	}
 
 	MoveList moveList(board);
-	moveList.keepLegalMoves(board);
+	moveList.keepLegalMoves();
+	Stats::incrementNodesGenerated(moveList.size());
 
 	if (moveList.empty())
 		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
-	
-	MoveOrdering::sortQMoves(moveList.begin(), moveList.end());
-	Stats::incrementNodesGenerated(moveList.size());
 
+	MoveOrdering::sortQMoves(moveList.begin(), moveList.end());
+	int searchedMoves{};
+	
 	for (const Move &move : moveList)
 	{
 		if (const auto flags = move.flags();
 			!(flags & Move::CAPTURE || flags & Move::PROMOTION))
 			break; // The moves are sorted so we can break if is not a capture
+		++searchedMoves;
 		
 		board.makeMove(move, false); // We already checked if they are legal or not
 
@@ -331,10 +333,15 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 		board.undoMove();
 
 		if (moveScore >= beta)
-			return moveScore;
+		{
+			Stats::incrementNodesSearched(searchedMoves);
+			return beta;
+		}
 		if (moveScore > alpha)
 			alpha = moveScore;
 	}
+
+	Stats::incrementNodesSearched(searchedMoves);
 
 	return alpha;
 }

@@ -332,6 +332,33 @@ namespace Bits
 		return shift<WEST>(getFile(square)) | shift<EAST>(getFile(square));
 	}
 
+	/**
+	 * Calculated using Chebyshev distance
+	 */
+	static constexpr auto SQUARE_DISTANCE = []
+	{
+		constexpr auto abs = [](const int x)
+		{
+			return( // deal with signed-zeros
+				x == 0 ? 0 :
+				// else
+				x < 0 ? - x : x );
+		};
+
+		std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> array{};
+
+		for (byte x{}; x < SQUARE_NB; ++x)
+			for (byte y{}; y < SQUARE_NB; ++y)
+				array[x][y] = std::max<byte>(abs(row(x) - row(y)), abs(col(x) - col(y)));
+
+		return array;
+	}();
+
+	constexpr byte getDistance(const byte x, const byte y)
+	{
+		return SQUARE_DISTANCE[x][y];
+	}
+
 // endregion Rays
 }
 

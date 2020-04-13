@@ -11,15 +11,15 @@ namespace MoveOrdering
 	static constexpr int NORMAL_SCORE_BONUS = 1000000;
 	static constexpr int PV_BONUS = NORMAL_SCORE_BONUS * 2;
 	static constexpr int EN_PASSANT_BONUS = 105;
-	static constexpr std::array VICTIM_SCORE = { 0, 100, 200, 300, 400, 500, 600 };
 	
+	static constexpr std::array VICTIM_SCORE = { 0, 100, 200, 300, 400, 500, 600 };
 	static constexpr auto MVA_LVV = []
 	{
 		std::array<std::array<int, 7>, 7> array{};
 
-		for (int attacker = PAWN; attacker <= KING; ++attacker)
+		for (byte attacker = PAWN; attacker <= KING; ++attacker)
 		{
-			for (int victim = PAWN; victim <= KING; ++victim)
+			for (byte victim = PAWN; victim <= KING; ++victim)
 			{
 				array[victim][attacker] = VICTIM_SCORE[victim] + 6 - VICTIM_SCORE[attacker] / 100;
 			}

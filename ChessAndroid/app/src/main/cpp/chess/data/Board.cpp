@@ -88,6 +88,11 @@ U64 Board::getType(const Color color, const PieceType type) const noexcept
 	return pieces[color][type];
 }
 
+byte Board::getKingSq(const Color color) const noexcept
+{
+	return pieceList[Piece(KING, color)][0];
+}
+
 bool Board::isRepetition() const noexcept
 {
 	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
@@ -106,6 +111,11 @@ Phase Board::getPhase() const noexcept
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
+static std::unique_ptr<byte> _from = std::make_unique<byte>();
+static std::unique_ptr<byte> _to = std::make_unique<byte>();
+static std::unique_ptr<Piece> _movedPiece = std::make_unique<Piece>();
+static std::unique_ptr<Piece> _actualPiece = std::make_unique<Piece>();
+
 bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 {
 	assert(!move.empty());
@@ -121,7 +131,11 @@ bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 	assert(Piece::isValid(movedPiece));
 	{
 		const auto p = getPiece(from);
-		assert(p.isValid());
+		*_from = from;
+		*_to = to;
+		*_movedPiece = Piece(movedPiece, side);
+		*_actualPiece = p;
+		assert(p.isValid()); // TODO
 	}
 	
 	assert(getPiece(from).type() == movedPiece);
@@ -197,7 +211,7 @@ bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 
 		if (move.flags() & Move::DOUBLE_PAWN_PUSH)
 		{
-			Pos enPassantPos(from);
+			Pos enPassantPos{ from };
 			enPassantPos.y += static_cast<byte>(side ? 1 : -1);
 			enPassantSq = enPassantPos.toSquare();
 			
@@ -216,7 +230,7 @@ bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 		assert(promotedPiece != PAWN && promotedPiece != KING);
 
 		removePiece(to); // Remove Pawn
-		addPiece(to, Piece(promotedPiece, side));
+		addPiece(to, { promotedPiece, side });
 	}
 
 	colorToMove = ~colorToMove;
@@ -336,9 +350,8 @@ bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare)
 
 bool Board::isInCheck(const Color color) const noexcept
 {
-	const U64 king = getType(color, KING);
-	if (!king) return true;
-	const byte kingSq = Bits::bitScanForward(king);
+	const byte kingSq = getKingSq(color);
+	assert(kingSq < SQUARE_NB);
 
 	return isAttackedByAny(~color, kingSq);
 }
