@@ -153,7 +153,7 @@ Score Evaluation::evaluatePieces() noexcept
 	Score pawnScore;
 
 	{
-		U64 pawns = board.getType(Us, PAWN);
+		U64 pawns = board.getType(PAWN, Us);
 		
 		if constexpr (Us == BLACK)
 			pawns = flipVertical(pawns);
@@ -176,7 +176,7 @@ Score Evaluation::evaluatePieces() noexcept
 	}
 
 	{
-		const U64 &pawns = board.getType(Us, PAWN);
+		const U64 &pawns = board.getType(PAWN, Us);
 		const U64 pawnsAttacks = PieceAttacks::getPawnAttacks<Us>(pawns);
 		const U64 doublePawnsAttacks = PieceAttacks::getDoublePawnAttacks<Us>(pawns);
 
@@ -185,16 +185,16 @@ Score Evaluation::evaluatePieces() noexcept
 		_attacksAll[Us] |= pawnsAttacks;
 	}
 
-	_mobilityArea[Us] = ~board.allPieces[Us] & ~PieceAttacks::getPawnAttacks<Them>(board.getType(Them, PAWN));
+	_mobilityArea[Us] = ~board.allPieces[Us] & ~PieceAttacks::getPawnAttacks<Them>(board.getType(PAWN, Them));
 
 	const auto knightBishop = [&] (const byte square)
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
-		if (getSquare64(square) & shift<Behind>(board.getType(Us, PAWN)))
-			score += MINOR_PAWN_SHIELD;
-
 		//score -= KING_PROTECTOR * getDistance(square, board.getKingSq(Us));
+		
+		if (getSquare64(square) & shift<Behind>(board.getType(PAWN, Us)))
+			score += MINOR_PAWN_SHIELD;
 	};
 
 	Piece piece{ KNIGHT, Us };
@@ -259,7 +259,7 @@ Score Evaluation::evaluateAttacks() const noexcept
 	constexpr Color Them = ~Us;
 	Score score{};
 
-    const U64 nonPawnEnemies = board.allPieces[Them] & ~board.getType(Us, PAWN);
+    const U64 nonPawnEnemies = board.allPieces[Them] & ~board.getType(PAWN, Us);
     const U64 stronglyProtected = _attacks[Them][PAWN]
                        | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
     const U64 defended = nonPawnEnemies & stronglyProtected;
@@ -279,8 +279,8 @@ Score Evaluation::evaluateAttacks() const noexcept
         if (weak & _attacks[Us][KING])
             score += THREAT_BY_KING;
 
-		//const U64 hangingPieces = ~_attacksAll[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
-		//score += HANGING * popCount(weak & hangingPieces);
+        const U64 hangingPieces = ~_attacksAll[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
+        score += HANGING * popCount(weak & hangingPieces);
 
         score += WEAK_QUEEN_PROTECTION * popCount(weak & _attacks[Them][QUEEN]);
     }
@@ -288,7 +288,7 @@ Score Evaluation::evaluateAttacks() const noexcept
     const U64 restrictedMovement = _attacksAll[Them] & _attacksAll[Us] & ~stronglyProtected;
     score += RESTRICTED_PIECE_MOVEMENT * short(popCount(restrictedMovement));
 
-	const U64 safePawnsAttacks = PieceAttacks::getPawnAttacks<Us>(board.getType(Us, PAWN) & safe) & nonPawnEnemies;
+	const U64 safePawnsAttacks = PieceAttacks::getPawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
     score += THREAT_BY_SAFE_PAWN * short(popCount(safePawnsAttacks));
 
 	return score;
@@ -299,8 +299,8 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
 	constexpr Dir ForwardDir = Us ? NORTH : SOUTH;
+	constexpr Dir BehindDir = Us ? SOUTH : NORTH;
 	constexpr byte Behind = Us ? -1 : 1;
-	constexpr Piece Piece{ PAWN, Us };
 
 	Score value = Psqt::BONUS[PAWN][square];
 
@@ -308,11 +308,11 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 	const byte rank = (Us ? pos.y : 7u - pos.y) - 1u;
 
 	const U64 adjacentFiles = getAdjacentFiles(square);
-	const U64 opposed = board.getType(Them, PAWN) & getRay(ForwardDir, square);
-	const U64 neighbours = board.getType(Piece) & adjacentFiles;
+	const U64 opposed = board.getType(PAWN, Them) & getRay(ForwardDir, square);
+	const U64 neighbours = board.getType(PAWN, Us) & adjacentFiles;
 	const U64 connected = neighbours & getRank(square);
 	const U64 support = neighbours & getRank(toSquare(pos.x + Behind, pos.y));
-	const bool isDoubled = board.at(pos.x, pos.y - Behind) == Piece;
+	const bool isDoubled = shift<BehindDir>(getSquare64(square)) & board.getType(PAWN, Us);
 
 	if (support | connected)
 	{
@@ -331,7 +331,7 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 		const U64 adjacentRays = shift<WEST>(rays) | shift<EAST>(rays);
 		rays |= Us ? shift<NORTH>(adjacentRays) : shift<SOUTH>(adjacentRays);
 
-		const bool isPassedPawn = !bool(rays & board.getType(Them, PAWN));
+		const bool isPassedPawn = !bool(rays & board.getType(PAWN, Them));
 
 		if (isPassedPawn)
 			value += PASSED_PAWN_RANK[rank];
@@ -364,7 +364,7 @@ Score Evaluation::evaluateBishop(const byte square) const noexcept
 	value += BISHOP_MOBILITY[mobility];
 
 	// Long Diagonal Bishop
-	const U64 centerAttacks = PieceAttacks::getBishopAttacks(square, board.getType(Them, PAWN)) & Center;
+	const U64 centerAttacks = PieceAttacks::getBishopAttacks(square, board.getType(PAWN, Them)) & Center;
 	if (popCount(centerAttacks) > 1)
 		value.mg += 45;
 
@@ -388,13 +388,13 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 
 		const U64 rays = getRank(square) | getFile(square);
 
-		return popCount(rays & board.getType(Them, PAWN));
+		return popCount(rays & board.getType(PAWN, Them));
 	}();
 	value += ROOK_ON_PAWN * rookOnPawn;
 
 	const U64 file = getFile(square);
-	if (!(board.getType(Us, PAWN) & file))
-		value += ROOK_ON_FILE[!(board.getType(Them, PAWN) & file)];
+	if (!(board.getType(PAWN, Us) & file))
+		value += ROOK_ON_FILE[!(board.getType(PAWN, Them) & file)];
 	else if (mobility <= 3)
 	{
 		const byte kx = col(board.pieceList[Piece{ KING, Us }][0]);
@@ -403,7 +403,7 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 			value -= TRAPPED_ROOK * (1 + !board.canCastle(Us));
 	}
 
-	const U64 queens = board.getType(Us, QUEEN) | board.getType(Them, QUEEN);
+	const U64 queens = board.getType(QUEEN, Us) | board.getType(QUEEN, Them);
 	if (file & queens)
 		value += ROOK_ON_QUEEN_FILE;
 
@@ -438,7 +438,7 @@ Score Evaluation::evaluateKing(const byte square) const noexcept
 	}
 	
 	value += KING_PAWN_SHIELD * 
-		popCount(Masks::PAWN_SHIELD[Us][square] & board.getType(Us, PAWN));
+		popCount(Masks::PAWN_SHIELD[Us][square] & board.getType(PAWN, Us));
 
 	return value;
 }

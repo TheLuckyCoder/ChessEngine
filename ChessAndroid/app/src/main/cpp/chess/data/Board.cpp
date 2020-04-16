@@ -57,17 +57,6 @@ Piece Board::getPiece(const byte x, const byte y) const noexcept
 	return data[toSquare(x, y)];
 }
 
-/*
- * Returns an empty Piece if the x or y parameters are wrong
- */
-Piece Board::at(const byte x, const byte y) const noexcept
-{
-	const Pos pos(x, y);
-	if (pos.isValid())
-		return data[pos.toSquare()];
-	return Piece();
-}
-
 U64 &Board::getType(const Piece piece) noexcept
 {
 	return pieces[piece.color()][piece.type()];
@@ -78,12 +67,12 @@ U64 Board::getType(const Piece piece) const noexcept
 	return pieces[piece.color()][piece.type()];
 }
 
-U64 &Board::getType(const Color color, const PieceType type) noexcept
+U64 &Board::getType(const PieceType type, const Color color) noexcept
 {
 	return pieces[color][type];
 }
 
-U64 Board::getType(const Color color, const PieceType type) const noexcept
+U64 Board::getType(const PieceType type, const Color color) const noexcept
 {
 	return pieces[color][type];
 }
@@ -111,12 +100,12 @@ Phase Board::getPhase() const noexcept
 	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
-static std::unique_ptr<byte> _from = std::make_unique<byte>();
+/*static std::unique_ptr<byte> _from = std::make_unique<byte>();
 static std::unique_ptr<byte> _to = std::make_unique<byte>();
 static std::unique_ptr<Piece> _movedPiece = std::make_unique<Piece>();
-static std::unique_ptr<Piece> _actualPiece = std::make_unique<Piece>();
+static std::unique_ptr<Piece> _actualPiece = std::make_unique<Piece>();*/
 
-bool Board::makeMove(const Move move, const bool checkLegal) noexcept
+bool Board::makeMove(const Move move) noexcept
 {
 	assert(!move.empty());
 	const byte from = move.from();
@@ -131,10 +120,10 @@ bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 	assert(Piece::isValid(movedPiece));
 	{
 		const auto p = getPiece(from);
-		*_from = from;
+		/**_from = from;
 		*_to = to;
 		*_movedPiece = Piece(movedPiece, side);
-		*_actualPiece = p;
+		*_actualPiece = p;*/
 		assert(p.isValid()); // TODO
 	}
 	
@@ -237,9 +226,6 @@ bool Board::makeMove(const Move move, const bool checkLegal) noexcept
 	Hash::flipSide(zKey);
 	
 	updateNonPieceBitboards();
-
-	if (!checkLegal)
-		return true;
 
 	if ((flags & Move::CAPTURE && move.capturedPiece() == KING) || isInCheck(side))
 	{
@@ -440,19 +426,19 @@ void Board::updatePieceList() noexcept
 
 void Board::updateNonPieceBitboards() noexcept
 {
-	allPieces[BLACK] = getType(BLACK, PAWN)
-					 | getType(BLACK, KNIGHT)
-					 | getType(BLACK, BISHOP)
-					 | getType(BLACK, ROOK)
-					 | getType(BLACK, QUEEN)
-					 | getType(BLACK, KING);
+	allPieces[BLACK] = getType(PAWN, BLACK)
+					 | getType(KNIGHT, BLACK)
+					 | getType(BISHOP, BLACK)
+					 | getType(ROOK, BLACK)
+					 | getType(QUEEN, BLACK)
+					 | getType(KING, BLACK);
 
-	allPieces[WHITE] = getType(WHITE, PAWN)
-					 | getType(WHITE, KNIGHT)
-					 | getType(WHITE, BISHOP)
-					 | getType(WHITE, ROOK)
-					 | getType(WHITE, QUEEN)
-					 | getType(WHITE, KING);
+	allPieces[WHITE] = getType(PAWN, WHITE)
+					 | getType(KNIGHT, WHITE)
+					 | getType(BISHOP, WHITE)
+					 | getType(ROOK, WHITE)
+					 | getType(QUEEN, WHITE)
+					 | getType(KING, WHITE);
 
 	occupied = allPieces[BLACK] | allPieces[WHITE];
 }

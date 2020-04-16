@@ -12,7 +12,7 @@
 std::array<std::array<Move, MAX_DEPTH>, 2> Search::_searchKillers{};
 std::array<std::array<int, 64>, 64> Search::_searchHistory{};
 ThreadPool Search::_threadPool(1);
-TranspositionTable Search::_transpTable(1);
+TranspositionTable Search::_transpTable(2);
 bool Search::_quiescenceSearchEnabled{};
 
 /*RootMove Search::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsigned jobCount, const short ply)
@@ -83,7 +83,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	Evaluation::getPawnTable().setSize(pawnTableSize);
 	
 	// If the Transposition Table wasn't resized, increment its age
-	if (!_transpTable.setSize(std::max<size_t>(settings.getCacheTableSizeMb() - pawnTableSize, 1u)))
+	if (!_transpTable.setSize(std::max<size_t>(settings.getCacheTableSizeMb() - pawnTableSize, 2u)))
 		_transpTable.incrementAge();
 
 	// Update ThreadPool size if needed
@@ -149,11 +149,8 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	return bestMove;
 }
 
-std::vector<Board> historyBoard(MAX_DEPTH);
-
 int Search::search(Board &board, int alpha, int beta, const int depth, const bool doNull, const bool doMoveCountPruning)
 {
-	historyBoard[board.ply] = board;
 	if (board.ply && (board.fiftyMoveRule == 100 || board.isRepetition()))
 		return 0;
 
@@ -183,6 +180,8 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return entryScore;
 	}
 
+	const int currentPly = board.ply;
+
 	// Null Move
 	const Color color = board.colorToMove;
 	if (doNull && board.ply && depth >= 4 && board.pieceCount[Piece(QUEEN, color)] + board.pieceCount[Piece(ROOK, color)] > 0 && !board.isInCheck(color))
@@ -205,11 +204,12 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	for (const Move &move : moveList)
 	{
+		assert(currentPly == board.ply);
 		if (!board.makeMove(move))
 			continue;
 		++legalCount;
 
-		int moveScore{};
+		int moveScore = alpha;
 		bool didLmr = false;
 
 		// Late Move Reductions
@@ -228,8 +228,27 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 		if (!didLmr || moveScore > alpha)
 			moveScore = -search(board, -beta, -alpha, depth - 1, true, true);
-
+		const int searchedPly = board.ply;
 		board.undoMove();
+		
+		// Mate Pruning
+		if (moveScore == Value::VALUE_MAX - searchedPly) // Winning
+		{
+			if (moveScore < beta)
+			{
+				beta = moveScore;
+				if (alpha >= moveScore)
+					return moveScore;
+			}
+		} else if (moveScore == -Value::VALUE_MAX + searchedPly) // Losing
+		{
+			if (moveScore > alpha)
+			{
+				alpha = moveScore;
+				if (beta <= moveScore)
+					return moveScore;
+			}
+		}
 
 		if (moveScore > bestScore)
 		{
@@ -263,34 +282,30 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	Stats::incrementNodesSearched(legalCount);
 
 	// Avoid putting an empty move in the Transposition Table if alpha was not raised
-	if (bestMove.empty())
-		bestMove = *moveList.begin();
-
-	// Store the result in the transposition table
-	auto flag = SearchEntry::Flag::EXACT;
-	if (alpha <= originalAlpha)
-		flag = SearchEntry::Flag::ALPHA;
+	if (!bestMove.empty())
+	{
+		// Store the result in the transposition table
+		auto flag = SearchEntry::Flag::EXACT;
+		if (alpha <= originalAlpha)
+			flag = SearchEntry::Flag::ALPHA;
 	
-	bestMove.setScore(alpha);
-	_transpTable.insert({ board.zKey, bestMove, byte(depth), flag });
+		bestMove.setScore(alpha);
+		_transpTable.insert({ board.zKey, bestMove, byte(depth), flag });
+	}
 	
 	return alpha;
 }
 
 int Search::searchCaptures(Board &board, int alpha, const int beta)
 {
-	historyBoard[board.ply] = board;
 	const int standPat = evaluate(board);
-
-	if (board.ply == MAX_MOVES)
-		return standPat;
 	
 	if (standPat >= beta)
 		return standPat;
 	if (standPat > alpha)
 		alpha = standPat;
 
-	if (board.ply > MAX_DEPTH)
+	if (board.ply >= MAX_DEPTH)
 		return alpha;
 
 	// Delta Pruning
@@ -311,26 +326,28 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 	}
 
 	MoveList moveList(board);
-	moveList.keepLegalMoves();
 	Stats::incrementNodesGenerated(moveList.size());
 
-	if (moveList.empty())
-		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
-
 	MoveOrdering::sortQMoves(moveList.begin(), moveList.end());
-	int searchedMoves{};
+	size_t legalCount{};
+	size_t searchedMoves{};
 	
 	for (const Move &move : moveList)
 	{
+		if (!board.makeMove(move))
+			continue;
+		++legalCount;
+
 		if (const auto flags = move.flags();
 			!(flags & Move::CAPTURE || flags & Move::PROMOTION))
+		{
+			board.undoMove();
 			break; // The moves are sorted so we can break if is not a capture
-		++searchedMoves;
-		
-		board.makeMove(move, false); // We already checked if they are legal or not
+		}
 
 		const int moveScore = -searchCaptures(board, -beta, -alpha);
 		board.undoMove();
+		++searchedMoves;
 
 		if (moveScore >= beta)
 		{
@@ -340,6 +357,9 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 		if (moveScore > alpha)
 			alpha = moveScore;
 	}
+
+	if (legalCount == 0)
+		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
 
 	Stats::incrementNodesSearched(searchedMoves);
 

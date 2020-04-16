@@ -62,7 +62,7 @@ enum class Phase : short
 
 enum Value : short
 {
-	VALUE_MAX = 32000,
+	VALUE_MAX = 32001,
 	VALUE_MIN = -VALUE_MAX,
 
 	VALUE_WINNER_WHITE = VALUE_MAX - 1,

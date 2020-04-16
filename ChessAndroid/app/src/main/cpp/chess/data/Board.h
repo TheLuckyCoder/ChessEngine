@@ -53,17 +53,16 @@ public:
 	Piece getPiece(byte squareIndex) const noexcept;
 	Piece &getPiece(byte x, byte y) noexcept;
 	Piece getPiece(byte x, byte y) const noexcept;
-	Piece at(byte x, byte y) const noexcept;
 	U64 &getType(Piece piece) noexcept;
 	U64 getType(Piece piece) const noexcept;
-	U64 &getType(Color color, PieceType type) noexcept;
-	U64 getType(Color color, PieceType type) const noexcept;
+	U64 &getType(PieceType type, Color color) noexcept;
+	U64 getType(PieceType type, Color color) const noexcept;
 	byte getKingSq(Color color) const noexcept;
 
 	bool isRepetition() const noexcept;
 	Phase getPhase() const noexcept;
 
-	bool makeMove(Move move, bool checkLegal = true) noexcept;
+	bool makeMove(Move move) noexcept;
 	void undoMove() noexcept;
 	void makeNullMove() noexcept;
 	void undoNullMove() noexcept;
@@ -88,7 +87,7 @@ bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) cons
 	static_assert(PAWN <= P);
 	static_assert(P <= KING);
 
-	const U64 type = getType(colorAttacking, P);
+	const U64 type = getType(P, colorAttacking);
 
 	if constexpr (P == PAWN)
 		return type & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare);

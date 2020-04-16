@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+
+#include "algorithm/Evaluation.h"
 #include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Hash.h"
@@ -93,7 +95,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 		|| flags & Move::QSIDE_CASTLE || flags & Move::EN_PASSANT;
 	const State state = getBoardState();
 
-	std::cout << "Made the Move: " << move.toString() << '\n';
+	std::cout << "Made the Move: " << move.toString() << "; Evaluated at: " << Evaluation::evaluate(_board) << '\n';
 	_listener(state, shouldRedraw, { { move.from(), move.to() } });
 
 	if (movedByPlayer && (state == State::NONE || state == State::WHITE_IN_CHECK || state == State::BLACK_IN_CHECK))

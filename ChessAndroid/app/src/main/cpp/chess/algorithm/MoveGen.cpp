@@ -60,7 +60,7 @@ namespace
 				const U64 enPassantCapture = getSquare64(board.enPassantSq);
 				const U64 capturedPawn = shift<EnPassantDirection>(enPassantCapture);
 
-				if (board.getType(Them, PAWN) & capturedPawn && (attacks & enPassantCapture))
+				if (board.getType(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
 				{
 					attacks &= ~enPassantCapture;
 					*moveList++ = { from, board.enPassantSq, PAWN, Move::EN_PASSANT };
@@ -122,7 +122,7 @@ namespace
 				const byte to = Bits::findNextSquare(attacks);
 				const PieceType capturedPiece = board.getPiece(to).type();
 
-				Move move(from, to, P);
+				Move move{ from, to, P };
 				if (capturedPiece)
 				{
 					move.setFlags(Move::CAPTURE);

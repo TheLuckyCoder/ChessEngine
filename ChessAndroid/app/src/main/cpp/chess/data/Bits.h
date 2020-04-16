@@ -337,15 +337,12 @@ namespace Bits
 	 */
 	static constexpr auto SQUARE_DISTANCE = []
 	{
-		constexpr auto abs = [](const int x)
-		{
-			return( // deal with signed-zeros
-				x == 0 ? 0 :
-				// else
-				x < 0 ? - x : x );
-		};
-
 		std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> array{};
+
+		constexpr auto abs = [] (const int x)
+		{
+			return x < 0 ? -x : x;
+		};
 
 		for (byte x{}; x < SQUARE_NB; ++x)
 			for (byte y{}; y < SQUARE_NB; ++y)
