@@ -6,11 +6,11 @@ using byte = unsigned char;
 
 class PieceAttacks
 {
-	const static std::array<std::array<U64, 64>, 2> s_PawnAttacks;
-	const static std::array<U64, 64> s_KnightAttacks;
-	static std::array<std::array<U64, 1024>, 64> s_BishopAttacks;
-	static std::array<std::array<U64, 4096>, 64> s_RookAttacks;
-	const static std::array<U64, 64> s_KingAttacks;
+	const static std::array<std::array<U64, 64>, 2> _pawnAttacks;
+	const static std::array<U64, 64> _knightAttacks;
+	static std::array<std::array<U64, 1024>, 64> _bishopAttacks;
+	static std::array<std::array<U64, 4096>, 64> _rookAttacks;
+	const static std::array<U64, 64> _kingAttacks;
 
 public:
 	PieceAttacks() = delete;

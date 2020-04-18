@@ -51,8 +51,6 @@ public:
 
 	Piece &getPiece(byte squareIndex) noexcept;
 	Piece getPiece(byte squareIndex) const noexcept;
-	Piece &getPiece(byte x, byte y) noexcept;
-	Piece getPiece(byte x, byte y) const noexcept;
 	U64 &getType(Piece piece) noexcept;
 	U64 getType(Piece piece) const noexcept;
 	U64 &getType(PieceType type, Color color) noexcept;

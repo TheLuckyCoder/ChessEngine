@@ -6,8 +6,8 @@
 
 Hash::HashArray Hash::_pieces{};
 U64 Hash::_side;
-std::array<U64, 4> Hash::_castlingRights;
-std::array<U64, SQUARE_NB> Hash::_enPassant;
+std::array<U64, 6> Hash::_castlingRights;
+std::array<U64, 8> Hash::_enPassant;
 
 void Hash::init()
 {
@@ -42,9 +42,7 @@ U64 Hash::compute(const Board &board)
 			hash ^= _pieces[i][piece.color()][piece.type()];
 
 	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
-
-	if (board.enPassantSq != SQ_NONE)
-		xorEnPassant(hash, board.enPassantSq);
+	xorEnPassant(hash, board.enPassantSq);
 
 	if (board.colorToMove)
 		flipSide(hash);
@@ -52,7 +50,8 @@ U64 Hash::compute(const Board &board)
 	return hash;
 }
 
-void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece, const Piece &destPiece)
+void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece,
+					const Piece &destPiece)
 {
 	// Remove Selected Piece
 	xorPiece(key, selectedSq, selectedPiece);
@@ -62,15 +61,6 @@ void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Pi
 
 	// Add Selected Piece to Destination
 	xorPiece(key, destSq, selectedPiece);
-}
-
-void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceType promotedType)
-{
-	// Remove the Pawn
-	key ^= _pieces[sq][color][PAWN];
-
-	// Add the Promoted Piece
-	key ^= _pieces[sq][color][promotedType];
 }
 
 void Hash::xorPiece(U64 &key, const byte sq, const Piece piece)
@@ -85,19 +75,23 @@ void Hash::flipSide(U64 &key)
 
 void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
 {
-	if (rights & CASTLE_WHITE_KING)
+	if (rights & CASTLE_WHITE_BOTH)
 		key ^= _castlingRights[0];
-	if (rights & CASTLE_WHITE_QUEEN)
+	else if (rights & CASTLE_WHITE_KING)
 		key ^= _castlingRights[1];
-
-	if (rights & CASTLE_BLACK_KING)
+	else if (rights & CASTLE_WHITE_QUEEN)
 		key ^= _castlingRights[2];
-	if (rights & CASTLE_BLACK_QUEEN)
+
+	if (rights & CASTLE_BLACK_BOTH)
 		key ^= _castlingRights[3];
+	else if (rights & CASTLE_BLACK_KING)
+		key ^= _castlingRights[4];
+	else if (rights & CASTLE_BLACK_QUEEN)
+		key ^= _castlingRights[5];
 }
 
 void Hash::xorEnPassant(U64 &key, const byte square)
 {
-	if (square != SQ_NONE)
-		key ^= _enPassant[square];
+	if (square <= SQUARE_NB)
+		key ^= _enPassant[col(square)];
 }

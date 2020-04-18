@@ -175,7 +175,8 @@ namespace
 			const byte y = row(kingSquare);
 			const auto isEmptyAndCheckFree = [&, y](const byte x)
 			{
-				return !board.getPiece(x, y) && !board.isAttackedByAny(Them, toSquare(x, y));
+				const byte sq = toSquare(x, y);
+				return !board.getPiece(sq) && !board.isAttackedByAny(Them, sq);
 			};
 
 			// King Side
@@ -190,7 +191,7 @@ namespace
 			if (board.canCastleQs(Us)
 				&& isEmptyAndCheckFree(3)
 				&& isEmptyAndCheckFree(2)
-				&& !board.getPiece(1, y))
+				&& !board.getPiece(toSquare(1, y)))
 			{
 				*moveList++ = { kingSquare, Pos(2, y).toSquare(), KING, Move::Flag::QSIDE_CASTLE };
 			}

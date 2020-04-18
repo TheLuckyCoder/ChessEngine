@@ -14,8 +14,13 @@ public:
 		: _move(move), _score(score)
 	{
 	}
+
+	constexpr Move(const byte from, const byte to, const PieceType piece) noexcept
+		: _move(((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
+	{
+	}
 	
-	constexpr Move(const byte from, const byte to, const PieceType piece, const unsigned int flags = 0) noexcept
+	constexpr Move(const byte from, const byte to, const PieceType piece, const unsigned int flags) noexcept
 		: _move(((flags & 0x7F) << 22u) | ((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
 	{
 	}

@@ -8,12 +8,10 @@ object SaveManager {
     private const val SAVE_FILE_NAME = "moves.txt"
 
     fun saveToFile(context: Context) {
-        val moves = Native.saveMoves()
-
-        if (moves.length <= 1) return
-
-        context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
-            it.write(moves)
+        Native.saveMoves()?.let { moves ->
+            context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
+                it.write(moves)
+            }
         }
     }
 

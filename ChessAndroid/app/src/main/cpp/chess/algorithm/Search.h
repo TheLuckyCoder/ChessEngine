@@ -33,7 +33,7 @@ public:
 
 private:
 	static Move iterativeDeepening(Board &board, const int depth);
-	static int search(Board &board, int alpha, int beta, int depth, bool doNull, bool doMoveCountPruning);
+	static int search(Board &board, int alpha, int beta, int depth, bool doNull, bool doLateMovePruning);
 	static int searchCaptures(Board &board, int alpha, int beta);
 
 	inline static int evaluate(const Board &board);

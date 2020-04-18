@@ -54,10 +54,10 @@ enum CastlingRights : unsigned char
 	CASTLED_WHITE = 0b10'0000
 };
 
-enum class Phase : short
+enum Phase : byte
 {
-	ENDING,
-	MIDDLE = 128
+	END_GAME_PHASE,
+	MIDDLE_GAME_PHASE = 128
 };
 
 enum Value : short

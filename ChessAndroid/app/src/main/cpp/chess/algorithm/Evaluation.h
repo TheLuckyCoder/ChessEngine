@@ -19,10 +19,6 @@ public:
 	{
 		return PIECE_VALUE[type];
 	}
-	static PawnStructureTable &getPawnTable() noexcept
-	{
-		return _pawnTable;
-	}
 
 private:
 	explicit Evaluation(const Board &board);

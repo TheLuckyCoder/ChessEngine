@@ -259,9 +259,13 @@ Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jobject, jstring mov
 external JNIEXPORT jstring JNICALL
 Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jobject)
 {
-	const std::string string = MovesPersistence::saveToString(BoardManager::getMovesHistory(),
-															  BoardManager::isPlayerWhite());
-	return pEnv->NewStringUTF(string.c_str());
+	const auto moves = BoardManager::getMovesHistory();
+	if (!moves.empty())
+	{
+		const auto string = MovesPersistence::saveToString(moves, BoardManager::isPlayerWhite());
+		return pEnv->NewStringUTF(string.c_str());
+	}
+	return nullptr;
 }
 
 

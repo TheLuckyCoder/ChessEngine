@@ -47,16 +47,6 @@ Piece Board::getPiece(const byte squareIndex) const noexcept
 	return data[squareIndex];
 }
 
-Piece &Board::getPiece(const byte x, const byte y) noexcept
-{
-	return data[toSquare(x, y)];
-}
-
-Piece Board::getPiece(const byte x, const byte y) const noexcept
-{
-	return data[toSquare(x, y)];
-}
-
 U64 &Board::getType(const Piece piece) noexcept
 {
 	return pieces[piece.color()][piece.type()];
@@ -97,13 +87,8 @@ Phase Board::getPhase() const noexcept
 	constexpr short endGameLimit = 3915;
 
 	const short limit = std::max(endGameLimit, std::min(npm, midGameLimit));
-	return static_cast<Phase>(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
+	return Phase(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
-
-/*static std::unique_ptr<byte> _from = std::make_unique<byte>();
-static std::unique_ptr<byte> _to = std::make_unique<byte>();
-static std::unique_ptr<Piece> _movedPiece = std::make_unique<Piece>();
-static std::unique_ptr<Piece> _actualPiece = std::make_unique<Piece>();*/
 
 bool Board::makeMove(const Move move) noexcept
 {
@@ -120,11 +105,7 @@ bool Board::makeMove(const Move move) noexcept
 	assert(Piece::isValid(movedPiece));
 	{
 		const auto p = getPiece(from);
-		/**_from = from;
-		*_to = to;
-		*_movedPiece = Piece(movedPiece, side);
-		*_actualPiece = p;*/
-		assert(p.isValid()); // TODO
+		assert(p.isValid());
 	}
 	
 	assert(getPiece(from).type() == movedPiece);
@@ -300,11 +281,8 @@ void Board::makeNullMove() noexcept
 	++ply;
 	history[historyPly++] = { zKey, Move(), castlingRights, enPassantSq, fiftyMoveRule };
 
-	if (enPassantSq != SQ_NONE)
-	{
-		Hash::xorEnPassant(zKey, enPassantSq);
-		enPassantSq = SQ_NONE;
-	}
+	Hash::xorEnPassant(zKey, enPassantSq);
+	enPassantSq = SQ_NONE;
 
 	colorToMove = ~colorToMove;
 	Hash::flipSide(zKey);

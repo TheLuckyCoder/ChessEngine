@@ -70,6 +70,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         binding.btnRestartGame.setOnClickListener {
             val view = View.inflate(this, R.layout.dialog_restart, null)
             val sideSpinner: Spinner = view.findViewById(R.id.sp_side)
+            val difficultySpinner: Spinner = view.findViewById(R.id.sp_difficulty)
 
             AlertDialog.Builder(this)
                 .setTitle(R.string.new_game)
@@ -80,6 +81,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                         1 -> false
                         else -> Random.nextBoolean()
                     }
+
+                    preferences.settings = difficultyLevels[difficultySpinner.selectedItemPosition]
 
                     restartGame(playerWhite)
                 }
@@ -103,9 +106,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         tiles.forEach {
             it.value.invalidate()
         }
-        gameManager.basicStatsEnabled = preferences.basicDebugInfo
-        gameManager.advancedStatsEnabled = preferences.advancedDebugInfo
-        gameManager.updateSettings(preferences.settings)
+        with(gameManager) {
+            basicStatsEnabled = preferences.basicDebugInfo
+            advancedStatsEnabled = preferences.advancedDebugInfo
+            updateSettings(preferences.settings)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -213,7 +218,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         } else {
-            binding.pbLoading.visibility = if (gameManager.isWorking) View.VISIBLE else View.INVISIBLE
+            binding.pbLoading.visibility =
+                if (gameManager.isWorking) View.VISIBLE else View.INVISIBLE
         }
 
         if (state == State.WHITE_IN_CHESS || state == State.WINNER_BLACK) {
@@ -354,4 +360,19 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     }
 
     private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
+
+    companion object {
+        private fun makeDifficulty(depth: Int, qSearch: Boolean) = Settings(depth, 1, 100, qSearch)
+
+        val difficultyLevels = listOf(
+            makeDifficulty(2, false),
+            makeDifficulty(2, true),
+            makeDifficulty(4, true),
+            makeDifficulty(6, true),
+            makeDifficulty(7, true),
+            makeDifficulty(8, true),
+            makeDifficulty(9, true),
+            makeDifficulty(10, true)
+        )
+    }
 }

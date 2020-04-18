@@ -143,7 +143,7 @@ U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 		   | getRayAttacksBackwards(square, blockers, WEST);
 }
 
-const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
+const std::array<std::array<U64, 64>, 2> PieceAttacks::_pawnAttacks = [] {
 	using namespace Bits;
 	std::array<std::array<U64, 64>, 2> moves{};
 
@@ -159,7 +159,7 @@ const std::array<std::array<U64, 64>, 2> PieceAttacks::s_PawnAttacks = [] {
 	return moves;
 }();
 
-const std::array<U64, 64> PieceAttacks::s_KnightAttacks = [] {
+const std::array<U64, 64> PieceAttacks::_knightAttacks = [] {
 	std::array<U64, 64> moves{};
 
 	const auto addAttack = [&](const byte startSquare, const byte x, const byte y) {
@@ -187,11 +187,11 @@ const std::array<U64, 64> PieceAttacks::s_KnightAttacks = [] {
 	return moves;
 }();
 
-std::array<std::array<U64, 1024>, SQUARE_NB> PieceAttacks::s_BishopAttacks{};
+std::array<std::array<U64, 1024>, SQUARE_NB> PieceAttacks::_bishopAttacks{};
 
-std::array<std::array<U64, 4096>, SQUARE_NB> PieceAttacks::s_RookAttacks{};
+std::array<std::array<U64, 4096>, SQUARE_NB> PieceAttacks::_rookAttacks{};
 
-const std::array<U64, SQUARE_NB> PieceAttacks::s_KingAttacks = [] {
+const std::array<U64, SQUARE_NB> PieceAttacks::_kingAttacks = [] {
 	using namespace Bits;
 
 	std::array<U64, SQUARE_NB> moves{};
@@ -230,7 +230,7 @@ void PieceAttacks::init() noexcept
 			const U64 attacks = generateBishopAttacks(square, blockers);
 			const U64 index = (blockers * bishopMagics[square]) >> (64 - indexBit);
 
-			s_BishopAttacks[square][index] = attacks;
+			_bishopAttacks[square][index] = attacks;
 		}
 	}
 
@@ -246,33 +246,33 @@ void PieceAttacks::init() noexcept
 			const U64 attacks = generateRookAttacks(square, blockers);
 			const U64 index = (blockers * rookMagics[square]) >> (64 - indexBit);
 
-			s_RookAttacks[square][index] = attacks;
+			_rookAttacks[square][index] = attacks;
 		}
 	}
 }
 
 U64 PieceAttacks::getPawnAttacks(const bool isWhite, const byte square) noexcept
 {
-	return s_PawnAttacks[isWhite][square];
+	return _pawnAttacks[isWhite][square];
 }
 
 U64 PieceAttacks::getKnightAttacks(const byte square) noexcept
 {
-	return s_KnightAttacks[square];
+	return _knightAttacks[square];
 }
 
 U64 PieceAttacks::getBishopAttacks(const byte square, U64 blockers) noexcept
 {
 	blockers &= bishopMasks[square];
 	const U64 key = (blockers * bishopMagics[square]) >> (64u - bishopIndexBits[square]);
-	return s_BishopAttacks[square][key];
+	return _bishopAttacks[square][key];
 }
 
 U64 PieceAttacks::getRookAttacks(const byte square, U64 blockers) noexcept
 {
 	blockers &= rookMasks[square];
 	const U64 key = (blockers * rookMagics[square]) >> (64u - rookIndexBits[square]);
-	return s_RookAttacks[square][key];
+	return _rookAttacks[square][key];
 }
 
 U64 PieceAttacks::getQueenAttacks(const byte square, const U64 blockers) noexcept
@@ -282,5 +282,5 @@ U64 PieceAttacks::getQueenAttacks(const byte square, const U64 blockers) noexcep
 
 U64 PieceAttacks::getKingAttacks(const byte square) noexcept
 {
-	return s_KingAttacks[square];
+	return _kingAttacks[square];
 }

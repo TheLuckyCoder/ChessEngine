@@ -36,7 +36,7 @@ object Native {
 
     external fun loadMoves(moves: String)
 
-    external fun saveMoves(): String
+    external fun saveMoves(): String?
 
     external fun perft(depth: Int)
 }
