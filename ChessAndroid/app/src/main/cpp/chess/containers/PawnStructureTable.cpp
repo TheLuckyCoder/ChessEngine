@@ -1,5 +1,7 @@
 #include "PawnStructureTable.h"
 
+#include <cstring>
+
 PawnStructureTable::PawnStructureTable(const std::size_t sizeMb) noexcept
 	: _size((sizeMb << 20u) / sizeof(PawnStructureEntry)) {}
 

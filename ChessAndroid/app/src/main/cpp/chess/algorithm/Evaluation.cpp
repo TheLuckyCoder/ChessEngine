@@ -6,70 +6,67 @@
 #include "../data/Pos.h"
 #include "PieceAttacks.h"
 
-#define S Score
-
 namespace
 {
 	constexpr short TEMPO_BONUS = 20;
-	constexpr S CHECK_BONUS{ 30, 42 };
+	constexpr Score CHECK_BONUS{ 30, 42 };
 
 	/*
 	 * Most of these values were imported from the Stockfish Chess Engine
 	 */
-	constexpr S PAWN_DOUBLED{ 11, 56 };
-	constexpr S PAWN_ISOLATED{ 5, 15 };
+	constexpr Score PAWN_DOUBLED{ 11, 56 };
+	constexpr Score PAWN_ISOLATED{ 5, 15 };
 	constexpr short PAWN_CONNECTED[]
 	{
 		0, 7, 8, 12, 29, 48, 86
 	};
-	constexpr S PASSED_PAWN_RANK[]
+	constexpr Score PASSED_PAWN_RANK[]
 	{
 		{ }, { 10, 28 }, { 17, 33 },  { 15, 41 }, {62, 72 }, { 168, 177 }, { 276, 260 }
 	};
 
-	constexpr S MINOR_PAWN_SHIELD{ 18,  3 };
-	constexpr S MINOR_THREATS[]
+	constexpr Score MINOR_PAWN_SHIELD{ 18,  3 };
+	constexpr Score MINOR_THREATS[]
 	{
 		{ }, { 6, 32 }, { 59, 41 }, { 79, 56 }, { 90, 119 }, { 79, 161 }, { }
 	};
-	constexpr S KING_PROTECTOR{ 7, 8 };
-	constexpr S HANGING{ 69, 36 };
-	constexpr S RESTRICTED_PIECE_MOVEMENT{ 7,  7 };
-	constexpr S WEAK_QUEEN_PROTECTION{ 14,  0 };
-	constexpr S THREAT_BY_KING{ 24, 89 };
-	constexpr S THREAT_BY_SAFE_PAWN{ 173, 94 };
+	constexpr Score KING_PROTECTOR{ 7, 8 };
+	constexpr Score HANGING{ 69, 36 };
+	constexpr Score RESTRICTED_PIECE_MOVEMENT{ 7,  7 };
+	constexpr Score WEAK_QUEEN_PROTECTION{ 14,  0 };
+	constexpr Score THREAT_BY_KING{ 24, 89 };
+	constexpr Score THREAT_BY_SAFE_PAWN{ 173, 94 };
 
-	constexpr S ROOK_ON_PAWN{ 10, 28 };
-	constexpr S ROOK_ON_QUEEN_FILE{ 7, 6 };
-	constexpr S TRAPPED_ROOK{ 52, 10 };
-	constexpr S ROOK_ON_FILE[] =
+	constexpr Score ROOK_ON_QUEEN_FILE{ 7, 6 };
+	constexpr Score TRAPPED_ROOK{ 52, 10 };
+	constexpr Score ROOK_ON_FILE[] =
 	{
 		{ 21, 4 }, { 47, 25 }
 	};
-	constexpr S ROOK_THREATS[]
+	constexpr Score ROOK_THREATS[]
 	{
-		{ }, { 3, 44 }, { 38, 71 }, { 38, 61 }, { 0, 38 }, { 51, 38 }, { 0, 0 }
+		{ }, { 3, 44 }, { 38, 71 }, { 38, 61 }, { 0, 38 }, { 51, 38 }, { }
 	};
-	constexpr S KING_PAWN_SHIELD{ 10, 0 };
+	constexpr Score KING_PAWN_SHIELD{ 10, 0 };
 
-	constexpr S KNIGHT_MOBILITY[]
+	constexpr Score KNIGHT_MOBILITY[]
 	{
 		{ -62, -81 }, { -53, -56 }, { -12, -30 }, { -4, -14 }, { 3, 8 }, { 13, 15 },
 		{ 22, 23 }, { 28, 27 }, { 33, 33 }
 	};
-	constexpr S BISHOP_MOBILITY[]
+	constexpr Score BISHOP_MOBILITY[]
 	{
 		{ -48,-59 }, { -20,-23 }, { 16, -3 }, { 26, 13 }, { 38, 24 }, { 51, 42 },
 		{ 55, 54 }, { 63, 57 }, { 63, 65 }, { 68, 73 }, { 81, 78 }, { 81, 86 },
 		{ 91, 88 }, { 98, 97 }
 	};
-	constexpr S ROOK_MOBILITY[]
+	constexpr Score ROOK_MOBILITY[]
 	{
 		{ -58, -76 }, { -27, -18 }, { -15, 28 }, { -10, 55 }, { -5, 69 }, { -2, 82 },
 		{ 9, 112 }, { 16, 118 }, { 30, 132 }, { 29, 142 }, { 32, 155 }, { 38, 165 },
 		{ 46, 166 }, { 48, 169 }, { 58, 171 }
 	};
-	constexpr S QUEEN_MOBILITY[]
+	constexpr Score QUEEN_MOBILITY[]
 	{
 		{ -39, -36 }, { -21, -15 }, { 3, 8 }, { 3, 18 }, { 14, 34 }, { 22, 54 },
 		{ 28, 61 }, { 41, 73 }, { 43, 79 }, { 48, 92 }, { 56, 94 }, { 60, 104 },
@@ -79,21 +76,19 @@ namespace
 	};
 }
 
-#undef S
-
 PawnStructureTable Evaluation::_pawnTable{ 1 };
 
 using namespace Bits;
 
 namespace Masks
 {
-	static auto constexpr PAWN_SHIELD = []
+	constexpr auto PAWN_SHIELD = []
 	{
 		std::array<std::array<U64, SQUARE_NB>, 2> array{};
 
 		for (byte i{}; i < SQUARE_NB; ++i)
 		{
-			const U64 square = 1ull << i;
+			const U64 square = getSquare64(i);
 
 			array[WHITE][i] =
 				(square << 8 | (square << 7 & ~FILE_H) | (square << 9 & ~FILE_A)) & RANK_2;
@@ -105,11 +100,12 @@ namespace Masks
 	}();
 }
 
-short Evaluation::evaluate(const Board &board) noexcept
+Evaluation::Result Evaluation::evaluate(const Board &board) noexcept
 {
-	Stats::incrementBoardsEvaluated();
-
+	Result result{ board };
 	Evaluation evaluator(board);
+
+	Stats::incrementBoardsEvaluated();
 
 	const Score piecesScore = evaluator.evaluatePieces<WHITE>() - evaluator.evaluatePieces<BLACK>();
 	const Score attacksScore =
@@ -121,17 +117,24 @@ short Evaluation::evaluate(const Board &board) noexcept
 		finalScore += TEMPO_BONUS;
 
 		if (Bits::getSquare64(board.getKingSq(BLACK)) & evaluator._attacksAll[WHITE])
+		{
 			finalScore += CHECK_BONUS;
+			result.isInCheck = true;
+		}
 	} else
 	{
 		finalScore -= TEMPO_BONUS;
 
 		if (Bits::getSquare64(board.getKingSq(WHITE)) & evaluator._attacksAll[BLACK])
+		{
 			finalScore -= CHECK_BONUS;
+			result.isInCheck = true;
+		}
 	}
 
 	const Phase phase = board.getPhase();
-	return (finalScore.mg * phase + (finalScore.eg * (128 - phase))) / 128;
+	result.value = (finalScore.mg * phase + (finalScore.eg * (128 - phase))) / 128;
+	return result;
 }
 
 Evaluation::Evaluation(const Board &board)
@@ -336,7 +339,7 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 		const U64 adjacentRays = shift<WEST>(rays) | shift<EAST>(rays);
 		rays |= Us ? shift<NORTH>(adjacentRays) : shift<SOUTH>(adjacentRays);
 
-		const bool isPassedPawn = !bool(rays & board.getType(PAWN, Them));
+		const bool isPassedPawn = !(rays & board.getType(PAWN, Them));
 
 		if (isPassedPawn)
 			value += PASSED_PAWN_RANK[rank];
@@ -389,16 +392,6 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 	const int mobility = popCount(
 		PieceAttacks::getRookAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += ROOK_MOBILITY[mobility];
-
-	const int rookOnPawn = [&]
-	{
-		if ((Us && pos.y < 5) || (Them && pos.y > 4)) return 0;
-
-		const U64 rays = getRank(square) | getFile(square);
-
-		return popCount(rays & board.getType(PAWN, Them));
-	}();
-	value += ROOK_ON_PAWN * rookOnPawn;
 
 	const U64 file = getFile(square);
 	if (!(board.getType(PAWN, Us) & file))

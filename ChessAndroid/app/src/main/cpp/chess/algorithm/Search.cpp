@@ -35,9 +35,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	_searchKillers.fill({});
 	_searchHistory.fill({});
 
-	if (board.getPhase() < Phase::MIDDLE_GAME_PHASE / 2)
-		++depth;
-	if (board.getPhase() == Phase::END_GAME_PHASE)
+	if (board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3)
 		++depth;
 
 	return iterativeDeepening(board, depth);
@@ -82,7 +80,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
 		int bestScore = search(board, alpha, beta, currentDepth, true, true);
-		if (!fullWindow && (bestScore <= alpha || bestScore >= beta)) // Eval outside window
+		/*if (!fullWindow && (bestScore <= alpha || bestScore >= beta)) // Eval outside window
 		{
 			// We need to do a full search
 			alpha = Value::VALUE_MIN;
@@ -90,7 +88,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 			fullWindow = true;
 			--currentDepth;
 			continue;
-		}
+		}*/
 
 		const int pvMoves = getPvLine(board, pvArray, currentDepth);
 		bestMove = pvArray[0];
@@ -116,11 +114,11 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		return 0;
 
 	if (board.ply == MAX_DEPTH)
-		return evaluate(board);
+		return Evaluation::evaluate(board).getInvertedValue();
 
 	// If in check and not already extended, allow the search to be extended to depth -1
 	if (depth <= 0)
-		return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta) : evaluate(board);
+		return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta, board.ply) : Evaluation::evaluate(board).getInvertedValue();
 
 	const int originalAlpha = alpha;
 	if (const SearchEntry entry = _transpTable[board.zKey];
@@ -146,7 +144,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	// Null Move
 	const Color color = board.colorToMove;
 	if (doNull && board.ply && depth >= 4 &&
-		board.pieceCount[Piece(QUEEN, color)] + board.pieceCount[Piece(ROOK, color)] > 0 &&
+		board.pieceCount[Piece{ QUEEN, color }] + board.pieceCount[Piece{ ROOK, color }] > 0 &&
 		!board.isInCheck(color))
 	{
 		board.makeNullMove();
@@ -158,16 +156,42 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	}
 
 	MoveList moveList(board);
-	MoveOrdering::sortMoves(board, moveList.begin(), moveList.end());
+	MoveOrdering::sortMoves(board, moveList);
 	Stats::incrementNodesGenerated(moveList.size());
 
 	size_t legalCount{};
 	int bestScore = Value::VALUE_MIN;
 	Move bestMove{};
 
+	const auto evalResult = Evaluation::evaluate(board);
+	const bool isInCheck = evalResult.isInCheck;
+	const int evalScore = evalResult.getInvertedValue();
+
 	for (const Move &move : moveList)
 	{
 		assert(currentPly == board.ply);
+
+		if (depth == 1
+			&& board.ply > 1
+			&& legalCount > 5
+			&& !(move.flags() & Move::CAPTURE)
+			&& !(move.flags() & Move::PROMOTION)
+			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
+			&& !(move.piece() == PAWN && (col(move.to()) == 7 || col(move.to()) == 2))
+			&& !isInCheck) // TODO: Move causes a check
+		{
+			const int futilityEval = evalScore + 125;
+			if (futilityEval <= alpha)
+			{
+				if (futilityEval > bestScore)
+				{
+					bestScore = evalScore;
+					bestMove = move;
+				}
+				continue;
+			}
+		}
+
 		if (!board.makeMove(move))
 			continue;
 		++legalCount;
@@ -183,6 +207,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& board.ply > 4
 			&& !(move.flags() & Move::Flag::CAPTURE)
 			&& !(move.flags() & Move::Flag::PROMOTION)
+			&& !isInCheck
 			&& !board.isInCheck(board.colorToMove))
 		{
 			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, false);
@@ -259,44 +284,55 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	return alpha;
 }
 
-int Search::searchCaptures(Board &board, int alpha, const int beta)
+int Search::searchCaptures(Board &board, int alpha, const int beta, const int horizonPly)
 {
-	const int standPat = evaluate(board);
-
-	if (standPat >= beta)
-		return standPat;
-	if (standPat > alpha)
-		alpha = standPat;
-
-	if (board.ply >= MAX_DEPTH)
-		return alpha;
-
-	// Delta Pruning
-	if (board.getPhase() <= Phase::MIDDLE_GAME_PHASE / 4) // Turn it off near the Endgame
+	const short currentPly = board.ply;
+	const bool inCheck = board.isInCheck(board.colorToMove);
+	const bool onlyRecaptures = !inCheck && (board.ply - horizonPly) > 4;
+	
+	if (!inCheck)
 	{
-		constexpr int QUEEN_VALUE = 2538;
-		constexpr int PAWN_VALUE = 128;
+		const int standPat = Evaluation::evaluate(board).getInvertedValue();
 
-		int bigDelta = QUEEN_VALUE;
+		if (standPat >= beta)
+			return standPat;
+		if (standPat > alpha)
+			alpha = standPat;
 
-		const bool isPromotion =
-			board.history[board.historyPly - 1].move.flags() & Move::Flag::PROMOTION;
-		if (isPromotion)
-			bigDelta += QUEEN_VALUE - PAWN_VALUE;
-
-		if (standPat < alpha - bigDelta)
+		if (board.ply >= MAX_DEPTH)
 			return alpha;
+
+		// Delta Pruning
+		if (board.getPhase() <= Phase::MIDDLE_GAME_PHASE / 4) // Turn it off near the Endgame
+		{
+			constexpr int QUEEN_VALUE = Evaluation::getPieceValue(QUEEN);
+			constexpr int PAWN_VALUE = Evaluation::getPieceValue(PAWN);
+
+			int bigDelta = QUEEN_VALUE;
+
+			const bool isPromotion =
+				board.history[board.historyPly - 1].move.flags() & Move::Flag::PROMOTION;
+			if (isPromotion)
+				bigDelta += QUEEN_VALUE - PAWN_VALUE;
+
+			if (standPat < alpha - bigDelta)
+				return alpha;
+		}
 	}
 
+	const auto &lastMove = board.history[board.historyPly - 1].move;
+	const byte lastCaptureSquare = lastMove.to();
+	
 	MoveList moveList(board);
 	Stats::incrementNodesGenerated(moveList.size());
 
-	MoveOrdering::sortQMoves(moveList.begin(), moveList.end());
+	MoveOrdering::sortQMoves(moveList);
 	size_t legalCount{};
 	size_t searchedMoves{};
 
 	for (const Move &move : moveList)
 	{
+		assert(currentPly == board.ply);
 		if (!board.makeMove(move))
 			continue;
 		++legalCount;
@@ -308,7 +344,13 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 			break; // The moves are sorted so we can break if is not a capture
 		}
 
-		const int moveScore = -searchCaptures(board, -beta, -alpha);
+		if (onlyRecaptures && lastCaptureSquare != move.to())
+		{
+			board.undoMove();
+			continue;
+		}
+
+		const int moveScore = -searchCaptures(board, -beta, -alpha, horizonPly);
 		board.undoMove();
 		++searchedMoves;
 
@@ -327,10 +369,4 @@ int Search::searchCaptures(Board &board, int alpha, const int beta)
 	Stats::incrementNodesSearched(searchedMoves);
 
 	return alpha;
-}
-
-inline int Search::evaluate(const Board &board)
-{
-	const int value = Evaluation::evaluate(board);
-	return board.colorToMove ? value : -value;
 }

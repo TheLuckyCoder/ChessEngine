@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 
 using byte = std::uint8_t;
 using U64 = std::uint64_t;

@@ -29,15 +29,14 @@ namespace MoveOrdering
 		return array;
 	}();
 
-	void sortMoves(const Board &board, Move *begin, Move *end) noexcept
+	void sortMoves(const Board &board, MoveList &moveList) noexcept
 	{
 		const Move pvMove = Search::getTranspTable()[board.zKey].move;
 		auto &searchKillers = Search::getSearchKillers();
 		auto &searchHistory = Search::getSearchHistory();
 
-		for (Move *it = begin; it != end; ++it)
+		for (Move &move : moveList)
 		{
-			Move &move = *it;
 			const auto flags = move.flags();
 
 			if (move == pvMove)
@@ -56,14 +55,13 @@ namespace MoveOrdering
 				move.setScore(searchHistory[move.from()][move.to()]);
 		}
 
-		std::sort(begin, end, std::greater<>());
+		std::sort(moveList.begin(), moveList.end(), std::greater<>());
 	}
 
-	void sortQMoves(Move *begin, Move *end) noexcept
+	void sortQMoves(MoveList &moveList) noexcept
 	{
-		for (Move *it = begin; it != end; ++it)
+		for (Move &move : moveList)
 		{
-			Move &move = *it;
 			const auto flags = move.flags();
 
 			if (flags & Move::Flag::CAPTURE)
@@ -74,6 +72,6 @@ namespace MoveOrdering
 				move.setScore(EN_PASSANT_BONUS);
 		}
 
-		std::sort(begin, end, std::greater<>());
+		std::sort(moveList.begin(), moveList.end(), std::greater<>());
 	}
 }

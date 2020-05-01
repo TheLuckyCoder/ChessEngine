@@ -1,7 +1,5 @@
 #pragma once
 
-#include <mutex>
-
 #include "../data/Defs.h"
 #include "../data/Score.h"
 

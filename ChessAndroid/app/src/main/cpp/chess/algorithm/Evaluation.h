@@ -2,10 +2,9 @@
 
 #include <array>
 
+#include "../data/Board.h"
 #include "../data/Score.h"
 #include "../containers/PawnStructureTable.h"
-
-class Board;
 
 class Evaluation final
 {
@@ -13,7 +12,16 @@ class Evaluation final
 	static PawnStructureTable _pawnTable;
 
 public:
-	static short evaluate(const Board &board) noexcept;
+	struct Result
+	{
+		const Board &board;
+		short value{};
+		bool isInCheck{};
+
+		short getInvertedValue() const noexcept { return board.colorToMove ? value : -value; }
+	};
+	
+	static Result evaluate(const Board &board) noexcept;
 	
 	static constexpr short getPieceValue(const PieceType type) noexcept
 	{
