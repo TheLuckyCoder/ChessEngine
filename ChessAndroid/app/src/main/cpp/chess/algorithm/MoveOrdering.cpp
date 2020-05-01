@@ -32,8 +32,8 @@ namespace MoveOrdering
 	void sortMoves(const Board &board, MoveList &moveList) noexcept
 	{
 		const Move pvMove = Search::getTranspTable()[board.zKey].move;
-		auto &searchKillers = Search::getSearchKillers();
-		auto &searchHistory = Search::getSearchHistory();
+		const auto &searchKillers = Search::getSearchKillers();
+		const auto &searchHistory = Search::getSearchHistory();
 
 		for (Move &move : moveList)
 		{
@@ -47,9 +47,9 @@ namespace MoveOrdering
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE_BONUS);
 			else if (flags & Move::Flag::EN_PASSANT)
 				move.setScore(EN_PASSANT_BONUS + NORMAL_SCORE_BONUS);
-			else if (searchKillers[0][board.ply] == move)
+			else if (searchKillers[0][board.ply] == move.getContents())
 				move.setScore(900000);
-			else if (searchKillers[1][board.ply] == move)
+			else if (searchKillers[1][board.ply] == move.getContents())
 				move.setScore(800000);
 			else
 				move.setScore(searchHistory[move.from()][move.to()]);

@@ -12,8 +12,8 @@ class Board;
 class Search final
 {
 	static TranspositionTable _transpTable;
-	static std::array<std::array<Move, MAX_DEPTH>, 2> _searchKillers;
-	static std::array<std::array<int, 64>, 64> _searchHistory;
+	static std::array<std::array<unsigned int, MAX_DEPTH>, 2> _searchKillers;
+	static std::array<std::array<byte, 64>, 64> _searchHistory;
 	static ThreadPool _threadPool;
 	static bool _quiescenceSearchEnabled;
 
@@ -32,7 +32,7 @@ public:
 	static auto &getSearchHistory() noexcept { return _searchHistory; }
 
 private:
-	static Move iterativeDeepening(Board &board, const int depth);
+	static Move iterativeDeepening(Board &board, int depth);
 	static int search(Board &board, int alpha, int beta, int depth, bool doNull, bool doLateMovePruning);
-	static int searchCaptures(Board &board, int alpha, int beta, int horizonPly);
+	static int searchCaptures(Board &board, int alpha, int beta, const Move &lastMove, int horizonPly);
 };

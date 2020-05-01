@@ -9,8 +9,8 @@
 #include "MoveOrdering.h"
 #include "Evaluation.h"
 
-std::array<std::array<Move, MAX_DEPTH>, 2> Search::_searchKillers{};
-std::array<std::array<int, 64>, 64> Search::_searchHistory{};
+std::array<std::array<unsigned int, MAX_DEPTH>, 2> Search::_searchKillers{};
+std::array<std::array<byte, 64>, 64> Search::_searchHistory{};
 ThreadPool Search::_threadPool(1);
 TranspositionTable Search::_transpTable(2);
 bool Search::_quiescenceSearchEnabled{};
@@ -45,8 +45,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 {
 	std::array<Move, MAX_DEPTH> pvArray{};
 
-	const auto getPvLine = [](Board &board, std::array<Move, MAX_DEPTH> &pvArray,
-							  const int depth) -> int
+	const auto getPvLine = [&board, &pvArray](const int depth) -> int
 	{
 		assert(depth < MAX_DEPTH);
 
@@ -75,7 +74,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	Move bestMove;
 	int alpha = Value::VALUE_MIN;
 	int beta = Value::VALUE_MAX;
-	bool fullWindow = true;
+	//bool fullWindow = true;
 
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
@@ -90,7 +89,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 			continue;
 		}*/
 
-		const int pvMoves = getPvLine(board, pvArray, currentDepth);
+		const int pvMoves = getPvLine(currentDepth);
 		bestMove = pvArray[0];
 
 		std::cout << "Depth: " << currentDepth << ", Score: " << bestScore << ", PvMoves: ";
@@ -118,7 +117,9 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	// If in check and not already extended, allow the search to be extended to depth -1
 	if (depth <= 0)
-		return _quiescenceSearchEnabled ? searchCaptures(board, alpha, beta, board.ply) : Evaluation::evaluate(board).getInvertedValue();
+		return _quiescenceSearchEnabled
+			       ? searchCaptures(board, alpha, beta, board.history[board.historyPly - 1].move, board.ply)
+			       : Evaluation::evaluate(board).getInvertedValue();
 
 	const int originalAlpha = alpha;
 	if (const SearchEntry entry = _transpTable[board.zKey];
@@ -250,7 +251,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			if (!(move.flags() & Move::Flag::CAPTURE))
 			{
 				_searchKillers[1][board.ply] = _searchKillers[0][board.ply];
-				_searchKillers[0][board.ply] = move;
+				_searchKillers[0][board.ply] = move.getContents();
 			}
 
 			_transpTable.insert({ board.zKey, bestMove, byte(depth), SearchEntry::Flag::BETA });
@@ -284,11 +285,11 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	return alpha;
 }
 
-int Search::searchCaptures(Board &board, int alpha, const int beta, const int horizonPly)
+int Search::searchCaptures(Board &board, int alpha, const int beta, const Move &lastMove, const int horizonPly)
 {
 	const short currentPly = board.ply;
 	const bool inCheck = board.isInCheck(board.colorToMove);
-	const bool onlyRecaptures = !inCheck && (board.ply - horizonPly) > 4;
+	const bool onlyRecaptures = !inCheck && (board.ply - horizonPly) > 4 && (lastMove.flags() & Move::CAPTURE);
 	
 	if (!inCheck)
 	{
@@ -320,7 +321,6 @@ int Search::searchCaptures(Board &board, int alpha, const int beta, const int ho
 		}
 	}
 
-	const auto &lastMove = board.history[board.historyPly - 1].move;
 	const byte lastCaptureSquare = lastMove.to();
 	
 	MoveList moveList(board);
@@ -333,6 +333,9 @@ int Search::searchCaptures(Board &board, int alpha, const int beta, const int ho
 	for (const Move &move : moveList)
 	{
 		assert(currentPly == board.ply);
+		if (legalCount && onlyRecaptures && lastCaptureSquare != move.to())
+			continue;
+		
 		if (!board.makeMove(move))
 			continue;
 		++legalCount;
@@ -350,7 +353,7 @@ int Search::searchCaptures(Board &board, int alpha, const int beta, const int ho
 			continue;
 		}
 
-		const int moveScore = -searchCaptures(board, -beta, -alpha, horizonPly);
+		const int moveScore = -searchCaptures(board, -beta, -alpha, move, horizonPly);
 		board.undoMove();
 		++searchedMoves;
 
