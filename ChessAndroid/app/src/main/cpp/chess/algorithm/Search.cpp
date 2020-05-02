@@ -8,6 +8,7 @@
 #include "MoveGen.h"
 #include "MoveOrdering.h"
 #include "Evaluation.h"
+#include "../data/Psqt.h"
 
 std::array<std::array<unsigned int, MAX_DEPTH>, 2> Search::_searchKillers{};
 std::array<std::array<byte, 64>, 64> Search::_searchHistory{};
@@ -19,7 +20,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 {
 	// Apply Settings
 	int depth = settings.getBaseSearchDepth();
-//	const auto threadCount = settings.getThreadCount();
+	//	const auto threadCount = settings.getThreadCount();
 	_quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
 	// If the Transposition Table wasn't resized, increment its age
@@ -27,8 +28,8 @@ Move Search::findBestMove(Board board, const Settings &settings)
 		_transpTable.incrementAge();
 
 	// Update ThreadPool size if needed
-//	if (_threadPool.getThreadCount() != threadCount)
-//		_threadPool.updateThreadCount(threadCount);
+	//	if (_threadPool.getThreadCount() != threadCount)
+	//		_threadPool.updateThreadCount(threadCount);
 
 	board.ply = 0;
 
@@ -107,7 +108,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 }
 
 int Search::search(Board &board, int alpha, int beta, const int depth, const bool doNull,
-				   const bool doLateMovePruning)
+                   const bool doLateMovePruning)
 {
 	if (board.ply && (board.fiftyMoveRule == 100 || board.isRepetition()))
 		return 0;
@@ -118,12 +119,13 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	// If in check and not already extended, allow the search to be extended to depth -1
 	if (depth <= 0)
 		return _quiescenceSearchEnabled
-			       ? searchCaptures(board, alpha, beta, board.history[board.historyPly - 1].move, board.ply)
+			       ? searchCaptures(board, alpha, beta, depth, board.ply)
 			       : Evaluation::evaluate(board).getInvertedValue();
 
 	const int originalAlpha = alpha;
 	if (const SearchEntry entry = _transpTable[board.zKey];
-		entry.age == _transpTable.currentAge()
+		!entry.qSearch
+		&& entry.age == _transpTable.currentAge()
 		&& entry.key == board.zKey
 		&& entry.depth >= depth)
 	{
@@ -174,12 +176,12 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 		if (depth == 1
 			&& board.ply > 1
-			&& legalCount > 5
+			&& legalCount > 4
 			&& !(move.flags() & Move::CAPTURE)
 			&& !(move.flags() & Move::PROMOTION)
 			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
 			&& !(move.piece() == PAWN && (col(move.to()) == 7 || col(move.to()) == 2))
-			&& !isInCheck) // TODO: Move causes a check
+			&& !isInCheck)
 		{
 			const int futilityEval = evalScore + 125;
 			if (futilityEval <= alpha)
@@ -254,7 +256,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 				_searchKillers[0][board.ply] = move.getContents();
 			}
 
-			_transpTable.insert({ board.zKey, bestMove, byte(depth), SearchEntry::Flag::BETA });
+			_transpTable.insert({ board.zKey, bestMove, static_cast<short>(depth), SearchEntry::Flag::BETA });
 			return beta;
 		}
 
@@ -270,30 +272,43 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	Stats::incrementNodesSearched(legalCount);
 
-	// Avoid putting an empty move in the Transposition Table if alpha was not raised
 	if (!bestMove.empty())
-	{
-		// Store the result in the transposition table
-		auto flag = SearchEntry::Flag::EXACT;
-		if (alpha <= originalAlpha)
-			flag = SearchEntry::Flag::ALPHA;
-
-		bestMove.setScore(alpha);
-		_transpTable.insert({ board.zKey, bestMove, byte(depth), flag });
-	}
+		storeTtAlphaExact(bestMove, board.zKey, alpha, originalAlpha, depth, false);
 
 	return alpha;
 }
 
-int Search::searchCaptures(Board &board, int alpha, const int beta, const Move &lastMove, const int horizonPly)
+int Search::searchCaptures(Board &board, int alpha, int beta, const int depth, const int horizonPly)
 {
 	const short currentPly = board.ply;
 	const bool inCheck = board.isInCheck(board.colorToMove);
-	const bool onlyRecaptures = !inCheck && (board.ply - horizonPly) > 4 && (lastMove.flags() & Move::CAPTURE);
-	
+
+	const int originalAlpha = alpha;
+	int standPat = VALUE_MIN;
+	int bestScore = VALUE_MIN;
+	Move bestMove;
+
 	if (!inCheck)
 	{
-		const int standPat = Evaluation::evaluate(board).getInvertedValue();
+		if (const SearchEntry entry = _transpTable[board.zKey];
+			entry.age == _transpTable.currentAge()
+			&& entry.key == board.zKey
+			&& entry.depth >= depth)
+		{
+			const int entryScore = entry.move.getScore();
+
+			if (entry.flag == SearchEntry::Flag::EXACT)
+				return entry.move.getScore();
+			if (entry.flag == SearchEntry::Flag::ALPHA)
+				alpha = std::max(alpha, entryScore);
+			else if (entry.flag == SearchEntry::Flag::BETA)
+				beta = std::min(beta, entryScore);
+
+			if (alpha >= beta)
+				return entryScore;
+		}
+		
+		standPat = Evaluation::evaluate(board).getInvertedValue();
 
 		if (standPat >= beta)
 			return standPat;
@@ -321,8 +336,6 @@ int Search::searchCaptures(Board &board, int alpha, const int beta, const Move &
 		}
 	}
 
-	const byte lastCaptureSquare = lastMove.to();
-	
 	MoveList moveList(board);
 	Stats::incrementNodesGenerated(moveList.size());
 
@@ -333,9 +346,7 @@ int Search::searchCaptures(Board &board, int alpha, const int beta, const Move &
 	for (const Move &move : moveList)
 	{
 		assert(currentPly == board.ply);
-		if (legalCount && onlyRecaptures && lastCaptureSquare != move.to())
-			continue;
-		
+
 		if (!board.makeMove(move))
 			continue;
 		++legalCount;
@@ -347,29 +358,60 @@ int Search::searchCaptures(Board &board, int alpha, const int beta, const Move &
 			break; // The moves are sorted so we can break if is not a capture
 		}
 
-		if (onlyRecaptures && lastCaptureSquare != move.to())
+		// Futility pruning
+		if (const int futilityEval = standPat + Psqt::BONUS[move.to()][move.piece()].eg;
+			!inCheck
+			&& standPat != VALUE_MIN
+			&& futilityEval <= alpha
+			&& !board.isInCheck(board.colorToMove))
 		{
 			board.undoMove();
 			continue;
 		}
 
-		const int moveScore = -searchCaptures(board, -beta, -alpha, move, horizonPly);
+		const int moveScore = -searchCaptures(board, -beta, -alpha, depth - 1, horizonPly);
 		board.undoMove();
 		++searchedMoves;
+
+		if (moveScore > bestScore)
+		{
+			bestScore = moveScore;
+			bestMove = move;
+			
+			if (moveScore > alpha)
+				alpha = moveScore;
+		}
 
 		if (moveScore >= beta)
 		{
 			Stats::incrementNodesSearched(searchedMoves);
+			if (!inCheck)
+				_transpTable.insert({ board.zKey, bestMove, static_cast<short>(depth), SearchEntry::Flag::BETA, true });
 			return beta;
 		}
-		if (moveScore > alpha)
-			alpha = moveScore;
 	}
 
 	if (legalCount == 0)
 		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
+	
+	if (!inCheck && !bestMove.empty())
+		storeTtAlphaExact(bestMove, board.zKey, alpha, originalAlpha, depth, true);
 
 	Stats::incrementNodesSearched(searchedMoves);
 
 	return alpha;
+}
+
+inline void Search::storeTtAlphaExact(Move bestMove, const U64 key, const int alpha, const int originalAlpha, const int depth, const bool qSearch)
+{
+	// Avoid putting an empty move in the Transposition Table if alpha was not raised
+	assert(!bestMove.empty());
+
+	// Store the result in the transposition table
+	auto flag = SearchEntry::Flag::EXACT;
+	if (alpha <= originalAlpha)
+		flag = SearchEntry::Flag::ALPHA;
+
+	bestMove.setScore(alpha);
+	_transpTable.insert({ key, bestMove, static_cast<short>(depth), flag, qSearch });
 }

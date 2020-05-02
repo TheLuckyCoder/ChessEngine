@@ -269,11 +269,11 @@ Score Evaluation::evaluateAttacks() const noexcept
 	const U64 nonPawnEnemies = board.allPieces[Them] & ~board.getType(PAWN, Us);
 	const U64 stronglyProtected = _attacks[Them][PAWN]
 								  | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
-	const U64 defended = nonPawnEnemies & stronglyProtected;
 	const U64 weak = board.allPieces[Them] & ~stronglyProtected & _attacksAll[Us];
+	const U64 defended = nonPawnEnemies & stronglyProtected;
 	const U64 safe = ~_attacksAll[Them] | _attacksAll[Us];
 
-	if (defended || weak)
+	if (weak | defended)
 	{
 		U64 minorThreats = (defended | weak) & (_attacks[Us][KNIGHT] | _attacks[Us][BISHOP]);
 		while (minorThreats)

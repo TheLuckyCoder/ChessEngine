@@ -15,8 +15,9 @@ struct SearchEntry
 	
     U64 key{};
     Move move;
-    byte depth{};
+    short depth{};
     Flag flag = Flag::EXACT;
+	bool qSearch{};
     unsigned short age{};
 };
 
