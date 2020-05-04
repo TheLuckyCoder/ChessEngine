@@ -14,9 +14,6 @@ public:
 	constexpr Pos(const byte x, const byte y) noexcept
 		: x(x), y(y) {}
 
-	constexpr Pos(const Pos pos, const byte x, const byte y) noexcept
-		: x(pos.x + x), y(pos.y + y) {}
-
 	constexpr bool operator==(const Pos &other) const noexcept
 	{
 		return x == other.x && y == other.y;

@@ -164,9 +164,8 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 			for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 			{
 				const byte sq = board.pieceList[piece][pieceNumber];
-				const Pos pos(sq);
 
-				pieceList.emplace_back(pos, color == BLACK ? byte(pieceType + 6u) : pieceType);
+				pieceList.emplace_back(Pos{ sq }, color == BLACK ? byte(pieceType + 6u) : pieceType);
 			}
 		}
 	}

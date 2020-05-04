@@ -1,6 +1,5 @@
 #include "MoveOrdering.h"
 
-#include <algorithm>
 #include <array>
 
 #include "Evaluation.h"
@@ -54,8 +53,6 @@ namespace MoveOrdering
 			else
 				move.setScore(searchHistory[move.from()][move.to()]);
 		}
-
-		std::sort(moveList.begin(), moveList.end(), std::greater<>());
 	}
 
 	void sortQMoves(MoveList &moveList) noexcept
@@ -71,7 +68,23 @@ namespace MoveOrdering
 			else if (flags & Move::Flag::EN_PASSANT)
 				move.setScore(EN_PASSANT_BONUS);
 		}
+	}
 
-		std::sort(moveList.begin(), moveList.end(), std::greater<>());
+	Move getNextMove(MoveList &moveList) noexcept
+	{
+		Move *foundMove = moveList.begin();
+		
+		for (auto &&move : moveList)
+		{
+			if (move.getScore() > foundMove->getScore())
+				foundMove = &move;
+		}
+
+		const Move bestMove = *foundMove;
+
+		*foundMove = moveList.back();
+		moveList.pop_back();
+
+		return bestMove;
 	}
 }

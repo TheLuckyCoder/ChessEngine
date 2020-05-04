@@ -29,7 +29,7 @@ enum Dir
 	SOUTH_WEST
 };
 
-enum class State : unsigned char
+enum class State : byte
 {
 	NONE,
 	WINNER_WHITE,
@@ -40,7 +40,7 @@ enum class State : unsigned char
 	INVALID = 10
 };
 
-enum CastlingRights : unsigned char
+enum CastlingRights : byte
 {
 	CASTLE_NONE = 0,
 
@@ -73,7 +73,7 @@ enum Value : short
 	MAX_DEPTH = 64
 };
 
-enum PieceType : unsigned char
+enum PieceType : byte
 {
 	NO_PIECE_TYPE = 0,
 	PAWN = 1,

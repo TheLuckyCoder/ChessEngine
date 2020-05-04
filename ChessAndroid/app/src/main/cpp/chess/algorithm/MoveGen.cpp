@@ -52,7 +52,7 @@ namespace
 		{
 			const byte from = board.pieceList[piece][pieceNumber];
 			const U64 bb = getSquare64(from);
-			U64 attacks = PieceAttacks::getPawnAttacks(Us, from);
+			U64 attacks = PieceAttacks::pawnAttacks<Us>(bb);
 
 			if (board.enPassantSq < SQ_NONE)
 			{
@@ -94,11 +94,12 @@ namespace
 		return moveList;
 	}
 
-	template <PieceType P>
-	Move *generatePieceMoves(const Board &board, const Color color, Move *moveList, const U64 targets)
+	template <Color Us, PieceType P>
+	Move *generatePieceMoves(const Board &board, Move *moveList, const U64 targets)
 	{
 		static_assert(P != KING && P != PAWN);
-		const Piece piece{ P, color };
+		constexpr Color Them = ~Us;
+		constexpr Piece piece{ P, Us };
 
 		for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 		{
@@ -107,26 +108,26 @@ namespace
 			U64 attacks{};
 
 			if constexpr (P == KNIGHT)
-				attacks = PieceAttacks::getKnightAttacks(from);
+				attacks = PieceAttacks::knightAttacks(from);
 			else if constexpr (P == BISHOP)
-				attacks = PieceAttacks::getBishopAttacks(from, board.occupied);
+				attacks = PieceAttacks::bishopAttacks(from, board.occupied);
 			else if constexpr (P == ROOK)
-				attacks = PieceAttacks::getRookAttacks(from, board.occupied);
+				attacks = PieceAttacks::rookAttacks(from, board.occupied);
 			else if constexpr (P == QUEEN)
-				attacks = PieceAttacks::getQueenAttacks(from, board.occupied);
+				attacks = PieceAttacks::queenAttacks(from, board.occupied);
 
 			attacks &= targets;
 
 			while (attacks)
 			{
 				const byte to = Bits::findNextSquare(attacks);
-				const PieceType capturedPiece = board.getPiece(to).type();
+				const U64 bb = Bits::getSquare64(to);
 
 				Move move{ from, to, P };
-				if (capturedPiece)
+				if (bb & board.allPieces[Them])
 				{
 					move.setFlags(Move::CAPTURE);
-					move.setCapturedPiece(capturedPiece);
+					move.setCapturedPiece(board.getPiece(to).type());
 				}
 
 				*moveList++ = move;
@@ -143,44 +144,43 @@ namespace
 		constexpr Piece kingPiece{ KING, Us };
 
 		moveList = generatePawnMoves<Us>(board, moveList, targets);
-		moveList = generatePieceMoves<KNIGHT>(board, Us, moveList, targets);
-		moveList = generatePieceMoves<BISHOP>(board, Us, moveList, targets);
-		moveList = generatePieceMoves<ROOK>(board, Us, moveList, targets);
-		moveList = generatePieceMoves<QUEEN>(board, Us, moveList, targets);
+		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, BISHOP>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, ROOK>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
 
 		// King Moves
 		const byte kingSquare = board.pieceList[kingPiece][0];
 		assert(kingSquare < SQUARE_NB);
 
 		{
-			U64 attacks = PieceAttacks::getKingAttacks(kingSquare) & targets;
+			U64 attacks = PieceAttacks::kingAttacks(kingSquare) & targets;
 			while (attacks)
 			{
 				const byte to = Bits::findNextSquare(attacks);
-				const PieceType captured = board.getPiece(to).type();
+				const U64 bb = Bits::getSquare64(to);
 
 				Move move(kingSquare, to, KING);
-				if (captured != NO_PIECE_TYPE)
+				if (bb & board.allPieces[Them])
 				{
 					move.setFlags(Move::CAPTURE);
-					move.setCapturedPiece(captured);
+					move.setCapturedPiece(board.getPiece(to).type());
 				}
 				*moveList++ = move;
 			}
 		}
 
-
-		if (board.canCastle(Us) && !board.isInCheck(Us))
+		if (board.canCastle<Us>() && !board.isInCheck<Us>())
 		{
 			const byte y = row(kingSquare);
 			const auto isEmptyAndCheckFree = [&, y](const byte x)
 			{
 				const byte sq = toSquare(x, y);
-				return !board.getPiece(sq) && !board.isAttackedByAny(Them, sq);
+				return !(board.occupied & Bits::getSquare64(sq)) && !board.isAttackedByAny(Them, sq);
 			};
 
 			// King Side
-			if (board.canCastleKs(Us)
+			if (board.canCastleKs<Us>()
 				&& isEmptyAndCheckFree(5)
 				&& isEmptyAndCheckFree(6))
 			{
@@ -188,10 +188,10 @@ namespace
 			}
 
 			// Queen Side
-			if (board.canCastleQs(Us)
+			if (board.canCastleQs<Us>()
 				&& isEmptyAndCheckFree(3)
 				&& isEmptyAndCheckFree(2)
-				&& !board.getPiece(toSquare(1, y)))
+				&& !(board.occupied & Bits::getSquare64(toSquare(1, y))))
 			{
 				*moveList++ = { kingSquare, Pos(2, y).toSquare(), KING, Move::Flag::QSIDE_CASTLE };
 			}

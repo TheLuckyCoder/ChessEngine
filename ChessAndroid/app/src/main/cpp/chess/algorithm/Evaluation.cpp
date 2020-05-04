@@ -30,12 +30,14 @@ namespace
 	{
 		{ }, { 6, 32 }, { 59, 41 }, { 79, 56 }, { 90, 119 }, { 79, 161 }, { }
 	};
-	constexpr Score KING_PROTECTOR{ 7, 8 };
+	//constexpr Score KING_PROTECTOR{ 7, 8 };
 	constexpr Score HANGING{ 69, 36 };
 	constexpr Score RESTRICTED_PIECE_MOVEMENT{ 7,  7 };
 	constexpr Score WEAK_QUEEN_PROTECTION{ 14,  0 };
 	constexpr Score THREAT_BY_KING{ 24, 89 };
 	constexpr Score THREAT_BY_SAFE_PAWN{ 173, 94 };
+	constexpr Score QUEEN_KNIGHT_THREAT{ 16, 11 };
+	constexpr Score QUEEN_SLIDER_THREAT{ 59, 18 };
 
 	constexpr Score ROOK_ON_QUEEN_FILE{ 7, 6 };
 	constexpr Score TRAPPED_ROOK{ 52, 10 };
@@ -76,7 +78,7 @@ namespace
 	};
 }
 
-PawnStructureTable Evaluation::_pawnTable{ 1 };
+PawnStructureTable Evaluation::_pawnTable{ 4 };
 
 using namespace Bits;
 
@@ -151,7 +153,7 @@ Score Evaluation::evaluatePieces() noexcept
 		const byte square = board.getKingSq(Us);
 		score += evaluateKing<Us>(square);
 
-		const U64 attacks = PieceAttacks::getKingAttacks(square);
+		const U64 attacks = PieceAttacks::kingAttacks(square);
 		_attacks[Us][KING] = attacks;
 		_attacksAll[Us] = attacks;
 	}
@@ -183,8 +185,8 @@ Score Evaluation::evaluatePieces() noexcept
 
 	{
 		const U64 &pawns = board.getType(PAWN, Us);
-		const U64 pawnsAttacks = PieceAttacks::getPawnAttacks<Us>(pawns);
-		const U64 doublePawnsAttacks = PieceAttacks::getDoublePawnAttacks<Us>(pawns);
+		const U64 pawnsAttacks = PieceAttacks::pawnAttacks<Us>(pawns);
+		const U64 doublePawnsAttacks = PieceAttacks::pawnDoubleAttacks<Us>(pawns);
 
 		_attacks[Us][PAWN] = pawnsAttacks;
 		_attacksMultiple[Us] = doublePawnsAttacks | (doublePawnsAttacks & _attacksAll[Us]);
@@ -192,7 +194,7 @@ Score Evaluation::evaluatePieces() noexcept
 	}
 
 	_mobilityArea[Us] =
-		~board.allPieces[Us] & ~PieceAttacks::getPawnAttacks<Them>(board.getType(PAWN, Them));
+		~board.allPieces[Us] & ~PieceAttacks::pawnAttacks<Them>(board.getType(PAWN, Them));
 
 	const auto knightBishop = [&](const byte square)
 	{
@@ -211,7 +213,7 @@ Score Evaluation::evaluatePieces() noexcept
 		score += evaluateKnight<Us>(square);
 		knightBishop(square);
 
-		const U64 attacks = PieceAttacks::getKnightAttacks(square);
+		const U64 attacks = PieceAttacks::knightAttacks(square);
 		_attacks[Us][KNIGHT] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -224,7 +226,7 @@ Score Evaluation::evaluatePieces() noexcept
 		score += evaluateBishop<Us>(square);
 		knightBishop(square);
 
-		const U64 attacks = PieceAttacks::getBishopAttacks(square, board.occupied);
+		const U64 attacks = PieceAttacks::bishopAttacks(square, board.occupied);
 		_attacks[Us][BISHOP] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -239,7 +241,7 @@ Score Evaluation::evaluatePieces() noexcept
 		const byte square = board.pieceList[piece][pieceNumber];
 		score += evaluateRook<Us>(square);
 
-		const U64 attacks = PieceAttacks::getRookAttacks(square, board.occupied);
+		const U64 attacks = PieceAttacks::rookAttacks(square, board.occupied);
 		_attacks[Us][ROOK] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -251,7 +253,7 @@ Score Evaluation::evaluatePieces() noexcept
 		const byte square = board.pieceList[piece][pieceNumber];
 		score += evaluateQueen<Us>(square);
 
-		const U64 attacks = PieceAttacks::getQueenAttacks(square, board.occupied);
+		const U64 attacks = PieceAttacks::queenAttacks(square, board.occupied);
 		_attacks[Us][QUEEN] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -275,11 +277,11 @@ Score Evaluation::evaluateAttacks() const noexcept
 
 	if (weak | defended)
 	{
-		U64 minorThreats = (defended | weak) & (_attacks[Us][KNIGHT] | _attacks[Us][BISHOP]);
+		U64 minorThreats = (defended | weak) & (_attacks[Us][KNIGHT] | _attacks[Us][BISHOP]) & board.allPieces[Them];
 		while (minorThreats)
 			score += MINOR_THREATS[board.getPiece(findNextSquare(minorThreats)).type()];
 
-		U64 rookThreats = weak & _attacks[Us][ROOK];
+		U64 rookThreats = weak & _attacks[Us][ROOK] & board.allPieces[Them];
 		while (rookThreats)
 			score += ROOK_THREATS[board.getPiece(findNextSquare(rookThreats)).type()];
 
@@ -292,11 +294,28 @@ Score Evaluation::evaluateAttacks() const noexcept
 		score += WEAK_QUEEN_PROTECTION * popCount(weak & _attacks[Them][QUEEN]);
 	}
 
+	// Bonus for threats on the next moves against enemy queen
+	if (board.pieceCount[Piece{ QUEEN, Them }])
+	{
+		byte sq = board.pieceList[Piece{ QUEEN, Them }][0];
+		const U64 safeSpots = _mobilityArea[Us] & ~stronglyProtected;
+
+		const U64 knightAttacks = _attacks[Us][KNIGHT] & PieceAttacks::knightAttacks(sq);
+
+		score += QUEEN_KNIGHT_THREAT * popCount(knightAttacks & safeSpots);
+
+		const U64 sliderAttacks = (_attacks[Us][BISHOP] &
+			PieceAttacks::bishopAttacks(sq, board.occupied))
+			 | (_attacks[Us][ROOK] & PieceAttacks::rookAttacks(sq, board.occupied));
+
+		score += QUEEN_SLIDER_THREAT * popCount(sliderAttacks & safe & _attacksMultiple[Us]);
+	}
+
 	const U64 restrictedMovement = _attacksAll[Them] & _attacksAll[Us] & ~stronglyProtected;
 	score += RESTRICTED_PIECE_MOVEMENT * short(popCount(restrictedMovement));
 
 	const U64 safePawnsAttacks =
-		PieceAttacks::getPawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
+		PieceAttacks::pawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
 	score += THREAT_BY_SAFE_PAWN * short(popCount(safePawnsAttacks));
 
 	return score;
@@ -312,7 +331,7 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 
 	Score value = Psqt::BONUS[PAWN][square];
 
-	const Pos pos(square);
+	const Pos pos{ square };
 	const byte rank = (Us ? pos.y : 7u - pos.y) - 1u;
 
 	const U64 adjacentFiles = getAdjacentFiles(square);
@@ -353,7 +372,7 @@ Score Evaluation::evaluateKnight(const byte square) const noexcept
 {
 	Score value = Psqt::BONUS[KNIGHT][square];
 
-	const int mobility = popCount(PieceAttacks::getKnightAttacks(square) & _mobilityArea[Us]);
+	const int mobility = popCount(PieceAttacks::knightAttacks(square) & _mobilityArea[Us]);
 	value += KNIGHT_MOBILITY[mobility];
 
 	return value;
@@ -369,12 +388,12 @@ Score Evaluation::evaluateBishop(const byte square) const noexcept
 	Score value = Psqt::BONUS[BISHOP][square];
 
 	const int mobility = popCount(
-		PieceAttacks::getBishopAttacks(square, board.occupied) & _mobilityArea[Us]);
+		PieceAttacks::bishopAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += BISHOP_MOBILITY[mobility];
 
 	// Long Diagonal Bishop
 	const U64 centerAttacks =
-		PieceAttacks::getBishopAttacks(square, board.getType(PAWN, Them)) & Center;
+		PieceAttacks::bishopAttacks(square, board.getType(PAWN, Them)) & Center;
 	if (popCount(centerAttacks) > 1)
 		value.mg += 45;
 
@@ -390,7 +409,7 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 	Score value = Psqt::BONUS[ROOK][square];
 
 	const int mobility = popCount(
-		PieceAttacks::getRookAttacks(square, board.occupied) & _mobilityArea[Us]);
+		PieceAttacks::rookAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += ROOK_MOBILITY[mobility];
 
 	const U64 file = getFile(square);
@@ -401,7 +420,7 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 		const byte kx = col(board.pieceList[Piece{ KING, Us }][0]);
 
 		if ((kx < 4) == (pos.x < kx))
-			value -= TRAPPED_ROOK * (1 + !board.canCastle(Us));
+			value -= TRAPPED_ROOK * (1 + !board.canCastle<Us>());
 	}
 
 	const U64 queens = board.getType(QUEEN, Us) | board.getType(QUEEN, Them);
@@ -417,12 +436,12 @@ Score Evaluation::evaluateQueen(const byte square) const noexcept
 	Score value = Psqt::BONUS[QUEEN][square];
 
 	const int mobility = popCount(
-		PieceAttacks::getQueenAttacks(square, board.occupied) & _mobilityArea[Us]);
+		PieceAttacks::queenAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += QUEEN_MOBILITY[mobility];
 
 	if (const U64 initialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
 		(initialPosition & shiftedBoards[square]) == 0)
-		value.mg -= 40;
+		value.mg -= 20;
 
 	return value;
 }
@@ -432,11 +451,11 @@ Score Evaluation::evaluateKing(const byte square) const noexcept
 {
 	Score value = Psqt::BONUS[KNIGHT][square];
 
-	if (board.isCastled(Us))
+	if (board.isCastled<Us>())
 		value.mg += 57;
 	else
 	{
-		const short count = short(board.canCastleKs(Us)) + short(board.canCastleQs(Us));
+		const short count = short(board.canCastleKs<Us>()) + short(board.canCastleQs<Us>());
 		value.mg += count * 19;
 	}
 

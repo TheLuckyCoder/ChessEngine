@@ -7,13 +7,15 @@
 
 #ifdef _MSC_VER
 #  include <intrin.h> // Microsoft header for _BitScanForward64()
+#elif defined(__linux__)
+#	include <byteswap.h>
 #endif
 
 //#define USE_CUSTOM_POPCNT
 
 namespace Bits
 {
-	constexpr U64 eastN(U64 board, const int n) noexcept
+	static constexpr U64 eastN(U64 board, const int n) noexcept
 	{
 		for (int i = 0; i < n; ++i)
 			board = ((board << 1) & (~FILE_A));
@@ -21,7 +23,7 @@ namespace Bits
 		return board;
 	}
 
-	constexpr U64 westN(U64 board, const int n) noexcept
+	static constexpr U64 westN(U64 board, const int n) noexcept
 	{
 		for (int i = 0; i < n; ++i)
 			board = ((board >> 1) & (~FILE_H));
@@ -32,7 +34,7 @@ namespace Bits
 	/**
 	 * Table of precalculated shifted bitboards indexed by the times 1 has been shifted to the left
 	 */
-	constexpr auto shiftedBoards = []
+	static constexpr auto shiftedBoards = []
 	{
 		std::array<U64, 64> array{};
 
@@ -197,7 +199,22 @@ namespace Bits
 	{
 		return _byteswap_uint64(bb);
 	}
-	
+
+#elif defined(__linux__)
+
+	inline U64 flipVertical(const U64 bb)
+	{
+		return bswap_64(bb);
+	}
+
+#elif (defined(__clang__) && __has_builtin(__builtin_bswap64)) \
+  || (defined(__GNUC__ ) && (__GNUC__ > 4))
+
+	inline U64 flipVertical(const U64 bb)
+	{
+		return __builtin_bswap64(bb);
+	}
+
 #else
 	/**
 	 * Flip a bitboard vertically about the centre ranks.
@@ -240,7 +257,7 @@ namespace Bits
 
 		using namespace Bits;
 
-		for (byte square = 0u; square < SQUARE_NB; ++square)
+		for (byte square{}; square < SQUARE_NB; ++square)
 		{
 			rays[NORTH][square] = 0x0101010101010100ULL << square;
 
@@ -283,7 +300,7 @@ namespace Bits
 	}();
 
 	template <Dir D>
-	constexpr U64 shift(const U64 bb) noexcept
+	static constexpr U64 shiftT(const U64 bb) noexcept
 	{
 		if constexpr (D == NORTH)
 			return bb << 8u;
@@ -304,6 +321,14 @@ namespace Bits
 			return (bb & ~FILE_A) >> 9u;
 
 		return {};
+	}
+
+	template <Dir D, Dir... Dirs>
+	constexpr U64 shift(const U64 bb) noexcept
+	{
+		U64 result = shiftT<D>(bb);
+		((result = shiftT<Dirs>(result)),...);
+		return result;
 	}
 
 	/**

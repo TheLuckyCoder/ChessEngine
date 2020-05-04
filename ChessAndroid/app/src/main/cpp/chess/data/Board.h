@@ -11,10 +11,15 @@ class UndoMove final
 {
 public:
 	U64 zKey{};
-	Move move{};
+	unsigned int moveContents{};
 	byte castlingRights{};
 	byte enPassantSq{};
 	byte fiftyMoveRule{};
+
+	Move getMove() const noexcept
+	{
+		return Move(moveContents);
+	}
 };
 
 class Board final
@@ -22,7 +27,6 @@ class Board final
 	friend class FenParser;
 
 public:
-	std::array<Piece, 64> data{};
 	U64 zKey{};
 	U64 occupied{};
 	std::array<U64, 2> allPieces{};
@@ -30,10 +34,12 @@ public:
 	
 	std::array<std::array<byte, 16>, 15> pieceList{};
 	std::array<byte, 15> pieceCount{};
-	
+
+	std::array<Piece, 64> data{};
+
 	short npm{};
-	Color colorToMove = WHITE;
-	byte castlingRights = CastlingRights::CASTLE_WHITE_BOTH | CastlingRights::CASTLE_BLACK_BOTH;
+	Color colorToMove{};
+	byte castlingRights{};
 	byte fiftyMoveRule{};
 	byte enPassantSq{};
 
@@ -45,11 +51,16 @@ public:
 	void setToFen(const std::string &fen);
 
 	bool canCastle(Color color) const noexcept;
-	bool canCastleKs(Color color) const noexcept;
-	bool canCastleQs(Color color) const noexcept;
-	bool isCastled(Color color) const noexcept;
+	template <Color C>
+	bool canCastle() const noexcept;
+	template <Color C>
+	bool canCastleKs() const noexcept;
+	template <Color C>
+	bool canCastleQs() const noexcept;
+	template <Color C>
+	bool isCastled() const noexcept;
 
-	Piece &getPiece(byte squareIndex) noexcept;
+	Piece &getPiece(byte squareIndex) noexcept; 
 	Piece getPiece(byte squareIndex) const noexcept;
 	U64 &getType(Piece piece) noexcept;
 	U64 getType(Piece piece) const noexcept;
@@ -68,7 +79,10 @@ public:
 	template <PieceType>
 	bool isAttacked(Color colorAttacking, byte targetSquare) const noexcept;
 	bool isAttackedByAny(Color colorAttacking, byte targetSquare) const noexcept;
+	bool isSideInCheck() const noexcept;
 	bool isInCheck(Color color) const noexcept;
+	template <Color C>
+	bool isInCheck() const noexcept;
 
 private:
 	void addPiece(byte square, Piece piece) noexcept;
@@ -79,6 +93,30 @@ private:
 	void updateNonPieceBitboards() noexcept;
 };
 
+template <Color C>
+bool Board::canCastle() const noexcept
+{
+	return castlingRights & (C == BLACK ? CASTLE_BLACK_BOTH : CASTLE_WHITE_BOTH);
+}
+
+template <Color C>
+bool Board::canCastleKs() const noexcept
+{
+	return castlingRights & (C == BLACK ? CASTLE_BLACK_KING : CASTLE_WHITE_KING);
+}
+
+template <Color C>
+bool Board::canCastleQs() const noexcept
+{
+	return castlingRights & (C == BLACK ? CASTLE_BLACK_QUEEN : CASTLE_WHITE_QUEEN);
+}
+
+template <Color C>
+bool Board::isCastled() const noexcept
+{
+	return castlingRights & (C == BLACK ? CASTLED_BLACK : CASTLED_WHITE);
+}
+
 template <PieceType P>
 bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) const noexcept
 {
@@ -88,17 +126,20 @@ bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) cons
 	const U64 type = getType(P, colorAttacking);
 
 	if constexpr (P == PAWN)
-		return type & PieceAttacks::getPawnAttacks(~colorAttacking, targetSquare);
-	else if constexpr (P == KNIGHT)
-		return type & PieceAttacks::getKnightAttacks(targetSquare);
+	{
+		const U64 bb = Bits::getSquare64(targetSquare);
+		return type & ~colorAttacking
+			   ? PieceAttacks::pawnAttacks<WHITE>(bb) : PieceAttacks::pawnAttacks<BLACK>(bb);
+	} else if constexpr (P == KNIGHT)
+		return type & PieceAttacks::knightAttacks(targetSquare);
 	else if constexpr (P == BISHOP)
-		return type & PieceAttacks::getBishopAttacks(targetSquare, occupied);
+		return type & PieceAttacks::bishopAttacks(targetSquare, occupied);
 	else if constexpr (P == ROOK)
-		return type & PieceAttacks::getRookAttacks(targetSquare, occupied);
+		return type & PieceAttacks::rookAttacks(targetSquare, occupied);
 	else if constexpr (P == QUEEN)
-		return type & PieceAttacks::getQueenAttacks(targetSquare, occupied);
+		return type & PieceAttacks::queenAttacks(targetSquare, occupied);
 	else if constexpr (P == KING)
-		return type & PieceAttacks::getKingAttacks(targetSquare);
+		return type & PieceAttacks::kingAttacks(targetSquare);
 
 	assert(false);
 	return false;

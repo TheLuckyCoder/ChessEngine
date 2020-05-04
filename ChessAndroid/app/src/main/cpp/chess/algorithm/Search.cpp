@@ -148,7 +148,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	const Color color = board.colorToMove;
 	if (doNull && board.ply && depth >= 4 &&
 		board.pieceCount[Piece{ QUEEN, color }] + board.pieceCount[Piece{ ROOK, color }] > 0 &&
-		!board.isInCheck(color))
+		!board.isSideInCheck())
 	{
 		board.makeNullMove();
 		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false);
@@ -164,15 +164,19 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	size_t legalCount{};
 	int bestScore = Value::VALUE_MIN;
-	Move bestMove{};
+	Move bestMove;
 
 	const auto evalResult = Evaluation::evaluate(board);
 	const bool isInCheck = evalResult.isInCheck;
 	const int evalScore = evalResult.getInvertedValue();
 
-	for (const Move &move : moveList)
+	while (true)
 	{
 		assert(currentPly == board.ply);
+
+		if (moveList.empty())
+			break;
+		const Move move = MoveOrdering::getNextMove(moveList);
 
 		if (depth == 1
 			&& board.ply > 1
@@ -211,7 +215,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& !(move.flags() & Move::Flag::CAPTURE)
 			&& !(move.flags() & Move::Flag::PROMOTION)
 			&& !isInCheck
-			&& !board.isInCheck(board.colorToMove))
+			&& !board.isSideInCheck())
 		{
 			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, false);
 			didLmr = true;
@@ -268,7 +272,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	}
 
 	if (legalCount == 0)
-		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
+		return board.isSideInCheck() ? -Value::VALUE_MAX + board.ply : 0;
 
 	Stats::incrementNodesSearched(legalCount);
 
@@ -281,7 +285,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 int Search::searchCaptures(Board &board, int alpha, int beta, const int depth, const int horizonPly)
 {
 	const short currentPly = board.ply;
-	const bool inCheck = board.isInCheck(board.colorToMove);
+	const bool inCheck = board.isSideInCheck();
 
 	const int originalAlpha = alpha;
 	int standPat = VALUE_MIN;
@@ -327,7 +331,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth, c
 			int bigDelta = QUEEN_VALUE;
 
 			const bool isPromotion =
-				board.history[board.historyPly - 1].move.flags() & Move::Flag::PROMOTION;
+				board.history[board.historyPly - 1].getMove().flags() & Move::Flag::PROMOTION;
 			if (isPromotion)
 				bigDelta += QUEEN_VALUE - PAWN_VALUE;
 
@@ -343,9 +347,13 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth, c
 	size_t legalCount{};
 	size_t searchedMoves{};
 
-	for (const Move &move : moveList)
+	while(true)
 	{
 		assert(currentPly == board.ply);
+
+		if (moveList.empty())
+			break;
+		const Move move = MoveOrdering::getNextMove(moveList);
 
 		if (!board.makeMove(move))
 			continue;
@@ -363,7 +371,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth, c
 			!inCheck
 			&& standPat != VALUE_MIN
 			&& futilityEval <= alpha
-			&& !board.isInCheck(board.colorToMove))
+			&& !board.isSideInCheck())
 		{
 			board.undoMove();
 			continue;
@@ -392,7 +400,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth, c
 	}
 
 	if (legalCount == 0)
-		return board.isInCheck(board.colorToMove) ? -Value::VALUE_MAX + board.ply : 0;
+		return board.isSideInCheck() ? -Value::VALUE_MAX + board.ply : 0;
 	
 	if (!inCheck && !bestMove.empty())
 		storeTtAlphaExact(bestMove, board.zKey, alpha, originalAlpha, depth, true);

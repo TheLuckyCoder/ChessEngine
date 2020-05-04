@@ -9,4 +9,6 @@ namespace MoveOrdering
 	void sortMoves(const Board &board, MoveList &moveList) noexcept;
 
 	void sortQMoves(MoveList &moveList) noexcept;
+
+	Move getNextMove(MoveList &moveList) noexcept;
 }

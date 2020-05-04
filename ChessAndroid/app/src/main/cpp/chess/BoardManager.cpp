@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-
 #include "algorithm/Evaluation.h"
 #include "Stats.h"
 #include "data/Board.h"
@@ -59,7 +58,7 @@ std::vector<Move> BoardManager::getMovesHistory()
 	std::vector<Move> moves(_board.historyPly);
 
 	for (size_t i{}; i < moves.size(); ++i)
-		moves[i] = _board.history[i].move;
+		moves[i] = _board.history[i].getMove();
 
 	return moves;
 }
@@ -136,22 +135,22 @@ bool BoardManager::undoLastMoves()
 
 	// Undo the move before the last move so that it is the player's turn again
 	const UndoMove playerMove = _board.history[_board.historyPly - 1];
-	if (playerMove.move.empty())
+	if (playerMove.getMove().empty())
 		_board.undoNullMove();
 	else
 		_board.undoMove();
 
 	_listener(getBoardState(), true,
-			  {{ engineMove.move.to(), engineMove.move.from() },
-			   { playerMove.move.to(), playerMove.move.from() }});
+			  {{ engineMove.getMove().to(), engineMove.getMove().from() },
+			   { playerMove.getMove().to(), playerMove.getMove().from() }});
 
 	return true;
 }
 
 State BoardManager::getBoardState()
 {
-	const bool whiteInCheck = _board.isInCheck(WHITE);
-	const bool blackInCheck = _board.isInCheck(BLACK);
+	const bool whiteInCheck = _board.isInCheck<WHITE>();
+	const bool blackInCheck = _board.isInCheck<BLACK>();
 
 	if (whiteInCheck && blackInCheck)
 		return State::INVALID;

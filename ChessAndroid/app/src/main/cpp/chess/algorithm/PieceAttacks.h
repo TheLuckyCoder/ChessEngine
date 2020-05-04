@@ -2,15 +2,10 @@
 
 #include "../data/Bits.h"
 
-using byte = unsigned char;
-
 class PieceAttacks
 {
-	const static std::array<std::array<U64, 64>, 2> _pawnAttacks;
-	const static std::array<U64, 64> _knightAttacks;
 	static std::array<std::array<U64, 1024>, 64> _bishopAttacks;
 	static std::array<std::array<U64, 4096>, 64> _rookAttacks;
-	const static std::array<U64, 64> _kingAttacks;
 
 public:
 	PieceAttacks() = delete;
@@ -22,15 +17,14 @@ public:
 	PieceAttacks &operator=(PieceAttacks&&) = delete;
 
 	static void init() noexcept;
-	static U64 getPawnAttacks(bool isWhite, byte square) noexcept;
-	static U64 getKnightAttacks(byte square) noexcept;
-	static U64 getBishopAttacks(byte square, U64 blockers) noexcept;
-	static U64 getRookAttacks(byte square, U64 blockers) noexcept;
-	static U64 getQueenAttacks(byte square, U64 blockers) noexcept;
-	static U64 getKingAttacks(byte square) noexcept;
+	static U64 knightAttacks(byte square) noexcept;
+	static U64 bishopAttacks(byte square, U64 blockers) noexcept;
+	static U64 rookAttacks(byte square, U64 blockers) noexcept;
+	static U64 queenAttacks(byte square, U64 blockers) noexcept;
+	static U64 kingAttacks(byte square) noexcept;
 
 	template <Color C>
-	static U64 getPawnAttacks(const U64 pawns) noexcept
+	static U64 pawnAttacks(const U64 pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
 		
@@ -41,7 +35,7 @@ public:
 	}
 
 	template <Color C>
-	static U64 getDoublePawnAttacks(const U64 pawns) noexcept
+	static U64 pawnDoubleAttacks(const U64 pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
 		

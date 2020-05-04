@@ -19,8 +19,9 @@ public:
 		: _move(((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
 	{
 	}
-	
-	constexpr Move(const byte from, const byte to, const PieceType piece, const unsigned int flags) noexcept
+
+	constexpr Move(const byte from, const byte to, const PieceType piece,
+				   const unsigned int flags) noexcept
 		: _move(((flags & 0x7F) << 22u) | ((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
 	{
 	}
@@ -49,7 +50,7 @@ public:
 	{
 		return static_cast<PieceType>(_move & 7u);
 	}
-	
+
 	constexpr PieceType capturedPiece() const noexcept
 	{
 		return static_cast<PieceType>((_move >> 3u) & 7u);
@@ -92,7 +93,7 @@ public:
 		constexpr unsigned int mask = 0x7F << 22u;
 		_move = (_move & ~mask) | ((flags << 22u) & mask);
 	}
-	
+
 	constexpr bool operator==(const Move &other) const noexcept
 	{
 		return _move == other._move;
@@ -110,12 +111,11 @@ public:
 
 	enum Flag
 	{
-		NONE = 1 << 0,
-	    CAPTURE = 1 << 1, // The move is a capture
-	    PROMOTION = 1 << 2, // The move is a promotion
-	    KSIDE_CASTLE = 1 << 3, // The move is a king side castle
-	    QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
-	    DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
+		CAPTURE = 1 << 1, // The move is a capture
+		PROMOTION = 1 << 2, // The move is a promotion
+		KSIDE_CASTLE = 1 << 3, // The move is a king side castle
+		QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
+		DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
 	    EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag additionally)
 	};
 
@@ -123,8 +123,8 @@ public:
 	{
 		std::string str;
 
-		const Pos fromPos { from() };
-		const Pos toPos { to() };
+		const Pos fromPos{ from() };
+		const Pos toPos{ to() };
 
 		{
 			const PieceType p = piece();
@@ -159,7 +159,7 @@ public:
 				p = 'B';
 			else if (promoted == KNIGHT)
 				p = 'N';
-			
+
 			str += p;
 		}
 

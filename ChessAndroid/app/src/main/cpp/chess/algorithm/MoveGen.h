@@ -10,26 +10,32 @@ Move *generateMoves(const Board &board, Move *moveList) noexcept;
 class MoveList
 {
 public:
-	explicit MoveList(Board& board)
+	explicit MoveList(Board &board)
 		: _board(board), _end(generateMoves(board, _moveList))
 	{
 	}
 
-	constexpr const Move &front() const noexcept { return *_moveList; }
-	constexpr Move &front() noexcept { return *_moveList; }
-	
-	constexpr const Move *begin() const noexcept { return _moveList; }
 	constexpr Move *begin() noexcept { return _moveList; }
+	constexpr const Move *begin() const noexcept { return _moveList; }
 
-	constexpr const Move *end() const noexcept { return _end; }
 	constexpr Move *end() noexcept { return _end; }
-	
+	constexpr const Move *end() const noexcept { return _end; }
+
+	constexpr Move &front() noexcept { return *begin(); }
+	constexpr const Move &front() const noexcept { return *begin(); }
+
+	constexpr Move &back() noexcept { return *(end() - 1); }
+	constexpr const Move &back() const noexcept { return *(end() - 1); }
+
+	constexpr void pop_back() noexcept { --_end; }
+
 	constexpr size_t size() const noexcept { return _end - _moveList; }
+
 	constexpr bool empty() const noexcept { return (_end - _moveList) == 0u; }
 
 	void keepLegalMoves() noexcept
 	{
-		_end = std::remove_if(_moveList, _end, [&] (const Move &move) -> bool
+		_end = std::remove_if(_moveList, _end, [&](const Move &move) -> bool
 		{
 			if (_board.makeMove(move))
 			{
@@ -62,6 +68,6 @@ inline bool moveExists(Board &board, const Move &move) noexcept
 			return false;
 		}
 	}
-	
+
 	return false;
 }

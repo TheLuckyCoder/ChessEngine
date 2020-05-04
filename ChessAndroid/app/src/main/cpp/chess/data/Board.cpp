@@ -19,22 +19,7 @@ void Board::setToFen(const std::string &fen)
 
 bool Board::canCastle(const Color color) const noexcept
 {
-	return castlingRights & (color == BLACK ? CASTLE_BLACK_BOTH : CASTLE_WHITE_BOTH);
-}
-
-bool Board::canCastleKs(const Color color) const noexcept
-{
-	return castlingRights & (color == BLACK ? CASTLE_BLACK_KING : CASTLE_WHITE_KING);
-}
-
-bool Board::canCastleQs(const Color color) const noexcept
-{
-	return castlingRights & (color == BLACK ? CASTLE_BLACK_QUEEN : CASTLE_WHITE_QUEEN);
-}
-
-bool Board::isCastled(const Color color) const noexcept
-{
-	return castlingRights & (color == BLACK ? CASTLED_BLACK : CASTLED_WHITE);
+	return color == BLACK ? canCastle<BLACK>() : canCastle<WHITE>();
 }
 
 Piece &Board::getPiece(const byte squareIndex) noexcept
@@ -113,18 +98,21 @@ bool Board::makeMove(const Move move) noexcept
 	// Handle en passant capture and castling
 	if (flags & Move::EN_PASSANT)
 	{
-		Pos capturedPos(to);
+		Pos capturedPos{ to };
 		capturedPos.y += static_cast<byte>(side ? -1 : 1);
 		removePiece(capturedPos.toSquare());
 	} else if (flags & Move::KSIDE_CASTLE)
 	{
 		switch (to)
 		{
-		case SQ_G1: movePiece(SQ_H1, SQ_F1);
-			break;
-		case SQ_G8: movePiece(SQ_H8, SQ_F8);
-			break;
-		default: assert(false);
+			case SQ_G1:
+				movePiece(SQ_H1, SQ_F1);
+				break;
+			case SQ_G8:
+				movePiece(SQ_H8, SQ_F8);
+				break;
+			default:
+				assert(false);
 		}
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
@@ -132,11 +120,14 @@ bool Board::makeMove(const Move move) noexcept
 	{
 		switch (to)
 		{
-		case SQ_C1: movePiece(SQ_A1, SQ_D1);
-			break;
-		case SQ_C8: movePiece(SQ_A8, SQ_D8);
-			break;
-		default: assert(false);
+			case SQ_C1:
+				movePiece(SQ_A1, SQ_D1);
+				break;
+			case SQ_C8:
+				movePiece(SQ_A8, SQ_D8);
+				break;
+			default:
+				assert(false);
 		}
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
@@ -146,9 +137,10 @@ bool Board::makeMove(const Move move) noexcept
 	Hash::xorCastlingRights(zKey, CastlingRights(castlingRights));
 
 	// Store the position info in history
-	history[historyPly] = { posKey, move, castlingRights, enPassantSq, fiftyMoveRule };
+	history[historyPly] = { posKey, move.getContents(), castlingRights, enPassantSq,
+							fiftyMoveRule };
 
-	if (movedPiece == KING && canCastle(side)) // Remove all castling rights if the king is moved
+	if (movedPiece == KING) // Remove all castling rights if the king is moved
 		castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	else if (movedPiece == ROOK && canCastle(side))
 	{
@@ -229,7 +221,7 @@ void Board::undoMove() noexcept
 	--ply;
 
 	const UndoMove &previousMove = history[historyPly];
-	const Move move = previousMove.move;
+	const Move move = previousMove.getMove();
 	const byte from = move.from();
 	const byte to = move.to();
 	const auto flags = move.flags();
@@ -245,28 +237,34 @@ void Board::undoMove() noexcept
 
 	if (flags & Move::EN_PASSANT)
 	{
-		Pos capturedPos(to);
+		Pos capturedPos{ to };
 		capturedPos.y += static_cast<byte>(colorToMove ? -1 : 1);
 		addPiece(capturedPos.toSquare(), Piece(PAWN, ~colorToMove));
 	} else if (flags & Move::KSIDE_CASTLE)
 	{
 		switch (to)
 		{
-		case SQ_G1: movePiece(SQ_F1, SQ_H1);
-			break;
-		case SQ_G8: movePiece(SQ_F8, SQ_H8);
-			break;
-		default: assert(false);
+			case SQ_G1:
+				movePiece(SQ_F1, SQ_H1);
+				break;
+			case SQ_G8:
+				movePiece(SQ_F8, SQ_H8);
+				break;
+			default:
+				assert(false);
 		}
 	} else if (flags & Move::QSIDE_CASTLE)
 	{
 		switch (to)
 		{
-		case SQ_C1: movePiece(SQ_D1, SQ_A1);
-			break;
-		case SQ_C8: movePiece(SQ_D8, SQ_A8);
-			break;
-		default: assert(false);
+			case SQ_C1:
+				movePiece(SQ_D1, SQ_A1);
+				break;
+			case SQ_C8:
+				movePiece(SQ_D8, SQ_A8);
+				break;
+			default:
+				assert(false);
 		}
 	}
 
@@ -288,10 +286,10 @@ void Board::undoMove() noexcept
 
 void Board::makeNullMove() noexcept
 {
-	assert(!isInCheck(colorToMove));
+	assert(!isSideInCheck());
 
 	++ply;
-	history[historyPly++] = { zKey, Move(), castlingRights, enPassantSq, fiftyMoveRule };
+	history[historyPly++] = { zKey, {}, castlingRights, enPassantSq, fiftyMoveRule };
 
 	Hash::xorEnPassant(zKey, enPassantSq);
 	enPassantSq = SQ_NONE;
@@ -317,28 +315,39 @@ void Board::undoNullMove() noexcept
 bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare) const noexcept
 {
 	return isAttacked<PAWN>(colorAttacking, targetSquare)
-		|| isAttacked<KNIGHT>(colorAttacking, targetSquare)
-		|| isAttacked<KING>(colorAttacking, targetSquare)
-		|| isAttacked<BISHOP>(colorAttacking, targetSquare)
-		|| isAttacked<ROOK>(colorAttacking, targetSquare)
-		|| isAttacked<QUEEN>(colorAttacking, targetSquare);
+		   || isAttacked<KNIGHT>(colorAttacking, targetSquare)
+		   || isAttacked<KING>(colorAttacking, targetSquare)
+		   || isAttacked<BISHOP>(colorAttacking, targetSquare)
+		   || isAttacked<ROOK>(colorAttacking, targetSquare)
+		   || isAttacked<QUEEN>(colorAttacking, targetSquare);
+}
+
+bool Board::isSideInCheck() const noexcept
+{
+	return isInCheck(colorToMove);
 }
 
 bool Board::isInCheck(const Color color) const noexcept
 {
-	const byte kingSq = getKingSq(color);
+	return color ? isInCheck<WHITE>() : isInCheck<BLACK>();
+}
+
+template <Color C>
+bool Board::isInCheck() const noexcept
+{
+	constexpr Color ColorAttacking = ~C;
+	const byte kingSq = getKingSq(C);
 	assert(kingSq < SQUARE_NB);
 
-	const Color colorAttacking = ~color;
-	const U64 queens = getType(QUEEN, colorAttacking);
-	const U64 bishops = getType(BISHOP, colorAttacking) | queens;
-	const U64 rooks = getType(ROOK, colorAttacking) | queens;
+	const U64 queens = getType(QUEEN, ColorAttacking);
+	const U64 bishops = getType(BISHOP, ColorAttacking) | queens;
+	const U64 rooks = getType(ROOK, ColorAttacking) | queens;
 
-	return (getType(PAWN, colorAttacking) & PieceAttacks::getPawnAttacks(~colorAttacking, kingSq))
-		|| (getType(KNIGHT, colorAttacking) & PieceAttacks::getKnightAttacks(kingSq))
-		|| (getType(KING, colorAttacking) & PieceAttacks::getKingAttacks(kingSq))
-		|| (bishops & PieceAttacks::getBishopAttacks(kingSq, occupied))
-		|| (rooks & PieceAttacks::getRookAttacks(kingSq, occupied));
+	return (getType(PAWN, ColorAttacking) & PieceAttacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
+		   || (getType(KNIGHT, ColorAttacking) & PieceAttacks::knightAttacks(kingSq))
+		   || (getType(KING, ColorAttacking) & PieceAttacks::kingAttacks(kingSq))
+		   || (bishops & PieceAttacks::bishopAttacks(kingSq, occupied))
+		   || (rooks & PieceAttacks::rookAttacks(kingSq, occupied));
 }
 
 void Board::addPiece(const byte square, const Piece piece) noexcept
@@ -397,10 +406,12 @@ void Board::removePiece(const byte square) noexcept
 	if (piece.type() != PAWN)
 		npm -= Evaluation::getPieceValue(piece.type());
 
+	auto &piecesSquares = pieceList[piece];
+
 	byte pieceIndex = -1;
 	for (byte i = 0; i < pieceCount[piece]; ++i)
 	{
-		if (pieceList[piece][i] == square)
+		if (piecesSquares[i] == square)
 		{
 			pieceIndex = i;
 			break;
@@ -409,9 +420,8 @@ void Board::removePiece(const byte square) noexcept
 
 	assert(pieceIndex < SQUARE_NB);
 
-	pieceCount[piece]--;
 	// Move the last square in this unused index
-	pieceList[piece][pieceIndex] = pieceList[piece][pieceCount[piece]];
+	piecesSquares[pieceIndex] = piecesSquares[--pieceCount[piece]];
 }
 
 void Board::updatePieceList() noexcept
@@ -426,18 +436,18 @@ void Board::updatePieceList() noexcept
 void Board::updateNonPieceBitboards() noexcept
 {
 	allPieces[BLACK] = getType(PAWN, BLACK)
-		| getType(KNIGHT, BLACK)
-		| getType(BISHOP, BLACK)
-		| getType(ROOK, BLACK)
-		| getType(QUEEN, BLACK)
-		| getType(KING, BLACK);
+					   | getType(KNIGHT, BLACK)
+					   | getType(BISHOP, BLACK)
+					   | getType(ROOK, BLACK)
+					   | getType(QUEEN, BLACK)
+					   | getType(KING, BLACK);
 
 	allPieces[WHITE] = getType(PAWN, WHITE)
-		| getType(KNIGHT, WHITE)
-		| getType(BISHOP, WHITE)
-		| getType(ROOK, WHITE)
-		| getType(QUEEN, WHITE)
-		| getType(KING, WHITE);
+					   | getType(KNIGHT, WHITE)
+					   | getType(BISHOP, WHITE)
+					   | getType(ROOK, WHITE)
+					   | getType(QUEEN, WHITE)
+					   | getType(KING, WHITE);
 
 	occupied = allPieces[BLACK] | allPieces[WHITE];
 }
