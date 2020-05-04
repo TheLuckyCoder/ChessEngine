@@ -293,7 +293,7 @@ static size_t perft(Board &board, const unsigned depth)
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject, jint depth)
+Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject)
 {
 	using namespace std::chrono;
 
@@ -301,14 +301,10 @@ Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject, jint depth)
 	board.setToFen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
 
 	constexpr auto TAG = "Perft Test: ";
-	constexpr std::array<size_t, 8> perftResults{
+	constexpr std::array<size_t, 8> perftResults
+	{
 		1, 14, 191, 2812, 43238, 674624, 11030083, 178633661
 	};
-
-	constexpr int maxSize = static_cast<int>(perftResults.size());
-
-	if (depth > maxSize)
-		depth = maxSize; // Otherwise it will take too long to compute
 
 	for (size_t i = 0; i < perftResults.size(); ++i)
 	{

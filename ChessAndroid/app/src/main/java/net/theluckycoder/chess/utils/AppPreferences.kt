@@ -23,6 +23,7 @@ class AppPreferences(private val context: Context) {
         const val KEY_THREAD_COUNT = "key_thread_count"
         const val KEY_CACHE_SIZE = "key_cache_size"
         const val KEY_QUIET_SEARCH = "key_quiet_search"
+        const val KEY_DIFFICULTY_LEVEL = "key_debug_basic"
         const val KEY_DEBUG_INFO_BASIC = "key_debug_basic"
         const val KEY_DEBUG_INFO_ADVANCED = "key_debug_advanced"
         const val KEY_PERFT_TEST = "key_perft_test"
@@ -31,37 +32,37 @@ class AppPreferences(private val context: Context) {
     private val manager
         get(): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
-    var firstStart
+    var firstStart: Boolean
         get() = manager.getBoolean(KEY_FIRST_START, true)
         set(value) = manager.edit().putBoolean(KEY_FIRST_START, value).apply()
 
-    var whiteTileColor
+    var whiteTileColor: Int
         get() = manager.getInt(KEY_TILE_WHITE, getColor(context, R.color.tile_white))
         set(value) = manager.edit().putInt(KEY_TILE_WHITE, value).apply()
 
-    var blackTileColor
+    var blackTileColor: Int
         get() = manager.getInt(KEY_TILE_BLACK, getColor(context, R.color.tile_black))
         set(value) = manager.edit().putInt(KEY_TILE_BLACK, value).apply()
 
-    var possibleTileColor
+    var possibleTileColor: Int
         get() = manager.getInt(KEY_TILE_POSSIBLE, getColor(context, R.color.tile_possible))
         set(value) = manager.edit().putInt(KEY_TILE_POSSIBLE, value).apply()
 
-    var selectedTileColor
+    var selectedTileColor: Int
         get() = manager.getInt(KEY_TILE_SELECTED, getColor(context, R.color.tile_selected))
         set(value) = manager.edit().putInt(KEY_TILE_SELECTED, value).apply()
 
-    var lastMovedTileColor
+    var lastMovedTileColor: Int
         get() = manager.getInt(KEY_TILE_LAST_MOVED, getColor(context, R.color.tile_last_moved))
         set(value) = manager.edit().putInt(KEY_TILE_LAST_MOVED, value).apply()
 
-    var kingInChessColor
+    var kingInChessColor: Int
         get() = manager.getInt(KEY_KING_IN_CHECK, getColor(context, R.color.king_in_check))
         set(value) = manager.edit().putInt(KEY_KING_IN_CHECK, value).apply()
 
-    var settings
-        get() = Settings(
-            baseSearchDepth = manager.getInt(KEY_SEARCH_DEPTH, 4),
+    var settings: Settings
+        get() = Settings.create(
+            searchDepth = manager.getInt(KEY_SEARCH_DEPTH, 4),
             threadCount = manager.getInt(
                 KEY_THREAD_COUNT,
                 Runtime.getRuntime().availableProcessors() - 1
@@ -70,20 +71,24 @@ class AppPreferences(private val context: Context) {
                 KEY_CACHE_SIZE,
                 null
             )?.toIntOrNull() ?: 100,
-            performQuiescenceSearch = manager.getBoolean(KEY_QUIET_SEARCH, true)
+            doQuietSearch = manager.getBoolean(KEY_QUIET_SEARCH, true)
         )
         set(value) {
             manager.edit()
-                .putInt(KEY_SEARCH_DEPTH, value.baseSearchDepth)
+                .putInt(KEY_SEARCH_DEPTH, value.searchDepth)
                 .putInt(KEY_THREAD_COUNT, value.threadCount)
                 .putString(KEY_CACHE_SIZE, value.cacheSize.toString())
-                .putBoolean(KEY_QUIET_SEARCH, value.performQuiescenceSearch)
+                .putBoolean(KEY_QUIET_SEARCH, value.doQuietSearch)
                 .apply()
         }
 
-    val basicDebugInfo
+    var difficultyLevel: Int
+        get() = manager.getInt(KEY_DIFFICULTY_LEVEL, 0)
+        set(value) = manager.edit().putInt(KEY_DIFFICULTY_LEVEL, value).apply()
+
+    val basicDebugInfo: Boolean
         get() = manager.getBoolean(KEY_DEBUG_INFO_BASIC, false)
 
-    val advancedDebugInfo
+    val advancedDebugInfo: Boolean
         get() = manager.getBoolean(KEY_DEBUG_INFO_ADVANCED, false)
 }

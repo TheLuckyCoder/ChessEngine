@@ -38,5 +38,5 @@ object Native {
 
     external fun saveMoves(): String?
 
-    external fun perft(depth: Int)
+    external fun perft()
 }

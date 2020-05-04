@@ -54,7 +54,7 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<Preference>(AppPreferences.KEY_PERFT_TEST)?.setOnPreferenceClickListener {
                 thread {
-                    Native.perft(6)
+                    Native.perft()
                 }
                 true
             }

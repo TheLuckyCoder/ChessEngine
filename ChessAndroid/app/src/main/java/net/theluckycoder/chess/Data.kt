@@ -54,22 +54,33 @@ data class PosPair(
     val destY: Int
 )
 
-class Settings(
-    baseSearchDepth: Int,
-    threadCount: Int,
+data class Settings(
+    val searchDepth: Int,
+    val threadCount: Int,
     val cacheSize: Int,
-    val performQuiescenceSearch: Boolean
+    val doQuietSearch: Boolean
 ) {
 
-    val baseSearchDepth = if (baseSearchDepth < 0) 1 else baseSearchDepth
-    val threadCount: Int
+    companion object {
+        private val MAX_THREAD_COUNT = Runtime.getRuntime().availableProcessors()
 
-    init {
-        val maxThreadCount = Runtime.getRuntime().availableProcessors()
-        this.threadCount = when {
-            threadCount > maxThreadCount -> maxThreadCount
-            threadCount < 1 -> maxThreadCount - 1
-            else -> threadCount
+        fun create(
+            searchDepth: Int,
+            threadCount: Int,
+            cacheSize: Int,
+            doQuietSearch: Boolean
+        ): Settings {
+            val threads = when {
+                threadCount > MAX_THREAD_COUNT -> MAX_THREAD_COUNT
+                threadCount < 1 -> MAX_THREAD_COUNT - 1
+                else -> threadCount
+            }
+            return Settings(
+                if (searchDepth < 0) 1 else searchDepth,
+                threads,
+                cacheSize,
+                doQuietSearch
+            )
         }
     }
 }

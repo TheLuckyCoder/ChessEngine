@@ -82,7 +82,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                         else -> Random.nextBoolean()
                     }
 
-                    preferences.settings = difficultyLevels[difficultySpinner.selectedItemPosition]
+
+                    val level = difficultySpinner.selectedItemPosition
+                    preferences.difficultyLevel = level
+                    preferences.settings =
+                        getDifficulty(level, preferences.settings)
 
                     restartGame(playerWhite)
                 }
@@ -94,7 +98,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             preferences.firstStart = false
             // Set Default Settings
             preferences.settings =
-                Settings(4, Runtime.getRuntime().availableProcessors() - 1, 100, true)
+                Settings.create(4, Runtime.getRuntime().availableProcessors() - 1, 100, true)
         }
 
         gameManager.initBoard(false)
@@ -362,17 +366,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
 
     companion object {
-        private fun makeDifficulty(depth: Int, qSearch: Boolean) = Settings(depth, 1, 100, qSearch)
+        fun getDifficulty(level: Int, currentSettings: Settings): Settings {
+            require(level >= 0)
 
-        val difficultyLevels = listOf(
-            makeDifficulty(2, false),
-            makeDifficulty(2, true),
-            makeDifficulty(4, true),
-            makeDifficulty(6, true),
-            makeDifficulty(7, true),
-            makeDifficulty(8, true),
-            makeDifficulty(9, true),
-            makeDifficulty(10, true)
-        )
+            return currentSettings.copy(
+                searchDepth = if (level == 0) level + 2 else level + 3,
+                doQuietSearch = level != 0
+            )
+        }
     }
 }

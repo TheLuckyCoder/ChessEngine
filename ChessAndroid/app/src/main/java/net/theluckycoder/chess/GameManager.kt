@@ -61,10 +61,10 @@ class GameManager(
 
     fun updateSettings(settings: Settings) {
         Native.setSettings(
-            settings.baseSearchDepth,
+            settings.searchDepth,
             settings.threadCount,
             settings.cacheSize,
-            settings.performQuiescenceSearch
+            settings.doQuietSearch
         )
     }
 
