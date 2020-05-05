@@ -30,7 +30,7 @@ namespace
 	{
 		{ }, { 6, 32 }, { 59, 41 }, { 79, 56 }, { 90, 119 }, { 79, 161 }, { }
 	};
-	//constexpr Score KING_PROTECTOR{ 7, 8 };
+	constexpr Score KING_PROTECTOR{ 4, 5 };
 	constexpr Score HANGING{ 69, 36 };
 	constexpr Score RESTRICTED_PIECE_MOVEMENT{ 7,  7 };
 	constexpr Score WEAK_QUEEN_PROTECTION{ 14,  0 };
@@ -107,7 +107,7 @@ Evaluation::Result Evaluation::evaluate(const Board &board) noexcept
 	Result result{ board };
 	Evaluation evaluator(board);
 
-	Stats::incrementBoardsEvaluated();
+	Stats::incBoardsEvaluated();
 
 	const Score piecesScore = evaluator.evaluatePieces<WHITE>() - evaluator.evaluatePieces<BLACK>();
 	const Score attacksScore =
@@ -200,7 +200,7 @@ Score Evaluation::evaluatePieces() noexcept
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
-		//score -= KING_PROTECTOR * getDistance(square, board.getKingSq(Us));
+		score -= KING_PROTECTOR * getDistance(square, board.getKingSq(Us));
 
 		if (getSquare64(square) & shift<Behind>(board.getType(PAWN, Us)))
 			score += MINOR_PAWN_SHIELD;
@@ -297,7 +297,7 @@ Score Evaluation::evaluateAttacks() const noexcept
 	// Bonus for threats on the next moves against enemy queen
 	if (board.pieceCount[Piece{ QUEEN, Them }])
 	{
-		byte sq = board.pieceList[Piece{ QUEEN, Them }][0];
+		const byte sq = board.pieceList[Piece{ QUEEN, Them }][0];
 		const U64 safeSpots = _mobilityArea[Us] & ~stronglyProtected;
 
 		const U64 knightAttacks = _attacks[Us][KNIGHT] & PieceAttacks::knightAttacks(sq);

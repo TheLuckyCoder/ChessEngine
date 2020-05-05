@@ -1,7 +1,11 @@
 #include "TranspositionTable.h"
 
+#include <iostream>
+
 TranspositionTable::TranspositionTable(const std::size_t sizeMb) noexcept
-	: _size((sizeMb << 20u) / sizeof(SearchEntry)) {}
+{
+	setSize(sizeMb);
+}
 
 TranspositionTable::~TranspositionTable() noexcept
 {
@@ -28,7 +32,7 @@ void TranspositionTable::insert(const SearchEntry &value) const noexcept
 	}
 }
 
-bool TranspositionTable::setSize(const std::size_t sizeMb) noexcept(false)
+bool TranspositionTable::setSize(std::size_t sizeMb) noexcept(false)
 {
 	const auto newSize = (sizeMb << 20u) / sizeof(SearchEntry);
 
@@ -36,8 +40,27 @@ bool TranspositionTable::setSize(const std::size_t sizeMb) noexcept(false)
 
 	_size = newSize;
 	delete[] _entries;
-	_entries = new SearchEntry[_size]();
 	_currentAge = 0u;
+
+	while (!_entries && sizeMb)
+	{
+		try
+		{
+			// Allocating memory this way is a lot faster than calling the constructor for each object
+			_entries = static_cast<SearchEntry *>(operator new[](sizeof(SearchEntry) * _size));
+			if (!_entries)
+				throw;
+		} catch (...)
+		{
+			_entries = nullptr;
+			std::cerr << "Failed to allocate " << sizeMb << "MB for the Transposition Table"
+					  << std::endl;
+			sizeMb /= 2;
+			_size = (sizeMb << 20u) / sizeof(SearchEntry);
+		}
+	}
+
+	std::memset(_entries, 0, _size);
 
 	return true;
 }

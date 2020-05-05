@@ -10,7 +10,7 @@
 #include "algorithm/Search.h"
 #include "algorithm/PieceAttacks.h"
 
-Settings BoardManager::_settings(4u, std::thread::hardware_concurrency() - 1u, 100, true);
+Settings BoardManager::_settings(6u, std::thread::hardware_concurrency() - 1u, 128, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
 Board BoardManager::_board;
 

@@ -34,7 +34,8 @@ public:
 private:
 	static Move iterativeDeepening(Board &board, int depth);
 	static int search(Board &board, int alpha, int beta, int depth, bool doNull, bool doLateMovePruning);
-	static int searchCaptures(Board &board, int alpha, int beta, int depth, int horizonPly);
+	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
+	static int futilityPruningBonus(int depth);
 	inline static void storeTtAlphaExact(Move bestMove, U64 key, int alpha, int originalAlpha, int depth, bool qSearch);
 };

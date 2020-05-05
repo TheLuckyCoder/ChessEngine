@@ -72,6 +72,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             val sideSpinner: Spinner = view.findViewById(R.id.sp_side)
             val difficultySpinner: Spinner = view.findViewById(R.id.sp_difficulty)
 
+            difficultySpinner.setSelection(preferences.difficultyLevel)
+
             AlertDialog.Builder(this)
                 .setTitle(R.string.new_game)
                 .setView(view)
@@ -81,7 +83,6 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                         1 -> false
                         else -> Random.nextBoolean()
                     }
-
 
                     val level = difficultySpinner.selectedItemPosition
                     preferences.difficultyLevel = level

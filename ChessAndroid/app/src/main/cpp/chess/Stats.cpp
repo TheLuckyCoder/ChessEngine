@@ -6,6 +6,9 @@ std::chrono::time_point<std::chrono::steady_clock> Stats::_startTime;
 std::atomic_size_t Stats::_boardsEvaluated;
 std::atomic_size_t Stats::_nodesSearched;
 std::atomic_size_t Stats::_nodesGenerated;
+std::atomic_size_t Stats::_betaCuts;
+std::atomic_size_t Stats::_nullCuts;
+std::atomic_size_t Stats::_futilityCuts;
 
 void Stats::setEnabled(const bool enabled) noexcept
 {
@@ -17,6 +20,9 @@ void Stats::resetStats() noexcept
 	_boardsEvaluated = 0;
 	_nodesSearched = 0;
 	_nodesGenerated = 0;
+	_betaCuts = 0;
+	_nullCuts = 0;
+	_futilityCuts = 0;
 }
 
 size_t Stats::getBoardsEvaluated() noexcept
@@ -34,22 +40,40 @@ size_t Stats::getNodesGenerated() noexcept
 	return _nodesGenerated;
 }
 
-void Stats::incrementBoardsEvaluated() noexcept
+void Stats::incBoardsEvaluated() noexcept
 {
 	if (_statsEnabled)
 		++_boardsEvaluated;
 }
 
-void Stats::incrementNodesSearched(const std::size_t amount) noexcept
+void Stats::incNodesSearched(const std::size_t amount) noexcept
 {
 	if (_statsEnabled)
 		_nodesSearched += amount;
 }
 
-void Stats::incrementNodesGenerated(const std::size_t amount) noexcept
+void Stats::incNodesGenerated(const std::size_t amount) noexcept
 {
 	if (_statsEnabled)
 		_nodesGenerated += amount;
+}
+
+void Stats::incBetaCuts() noexcept
+{
+	if (_statsEnabled)
+		++_betaCuts;
+}
+
+void Stats::incNullCuts() noexcept
+{
+	if (_statsEnabled)
+		++_nullCuts;
+}
+
+void Stats::incFutilityCuts() noexcept
+{
+	if (_statsEnabled)
+		++_futilityCuts;
 }
 
 void Stats::startTimer() noexcept
@@ -64,7 +88,7 @@ void Stats::stopTimer() noexcept
 	_elapsedTime = std::chrono::duration<double, std::milli>(currentTime - _startTime).count();
 }
 
-double Stats::getElapsedTime() noexcept
+double Stats::getElapsedMs() noexcept
 {
 	return _elapsedTime;
 }
@@ -73,9 +97,27 @@ std::string Stats::formatStats(const char separator) noexcept(false)
 {
 	std::stringstream stream;
 
-	stream << "Boards Evaluated: " << static_cast<size_t>(_boardsEvaluated) << separator
-		   << "Nodes Searched: " << static_cast<size_t>(_nodesSearched) << separator
-		   << "Nodes Generated: " << static_cast<size_t>(_nodesGenerated) << separator;
+	const double timeMs = getElapsedMs();
+
+	stream << "Elapsed Time: " << timeMs << "ms" << separator;
+
+	if (_statsEnabled)
+	{
+		const auto boardsEvaluated = static_cast<size_t>(_boardsEvaluated);
+		const auto nodesSearched = static_cast<size_t>(_nodesSearched);
+		const auto nodesGenerated = static_cast<size_t>(_nodesGenerated);
+		const auto betaCuts = static_cast<size_t>(_betaCuts);
+		const auto nullCuts = static_cast<size_t>(_nullCuts);
+		const auto futilityCuts = static_cast<size_t>(_futilityCuts);
+		const size_t nps = timeMs ? (nodesSearched / (timeMs / 1000.0)) : 0;
+
+		stream << "Boards Evaluated: " << boardsEvaluated << separator
+			   << "Nodes Searched: " << nodesSearched << separator
+			   << "Nodes Generated: " << nodesGenerated << separator
+			   << "Nps: " << nps << separator
+			   << "Beta/Null/Futility: " << betaCuts << '/' << nullCuts << '/' << futilityCuts
+			   << separator;
+	}
 
 	return stream.str();
 }

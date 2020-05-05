@@ -44,8 +44,8 @@ public:
 	void clear() noexcept;
 
 private:
-    std::size_t _size;
+    std::size_t _size{};
     byte _currentAge{};
-	SearchEntry *_entries = new SearchEntry[_size]();
+	SearchEntry *_entries = nullptr;
 	mutable std::shared_mutex _mutexes[MUTEX_COUNT];
 };

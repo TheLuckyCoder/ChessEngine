@@ -140,15 +140,18 @@ bool Board::makeMove(const Move move) noexcept
 	history[historyPly] = { posKey, move.getContents(), castlingRights, enPassantSq,
 							fiftyMoveRule };
 
-	if (movedPiece == KING) // Remove all castling rights if the king is moved
-		castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
-	else if (movedPiece == ROOK && canCastle(side))
+	if (canCastle(side))
 	{
-		const U64 rookFile = Bits::getFile(from);
-		if (rookFile == FILE_A)
-			castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
-		else if (rookFile == FILE_H)
-			castlingRights &= ~(side ? CASTLE_WHITE_KING : CASTLE_BLACK_KING);
+		if (movedPiece == ROOK)
+		{
+			const U64 rookFile = Bits::getFile(from);
+			if (rookFile == FILE_A)
+				castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
+			else if (rookFile == FILE_H)
+				castlingRights &= ~(side ? CASTLE_WHITE_KING : CASTLE_BLACK_KING);
+		} else if (movedPiece == KING)
+			// Remove all castling rights if the king is moved
+			castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	}
 
 	enPassantSq = SQ_NONE;
