@@ -439,9 +439,9 @@ Score Evaluation::evaluateQueen(const byte square) const noexcept
 		PieceAttacks::queenAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += QUEEN_MOBILITY[mobility];
 
-	if (const U64 initialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
-		(initialPosition & shiftedBoards[square]) == 0)
-		value.mg -= 20;
+	constexpr U64 InitialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
+	if ((InitialPosition & shiftedBoards[square]) == 0)
+		value.mg -= 18;
 
 	return value;
 }

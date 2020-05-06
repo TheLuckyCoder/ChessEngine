@@ -56,7 +56,7 @@
 
         <SeekBarPreference
             android:key="key_search_depth"
-            android:max="10"
+            android:max="11"
             android:summary="Base Search Depth of the Algorithm. The value may be tweaked by the engine"
             android:title="Search Depth"
             app:defaultValue="4"
@@ -102,8 +102,8 @@
 
         <SwitchPreferenceCompat
             android:defaultValue="false"
-            android:dependency="key_show_debug_advanced"
-            android:key="key_debug_advanced"
+            android:dependency="key_show_debug_basic"
+            android:key="key_show_debug_advanced"
             android:summary="Displays the number of Evaluated Boards and Searched Nodes"
             android:title="Enable Advanced Debug Info"
             app:icon="@drawable/ic_pref_stats" />
