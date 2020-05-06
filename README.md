@@ -2,8 +2,37 @@
 
 This project uses the evaluation function values (in the file Evaluation.cpp) from the Stockfish Chess Engine, licensed under GNU GPL 3.0.
 
+## Features
+- Search:
+  - AlphaBeta Pruning
+  - Iterative Deepening
+  - Futility Pruning
+  - Null Move Pruning
+  - Late Move Reductions
+  - Quiescence Search
+    - Delta Pruning
+- Move Ordering:
+  - Hash Move
+  - MVV/LVA
+  - Killer heuristic
+  - History heuristic
+- Evaluation:
+  - Evaluation Tapering
+  - Piece Square Tables
+  - Threats/Attacks
+  - Pawn Structure (Connected/Isolated/Double/Passed)
+  - Piece Mobility
+  - Long Diagonal Bishop
+  - Bishop Pairs
+  - Rooks on Open Files
+  - Rooks on Queen Files
+  - Pawn Shield
+- Other:
+  - Zobrist Hashing
+  - Transposition Table
+  - Pawn Structure Table
 ## License
-Copyright (C) 2019 TheLuckyCoder
+Copyright (C) 2020 TheLuckyCoder
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
