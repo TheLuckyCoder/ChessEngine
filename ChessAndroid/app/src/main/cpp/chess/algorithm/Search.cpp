@@ -73,23 +73,10 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	};
 
 	Move bestMove;
-	int alpha = Value::VALUE_MIN;
-	int beta = Value::VALUE_MAX;
-	//bool fullWindow = true;
 
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
-		int bestScore = search(board, alpha, beta, currentDepth, true, true);
-		/*if (!fullWindow && (bestScore <= alpha || bestScore >= beta)) // Eval outside window
-		{
-			// We need to do a full search
-			alpha = Value::VALUE_MIN;
-			beta = Value::VALUE_MAX;
-			fullWindow = true;
-			--currentDepth;
-			continue;
-		}*/
-
+		const int bestScore = search(board, Value::VALUE_MIN, Value::VALUE_MAX, currentDepth, true, true);
 		const int pvMoves = getPvLine(currentDepth);
 		bestMove = pvArray[0];
 
@@ -98,10 +85,6 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 			std::cout << pvArray[pvNum].toString() << ", ";
 
 		std::cout << '\n';
-
-		/*alpha = bestScore - 200;
-		beta = bestScore + 200;
-		fullWindow = false;*/
 	}
 
 	return bestMove;
@@ -173,16 +156,17 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	const bool isInCheck = evalResult.isInCheck;
 	const int evalScore = evalResult.getInvertedValue();
 
-	while (true)
+	while (!moveList.empty())
 	{
 		assert(currentPly == board.ply);
 
-		if (moveList.empty())
-			break;
 		const Move move = MoveOrdering::getNextMove(moveList);
+		const bool isPvNode = move.getScore() == MoveOrdering::PV_SCORE;
 
+		// Futility Pruning
 		if (depth < 4
-			&& board.ply > 2
+			&& board.ply
+			&& !isMateValue(static_cast<Value>(alpha))
 			&& alpha != VALUE_MIN
 			&& legalCount > 3
 			&& !(move.flags() & Move::CAPTURE)
@@ -209,12 +193,13 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		++legalCount;
 
 		int moveScore = alpha;
-		bool didLmr = false;
+		bool doFullSearch = true;
 
 		// Late Move Reductions
-		if (doNull
+		if (!isPvNode
+			&& doNull
 			&& doLateMovePruning
-			&& legalCount >= 4
+			&& legalCount > 3
 			&& depth >= 3
 			&& board.ply > 4
 			&& !(move.flags() & Move::Flag::CAPTURE)
@@ -222,11 +207,14 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& !isInCheck
 			&& !board.isSideInCheck())
 		{
-			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, false);
-			didLmr = true;
+			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, true, false);
+			// Search with a full window if LMR failed high
+			doFullSearch = moveScore > alpha;
+			if (!doFullSearch)
+				Stats::incLmrCount();
 		}
 
-		if (!didLmr || moveScore > alpha) // Search with a full window if LMR failed high
+		if (doFullSearch)
 			moveScore = -search(board, -beta, -alpha, depth - 1, true, true);
 		const int searchedPly = board.ply;
 		board.undoMove();
@@ -240,7 +228,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 				if (alpha >= moveScore)
 					return moveScore;
 			}
-		} else if (moveScore == -Value::VALUE_MAX + searchedPly) // Losing
+		} else if (moveScore == Value::VALUE_MIN + searchedPly) // Losing
 		{
 			if (moveScore > alpha)
 			{
@@ -353,12 +341,10 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	size_t legalCount{};
 	size_t searchedMoves{};
 
-	while(true)
+	while(!moveList.empty())
 	{
 		assert(currentPly == board.ply);
 
-		if (moveList.empty())
-			break;
 		const Move move = MoveOrdering::getNextMove(moveList);
 
 		if (!board.makeMove(move))
@@ -425,7 +411,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 int Search::futilityPruningBonus(const int depth)
 {
-	constexpr std::array BONUS{ 100, 160, 300, 500 };
+	constexpr std::array BONUS{ 100, 160, 320, 600 };
 	if (depth < 0)
 		return BONUS[0];
 	assert(depth < 4);

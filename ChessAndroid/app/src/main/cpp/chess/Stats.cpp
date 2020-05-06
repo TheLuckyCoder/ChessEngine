@@ -9,6 +9,7 @@ std::atomic_size_t Stats::_nodesGenerated;
 std::atomic_size_t Stats::_betaCuts;
 std::atomic_size_t Stats::_nullCuts;
 std::atomic_size_t Stats::_futilityCuts;
+std::atomic_size_t Stats::_lmrCount;
 
 void Stats::setEnabled(const bool enabled) noexcept
 {
@@ -23,21 +24,7 @@ void Stats::resetStats() noexcept
 	_betaCuts = 0;
 	_nullCuts = 0;
 	_futilityCuts = 0;
-}
-
-size_t Stats::getBoardsEvaluated() noexcept
-{
-	return _boardsEvaluated;
-}
-
-size_t Stats::getNodesSearched() noexcept
-{
-	return _nodesSearched;
-}
-
-size_t Stats::getNodesGenerated() noexcept
-{
-	return _nodesGenerated;
+	_lmrCount = 0;
 }
 
 void Stats::incBoardsEvaluated() noexcept
@@ -76,6 +63,12 @@ void Stats::incFutilityCuts() noexcept
 		++_futilityCuts;
 }
 
+void Stats::incLmrCount() noexcept
+{
+	if (_statsEnabled)
+		++_lmrCount;
+}
+
 void Stats::startTimer() noexcept
 {
 	_startTime = std::chrono::high_resolution_clock::now();
@@ -109,14 +102,15 @@ std::string Stats::formatStats(const char separator) noexcept(false)
 		const auto betaCuts = static_cast<size_t>(_betaCuts);
 		const auto nullCuts = static_cast<size_t>(_nullCuts);
 		const auto futilityCuts = static_cast<size_t>(_futilityCuts);
+		const auto lmrCount = static_cast<size_t>(_lmrCount);
 		const size_t nps = timeMs ? (nodesSearched / (timeMs / 1000.0)) : 0;
 
 		stream << "Boards Evaluated: " << boardsEvaluated << separator
 			   << "Nodes Searched: " << nodesSearched << separator
 			   << "Nodes Generated: " << nodesGenerated << separator
 			   << "Nps: " << nps << separator
-			   << "Beta/Null/Futility: " << betaCuts << '/' << nullCuts << '/' << futilityCuts
-			   << separator;
+			   << "Beta/Null: " << betaCuts << '/' << nullCuts << separator
+			   << "Futility/LMR: " << futilityCuts << '/' << lmrCount << separator;
 	}
 
 	return stream.str();

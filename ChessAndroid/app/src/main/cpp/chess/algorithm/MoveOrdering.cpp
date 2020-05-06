@@ -8,9 +8,7 @@
 
 namespace MoveOrdering
 {
-	static constexpr int NORMAL_SCORE_BONUS = 1000000;
-	static constexpr int PV_BONUS = NORMAL_SCORE_BONUS * 2;
-	static constexpr int EN_PASSANT_BONUS = 105;
+	static constexpr int EN_PASSANT_SCORE = 105;
 
 	static constexpr std::array VICTIM_SCORE = { 0, 100, 200, 300, 400, 500, 600 };
 	static constexpr auto MVA_LVV = []
@@ -39,13 +37,13 @@ namespace MoveOrdering
 			const auto flags = move.flags();
 
 			if (move == pvMove)
-				move.setScore(PV_BONUS);
+				move.setScore(PV_SCORE);
 			else if (flags & Move::Flag::CAPTURE)
-				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()] + NORMAL_SCORE_BONUS);
+				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()] + NORMAL_SCORE);
 			else if (flags & Move::PROMOTION)
-				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE_BONUS);
+				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE);
 			else if (flags & Move::Flag::EN_PASSANT)
-				move.setScore(EN_PASSANT_BONUS + NORMAL_SCORE_BONUS);
+				move.setScore(EN_PASSANT_SCORE + NORMAL_SCORE);
 			else if (searchKillers[0][board.ply] == move.getContents())
 				move.setScore(900000);
 			else if (searchKillers[1][board.ply] == move.getContents())
@@ -66,7 +64,7 @@ namespace MoveOrdering
 			else if (flags & Move::PROMOTION)
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()));
 			else if (flags & Move::Flag::EN_PASSANT)
-				move.setScore(EN_PASSANT_BONUS);
+				move.setScore(EN_PASSANT_SCORE);
 		}
 	}
 

@@ -73,6 +73,12 @@ enum Value : short
 	MAX_DEPTH = 64
 };
 
+constexpr bool isMateValue(const Value value) noexcept
+{
+	const int absValue = value < 0 ? -value : value;
+	return (absValue + MAX_DEPTH) > VALUE_MAX;
+}
+
 enum PieceType : byte
 {
 	NO_PIECE_TYPE = 0,

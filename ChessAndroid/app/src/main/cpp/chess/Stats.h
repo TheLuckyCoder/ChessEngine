@@ -16,6 +16,7 @@ class Stats final
 	static std::atomic_size_t _betaCuts;
 	static std::atomic_size_t _nullCuts;
 	static std::atomic_size_t _futilityCuts;
+	static std::atomic_size_t _lmrCount;
 
 public:
 	Stats() = delete;
@@ -27,16 +28,13 @@ public:
 	static void setEnabled(bool enabled) noexcept;
 	static void resetStats() noexcept;
 
-	static size_t getBoardsEvaluated() noexcept;
-	static size_t getNodesSearched() noexcept;
-	static size_t getNodesGenerated() noexcept;
-
 	static void incBoardsEvaluated() noexcept;
 	static void incNodesSearched(std::size_t amount = 1u) noexcept;
 	static void incNodesGenerated(std::size_t amount = 1u) noexcept;
 	static void incBetaCuts() noexcept;
 	static void incNullCuts() noexcept;
 	static void incFutilityCuts() noexcept;
+	static void incLmrCount() noexcept;
 
 	static void startTimer() noexcept;
 	static void stopTimer() noexcept;

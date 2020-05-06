@@ -40,27 +40,19 @@ bool TranspositionTable::setSize(std::size_t sizeMb) noexcept(false)
 
 	_size = newSize;
 	delete[] _entries;
+	_entries = nullptr;
 	_currentAge = 0u;
 
 	while (!_entries && sizeMb)
 	{
-		try
+		_entries = new(std::nothrow) SearchEntry[_size]{};
+		if (!_entries)
 		{
-			// Allocating memory this way is a lot faster than calling the constructor for each object
-			_entries = static_cast<SearchEntry *>(operator new[](sizeof(SearchEntry) * _size));
-			if (!_entries)
-				throw;
-		} catch (...)
-		{
-			_entries = nullptr;
-			std::cerr << "Failed to allocate " << sizeMb << "MB for the Transposition Table"
-					  << std::endl;
+			std::cerr << "Failed to allocate " << sizeMb << "MB for the Transposition Table\n";
 			sizeMb /= 2;
 			_size = (sizeMb << 20u) / sizeof(SearchEntry);
 		}
 	}
-
-	std::memset(_entries, 0, _size);
 
 	return true;
 }

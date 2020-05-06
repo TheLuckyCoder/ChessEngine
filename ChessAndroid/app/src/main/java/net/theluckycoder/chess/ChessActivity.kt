@@ -9,10 +9,10 @@ import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
-import android.widget.Spinner
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import net.theluckycoder.chess.databinding.ActivityChessBinding
+import net.theluckycoder.chess.databinding.DialogRestartBinding
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.CapturedPieces
 import net.theluckycoder.chess.utils.PieceResourceManager
@@ -68,26 +68,23 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         }
 
         binding.btnRestartGame.setOnClickListener {
-            val view = View.inflate(this, R.layout.dialog_restart, null)
-            val sideSpinner: Spinner = view.findViewById(R.id.sp_side)
-            val difficultySpinner: Spinner = view.findViewById(R.id.sp_difficulty)
+            val dialogBinding = DialogRestartBinding.inflate(layoutInflater)
 
-            difficultySpinner.setSelection(preferences.difficultyLevel)
+            dialogBinding.spDifficulty.setSelection(preferences.difficultyLevel)
 
             AlertDialog.Builder(this)
                 .setTitle(R.string.new_game)
-                .setView(view)
+                .setView(dialogBinding.root)
                 .setPositiveButton(R.string.action_start) { _, _ ->
-                    val playerWhite = when (sideSpinner.selectedItemPosition) {
+                    val playerWhite = when (dialogBinding.spSide.selectedItemPosition) {
                         0 -> true
                         1 -> false
                         else -> Random.nextBoolean()
                     }
 
-                    val level = difficultySpinner.selectedItemPosition
+                    val level = dialogBinding.spDifficulty.selectedItemPosition
                     preferences.difficultyLevel = level
-                    preferences.settings =
-                        getDifficulty(level, preferences.settings)
+                    preferences.settings = getDifficulty(level, preferences.settings)
 
                     restartGame(playerWhite)
                 }

@@ -23,14 +23,13 @@ class AppPreferences(private val context: Context) {
         const val KEY_THREAD_COUNT = "key_thread_count"
         const val KEY_CACHE_SIZE = "key_cache_size"
         const val KEY_QUIET_SEARCH = "key_quiet_search"
-        const val KEY_DIFFICULTY_LEVEL = "key_debug_basic"
-        const val KEY_DEBUG_INFO_BASIC = "key_debug_basic"
-        const val KEY_DEBUG_INFO_ADVANCED = "key_debug_advanced"
+        const val KEY_DIFFICULTY_LEVEL = "key_difficulty_level"
+        const val KEY_DEBUG_INFO_BASIC = "key_show_debug_basic"
+        const val KEY_DEBUG_INFO_ADVANCED = "key_show_debug_advanced"
         const val KEY_PERFT_TEST = "key_perft_test"
     }
 
-    private val manager
-        get(): SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val manager by lazy { PreferenceManager.getDefaultSharedPreferences(context) }
 
     var firstStart: Boolean
         get() = manager.getBoolean(KEY_FIRST_START, true)

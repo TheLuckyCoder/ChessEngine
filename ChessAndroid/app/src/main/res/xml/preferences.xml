@@ -95,14 +95,14 @@
 
         <SwitchPreferenceCompat
             android:defaultValue="false"
-            android:key="key_debug_basic"
+            android:key="key_show_debug_basic"
             android:summary="Displays Board Evaluation and Search Time"
             android:title="Enable Debug Info"
             app:icon="@drawable/ic_pref_debug_info" />
 
         <SwitchPreferenceCompat
             android:defaultValue="false"
-            android:dependency="key_debug_basic"
+            android:dependency="key_show_debug_advanced"
             android:key="key_debug_advanced"
             android:summary="Displays the number of Evaluated Boards and Searched Nodes"
             android:title="Enable Advanced Debug Info"
@@ -110,7 +110,6 @@
 
         <Preference
             android:key="key_perft_test"
-            android:summary="Run a Perft Test on the default board"
             android:title="Execute Perft Test" />
 
     </PreferenceCategory>
