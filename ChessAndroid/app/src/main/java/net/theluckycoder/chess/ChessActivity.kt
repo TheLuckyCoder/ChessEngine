@@ -84,7 +84,10 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
                     val level = dialogBinding.spDifficulty.selectedItemPosition
                     preferences.difficultyLevel = level
-                    preferences.settings = getDifficulty(level, preferences.settings)
+
+                    val newSettings = getDifficulty(level, preferences.settings)
+                    gameManager.updateSettings(newSettings)
+                    preferences.settings = newSettings
 
                     restartGame(playerWhite)
                 }
@@ -253,7 +256,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         if (gameManager.isWorking) {
             thread {
                 while (gameManager.isWorking)
-                    Thread.sleep(200)
+                    Thread.sleep(20)
 
                 runOnUiThread(restart)
             }
@@ -368,7 +371,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             require(level >= 0)
 
             return currentSettings.copy(
-                searchDepth = if (level == 0) level + 2 else level + 3,
+                searchDepth = if (level == 0 || level == 1) level + 2 else level + 3,
                 doQuietSearch = level != 0
             )
         }

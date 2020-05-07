@@ -8,6 +8,16 @@
 class Move final
 {
 public:
+	enum Flag
+	{
+		CAPTURE = 1 << 1, // The move is a capture
+		PROMOTION = 1 << 2, // The move is a promotion
+		KSIDE_CASTLE = 1 << 3, // The move is a king side castle
+		QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
+		DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
+		EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag additionally)
+	};
+
 	Move() = default;
 
 	explicit constexpr Move(const unsigned int move, const int score = 0) noexcept
@@ -94,34 +104,26 @@ public:
 		_move = (_move & ~mask) | ((flags << 22u) & mask);
 	}
 
-	constexpr bool operator==(const Move &other) const noexcept
+	constexpr bool isAdvancedPawnPush() const noexcept
 	{
-		return _move == other._move;
+		const byte y = row(to());
+		return piece() == PAWN && (y == 7 || y == 2);
 	}
 
-	constexpr bool operator<(const Move &other) const noexcept
+	constexpr bool operator==(const Move &rhs) const noexcept
 	{
-		return _score < other._score;
+		return _move == rhs._move;
 	}
 
-	constexpr bool operator>(const Move &other) const noexcept
+	constexpr bool operator!=(const Move &rhs) const noexcept
 	{
-		return _score > other._score;
+		return _move != rhs._move;
 	}
-
-	enum Flag
-	{
-		CAPTURE = 1 << 1, // The move is a capture
-		PROMOTION = 1 << 2, // The move is a promotion
-		KSIDE_CASTLE = 1 << 3, // The move is a king side castle
-		QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
-		DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
-	    EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag additionally)
-	};
 
 	std::string toString() const
 	{
 		std::string str;
+		str.reserve(5);
 
 		const Pos fromPos{ from() };
 		const Pos toPos{ to() };

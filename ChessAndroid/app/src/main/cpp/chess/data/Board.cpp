@@ -54,7 +54,7 @@ U64 Board::getType(const PieceType type, const Color color) const noexcept
 
 byte Board::getKingSq(const Color color) const noexcept
 {
-	return pieceList[Piece(KING, color)][0];
+	return pieceList[Piece{ KING, color }][0];
 }
 
 bool Board::isRepetition() const noexcept
@@ -242,7 +242,7 @@ void Board::undoMove() noexcept
 	{
 		Pos capturedPos{ to };
 		capturedPos.y += static_cast<byte>(colorToMove ? -1 : 1);
-		addPiece(capturedPos.toSquare(), Piece(PAWN, ~colorToMove));
+		addPiece(capturedPos.toSquare(), { PAWN, ~colorToMove });
 	} else if (flags & Move::KSIDE_CASTLE)
 	{
 		switch (to)
@@ -315,14 +315,14 @@ void Board::undoNullMove() noexcept
 	colorToMove = ~colorToMove;
 }
 
-bool Board::isAttackedByAny(const Color colorAttacking, const byte targetSquare) const noexcept
+bool Board::isAttackedByAny(const Color attackerColor, const byte targetSquare) const noexcept
 {
-	return isAttacked<PAWN>(colorAttacking, targetSquare)
-		   || isAttacked<KNIGHT>(colorAttacking, targetSquare)
-		   || isAttacked<KING>(colorAttacking, targetSquare)
-		   || isAttacked<BISHOP>(colorAttacking, targetSquare)
-		   || isAttacked<ROOK>(colorAttacking, targetSquare)
-		   || isAttacked<QUEEN>(colorAttacking, targetSquare);
+	return isAttacked<PAWN>(attackerColor, targetSquare)
+		   || isAttacked<KNIGHT>(attackerColor, targetSquare)
+		   || isAttacked<KING>(attackerColor, targetSquare)
+		   || isAttacked<BISHOP>(attackerColor, targetSquare)
+		   || isAttacked<ROOK>(attackerColor, targetSquare)
+		   || isAttacked<QUEEN>(attackerColor, targetSquare);
 }
 
 bool Board::isSideInCheck() const noexcept

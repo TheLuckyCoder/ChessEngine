@@ -35,7 +35,6 @@ class SettingsActivity : AppCompatActivity() {
                     whiteTileColor = getColor(activity, R.color.tile_white)
                     blackTileColor = getColor(activity, R.color.tile_black)
                     possibleTileColor = getColor(activity, R.color.tile_possible)
-                    selectedTileColor = getColor(activity, R.color.tile_selected)
                     lastMovedTileColor = getColor(activity, R.color.tile_last_moved)
                     kingInChessColor = getColor(activity, R.color.king_in_check)
                 }

@@ -26,13 +26,6 @@
             app:cpv_showAlphaSlider="true" />
 
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
-            android:defaultValue="@color/tile_selected"
-            android:key="key_tile_selected"
-            android:title="Selected Tile Color"
-            app:cpv_colorShape="square"
-            app:cpv_showAlphaSlider="true" />
-
-        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/tile_last_moved"
             android:key="key_tile_last_moved"
             android:title="Last Moved Tile Color"

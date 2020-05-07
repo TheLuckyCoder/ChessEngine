@@ -194,12 +194,13 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		// Futility Pruning
 		if (depth < FUTILITY_MAX_DEPTH
 			&& !pvMove
+			&& legalCount > 3
 			&& futilityMarginEval <= alpha
 			&& !isMateValue(static_cast<Value>(alpha))
 			&& !(move.flags() & Move::CAPTURE)
 			&& !(move.flags() & Move::PROMOTION)
 			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
-			&& !(move.piece() == PAWN && (col(move.to()) == 7 || col(move.to()) == 2))
+			&& !move.isAdvancedPawnPush()
 			&& !isInCheck)
 		{
 			Stats::incFutilityCuts();
@@ -334,30 +335,9 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 		standPat = Evaluation::evaluate(board).getInvertedValue();
 
-		if (standPat >= beta)
+		alpha = std::max(alpha, standPat);
+		if (alpha >= beta)
 			return standPat;
-		if (standPat > alpha)
-			alpha = standPat;
-
-		if (board.ply >= MAX_DEPTH)
-			return alpha;
-
-		// Delta Pruning
-		if (board.getPhase() <= Phase::MIDDLE_GAME_PHASE / 4) // Turn it off near the Endgame
-		{
-			constexpr int QUEEN_VALUE = Evaluation::getPieceValue(QUEEN);
-			constexpr int PAWN_VALUE = Evaluation::getPieceValue(PAWN);
-
-			int bigDelta = QUEEN_VALUE;
-
-			const bool isPromotion =
-				board.history[board.historyPly - 1].getMove().flags() & Move::Flag::PROMOTION;
-			if (isPromotion)
-				bigDelta += QUEEN_VALUE - PAWN_VALUE;
-
-			if (standPat < alpha - bigDelta)
-				return alpha;
-		}
 	}
 
 	MoveList moveList(board);

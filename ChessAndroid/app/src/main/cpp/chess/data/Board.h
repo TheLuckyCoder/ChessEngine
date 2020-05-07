@@ -78,7 +78,7 @@ public:
 
 	template <PieceType>
 	bool isAttacked(Color colorAttacking, byte targetSquare) const noexcept;
-	bool isAttackedByAny(Color colorAttacking, byte targetSquare) const noexcept;
+	bool isAttackedByAny(Color attackerColor, byte targetSquare) const noexcept;
 	bool isSideInCheck() const noexcept;
 	bool isInCheck(Color color) const noexcept;
 	template <Color C>

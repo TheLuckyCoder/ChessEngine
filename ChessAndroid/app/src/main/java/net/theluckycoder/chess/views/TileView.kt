@@ -55,7 +55,7 @@ class TileView(
 
         when (state) {
             State.SELECTED -> {
-                selectedStatePaint.color = activity.preferences.selectedTileColor
+                selectedStatePaint.color = activity.preferences.lastMovedTileColor
 
                 canvas.drawRect(
                     0f,

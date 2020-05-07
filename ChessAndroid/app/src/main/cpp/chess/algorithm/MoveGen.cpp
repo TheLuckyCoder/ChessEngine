@@ -142,7 +142,6 @@ namespace
 	Move *generateAllMoves(const Board &board, Move *moveList, const U64 targets)
 	{
 		constexpr Color Them = ~Us;
-		constexpr Piece KingPiece{ KING, Us };
 
 		moveList = generatePawnMoves<Us>(board, moveList, targets);
 		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
@@ -151,6 +150,7 @@ namespace
 		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
 
 		// King Moves
+		constexpr Piece KingPiece{ KING, Us };
 		const byte kingSquare = board.pieceList[KingPiece][0];
 		assert(kingSquare < SQUARE_NB);
 
@@ -174,11 +174,11 @@ namespace
 		if (board.canCastle<Us>() && !board.isInCheck<Us>())
 		{
 			const byte y = row(kingSquare);
-			const auto isEmptyAndCheckFree = [&, y](const byte x)
+			const auto isEmptyAndCheckFree = [&board, y](const byte x)
 			{
 				const byte sq = toSquare(x, y);
-				return !(board.occupied & Bits::getSquare64(sq)) &&
-					   !board.isAttackedByAny(Them, sq);
+				return !(board.occupied & Bits::getSquare64(sq))
+					   && !board.isAttackedByAny(Them, sq);
 			};
 
 			// King Side

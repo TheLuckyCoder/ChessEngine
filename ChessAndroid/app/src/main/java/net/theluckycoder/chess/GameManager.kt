@@ -38,25 +38,22 @@ class GameManager(
         Native.enableStats(advancedStatsEnabled)
 
         if (initialized) {
-            if (isPlayerWhite != playerWhite) {
-                isPlayerWhite = playerWhite
-                listener.redrawBoard(playerWhite)
-            }
+            isPlayerWhite = playerWhite
 
             listener.redrawPieces(getPiecesList(), playerWhite)
         } else {
             initialized = true
 
-            listener.redrawBoard(isPlayerWhite)
+            listener.redrawBoard(playerWhite)
 
-            isPlayerWhite = if (SaveManager.loadFromFile(context)) {
-                Native.isPlayerWhite()
-            } else {
-                initBoardNative(true, playerWhite)
-                listener.redrawPieces(getPiecesList(), playerWhite)
-                playerWhite
-            }
+            isPlayerWhite =
+                if (SaveManager.loadFromFile(context)) Native.isPlayerWhite() else playerWhite
+
+            initBoardNative(true, isPlayerWhite)
         }
+
+        listener.redrawBoard(isPlayerWhite)
+        listener.redrawPieces(getPiecesList(), isPlayerWhite)
     }
 
     fun updateSettings(settings: Settings) {

@@ -14,7 +14,6 @@ class AppPreferences(private val context: Context) {
         const val KEY_TILE_WHITE = "key_tile_white"
         const val KEY_TILE_BLACK = "key_tile_black"
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
-        const val KEY_TILE_SELECTED = "key_tile_selected"
         const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
         const val KEY_KING_IN_CHECK = "key_king_in_check"
         const val KEY_RESET_COLORS = "key_reset_colors"
@@ -46,10 +45,6 @@ class AppPreferences(private val context: Context) {
     var possibleTileColor: Int
         get() = manager.getInt(KEY_TILE_POSSIBLE, getColor(context, R.color.tile_possible))
         set(value) = manager.edit().putInt(KEY_TILE_POSSIBLE, value).apply()
-
-    var selectedTileColor: Int
-        get() = manager.getInt(KEY_TILE_SELECTED, getColor(context, R.color.tile_selected))
-        set(value) = manager.edit().putInt(KEY_TILE_SELECTED, value).apply()
 
     var lastMovedTileColor: Int
         get() = manager.getInt(KEY_TILE_LAST_MOVED, getColor(context, R.color.tile_last_moved))
