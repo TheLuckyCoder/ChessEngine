@@ -5,7 +5,6 @@
 std::chrono::time_point<std::chrono::steady_clock> Stats::_startTime;
 std::atomic_size_t Stats::_boardsEvaluated;
 std::atomic_size_t Stats::_nodesSearched;
-std::atomic_size_t Stats::_nodesGenerated;
 std::atomic_size_t Stats::_betaCuts;
 std::atomic_size_t Stats::_nullCuts;
 std::atomic_size_t Stats::_futilityCuts;
@@ -20,7 +19,6 @@ void Stats::resetStats() noexcept
 {
 	_boardsEvaluated = 0;
 	_nodesSearched = 0;
-	_nodesGenerated = 0;
 	_betaCuts = 0;
 	_nullCuts = 0;
 	_futilityCuts = 0;
@@ -37,12 +35,6 @@ void Stats::incNodesSearched(const std::size_t amount) noexcept
 {
 	if (_statsEnabled)
 		_nodesSearched += amount;
-}
-
-void Stats::incNodesGenerated(const std::size_t amount) noexcept
-{
-	if (_statsEnabled)
-		_nodesGenerated += amount;
 }
 
 void Stats::incBetaCuts() noexcept
@@ -98,7 +90,6 @@ std::string Stats::formatStats(const char separator) noexcept(false)
 	{
 		const auto boardsEvaluated = static_cast<size_t>(_boardsEvaluated);
 		const auto nodesSearched = static_cast<size_t>(_nodesSearched);
-		const auto nodesGenerated = static_cast<size_t>(_nodesGenerated);
 		const auto betaCuts = static_cast<size_t>(_betaCuts);
 		const auto nullCuts = static_cast<size_t>(_nullCuts);
 		const auto futilityCuts = static_cast<size_t>(_futilityCuts);
@@ -107,7 +98,6 @@ std::string Stats::formatStats(const char separator) noexcept(false)
 
 		stream << "Boards Evaluated: " << boardsEvaluated << separator
 			   << "Nodes Searched: " << nodesSearched << separator
-			   << "Nodes Generated: " << nodesGenerated << separator
 			   << "Nps: " << nps << separator
 			   << "Beta/Null: " << betaCuts << '/' << nullCuts << separator
 			   << "Futility/LMR: " << futilityCuts << '/' << lmrCount << separator;

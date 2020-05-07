@@ -1,7 +1,6 @@
 #include "MoveGen.h"
 
 #include "PieceAttacks.h"
-#include "../data/Pos.h"
 
 namespace
 {
@@ -10,7 +9,7 @@ namespace
 	{
 		using namespace Bits;
 
-		constexpr Piece piece{ PAWN, Us };
+		constexpr Piece Piece{ PAWN, Us };
 		constexpr Color Them = ~Us;
 		constexpr Dir Forward = Us == WHITE ? NORTH : SOUTH;
 		constexpr U64 StartRank = Us == WHITE ? RANK_2 : RANK_7;
@@ -18,7 +17,8 @@ namespace
 
 		const auto addQuietMove = [&](const byte from, const byte to, const U64 pos)
 		{
-			Move move(from, to, PAWN);
+			Move move{ from, to, PAWN };
+
 			if (LastRank & pos)
 			{
 				move.setFlags(Move::PROMOTION);
@@ -33,7 +33,7 @@ namespace
 
 		const auto addCaptureMove = [&](const byte from, const byte to, const U64 pos)
 		{
-			Move move(from, to, PAWN);
+			Move move{ from, to, PAWN, Move::CAPTURE };
 			move.setCapturedPiece(board.getPiece(to).type());
 
 			if (LastRank & pos)
@@ -48,9 +48,9 @@ namespace
 				*moveList++ = move;
 		};
 
-		for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
+		for (byte pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
 		{
-			const byte from = board.pieceList[piece][pieceNumber];
+			const byte from = board.pieceList[Piece][pieceNumber];
 			const U64 bb = getSquare64(from);
 			U64 attacks = PieceAttacks::pawnAttacks<Us>(bb);
 
@@ -83,10 +83,11 @@ namespace
 
 				if (StartRank & bb)
 				{
-					const U64 doubleMoveBB = shift<Forward>(moveBB);
+					const U64 doublePushBb = shift<Forward>(moveBB);
 
-					if (!(board.occupied & doubleMoveBB))
-						*moveList++ = { from, bitScanForward(doubleMoveBB), PAWN, Move::DOUBLE_PAWN_PUSH };
+					if (!(board.occupied & doublePushBb))
+						*moveList++ = { from, bitScanForward(doublePushBb), PAWN,
+										Move::DOUBLE_PAWN_PUSH };
 				}
 			}
 		}
@@ -99,11 +100,11 @@ namespace
 	{
 		static_assert(P != KING && P != PAWN);
 		constexpr Color Them = ~Us;
-		constexpr Piece piece{ P, Us };
+		constexpr Piece Piece{ P, Us };
 
-		for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
+		for (byte pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
 		{
-			const byte from = board.pieceList[piece][pieceNumber];
+			const byte from = board.pieceList[Piece][pieceNumber];
 
 			U64 attacks{};
 
@@ -141,7 +142,7 @@ namespace
 	Move *generateAllMoves(const Board &board, Move *moveList, const U64 targets)
 	{
 		constexpr Color Them = ~Us;
-		constexpr Piece kingPiece{ KING, Us };
+		constexpr Piece KingPiece{ KING, Us };
 
 		moveList = generatePawnMoves<Us>(board, moveList, targets);
 		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
@@ -150,7 +151,7 @@ namespace
 		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
 
 		// King Moves
-		const byte kingSquare = board.pieceList[kingPiece][0];
+		const byte kingSquare = board.pieceList[KingPiece][0];
 		assert(kingSquare < SQUARE_NB);
 
 		{
@@ -160,7 +161,7 @@ namespace
 				const byte to = Bits::findNextSquare(attacks);
 				const U64 bb = Bits::getSquare64(to);
 
-				Move move(kingSquare, to, KING);
+				Move move{ kingSquare, to, KING };
 				if (bb & board.allPieces[Them])
 				{
 					move.setFlags(Move::CAPTURE);
@@ -176,7 +177,8 @@ namespace
 			const auto isEmptyAndCheckFree = [&, y](const byte x)
 			{
 				const byte sq = toSquare(x, y);
-				return !(board.occupied & Bits::getSquare64(sq)) && !board.isAttackedByAny(Them, sq);
+				return !(board.occupied & Bits::getSquare64(sq)) &&
+					   !board.isAttackedByAny(Them, sq);
 			};
 
 			// King Side
@@ -184,7 +186,7 @@ namespace
 				&& isEmptyAndCheckFree(5)
 				&& isEmptyAndCheckFree(6))
 			{
-				*moveList++ = { kingSquare, Pos(6, y).toSquare(), KING, Move::Flag::KSIDE_CASTLE };
+				*moveList++ = { kingSquare, toSquare(6, y), KING, Move::KSIDE_CASTLE };
 			}
 
 			// Queen Side
@@ -193,7 +195,7 @@ namespace
 				&& isEmptyAndCheckFree(2)
 				&& !(board.occupied & Bits::getSquare64(toSquare(1, y))))
 			{
-				*moveList++ = { kingSquare, Pos(2, y).toSquare(), KING, Move::Flag::QSIDE_CASTLE };
+				*moveList++ = { kingSquare, toSquare(2, y), KING, Move::QSIDE_CASTLE };
 			}
 		}
 

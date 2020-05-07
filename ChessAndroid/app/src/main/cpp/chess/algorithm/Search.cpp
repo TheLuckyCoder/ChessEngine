@@ -10,6 +10,10 @@
 #include "Evaluation.h"
 #include "../data/Psqt.h"
 
+constexpr int FUTILITY_QSEARCH_MARGIN = 100;
+constexpr int FUTILITY_MARGIN = 160;
+constexpr int FUTILITY_MAX_DEPTH = 6;
+
 std::array<std::array<unsigned int, MAX_DEPTH>, 2> Search::_searchKillers{};
 std::array<std::array<byte, 64>, 64> Search::_searchHistory{};
 ThreadPool Search::_threadPool(1);
@@ -76,13 +80,14 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
-		const int bestScore = search(board, Value::VALUE_MIN, Value::VALUE_MAX, currentDepth, true, true);
+		const int bestScore = search(board, Value::VALUE_MIN, Value::VALUE_MAX, currentDepth, true,
+									 true, true);
 		const int pvMoves = getPvLine(currentDepth);
 		bestMove = pvArray[0];
 
 		std::cout << "Depth: " << currentDepth << ", Score: " << bestScore << ", PvMoves: ";
-		for (int pvNum = 0; pvNum < pvMoves; ++pvNum)
-			std::cout << pvArray[pvNum].toString() << ", ";
+		for (int pvCount = 0; pvCount < pvMoves; ++pvCount)
+			std::cout << pvArray[pvCount].toString() << ", ";
 
 		std::cout << '\n';
 	}
@@ -90,22 +95,28 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	return bestMove;
 }
 
-int Search::search(Board &board, int alpha, int beta, const int depth, const bool doNull,
-                   const bool doLateMovePruning)
+int Search::search(Board &board, int alpha, int beta, const int depth, const bool isPvNode,
+				   const bool doNull, const bool doLmr)
 {
-	if (board.ply && (board.fiftyMoveRule == 100 || board.isRepetition()))
+	const bool rootNode = !board.ply;
+	if (rootNode)
+		assert(isPvNode);
+
+	if (!rootNode && (board.fiftyMoveRule == 100 || board.isRepetition()))
 		return 0;
 
 	if (board.ply == MAX_DEPTH)
 		return Evaluation::evaluate(board).getInvertedValue();
 
-	// If in check and not already extended, allow the search to be extended to depth -1
 	if (depth <= 0)
 		return _quiescenceSearchEnabled
-			       ? searchCaptures(board, alpha, beta, depth)
-			       : Evaluation::evaluate(board).getInvertedValue();
+			   ? searchCaptures(board, alpha, beta, depth)
+			   : Evaluation::evaluate(board).getInvertedValue();
 
 	const int originalAlpha = alpha;
+	const int startPly = board.ply;
+
+	// Prove the Transposition Table
 	if (const SearchEntry entry = _transpTable[board.zKey];
 		!entry.qSearch
 		&& entry.age == _transpTable.currentAge()
@@ -115,7 +126,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		const int entryScore = entry.move.getScore();
 
 		if (entry.flag == SearchEntry::Flag::EXACT)
-			return entry.move.getScore();
+			return entryScore;
 		if (entry.flag == SearchEntry::Flag::ALPHA)
 			alpha = std::max(alpha, entryScore);
 		else if (entry.flag == SearchEntry::Flag::BETA)
@@ -125,16 +136,20 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return entryScore;
 	}
 
-	const int currentPly = board.ply;
-
-	// Null Move
-	const Color color = board.colorToMove;
-	if (doNull && board.ply && depth >= 4 &&
-		board.pieceCount[Piece{ QUEEN, color }] + board.pieceCount[Piece{ ROOK, color }] > 0 &&
-		!board.isSideInCheck())
+	const auto evalResult = Evaluation::evaluate(board);
+	const bool isInCheck = evalResult.isInCheck;
+	const int eval = evalResult.getInvertedValue();
+	// Null Move Pruning
+	if (!isPvNode
+		&& doNull
+		&& depth >= 4
+		&& eval >= beta
+		&& !isInCheck
+		&& board.pieceCount[Piece{ QUEEN, board.colorToMove }]
+		   + board.pieceCount[Piece{ ROOK, board.colorToMove }] > 0)
 	{
 		board.makeNullMove();
-		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false);
+		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false, false);
 		board.undoNullMove();
 
 		if (nullScore >= beta)
@@ -146,46 +161,33 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	MoveList moveList(board);
 	MoveOrdering::sortMoves(board, moveList);
-	Stats::incNodesGenerated(moveList.size());
 
 	size_t legalCount{};
 	int bestScore = Value::VALUE_MIN;
 	Move bestMove;
 
-	const auto evalResult = Evaluation::evaluate(board);
-	const bool isInCheck = evalResult.isInCheck;
-	const int evalScore = evalResult.getInvertedValue();
-
 	while (!moveList.empty())
 	{
-		assert(currentPly == board.ply);
+		assert(startPly == board.ply);
 
 		const Move move = MoveOrdering::getNextMove(moveList);
-		const bool isPvNode = move.getScore() == MoveOrdering::PV_SCORE;
+		const bool pvMove = move.getScore() == MoveOrdering::PV_SCORE;
 
 		// Futility Pruning
-		if (depth < 4
-			&& board.ply
+		if (depth < FUTILITY_MAX_DEPTH
+			&& !pvMove
+			&& futilityMarginEval <= alpha
 			&& !isMateValue(static_cast<Value>(alpha))
-			&& alpha != VALUE_MIN
-			&& legalCount > 3
 			&& !(move.flags() & Move::CAPTURE)
 			&& !(move.flags() & Move::PROMOTION)
 			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
 			&& !(move.piece() == PAWN && (col(move.to()) == 7 || col(move.to()) == 2))
 			&& !isInCheck)
 		{
-			const int futilityEval = evalScore + futilityPruningBonus(depth);
-			if (futilityEval <= alpha)
-			{
-				Stats::incFutilityCuts();
-				if (futilityEval > bestScore)
-				{
-					bestScore = evalScore;
-					bestMove = move;
-				}
-				continue;
-			}
+			Stats::incFutilityCuts();
+			if (futilityMarginEval > bestScore)
+				bestScore = eval;
+			continue;
 		}
 
 		if (!board.makeMove(move))
@@ -196,9 +198,9 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		bool doFullSearch = true;
 
 		// Late Move Reductions
-		if (!isPvNode
+		if (!pvMove
 			&& doNull
-			&& doLateMovePruning
+			&& doLmr
 			&& legalCount > 3
 			&& depth >= 3
 			&& board.ply > 4
@@ -207,7 +209,8 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& !isInCheck
 			&& !board.isSideInCheck())
 		{
-			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, true, false);
+			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, true, false);
+
 			// Search with a full window if LMR failed high
 			doFullSearch = moveScore > alpha;
 			if (!doFullSearch)
@@ -215,7 +218,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		}
 
 		if (doFullSearch)
-			moveScore = -search(board, -beta, -alpha, depth - 1, true, true);
+			moveScore = -search(board, -beta, -alpha, depth - 1, pvMove, true, true);
 		const int searchedPly = board.ply;
 		board.undoMove();
 
@@ -249,11 +252,12 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		{
 			if (!(move.flags() & Move::Flag::CAPTURE))
 			{
-				_searchKillers[1][board.ply] = _searchKillers[0][board.ply];
-				_searchKillers[0][board.ply] = move.getContents();
+				_searchKillers[1][startPly] = _searchKillers[0][startPly];
+				_searchKillers[0][startPly] = move.getContents();
 			}
 
-			_transpTable.insert({ board.zKey, bestMove, static_cast<short>(depth), SearchEntry::Flag::BETA });
+			_transpTable.insert(
+				{ board.zKey, bestMove, static_cast<short>(depth), SearchEntry::Flag::BETA });
 			Stats::incBetaCuts();
 			return beta;
 		}
@@ -266,7 +270,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	}
 
 	if (legalCount == 0)
-		return board.isSideInCheck() ? -Value::VALUE_MAX + board.ply : 0;
+		return board.isSideInCheck() ? -Value::VALUE_MAX + startPly : 0;
 
 	Stats::incNodesSearched(legalCount);
 
@@ -278,7 +282,11 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 {
-	const short currentPly = board.ply;
+	const short startPly = board.ply;
+
+	if (startPly == MAX_DEPTH)
+		return Evaluation::evaluate(board).getInvertedValue();
+
 	const bool inCheck = board.isSideInCheck();
 
 	const int originalAlpha = alpha;
@@ -305,7 +313,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 			if (alpha >= beta)
 				return entryScore;
 		}
-		
+
 		standPat = Evaluation::evaluate(board).getInvertedValue();
 
 		if (standPat >= beta)
@@ -335,15 +343,14 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	}
 
 	MoveList moveList(board);
-	Stats::incNodesGenerated(moveList.size());
 
 	MoveOrdering::sortQMoves(moveList);
 	size_t legalCount{};
 	size_t searchedMoves{};
 
-	while(!moveList.empty())
+	while (!moveList.empty())
 	{
-		assert(currentPly == board.ply);
+		assert(startPly == board.ply);
 
 		const Move move = MoveOrdering::getNextMove(moveList);
 
@@ -358,13 +365,12 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 			break; // The moves are sorted so we can break if is not a capture
 		}
 
+		const int futilityEval = standPat + Psqt::BONUS[move.to()][move.piece()].eg
+								 + Evaluation::getPieceValue(move.promotedPiece())
+								 + FUTILITY_QUIESCENCE_MARGIN;
 		// Futility Pruning
-		if (const int futilityEval = standPat
-				+ Psqt::BONUS[move.to()][move.piece()].eg
-				+ Evaluation::getPieceValue(move.promotedPiece())
-				+ futilityPruningBonus(depth);
-			!inCheck
-			&&board.ply > 2
+		if (!inCheck
+			&& board.ply > 2
 			&& standPat != VALUE_MIN
 			&& alpha != VALUE_MIN
 			&& futilityEval <= alpha
@@ -383,7 +389,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 		{
 			bestScore = moveScore;
 			bestMove = move;
-			
+
 			if (moveScore > alpha)
 				alpha = moveScore;
 		}
@@ -400,7 +406,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 	if (legalCount == 0)
 		return board.isSideInCheck() ? -Value::VALUE_MAX + board.ply : 0;
-	
+
 	if (!inCheck && !bestMove.empty())
 		storeTtAlphaExact(bestMove, board.zKey, alpha, originalAlpha, depth, true);
 
@@ -409,16 +415,8 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	return alpha;
 }
 
-int Search::futilityPruningBonus(const int depth)
-{
-	constexpr std::array BONUS{ 100, 160, 320, 600 };
-	if (depth < 0)
-		return BONUS[0];
-	assert(depth < 4);
-	return depth;
-}
-
-inline void Search::storeTtAlphaExact(Move bestMove, const U64 key, const int alpha, const int originalAlpha, const int depth, const bool qSearch)
+inline void Search::storeTtAlphaExact(Move bestMove, const U64 key, const int alpha,
+									  const int originalAlpha, const int depth, const bool qSearch)
 {
 	// Avoid putting an empty move in the Transposition Table if alpha was not raised
 	assert(!bestMove.empty());

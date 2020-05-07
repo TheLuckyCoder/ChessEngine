@@ -76,7 +76,7 @@ enum Value : short
 constexpr bool isMateValue(const Value value) noexcept
 {
 	const int absValue = value < 0 ? -value : value;
-	return (absValue + MAX_DEPTH) > VALUE_MAX;
+	return (absValue + MAX_DEPTH + 1) > VALUE_MAX;
 }
 
 enum PieceType : byte
