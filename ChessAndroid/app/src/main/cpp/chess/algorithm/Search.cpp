@@ -10,12 +10,16 @@
 #include "Evaluation.h"
 #include "../data/Psqt.h"
 
-constexpr int FUTILITY_QSEARCH_MARGIN = 100;
+constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
+constexpr int REVERSE_FUTILITY_MARGIN = 220;
+
+constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
 constexpr int FUTILITY_MARGIN = 160;
 constexpr int FUTILITY_MAX_DEPTH = 6;
 
 std::array<std::array<unsigned int, MAX_DEPTH>, 2> Search::_searchKillers{};
 std::array<std::array<byte, 64>, 64> Search::_searchHistory{};
+std::array<int, MAX_DEPTH> Search::_evalHistory;
 ThreadPool Search::_threadPool(1);
 TranspositionTable Search::_transpTable(2);
 bool Search::_quiescenceSearchEnabled{};
@@ -39,6 +43,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 
 	_searchKillers.fill({});
 	_searchHistory.fill({});
+	_evalHistory.fill({});
 
 	if (board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3)
 		++depth;
@@ -139,6 +144,19 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	const auto evalResult = Evaluation::evaluate(board);
 	const bool isInCheck = evalResult.isInCheck;
 	const int eval = evalResult.getInvertedValue();
+	_evalHistory[board.ply] = eval;
+
+	// We are improving if our static eval increased in the last move
+	const bool improving = startPly > 1 ? (eval > _evalHistory[startPly - 2]) : false;
+	const int futilityMarginEval = eval + FUTILITY_MARGIN * depth;
+
+	// Reverse Futility Pruning
+	if (!isPvNode
+		&& !isInCheck
+		&& depth <= REVERSE_FUTILITY_MAX_DEPTH
+		&& (eval - REVERSE_FUTILITY_MARGIN * std::max(1, depth - improving)) >= beta)
+		return eval;
+
 	// Null Move Pruning
 	if (!isPvNode
 		&& doNull
