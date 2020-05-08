@@ -1,4 +1,4 @@
-#include "PieceAttacks.h"
+#include "Attacks.h"
 
 #include "../data/Pos.h"
 
@@ -117,38 +117,6 @@ U64 getBlockersFromIndex(const int index, U64 mask)
 	return blockers;
 }
 
-U64 getRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
-{
-	const U64 attacks = Bits::getRay(direction, square);
-	const U64 blocker = attacks & occupied;
-	const byte index = Bits::bitScanForward(blocker | 0x8000000000000000);
-	return attacks ^ Bits::getRay(direction, index);
-}
-
-U64 getRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
-{
-	const U64 attacks = Bits::getRay(direction, square);
-	const U64 blocker = attacks & occupied;
-	const byte index = Bits::bitScanReverse(blocker | 1ULL);
-	return attacks ^ Bits::getRay(direction, index);
-}
-
-U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
-{
-	return getRayAttacksForwards(square, blockers, NORTH_WEST)
-		   | getRayAttacksForwards(square, blockers, NORTH_EAST)
-		   | getRayAttacksBackwards(square, blockers, SOUTH_EAST)
-		   | getRayAttacksBackwards(square, blockers, SOUTH_WEST);
-}
-
-U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
-{
-	return getRayAttacksForwards(square, blockers, NORTH)
-		   | getRayAttacksForwards(square, blockers, EAST)
-		   | getRayAttacksBackwards(square, blockers, SOUTH)
-		   | getRayAttacksBackwards(square, blockers, WEST);
-}
-
 static constexpr auto _knightAttacks = []
 {
 	std::array<U64, 64> moves{};
@@ -194,11 +162,11 @@ static constexpr auto _kingAttacks = []
 	return moves;
 }();
 
-std::array<std::array<U64, 1024>, SQUARE_NB> PieceAttacks::_bishopAttacks{};
+std::array<std::array<U64, 1024>, SQUARE_NB> Attacks::_bishopAttacks{};
 
-std::array<std::array<U64, 4096>, SQUARE_NB> PieceAttacks::_rookAttacks{};
+std::array<std::array<U64, 4096>, SQUARE_NB> Attacks::_rookAttacks{};
 
-void PieceAttacks::init() noexcept
+void Attacks::init() noexcept
 {
 	static bool initialized = false;
 	if (initialized) return;
@@ -213,7 +181,7 @@ void PieceAttacks::init() noexcept
 		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
 		{
 			const U64 blockers = getBlockersFromIndex(blockerIndex, bishopMasks[bb]);
-			const U64 attacks = generateBishopAttacks(bb, blockers);
+			const U64 attacks = Bits::generateBishopAttacks(bb, blockers);
 			const U64 index = (blockers * bishopMagics[bb]) >> (64 - indexBit);
 
 			_bishopAttacks[bb][index] = attacks;
@@ -229,7 +197,7 @@ void PieceAttacks::init() noexcept
 		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
 		{
 			const U64 blockers = getBlockersFromIndex(blockerIndex, rookMasks[bb]);
-			const U64 attacks = generateRookAttacks(bb, blockers);
+			const U64 attacks = Bits::generateRookAttacks(bb, blockers);
 			const U64 index = (blockers * rookMagics[bb]) >> (64 - indexBit);
 
 			_rookAttacks[bb][index] = attacks;
@@ -237,31 +205,31 @@ void PieceAttacks::init() noexcept
 	}
 }
 
-U64 PieceAttacks::knightAttacks(byte square) noexcept
+U64 Attacks::knightAttacks(byte square) noexcept
 {
 	return _knightAttacks[square];
 }
 
-U64 PieceAttacks::bishopAttacks(byte square, U64 blockers) noexcept
+U64 Attacks::bishopAttacks(byte square, U64 blockers) noexcept
 {
 	blockers &= bishopMasks[square];
 	const U64 key = (blockers * bishopMagics[square]) >> (64u - bishopIndexBits[square]);
 	return _bishopAttacks[square][key];
 }
 
-U64 PieceAttacks::rookAttacks(byte square, U64 blockers) noexcept
+U64 Attacks::rookAttacks(byte square, U64 blockers) noexcept
 {
 	blockers &= rookMasks[square];
 	const U64 key = (blockers * rookMagics[square]) >> (64u - rookIndexBits[square]);
 	return _rookAttacks[square][key];
 }
 
-U64 PieceAttacks::queenAttacks(byte square, U64 blockers) noexcept
+U64 Attacks::queenAttacks(byte square, U64 blockers) noexcept
 {
 	return bishopAttacks(square, blockers) | rookAttacks(square, blockers);
 }
 
-U64 PieceAttacks::kingAttacks(byte square) noexcept
+U64 Attacks::kingAttacks(byte square) noexcept
 {
 	return _kingAttacks[square];
 }

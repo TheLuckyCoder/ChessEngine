@@ -1,6 +1,6 @@
 #include "MoveGen.h"
 
-#include "PieceAttacks.h"
+#include "Attacks.h"
 
 namespace
 {
@@ -52,7 +52,7 @@ namespace
 		{
 			const byte from = board.pieceList[Piece][pieceNumber];
 			const U64 bb = getSquare64(from);
-			U64 attacks = PieceAttacks::pawnAttacks<Us>(bb);
+			U64 attacks = Attacks::pawnAttacks<Us>(bb);
 
 			if (board.enPassantSq < SQ_NONE)
 			{
@@ -109,13 +109,13 @@ namespace
 			U64 attacks{};
 
 			if constexpr (P == KNIGHT)
-				attacks = PieceAttacks::knightAttacks(from);
+				attacks = Attacks::knightAttacks(from);
 			else if constexpr (P == BISHOP)
-				attacks = PieceAttacks::bishopAttacks(from, board.occupied);
+				attacks = Attacks::bishopAttacks(from, board.occupied);
 			else if constexpr (P == ROOK)
-				attacks = PieceAttacks::rookAttacks(from, board.occupied);
+				attacks = Attacks::rookAttacks(from, board.occupied);
 			else if constexpr (P == QUEEN)
-				attacks = PieceAttacks::queenAttacks(from, board.occupied);
+				attacks = Attacks::queenAttacks(from, board.occupied);
 
 			attacks &= targets;
 
@@ -139,29 +139,21 @@ namespace
 	}
 
 	template <Color Us>
-	Move *generateAllMoves(const Board &board, Move *moveList, const U64 targets)
+	Move *generateKingMoves(const Board &board, Move *moveList, const U64 targets)
 	{
 		constexpr Color Them = ~Us;
-
-		moveList = generatePawnMoves<Us>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, BISHOP>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, ROOK>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
-
-		// King Moves
 		constexpr Piece KingPiece{ KING, Us };
-		const byte kingSquare = board.pieceList[KingPiece][0];
-		assert(kingSquare < SQUARE_NB);
+		const byte kingSq = board.pieceList[KingPiece][0];
+		assert(kingSq < SQUARE_NB);
 
 		{
-			U64 attacks = PieceAttacks::kingAttacks(kingSquare) & targets;
+			U64 attacks = Attacks::kingAttacks(kingSq) & targets;
 			while (attacks)
 			{
 				const byte to = Bits::findNextSquare(attacks);
 				const U64 bb = Bits::getSquare64(to);
 
-				Move move{ kingSquare, to, KING };
+				Move move{ kingSq, to, KING };
 				if (bb & board.allPieces[Them])
 				{
 					move.setFlags(Move::CAPTURE);
@@ -171,33 +163,59 @@ namespace
 			}
 		}
 
+		const auto addCastleMove = [&, kingSq](const byte kingTo, const byte rookSq,
+											   const byte rookTo, const Move::Flag castleSide)
+		{
+			U64 mask = Bits::getRayBetween(kingSq, kingTo) | Bits::getSquare64(kingTo);
+			mask |= Bits::getRayBetween(rookSq, rookTo) | Bits::getSquare64(rookTo);
+			mask &= ~(Bits::getSquare64(kingSq) | Bits::getSquare64(rookSq));
+
+			// There can't be any pieces in between the rook and king
+			if (board.occupied & mask)
+				return;
+
+			// The King can't pass through a checked square
+			mask = Bits::getRayBetween(kingSq, rookTo);
+			while (mask)
+			{
+				if (board.isAttackedByAny(Them, Bits::popLsb(mask)))
+					return;
+			}
+
+			*moveList++ = { kingSq, kingTo, KING, static_cast<unsigned>(castleSide) };
+		};
+
 		if (board.canCastle<Us>() && !board.isInCheck<Us>())
 		{
-			const byte y = row(kingSquare);
-			const auto isEmptyAndCheckFree = [&board, y](const byte x)
+			if (board.canCastleKs<Us>())
 			{
-				const byte sq = toSquare(x, y);
-				return !(board.occupied & Bits::getSquare64(sq))
-					   && !board.isAttackedByAny(Them, sq);
-			};
-
-			// King Side
-			if (board.canCastleKs<Us>()
-				&& isEmptyAndCheckFree(5)
-				&& isEmptyAndCheckFree(6))
-			{
-				*moveList++ = { kingSquare, toSquare(6, y), KING, Move::KSIDE_CASTLE };
+				constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
+				constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
+				constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
+				addCastleMove(KingTo, RookSq, RookTo, Move::KSIDE_CASTLE);
 			}
 
-			// Queen Side
-			if (board.canCastleQs<Us>()
-				&& isEmptyAndCheckFree(3)
-				&& isEmptyAndCheckFree(2)
-				&& !(board.occupied & Bits::getSquare64(toSquare(1, y))))
+			if (board.canCastleQs<Us>())
 			{
-				*moveList++ = { kingSquare, toSquare(2, y), KING, Move::QSIDE_CASTLE };
+				constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
+				constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
+				constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
+				addCastleMove(KingTo, RookSq, RookTo, Move::QSIDE_CASTLE);
 			}
 		}
+
+		return moveList;
+	}
+
+	template <Color Us>
+	Move *generateAllMoves(const Board &board, Move *moveList, const U64 targets)
+	{
+		moveList = generatePawnMoves<Us>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, BISHOP>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, ROOK>(board, moveList, targets);
+		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
+		moveList = generateKingMoves<Us>(board, moveList, targets);
 
 		return moveList;
 	}

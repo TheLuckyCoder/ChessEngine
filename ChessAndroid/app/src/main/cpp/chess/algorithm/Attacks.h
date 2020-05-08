@@ -2,19 +2,19 @@
 
 #include "../data/Bits.h"
 
-class PieceAttacks
+class Attacks
 {
 	static std::array<std::array<U64, 1024>, 64> _bishopAttacks;
 	static std::array<std::array<U64, 4096>, 64> _rookAttacks;
 
 public:
-	PieceAttacks() = delete;
-	PieceAttacks(const PieceAttacks&) = delete;
-	PieceAttacks(PieceAttacks&&) = delete;
-	~PieceAttacks() = delete;
+	Attacks() = delete;
+	Attacks(const Attacks&) = delete;
+	Attacks(Attacks&&) = delete;
+	~Attacks() = delete;
 
-	PieceAttacks &operator=(const PieceAttacks&) = delete;
-	PieceAttacks &operator=(PieceAttacks&&) = delete;
+	Attacks &operator=(const Attacks&) = delete;
+	Attacks &operator=(Attacks&&) = delete;
 
 	static void init() noexcept;
 	static U64 knightAttacks(byte square) noexcept;

@@ -5,7 +5,7 @@
 
 #include "Piece.h"
 #include "Move.h"
-#include "../algorithm/PieceAttacks.h"
+#include "../algorithm/Attacks.h"
 
 class UndoMove final
 {
@@ -129,17 +129,17 @@ bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) cons
 	{
 		const U64 bb = Bits::getSquare64(targetSquare);
 		return type & ~colorAttacking
-			   ? PieceAttacks::pawnAttacks<WHITE>(bb) : PieceAttacks::pawnAttacks<BLACK>(bb);
+			   ? Attacks::pawnAttacks<WHITE>(bb) : Attacks::pawnAttacks<BLACK>(bb);
 	} else if constexpr (P == KNIGHT)
-		return type & PieceAttacks::knightAttacks(targetSquare);
+		return type & Attacks::knightAttacks(targetSquare);
 	else if constexpr (P == BISHOP)
-		return type & PieceAttacks::bishopAttacks(targetSquare, occupied);
+		return type & Attacks::bishopAttacks(targetSquare, occupied);
 	else if constexpr (P == ROOK)
-		return type & PieceAttacks::rookAttacks(targetSquare, occupied);
+		return type & Attacks::rookAttacks(targetSquare, occupied);
 	else if constexpr (P == QUEEN)
-		return type & PieceAttacks::queenAttacks(targetSquare, occupied);
+		return type & Attacks::queenAttacks(targetSquare, occupied);
 	else if constexpr (P == KING)
-		return type & PieceAttacks::kingAttacks(targetSquare);
+		return type & Attacks::kingAttacks(targetSquare);
 
 	assert(false);
 	return false;

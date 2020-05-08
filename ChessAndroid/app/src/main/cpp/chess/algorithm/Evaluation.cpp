@@ -4,7 +4,7 @@
 #include "../data/Board.h"
 #include "../data/Psqt.h"
 #include "../data/Pos.h"
-#include "PieceAttacks.h"
+#include "Attacks.h"
 
 namespace
 {
@@ -153,7 +153,7 @@ Score Evaluation::evaluatePieces() noexcept
 		const byte square = board.getKingSq(Us);
 		score += evaluateKing<Us>(square);
 
-		const U64 attacks = PieceAttacks::kingAttacks(square);
+		const U64 attacks = Attacks::kingAttacks(square);
 		_attacks[Us][KING] = attacks;
 		_attacksAll[Us] = attacks;
 	}
@@ -185,8 +185,8 @@ Score Evaluation::evaluatePieces() noexcept
 
 	{
 		const U64 &pawns = board.getType(PAWN, Us);
-		const U64 pawnsAttacks = PieceAttacks::pawnAttacks<Us>(pawns);
-		const U64 doublePawnsAttacks = PieceAttacks::pawnDoubleAttacks<Us>(pawns);
+		const U64 pawnsAttacks = Attacks::pawnAttacks<Us>(pawns);
+		const U64 doublePawnsAttacks = Attacks::pawnDoubleAttacks<Us>(pawns);
 
 		_attacks[Us][PAWN] = pawnsAttacks;
 		_attacksMultiple[Us] = doublePawnsAttacks | (doublePawnsAttacks & _attacksAll[Us]);
@@ -194,7 +194,7 @@ Score Evaluation::evaluatePieces() noexcept
 	}
 
 	_mobilityArea[Us] =
-		~board.allPieces[Us] & ~PieceAttacks::pawnAttacks<Them>(board.getType(PAWN, Them));
+		~board.allPieces[Us] & ~Attacks::pawnAttacks<Them>(board.getType(PAWN, Them));
 
 	const auto knightBishop = [&](const byte square)
 	{
@@ -213,7 +213,7 @@ Score Evaluation::evaluatePieces() noexcept
 		score += evaluateKnight<Us>(square);
 		knightBishop(square);
 
-		const U64 attacks = PieceAttacks::knightAttacks(square);
+		const U64 attacks = Attacks::knightAttacks(square);
 		_attacks[Us][KNIGHT] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -226,7 +226,7 @@ Score Evaluation::evaluatePieces() noexcept
 		score += evaluateBishop<Us>(square);
 		knightBishop(square);
 
-		const U64 attacks = PieceAttacks::bishopAttacks(square, board.occupied);
+		const U64 attacks = Attacks::bishopAttacks(square, board.occupied);
 		_attacks[Us][BISHOP] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -241,7 +241,7 @@ Score Evaluation::evaluatePieces() noexcept
 		const byte square = board.pieceList[piece][pieceNumber];
 		score += evaluateRook<Us>(square);
 
-		const U64 attacks = PieceAttacks::rookAttacks(square, board.occupied);
+		const U64 attacks = Attacks::rookAttacks(square, board.occupied);
 		_attacks[Us][ROOK] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -253,7 +253,7 @@ Score Evaluation::evaluatePieces() noexcept
 		const byte square = board.pieceList[piece][pieceNumber];
 		score += evaluateQueen<Us>(square);
 
-		const U64 attacks = PieceAttacks::queenAttacks(square, board.occupied);
+		const U64 attacks = Attacks::queenAttacks(square, board.occupied);
 		_attacks[Us][QUEEN] |= attacks;
 		_attacksMultiple[Us] |= _attacksAll[Us] & attacks;
 		_attacksAll[Us] |= attacks;
@@ -300,13 +300,13 @@ Score Evaluation::evaluateAttacks() const noexcept
 		const byte sq = board.pieceList[Piece{ QUEEN, Them }][0];
 		const U64 safeSpots = _mobilityArea[Us] & ~stronglyProtected;
 
-		const U64 knightAttacks = _attacks[Us][KNIGHT] & PieceAttacks::knightAttacks(sq);
+		const U64 knightAttacks = _attacks[Us][KNIGHT] & Attacks::knightAttacks(sq);
 
 		score += QUEEN_KNIGHT_THREAT * popCount(knightAttacks & safeSpots);
 
 		const U64 sliderAttacks = (_attacks[Us][BISHOP] &
-			PieceAttacks::bishopAttacks(sq, board.occupied))
-			 | (_attacks[Us][ROOK] & PieceAttacks::rookAttacks(sq, board.occupied));
+								   Attacks::bishopAttacks(sq, board.occupied))
+			 | (_attacks[Us][ROOK] & Attacks::rookAttacks(sq, board.occupied));
 
 		score += QUEEN_SLIDER_THREAT * popCount(sliderAttacks & safe & _attacksMultiple[Us]);
 	}
@@ -315,7 +315,7 @@ Score Evaluation::evaluateAttacks() const noexcept
 	score += RESTRICTED_PIECE_MOVEMENT * short(popCount(restrictedMovement));
 
 	const U64 safePawnsAttacks =
-		PieceAttacks::pawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
+		Attacks::pawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
 	score += THREAT_BY_SAFE_PAWN * short(popCount(safePawnsAttacks));
 
 	return score;
@@ -372,7 +372,7 @@ Score Evaluation::evaluateKnight(const byte square) const noexcept
 {
 	Score value = Psqt::BONUS[KNIGHT][square];
 
-	const int mobility = popCount(PieceAttacks::knightAttacks(square) & _mobilityArea[Us]);
+	const int mobility = popCount(Attacks::knightAttacks(square) & _mobilityArea[Us]);
 	value += KNIGHT_MOBILITY[mobility];
 
 	return value;
@@ -388,12 +388,12 @@ Score Evaluation::evaluateBishop(const byte square) const noexcept
 	Score value = Psqt::BONUS[BISHOP][square];
 
 	const int mobility = popCount(
-		PieceAttacks::bishopAttacks(square, board.occupied) & _mobilityArea[Us]);
+		Attacks::bishopAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += BISHOP_MOBILITY[mobility];
 
 	// Long Diagonal Bishop
 	const U64 centerAttacks =
-		PieceAttacks::bishopAttacks(square, board.getType(PAWN, Them)) & Center;
+		Attacks::bishopAttacks(square, board.getType(PAWN, Them)) & Center;
 	if (popCount(centerAttacks) > 1)
 		value.mg += 45;
 
@@ -409,7 +409,7 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 	Score value = Psqt::BONUS[ROOK][square];
 
 	const int mobility = popCount(
-		PieceAttacks::rookAttacks(square, board.occupied) & _mobilityArea[Us]);
+		Attacks::rookAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += ROOK_MOBILITY[mobility];
 
 	const U64 file = getFile(square);
@@ -436,7 +436,7 @@ Score Evaluation::evaluateQueen(const byte square) const noexcept
 	Score value = Psqt::BONUS[QUEEN][square];
 
 	const int mobility = popCount(
-		PieceAttacks::queenAttacks(square, board.occupied) & _mobilityArea[Us]);
+		Attacks::queenAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += QUEEN_MOBILITY[mobility];
 
 	constexpr U64 InitialPosition = FILE_D & (Us ? RANK_1 : RANK_8);

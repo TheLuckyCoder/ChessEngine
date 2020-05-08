@@ -346,11 +346,11 @@ bool Board::isInCheck() const noexcept
 	const U64 bishops = getType(BISHOP, ColorAttacking) | queens;
 	const U64 rooks = getType(ROOK, ColorAttacking) | queens;
 
-	return (getType(PAWN, ColorAttacking) & PieceAttacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
-		   || (getType(KNIGHT, ColorAttacking) & PieceAttacks::knightAttacks(kingSq))
-		   || (getType(KING, ColorAttacking) & PieceAttacks::kingAttacks(kingSq))
-		   || (bishops & PieceAttacks::bishopAttacks(kingSq, occupied))
-		   || (rooks & PieceAttacks::rookAttacks(kingSq, occupied));
+	return (getType(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
+		   || (getType(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
+		   || (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
+		   || (bishops & Attacks::bishopAttacks(kingSq, occupied))
+		   || (rooks & Attacks::rookAttacks(kingSq, occupied));
 }
 
 void Board::addPiece(const byte square, const Piece piece) noexcept

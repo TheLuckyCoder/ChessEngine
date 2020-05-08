@@ -14,6 +14,7 @@ public:
 		PROMOTION = 1 << 2, // The move is a promotion
 		KSIDE_CASTLE = 1 << 3, // The move is a king side castle
 		QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
+		CASTLE = KSIDE_CASTLE | QSIDE_CASTLE,
 		DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
 		EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag additionally)
 	};

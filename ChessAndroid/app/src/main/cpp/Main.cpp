@@ -271,7 +271,7 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jobject)
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_perft(JNIEnv *, jobject)
 {
-	PieceAttacks::init();
+	Attacks::init();
 
 	// Position 1
 	perftTest("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", {

@@ -8,7 +8,7 @@
 #include "algorithm/Hash.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
-#include "algorithm/PieceAttacks.h"
+#include "algorithm/Attacks.h"
 
 Settings BoardManager::_settings(6u, std::thread::hardware_concurrency() - 1u, 128, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
@@ -17,7 +17,7 @@ Board BoardManager::_board;
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
 	Hash::init();
-	PieceAttacks::init();
+	Attacks::init();
 
 	_board.initDefaultBoard();
 	_listener = listener;
@@ -90,8 +90,8 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 	_board.makeMove(move);
 
 	const auto flags = move.flags();
-	const bool shouldRedraw = flags & Move::PROMOTION || flags & Move::KSIDE_CASTLE
-							  || flags & Move::QSIDE_CASTLE || flags & Move::EN_PASSANT;
+	const bool shouldRedraw = flags & Move::PROMOTION || flags & Move::CASTLE
+							  || flags & Move::EN_PASSANT;
 	const State state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()

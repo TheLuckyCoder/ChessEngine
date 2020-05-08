@@ -357,6 +357,66 @@ namespace Bits
 		return shift<WEST>(getFile(square)) | shift<EAST>(getFile(square));
 	}
 
+	inline U64 generateRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
+	{
+		const U64 attacks = getRay(direction, square);
+		const U64 blocker = attacks & occupied;
+		const byte index = bitScanForward(blocker | 0x8000000000000000);
+		return attacks ^ getRay(direction, index);
+	}
+
+	inline U64 generateRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
+	{
+		const U64 attacks = Bits::getRay(direction, square);
+		const U64 blocker = attacks & occupied;
+		const byte index = bitScanReverse(blocker | 1ULL);
+		return attacks ^ getRay(direction, index);
+	}
+
+	inline U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
+	{
+		return generateRayAttacksForwards(square, blockers, NORTH_WEST)
+			   | generateRayAttacksForwards(square, blockers, NORTH_EAST)
+			   | generateRayAttacksBackwards(square, blockers, SOUTH_EAST)
+			   | generateRayAttacksBackwards(square, blockers, SOUTH_WEST);
+	}
+
+	inline U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
+	{
+		return generateRayAttacksForwards(square, blockers, NORTH)
+			   | generateRayAttacksForwards(square, blockers, EAST)
+			   | generateRayAttacksBackwards(square, blockers, SOUTH)
+			   | generateRayAttacksBackwards(square, blockers, WEST);
+	}
+
+	static const auto RAYS_BETWEEN_SQUARES = []
+	{
+		std::array<std::array<U64, SQUARE_NB>, SQUARE_NB> array{};
+
+		for (byte sq1{}; sq1 < SQUARE_NB; ++sq1)
+			for (byte sq2{}; sq2 < SQUARE_NB; ++sq2)
+			{
+				const U64 bb1 = getSquare64(sq1);
+				const U64 bb2 = getSquare64(sq2);
+
+				if (generateRookAttacks(sq1, 0ull) & bb2)
+					array[sq1][sq2] = generateRookAttacks(sq1, bb2) & generateRookAttacks(sq2, bb1);
+				else if (generateBishopAttacks(sq1, 0ull) & bb2)
+					array[sq1][sq2] = generateBishopAttacks(sq1, bb2) & generateBishopAttacks(sq2, bb1);
+			}
+
+		return array;
+	}();
+
+	inline U64 getRayBetween(const byte sq1, const byte sq2)
+	{
+		assert(sq1 < SQ_NONE);
+		assert(sq2 < SQ_NONE);
+		return RAYS_BETWEEN_SQUARES[sq1][sq2];
+	}
+
+// endregion Rays
+
 	/**
 	 * Calculated using Chebyshev distance
 	 */
@@ -376,12 +436,10 @@ namespace Bits
 		return array;
 	}();
 
-	constexpr byte getDistance(const byte x, const byte y)
+	constexpr byte getDistance(const byte sq1, const byte sq2)
 	{
-		return SQUARE_DISTANCE[x][y];
+		return SQUARE_DISTANCE[sq1][sq2];
 	}
-
-// endregion Rays
 }
 
 #undef USE_CUSTOM_POPCNT
