@@ -119,19 +119,13 @@ Evaluation::Result Evaluation::evaluate(const Board &board) noexcept
 		finalScore += TEMPO_BONUS;
 
 		if (Bits::getSquare64(board.getKingSq(BLACK)) & evaluator._attacksAll[WHITE])
-		{
 			finalScore += CHECK_BONUS;
-			result.isInCheck = true;
-		}
 	} else
 	{
 		finalScore -= TEMPO_BONUS;
 
 		if (Bits::getSquare64(board.getKingSq(WHITE)) & evaluator._attacksAll[BLACK])
-		{
 			finalScore -= CHECK_BONUS;
-			result.isInCheck = true;
-		}
 	}
 
 	const Phase phase = board.getPhase();
@@ -441,7 +435,7 @@ Score Evaluation::evaluateQueen(const byte square) const noexcept
 
 	constexpr U64 InitialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
 	if ((InitialPosition & shiftedBoards[square]) == 0)
-		value.mg -= 18;
+		value.mg -= 14;
 
 	return value;
 }
@@ -452,7 +446,7 @@ Score Evaluation::evaluateKing(const byte square) const noexcept
 	Score value = Psqt::BONUS[KNIGHT][square];
 
 	if (board.isCastled<Us>())
-		value.mg += 57;
+		value.mg += 59;
 	else
 	{
 		const short count = short(board.canCastleKs<Us>()) + short(board.canCastleQs<Us>());

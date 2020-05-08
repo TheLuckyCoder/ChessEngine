@@ -143,25 +143,44 @@ namespace
 	{
 		constexpr Color Them = ~Us;
 		constexpr Piece KingPiece{ KING, Us };
+
 		const byte kingSq = board.pieceList[KingPiece][0];
 		assert(kingSq < SQUARE_NB);
 
-		{
-			U64 attacks = Attacks::kingAttacks(kingSq) & targets;
-			while (attacks)
-			{
-				const byte to = Bits::findNextSquare(attacks);
-				const U64 bb = Bits::getSquare64(to);
+		U64 moves = Attacks::kingAttacks(kingSq) & targets;
+		moves &= ~Attacks::pawnAttacks<Them>(board.getType(PAWN, Them));
 
-				Move move{ kingSq, to, KING };
-				if (bb & board.allPieces[Them])
-				{
-					move.setFlags(Move::CAPTURE);
-					move.setCapturedPiece(board.getPiece(to).type());
-				}
-				*moveList++ = move;
-			}
+		const U64 attackers = board.kingAttackers;
+		if (attackers)
+		{
+			U64 bishopAttackers =
+				attackers & (board.getType(BISHOP, Them) | board.getType(QUEEN, Them));
+			U64 rookAttackers =
+				attackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
+
+			while (bishopAttackers)
+				moves &= ~Attacks::bishopXRayAttacks(Bits::popLsb(bishopAttackers));
+
+			while (rookAttackers)
+				moves &= ~Attacks::rookXRayAttacks(Bits::popLsb(rookAttackers));
 		}
+
+		while (moves)
+		{
+			const byte to = Bits::findNextSquare(moves);
+			const U64 bb = Bits::getSquare64(to);
+
+			Move move{ kingSq, to, KING };
+			if (bb & board.allPieces[Them])
+			{
+				move.setFlags(Move::CAPTURE);
+				move.setCapturedPiece(board.getPiece(to).type());
+			}
+			*moveList++ = move;
+		}
+
+		if (board.isSideInCheck() && !board.canCastle<Us>())
+			return moveList;
 
 		const auto addCastleMove = [&, kingSq](const byte kingTo, const byte rookSq,
 											   const byte rookTo, const Move::Flag castleSide)
@@ -185,37 +204,73 @@ namespace
 			*moveList++ = { kingSq, kingTo, KING, static_cast<unsigned>(castleSide) };
 		};
 
-		if (board.canCastle<Us>() && !board.isInCheck<Us>())
+		if (board.canCastleKs<Us>())
 		{
-			if (board.canCastleKs<Us>())
-			{
-				constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
-				constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
-				constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
-				addCastleMove(KingTo, RookSq, RookTo, Move::KSIDE_CASTLE);
-			}
+			constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
+			constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
+			constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
+			addCastleMove(KingTo, RookSq, RookTo, Move::KSIDE_CASTLE);
+		}
 
-			if (board.canCastleQs<Us>())
-			{
-				constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
-				constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
-				constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
-				addCastleMove(KingTo, RookSq, RookTo, Move::QSIDE_CASTLE);
-			}
+		if (board.canCastleQs<Us>())
+		{
+			constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
+			constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
+			constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
+			addCastleMove(KingTo, RookSq, RookTo, Move::QSIDE_CASTLE);
 		}
 
 		return moveList;
 	}
 
 	template <Color Us>
-	Move *generateAllMoves(const Board &board, Move *moveList, const U64 targets)
+	Move *generateAllMoves(const Board &board, Move *moveList)
 	{
+		using namespace Bits;
+		constexpr Color Them = ~Us;
+
+		const U64 kingTargets = ~board.allPieces[Us];
+		if (Bits::several(board.kingAttackers))
+			return generateKingMoves<Us>(board, moveList, kingTargets);
+
+		U64 targets{};
+		const U64 kingAttackers = board.kingAttackers;
+		// When checked we must either capture the attacker
+		// or block it if is a slider piece
+		if (kingAttackers)
+		{
+			targets |= kingAttackers;
+
+			U64 bishopAttackers =
+				kingAttackers & (board.getType(BISHOP, Them) | board.getType(QUEEN, Them));
+			U64 rookAttackers =
+				kingAttackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
+
+			while (bishopAttackers)
+			{
+				const byte sq = popLsb(bishopAttackers);
+				targets |= Attacks::bishopXRayAttacks(sq);
+			}
+
+			while (rookAttackers)
+			{
+				const byte sq = popLsb(rookAttackers);
+				targets |= Attacks::rookXRayAttacks(sq);
+			}
+		}
+
+		// Everywhere but our pieces
+		if (targets)
+			targets &= kingTargets;
+		else
+			targets = kingTargets;
+
 		moveList = generatePawnMoves<Us>(board, moveList, targets);
 		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
 		moveList = generatePieceMoves<Us, BISHOP>(board, moveList, targets);
 		moveList = generatePieceMoves<Us, ROOK>(board, moveList, targets);
 		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
-		moveList = generateKingMoves<Us>(board, moveList, targets);
+		moveList = generateKingMoves<Us>(board, moveList, kingTargets);
 
 		return moveList;
 	}
@@ -224,9 +279,7 @@ namespace
 Move *generateMoves(const Board &board, Move *moveList) noexcept
 {
 	const Color color = board.colorToMove;
-	const U64 targets = ~board.allPieces[color]; // Remove our pieces
-
 	return color == WHITE
-		   ? generateAllMoves<WHITE>(board, moveList, targets)
-		   : generateAllMoves<BLACK>(board, moveList, targets);
+		   ? generateAllMoves<WHITE>(board, moveList)
+		   : generateAllMoves<BLACK>(board, moveList);
 }

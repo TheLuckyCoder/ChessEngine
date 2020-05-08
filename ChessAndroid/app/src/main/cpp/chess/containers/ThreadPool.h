@@ -16,16 +16,8 @@ public:
 	explicit ThreadPool(const std::size_t numThreads = std::thread::hardware_concurrency())
 	{
 		_threads.reserve(numThreads);
-		try
-		{
-			for (auto i = 0u; i < numThreads; ++i)
-				_threads.emplace_back(&ThreadPool::worker, this);
-		}
-		catch (...)
-		{
-			destroy();
-			throw;
-		}
+		for (auto i = 0u; i < numThreads; ++i)
+			_threads.emplace_back(&ThreadPool::worker, this);
 	}
 
 	ThreadPool(const ThreadPool&) = delete;

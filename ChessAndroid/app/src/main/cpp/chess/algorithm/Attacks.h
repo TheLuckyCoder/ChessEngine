@@ -17,17 +17,21 @@ public:
 	Attacks &operator=(Attacks&&) = delete;
 
 	static void init() noexcept;
+
 	static U64 knightAttacks(byte square) noexcept;
 	static U64 bishopAttacks(byte square, U64 blockers) noexcept;
 	static U64 rookAttacks(byte square, U64 blockers) noexcept;
 	static U64 queenAttacks(byte square, U64 blockers) noexcept;
 	static U64 kingAttacks(byte square) noexcept;
 
+	static U64 bishopXRayAttacks(byte square) noexcept;
+	static U64 rookXRayAttacks(byte square) noexcept;
+
 	template <Color C>
 	static U64 pawnAttacks(const U64 pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
-		
+
 		if constexpr (C == WHITE)
 			return Bits::shift<NORTH_WEST>(pawns) | Bits::shift<NORTH_EAST>(pawns);
 		else
@@ -38,7 +42,7 @@ public:
 	static U64 pawnDoubleAttacks(const U64 pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
-		
+
 		if constexpr (C == WHITE)
 			return Bits::shift<NORTH_WEST>(pawns) & Bits::shift<NORTH_EAST>(pawns);
 		else

@@ -141,9 +141,8 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return entryScore;
 	}
 
-	const auto evalResult = Evaluation::evaluate(board);
-	const bool isInCheck = evalResult.isInCheck;
-	const int eval = evalResult.getInvertedValue();
+	const int eval = Evaluation::evaluate(board).getInvertedValue();
+	const bool nodeInCheck = board.isSideInCheck();
 	_evalHistory[board.ply] = eval;
 
 	// We are improving if our static eval increased in the last move
@@ -152,7 +151,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	// Reverse Futility Pruning
 	if (!isPvNode
-		&& !isInCheck
+		&& !nodeInCheck
 		&& depth <= REVERSE_FUTILITY_MAX_DEPTH
 		&& (eval - REVERSE_FUTILITY_MARGIN * std::max(1, depth - improving)) >= beta)
 		return eval;
@@ -162,7 +161,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		&& doNull
 		&& depth >= 4
 		&& eval >= beta
-		&& !isInCheck
+		&& !nodeInCheck
 		&& board.pieceCount[Piece{ QUEEN, board.colorToMove }]
 		   + board.pieceCount[Piece{ ROOK, board.colorToMove }] > 0)
 	{
@@ -201,7 +200,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& !(move.flags() & Move::PROMOTION)
 			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
 			&& !move.isAdvancedPawnPush()
-			&& !isInCheck)
+			&& !nodeInCheck)
 		{
 			Stats::incFutilityCuts();
 			if (futilityMarginEval > bestScore)
@@ -225,7 +224,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& board.ply > 4
 			&& !(move.flags() & Move::Flag::CAPTURE)
 			&& !(move.flags() & Move::Flag::PROMOTION)
-			&& !isInCheck
+			&& !nodeInCheck
 			&& !board.isSideInCheck())
 		{
 			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, true, false);
@@ -363,7 +362,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 			break; // The moves are sorted so we can break if is not a capture
 		}
 
-		const int futilityEval = standPat + Psqt::BONUS[move.to()][move.piece()].eg
+		const int futilityEval = standPat + Psqt::BONUS[move.piece()][move.to()].eg
 								 + Evaluation::getPieceValue(move.promotedPiece())
 								 + FUTILITY_QUIESCENCE_MARGIN;
 		// Futility Pruning

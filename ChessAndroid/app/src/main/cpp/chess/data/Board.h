@@ -11,6 +11,7 @@ class UndoMove final
 {
 public:
 	U64 zKey{};
+	U64 kingAttackers{};
 	unsigned int moveContents{};
 	byte castlingRights{};
 	byte enPassantSq{};
@@ -29,6 +30,7 @@ class Board final
 public:
 	U64 zKey{};
 	U64 occupied{};
+	U64 kingAttackers{};
 	std::array<U64, 2> allPieces{};
 	std::array<std::array<U64, 7>, 2> pieces{};
 	
@@ -79,8 +81,9 @@ public:
 	template <PieceType>
 	bool isAttacked(Color colorAttacking, byte targetSquare) const noexcept;
 	bool isAttackedByAny(Color attackerColor, byte targetSquare) const noexcept;
+	template <Color C>
+	U64 allKingAttackers() const noexcept;
 	bool isSideInCheck() const noexcept;
-	bool isInCheck(Color color) const noexcept;
 	template <Color C>
 	bool isInCheck() const noexcept;
 
@@ -141,6 +144,41 @@ bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) cons
 	else if constexpr (P == KING)
 		return type & Attacks::kingAttacks(targetSquare);
 
-	assert(false);
 	return false;
+}
+
+template <Color C>
+U64 Board::allKingAttackers() const noexcept
+{
+	constexpr Color ColorAttacking = ~C;
+	const byte kingSq = getKingSq(C);
+	assert(kingSq < SQUARE_NB);
+
+	const U64 queens = getType(QUEEN, ColorAttacking);
+	const U64 bishops = getType(BISHOP, ColorAttacking) | queens;
+	const U64 rooks = getType(ROOK, ColorAttacking) | queens;
+
+	return (getType(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
+		   | (getType(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
+		   | (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
+		   | (bishops & Attacks::bishopAttacks(kingSq, occupied))
+		   | (rooks & Attacks::rookAttacks(kingSq, occupied));
+}
+
+template <Color C>
+bool Board::isInCheck() const noexcept
+{
+	constexpr Color ColorAttacking = ~C;
+	const byte kingSq = getKingSq(C);
+	assert(kingSq < SQUARE_NB);
+
+	const U64 queens = getType(QUEEN, ColorAttacking);
+	const U64 bishops = getType(BISHOP, ColorAttacking) | queens;
+	const U64 rooks = getType(ROOK, ColorAttacking) | queens;
+
+	return (getType(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
+		   || (getType(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
+		   || (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
+		   || (bishops & Attacks::bishopAttacks(kingSq, occupied))
+		   || (rooks & Attacks::rookAttacks(kingSq, occupied));
 }

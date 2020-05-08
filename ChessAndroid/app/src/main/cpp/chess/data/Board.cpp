@@ -137,7 +137,7 @@ bool Board::makeMove(const Move move) noexcept
 	Hash::xorCastlingRights(zKey, CastlingRights(castlingRights));
 
 	// Store the position info in history
-	history[historyPly] = { posKey, move.getContents(), castlingRights, enPassantSq,
+	history[historyPly] = { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq,
 							fiftyMoveRule };
 
 	if (canCastle(side))
@@ -209,11 +209,14 @@ bool Board::makeMove(const Move move) noexcept
 
 	updateNonPieceBitboards();
 
-	if ((flags & Move::CAPTURE && move.capturedPiece() == KING) || isInCheck(side))
+	if ((flags & Move::CAPTURE && move.capturedPiece() == KING)
+		|| (side ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>()))
 	{
 		undoMove();
 		return false;
 	}
+
+	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
 
 	return true;
 }
@@ -232,6 +235,7 @@ void Board::undoMove() noexcept
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
 
+	kingAttackers = previousMove.kingAttackers;
 	castlingRights = previousMove.castlingRights;
 	fiftyMoveRule = previousMove.fiftyMoveRule;
 	enPassantSq = previousMove.enPassantSq;
@@ -292,13 +296,15 @@ void Board::makeNullMove() noexcept
 	assert(!isSideInCheck());
 
 	++ply;
-	history[historyPly++] = { zKey, {}, castlingRights, enPassantSq, fiftyMoveRule };
+	history[historyPly++] = { zKey, kingAttackers, {}, castlingRights, enPassantSq, fiftyMoveRule };
 
 	Hash::xorEnPassant(zKey, enPassantSq);
 	enPassantSq = SQ_NONE;
 
 	colorToMove = ~colorToMove;
 	Hash::flipSide(zKey);
+
+	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
 }
 
 void Board::undoNullMove() noexcept
@@ -308,6 +314,7 @@ void Board::undoNullMove() noexcept
 
 	const UndoMove &previousMove = history[historyPly];
 	zKey = previousMove.zKey;
+	kingAttackers = previousMove.kingAttackers;
 	castlingRights = previousMove.castlingRights;
 	fiftyMoveRule = previousMove.fiftyMoveRule;
 	enPassantSq = previousMove.enPassantSq;
@@ -327,30 +334,7 @@ bool Board::isAttackedByAny(const Color attackerColor, const byte targetSquare) 
 
 bool Board::isSideInCheck() const noexcept
 {
-	return isInCheck(colorToMove);
-}
-
-bool Board::isInCheck(const Color color) const noexcept
-{
-	return color ? isInCheck<WHITE>() : isInCheck<BLACK>();
-}
-
-template <Color C>
-bool Board::isInCheck() const noexcept
-{
-	constexpr Color ColorAttacking = ~C;
-	const byte kingSq = getKingSq(C);
-	assert(kingSq < SQUARE_NB);
-
-	const U64 queens = getType(QUEEN, ColorAttacking);
-	const U64 bishops = getType(BISHOP, ColorAttacking) | queens;
-	const U64 rooks = getType(ROOK, ColorAttacking) | queens;
-
-	return (getType(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
-		   || (getType(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
-		   || (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
-		   || (bishops & Attacks::bishopAttacks(kingSq, occupied))
-		   || (rooks & Attacks::rookAttacks(kingSq, occupied));
+	return static_cast<bool>(kingAttackers);
 }
 
 void Board::addPiece(const byte square, const Piece piece) noexcept

@@ -16,7 +16,6 @@ public:
 	{
 		const Board &board;
 		short value{};
-		bool isInCheck{};
 
 		short getInvertedValue() const noexcept { return board.colorToMove ? value : -value; }
 	};

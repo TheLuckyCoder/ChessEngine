@@ -145,9 +145,9 @@ static constexpr auto _kingAttacks = []
 
 	std::array<U64, SQUARE_NB> moves{};
 
-	for (byte i{}; i < SQUARE_NB; ++i)
+	for (byte sq{}; sq < SQUARE_NB; ++sq)
 	{
-		const U64 bb = getSquare64(i);
+		const U64 bb = getSquare64(sq);
 
 		// Vertical and Horizontal
 		U64 attacks = shift<NORTH>(bb) | shift<SOUTH>(bb) | shift<EAST>(bb) | shift<WEST>(bb);
@@ -156,7 +156,7 @@ static constexpr auto _kingAttacks = []
 		attacks |= shift<NORTH_EAST>(bb) | shift<NORTH_WEST>(bb) | shift<SOUTH_EAST>(bb) |
 				   shift<SOUTH_WEST>(bb);
 
-		moves[i] = attacks;
+		moves[sq] = attacks;
 	}
 
 	return moves;
@@ -165,6 +165,36 @@ static constexpr auto _kingAttacks = []
 std::array<std::array<U64, 1024>, SQUARE_NB> Attacks::_bishopAttacks{};
 
 std::array<std::array<U64, 4096>, SQUARE_NB> Attacks::_rookAttacks{};
+
+static constexpr auto _bishopXRayAttacks = []
+{
+	using namespace Bits;
+
+	std::array<U64, SQUARE_NB> moves{};
+
+	for (byte sq{}; sq < SQUARE_NB; ++sq)
+		moves[sq] = getRay(NORTH_WEST, sq)
+				   | getRay(NORTH_EAST, sq)
+				   | getRay(SOUTH_WEST, sq)
+				   | getRay(SOUTH_EAST, sq);
+
+	return moves;
+}();
+
+static constexpr auto _rookXRayAttacks = []
+{
+	using namespace Bits;
+
+	std::array<U64, SQUARE_NB> moves{};
+
+	for (byte sq{}; sq < SQUARE_NB; ++sq)
+		moves[sq] = getRay(NORTH, sq)
+				   | getRay(EAST, sq)
+				   | getRay(SOUTH, sq)
+				   | getRay(WEST, sq);
+
+	return moves;
+}();
 
 void Attacks::init() noexcept
 {
@@ -205,31 +235,41 @@ void Attacks::init() noexcept
 	}
 }
 
-U64 Attacks::knightAttacks(byte square) noexcept
+U64 Attacks::knightAttacks(const byte square) noexcept
 {
 	return _knightAttacks[square];
 }
 
-U64 Attacks::bishopAttacks(byte square, U64 blockers) noexcept
+U64 Attacks::bishopAttacks(const byte square, U64 blockers) noexcept
 {
 	blockers &= bishopMasks[square];
 	const U64 key = (blockers * bishopMagics[square]) >> (64u - bishopIndexBits[square]);
 	return _bishopAttacks[square][key];
 }
 
-U64 Attacks::rookAttacks(byte square, U64 blockers) noexcept
+U64 Attacks::rookAttacks(const byte square, U64 blockers) noexcept
 {
 	blockers &= rookMasks[square];
 	const U64 key = (blockers * rookMagics[square]) >> (64u - rookIndexBits[square]);
 	return _rookAttacks[square][key];
 }
 
-U64 Attacks::queenAttacks(byte square, U64 blockers) noexcept
+U64 Attacks::queenAttacks(const byte square, const U64 blockers) noexcept
 {
 	return bishopAttacks(square, blockers) | rookAttacks(square, blockers);
 }
 
-U64 Attacks::kingAttacks(byte square) noexcept
+U64 Attacks::kingAttacks(const byte square) noexcept
 {
 	return _kingAttacks[square];
+}
+
+U64 Attacks::bishopXRayAttacks(const byte square) noexcept
+{
+	return _bishopXRayAttacks[square];
+}
+
+U64 Attacks::rookXRayAttacks(const byte square) noexcept
+{
+	return _rookXRayAttacks[square];
 }

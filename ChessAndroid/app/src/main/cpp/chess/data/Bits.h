@@ -247,6 +247,11 @@ namespace Bits
 		return square;
 	}
 
+	inline bool several(const U64 bb) noexcept
+	{
+		return bb & (bb - 1);
+	}
+
 // region Rays
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square
@@ -357,7 +362,7 @@ namespace Bits
 		return shift<WEST>(getFile(square)) | shift<EAST>(getFile(square));
 	}
 
-	inline U64 generateRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
+	inline static U64 generateRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
 	{
 		const U64 attacks = getRay(direction, square);
 		const U64 blocker = attacks & occupied;
@@ -365,7 +370,7 @@ namespace Bits
 		return attacks ^ getRay(direction, index);
 	}
 
-	inline U64 generateRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
+	inline static U64 generateRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
 	{
 		const U64 attacks = Bits::getRay(direction, square);
 		const U64 blocker = attacks & occupied;

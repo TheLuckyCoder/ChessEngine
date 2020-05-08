@@ -50,7 +50,7 @@ void FenParser::parseFen(const std::string &fen)
 	_board.enPassantSq = 64u;
 	//_board.enPassant = token == "-" ? 0ull : 1 << x;
 
-	// Halfmove Clock
+	// HalfMove Clock
 	int halfMove;
 	fenStream >> halfMove;
 	_board.fiftyMoveRule = static_cast<byte>(halfMove);
@@ -58,6 +58,8 @@ void FenParser::parseFen(const std::string &fen)
 	_board.updatePieceList();
 	_board.updateNonPieceBitboards();
 	_board.zKey = Hash::compute(_board);
+
+	_board.kingAttackers = _board.colorToMove ? _board.allKingAttackers<WHITE>() : _board.allKingAttackers<BLACK>();
 }
 
 std::string FenParser::exportToFen()
@@ -76,40 +78,40 @@ void FenParser::parsePieces(std::istringstream &stream) const
 		switch (currChar)
 		{
 			case 'p':
-				_board.data[boardPos++] = Piece(PAWN, BLACK);
+				_board.data[boardPos++] = { PAWN, BLACK };
 				break;
 			case 'r':
-				_board.data[boardPos++] = Piece(ROOK, BLACK);
+				_board.data[boardPos++] = { ROOK, BLACK };
 				break;
 			case 'n':
-				_board.data[boardPos++] = Piece(KNIGHT, BLACK);
+				_board.data[boardPos++] = { KNIGHT, BLACK };
 				break;
 			case 'b':
-				_board.data[boardPos++] = Piece(BISHOP, BLACK);
+				_board.data[boardPos++] = { BISHOP, BLACK };
 				break;
 			case 'q':
-				_board.data[boardPos++] = Piece(QUEEN, BLACK);
+				_board.data[boardPos++] = { QUEEN, BLACK };
 				break;
 			case 'k':
-				_board.data[boardPos++] = Piece(KING, BLACK);
+				_board.data[boardPos++] = { KING, BLACK };
 				break;
 			case 'P':
-				_board.data[boardPos++] = Piece(PAWN, WHITE);
+				_board.data[boardPos++] = { PAWN, WHITE };
 				break;
 			case 'R':
-				_board.data[boardPos++] = Piece(ROOK, WHITE);
+				_board.data[boardPos++] = { ROOK, WHITE };
 				break;
 			case 'N':
-				_board.data[boardPos++] = Piece(KNIGHT, WHITE);
+				_board.data[boardPos++] = { KNIGHT, WHITE };
 				break;
 			case 'B':
-				_board.data[boardPos++] = Piece(BISHOP, WHITE);
+				_board.data[boardPos++] = { BISHOP, WHITE };
 				break;
 			case 'Q':
-				_board.data[boardPos++] = Piece(QUEEN, WHITE);
+				_board.data[boardPos++] = { QUEEN, WHITE };
 				break;
 			case 'K':
-				_board.data[boardPos++] = Piece(KING, WHITE);
+				_board.data[boardPos++] = { KING, WHITE };
 				break;
 			case '/': boardPos -= 16u; // Go down one rank
 				break;
