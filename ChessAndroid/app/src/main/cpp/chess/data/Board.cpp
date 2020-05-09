@@ -57,13 +57,35 @@ byte Board::getKingSq(const Color color) const noexcept
 	return pieceList[Piece{ KING, color }][0];
 }
 
-bool Board::isRepetition() const noexcept
+bool Board::isDrawn() const noexcept
 {
-	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
-		if (zKey == history[i].zKey)
-			return true;
+	// Fifty Move Rules
+	if (fiftyMoveRule > 99)
+		return true;
 
-	return false;
+	// Three-fold repetition
+	byte repetitions{};
+	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
+	{
+		if (zKey == history[i].zKey)
+		{
+			++repetitions;
+			if (repetitions == 3)
+				return true;
+		}
+	}
+
+	// Insufficient Material
+	// KvK, KvN, KvB, KvNN
+	const U64 pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
+	const U64 knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
+	const U64 bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
+	const U64 rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
+	const U64 queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
+
+	return !(pawns | rooks | queens)
+		   && (!Bits::several(allPieces[WHITE]) || !Bits::several(allPieces[BLACK]))
+		   && (!Bits::several(knight | bishop) || (!bishop && Bits::popCount(knight) <= 2));
 }
 
 Phase Board::getPhase() const noexcept

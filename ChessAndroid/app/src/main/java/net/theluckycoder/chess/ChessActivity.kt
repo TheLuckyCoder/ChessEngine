@@ -97,9 +97,13 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
 
         if (preferences.firstStart) {
             preferences.firstStart = false
+
             // Set Default Settings
-            preferences.settings =
-                Settings.create(4, Runtime.getRuntime().availableProcessors() - 1, 100, true)
+            val defaultDifficultyLevel = 4
+            val settings =
+                Settings.create(4, Runtime.getRuntime().availableProcessors() - 1, 64, true)
+            preferences.settings = getDifficulty(defaultDifficultyLevel, settings)
+            preferences.difficultyLevel = defaultDifficultyLevel
         }
 
         gameManager.initBoard(false)

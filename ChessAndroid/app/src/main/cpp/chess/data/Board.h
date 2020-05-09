@@ -70,7 +70,7 @@ public:
 	U64 getType(PieceType type, Color color) const noexcept;
 	byte getKingSq(Color color) const noexcept;
 
-	bool isRepetition() const noexcept;
+	bool isDrawn() const noexcept;
 	Phase getPhase() const noexcept;
 
 	bool makeMove(Move move) noexcept;
@@ -84,8 +84,6 @@ public:
 	template <Color C>
 	U64 allKingAttackers() const noexcept;
 	bool isSideInCheck() const noexcept;
-	template <Color C>
-	bool isInCheck() const noexcept;
 
 private:
 	void addPiece(byte square, Piece piece) noexcept;
@@ -163,22 +161,4 @@ U64 Board::allKingAttackers() const noexcept
 		   | (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
 		   | (bishops & Attacks::bishopAttacks(kingSq, occupied))
 		   | (rooks & Attacks::rookAttacks(kingSq, occupied));
-}
-
-template <Color C>
-bool Board::isInCheck() const noexcept
-{
-	constexpr Color ColorAttacking = ~C;
-	const byte kingSq = getKingSq(C);
-	assert(kingSq < SQUARE_NB);
-
-	const U64 queens = getType(QUEEN, ColorAttacking);
-	const U64 bishops = getType(BISHOP, ColorAttacking) | queens;
-	const U64 rooks = getType(ROOK, ColorAttacking) | queens;
-
-	return (getType(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bits::getSquare64(kingSq)))
-		   || (getType(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
-		   || (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
-		   || (bishops & Attacks::bishopAttacks(kingSq, occupied))
-		   || (rooks & Attacks::rookAttacks(kingSq, occupied));
 }

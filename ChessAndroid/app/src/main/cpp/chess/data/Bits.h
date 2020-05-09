@@ -252,6 +252,11 @@ namespace Bits
 		return bb & (bb - 1);
 	}
 
+	inline bool onlyOne(const U64 bb) noexcept
+	{
+		return bb && !several(bb);
+	}
+
 // region Rays
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square

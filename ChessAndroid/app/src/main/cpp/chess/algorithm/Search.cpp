@@ -18,7 +18,7 @@ constexpr int FUTILITY_MARGIN = 160;
 constexpr int FUTILITY_MAX_DEPTH = 6;
 
 std::array<std::array<unsigned int, MAX_DEPTH>, 2> Search::_searchKillers{};
-std::array<std::array<byte, 64>, 64> Search::_searchHistory{};
+std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> Search::_searchHistory{};
 std::array<int, MAX_DEPTH> Search::_evalHistory;
 ThreadPool Search::_threadPool(1);
 TranspositionTable Search::_transpTable(2);
@@ -57,7 +57,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 
 	const auto getPvLine = [&board, &pvArray](const int depth) -> int
 	{
-		assert(depth < MAX_DEPTH);
+		assert(depth <= MAX_DEPTH);
 
 		int count{};
 
@@ -107,10 +107,10 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	if (rootNode)
 		assert(isPvNode);
 
-	if (!rootNode && (board.fiftyMoveRule == 100 || board.isRepetition()))
+	if (!rootNode && board.isDrawn())
 		return 0;
 
-	if (board.ply == MAX_DEPTH)
+	if (board.ply >= MAX_DEPTH)
 		return Evaluation::evaluate(board).getInvertedValue();
 
 	if (depth <= 0)
@@ -190,6 +190,10 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		const Move move = MoveOrdering::getNextMove(moveList);
 		const bool pvMove = move.getScore() == MoveOrdering::PV_SCORE;
 
+		if (!board.makeMove(move))
+			continue;
+		++legalCount;
+
 		// Futility Pruning
 		if (depth < FUTILITY_MAX_DEPTH
 			&& !pvMove
@@ -200,17 +204,15 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& !(move.flags() & Move::PROMOTION)
 			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
 			&& !move.isAdvancedPawnPush()
-			&& !nodeInCheck)
+			&& !nodeInCheck
+			&& !board.isSideInCheck())
 		{
 			Stats::incFutilityCuts();
 			if (futilityMarginEval > bestScore)
 				bestScore = eval;
+			board.undoMove();
 			continue;
 		}
-
-		if (!board.makeMove(move))
-			continue;
-		++legalCount;
 
 		int moveScore = alpha;
 		bool doFullSearch = true;
@@ -300,9 +302,12 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 {
+	if (board.isDrawn())
+		return 0;
+
 	const short startPly = board.ply;
 
-	if (startPly == MAX_DEPTH)
+	if (startPly >= MAX_DEPTH)
 		return Evaluation::evaluate(board).getInvertedValue();
 
 	const bool inCheck = board.isSideInCheck();

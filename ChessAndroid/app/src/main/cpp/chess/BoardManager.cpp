@@ -10,7 +10,7 @@
 #include "algorithm/Search.h"
 #include "algorithm/Attacks.h"
 
-Settings BoardManager::_settings(6u, std::thread::hardware_concurrency() - 1u, 128, true);
+Settings BoardManager::_settings(6u, std::thread::hardware_concurrency() - 1u, 64, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
 Board BoardManager::_board;
 
@@ -55,7 +55,7 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 
 std::vector<Move> BoardManager::getMovesHistory()
 {
-	std::vector<Move> moves(_board.historyPly);
+	std::vector<Move> moves(static_cast<size_t>(_board.historyPly));
 
 	for (size_t i{}; i < moves.size(); ++i)
 		moves[i] = _board.history[i].getMove();
@@ -149,8 +149,11 @@ bool BoardManager::undoLastMoves()
 
 State BoardManager::getBoardState()
 {
-	const bool whiteInCheck = _board.isInCheck<WHITE>();
-	const bool blackInCheck = _board.isInCheck<BLACK>();
+	if (_board.isDrawn())
+		return State::DRAW;
+
+	const bool whiteInCheck = _board.allKingAttackers<WHITE>();
+	const bool blackInCheck = _board.allKingAttackers<BLACK>();
 
 	if (whiteInCheck && blackInCheck)
 		return State::INVALID;

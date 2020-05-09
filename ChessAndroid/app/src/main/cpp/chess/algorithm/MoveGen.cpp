@@ -179,7 +179,7 @@ namespace
 			*moveList++ = move;
 		}
 
-		if (board.isSideInCheck() && !board.canCastle<Us>())
+		if (board.isSideInCheck() || !board.canCastle<Us>())
 			return moveList;
 
 		const auto addCastleMove = [&, kingSq](const byte kingTo, const byte rookSq,

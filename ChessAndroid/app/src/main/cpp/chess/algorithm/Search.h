@@ -13,7 +13,7 @@ class Search final
 {
 	static TranspositionTable _transpTable;
 	static std::array<std::array<unsigned int, MAX_DEPTH>, 2> _searchKillers;
-	static std::array<std::array<byte, 64>, 64> _searchHistory;
+	static std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> _searchHistory;
 	static std::array<int, MAX_DEPTH> _evalHistory;
 	static ThreadPool _threadPool;
 	static bool _quiescenceSearchEnabled;
