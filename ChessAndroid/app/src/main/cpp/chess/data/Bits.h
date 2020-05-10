@@ -15,7 +15,7 @@
 
 namespace Bits
 {
-	static constexpr U64 eastN(U64 board, const int n) noexcept
+	static constexpr U64 _eastN(U64 board, const int n) noexcept
 	{
 		for (int i = 0; i < n; ++i)
 			board = ((board << 1) & (~FILE_A));
@@ -23,7 +23,7 @@ namespace Bits
 		return board;
 	}
 
-	static constexpr U64 westN(U64 board, const int n) noexcept
+	static constexpr U64 _westN(U64 board, const int n) noexcept
 	{
 		for (int i = 0; i < n; ++i)
 			board = ((board >> 1) & (~FILE_H));
@@ -34,7 +34,7 @@ namespace Bits
 	/**
 	 * Table of precalculated shifted bitboards indexed by the times 1 has been shifted to the left
 	 */
-	static constexpr auto shiftedBoards = []
+	static constexpr auto _SQUARES = []
 	{
 		std::array<U64, 64> array{};
 
@@ -46,7 +46,7 @@ namespace Bits
 
 	constexpr U64 getSquare64(const byte square) noexcept
 	{
-		return shiftedBoards[square];
+		return _SQUARES[square];
 	}
 
 #if defined(__GNUC__)  // GCC, Clang
@@ -240,13 +240,6 @@ namespace Bits
 		return lsbIndex;
 	}
 
-	inline byte findNextSquare(U64 &bb)
-	{
-		const byte square = Bits::bitScanForward(bb);
-		bb ^= Bits::shiftedBoards[square];
-		return square;
-	}
-
 	inline bool several(const U64 bb) noexcept
 	{
 		return bb & (bb - 1);
@@ -261,7 +254,7 @@ namespace Bits
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square
 	*/
-	static constexpr auto RAYS = []
+	static constexpr auto _RAYS = []
 	{
 		std::array<std::array<U64, SQUARE_NB>, 8> rays{};
 
@@ -273,23 +266,27 @@ namespace Bits
 
 			rays[SOUTH][square] = 0x0080808080808080ULL >> (63u - square);
 
-			rays[EAST][square] = 2u * (shiftedBoards[square | 7u] - shiftedBoards[square]);
+			rays[EAST][square] = 2u * (_SQUARES[square | 7u] - _SQUARES[square]);
 
-			rays[WEST][square] = shiftedBoards[square] - shiftedBoards[square & 56u];
+			rays[WEST][square] = _SQUARES[square] - _SQUARES[square & 56u];
 
-			rays[NORTH_WEST][square] = westN(0x102040810204000ULL, 7u - col(square)) << (row(square) * 8u);
+			rays[NORTH_WEST][square] =
+				_westN(0x102040810204000ULL, 7u - col(square)) << (row(square) * 8u);
 
-			rays[NORTH_EAST][square] = eastN(0x8040201008040200ULL, col(square)) << (row(square) * 8u);
+			rays[NORTH_EAST][square] =
+				_eastN(0x8040201008040200ULL, col(square)) << (row(square) * 8u);
 
-			rays[SOUTH_WEST][square] = westN(0x40201008040201ULL, 7u - col(square)) >> ((7u - row(square)) * 8u);
+			rays[SOUTH_WEST][square] =
+				_westN(0x40201008040201ULL, 7u - col(square)) >> ((7u - row(square)) * 8u);
 
-			rays[SOUTH_EAST][square] = eastN(0x2040810204080ULL, col(square)) >> ((7u - row(square)) * 8u);
+			rays[SOUTH_EAST][square] =
+				_eastN(0x2040810204080ULL, col(square)) >> ((7u - row(square)) * 8u);
 		}
 
 		return rays;
 	}();
 
-	static constexpr auto RANKS = []
+	static constexpr auto _RANKS = []
 	{
 		std::array<U64, 8> ranks{};
 
@@ -299,7 +296,7 @@ namespace Bits
 		return ranks;
 	}();
 
-	static constexpr auto FILES = []
+	static constexpr auto _FILES = []
 	{
 		std::array<U64, 8> files{};
 
@@ -310,7 +307,7 @@ namespace Bits
 	}();
 
 	template <Dir D>
-	static constexpr U64 shiftT(const U64 bb) noexcept
+	static constexpr U64 _shiftT(const U64 bb) noexcept
 	{
 		if constexpr (D == NORTH)
 			return bb << 8u;
@@ -336,8 +333,8 @@ namespace Bits
 	template <Dir D, Dir... Dirs>
 	constexpr U64 shift(const U64 bb) noexcept
 	{
-		U64 result = shiftT<D>(bb);
-		((result = shiftT<Dirs>(result)),...);
+		U64 result = _shiftT<D>(bb);
+		((result = _shiftT<Dirs>(result)),...);
 		return result;
 	}
 
@@ -349,17 +346,17 @@ namespace Bits
 	 */
 	constexpr U64 getRay(const Dir direction, const byte square) noexcept
 	{
-		return RAYS[direction][square];
+		return _RAYS[direction][square];
 	}
 
 	constexpr U64 getRank(const byte square) noexcept
 	{
-		return RANKS[row(square)];
+		return _RANKS[row(square)];
 	}
 
 	constexpr U64 getFile(const byte square) noexcept
 	{
-		return FILES[col(square)];
+		return _FILES[col(square)];
 	}
 
 	constexpr U64 getAdjacentFiles(const byte square) noexcept
@@ -367,17 +364,17 @@ namespace Bits
 		return shift<WEST>(getFile(square)) | shift<EAST>(getFile(square));
 	}
 
-	inline static U64 generateRayAttacksForwards(const byte square, const U64 occupied, const Dir direction)
+	inline static U64 _generateRayAttacksForwards(const byte sq, const U64 occupied, const Dir direction)
 	{
-		const U64 attacks = getRay(direction, square);
+		const U64 attacks = getRay(direction, sq);
 		const U64 blocker = attacks & occupied;
 		const byte index = bitScanForward(blocker | 0x8000000000000000);
 		return attacks ^ getRay(direction, index);
 	}
 
-	inline static U64 generateRayAttacksBackwards(const byte square, const U64 occupied, const Dir direction)
+	inline static U64 _generateRayAttacksBackwards(const byte sq, const U64 occupied, const Dir direction)
 	{
-		const U64 attacks = Bits::getRay(direction, square);
+		const U64 attacks = Bits::getRay(direction, sq);
 		const U64 blocker = attacks & occupied;
 		const byte index = bitScanReverse(blocker | 1ULL);
 		return attacks ^ getRay(direction, index);
@@ -385,21 +382,21 @@ namespace Bits
 
 	inline U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
 	{
-		return generateRayAttacksForwards(square, blockers, NORTH_WEST)
-			   | generateRayAttacksForwards(square, blockers, NORTH_EAST)
-			   | generateRayAttacksBackwards(square, blockers, SOUTH_EAST)
-			   | generateRayAttacksBackwards(square, blockers, SOUTH_WEST);
+		return _generateRayAttacksForwards(square, blockers, NORTH_WEST)
+			   | _generateRayAttacksForwards(square, blockers, NORTH_EAST)
+			   | _generateRayAttacksBackwards(square, blockers, SOUTH_EAST)
+			   | _generateRayAttacksBackwards(square, blockers, SOUTH_WEST);
 	}
 
 	inline U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
 	{
-		return generateRayAttacksForwards(square, blockers, NORTH)
-			   | generateRayAttacksForwards(square, blockers, EAST)
-			   | generateRayAttacksBackwards(square, blockers, SOUTH)
-			   | generateRayAttacksBackwards(square, blockers, WEST);
+		return _generateRayAttacksForwards(square, blockers, NORTH)
+			   | _generateRayAttacksForwards(square, blockers, EAST)
+			   | _generateRayAttacksBackwards(square, blockers, SOUTH)
+			   | _generateRayAttacksBackwards(square, blockers, WEST);
 	}
 
-	static const auto RAYS_BETWEEN_SQUARES = []
+	static const auto _RAYS_BETWEEN_SQUARES = []
 	{
 		std::array<std::array<U64, SQUARE_NB>, SQUARE_NB> array{};
 
@@ -422,7 +419,7 @@ namespace Bits
 	{
 		assert(sq1 < SQ_NONE);
 		assert(sq2 < SQ_NONE);
-		return RAYS_BETWEEN_SQUARES[sq1][sq2];
+		return _RAYS_BETWEEN_SQUARES[sq1][sq2];
 	}
 
 // endregion Rays
@@ -430,7 +427,7 @@ namespace Bits
 	/**
 	 * Calculated using Chebyshev distance
 	 */
-	static constexpr auto SQUARE_DISTANCE = []
+	static constexpr auto _DISTANCE_BETWEEM_SQUARES = []
 	{
 		std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> array{};
 
@@ -446,9 +443,9 @@ namespace Bits
 		return array;
 	}();
 
-	constexpr byte getDistance(const byte sq1, const byte sq2)
+	constexpr byte getDistanceBetween(const byte sq1, const byte sq2)
 	{
-		return SQUARE_DISTANCE[sq1][sq2];
+		return _DISTANCE_BETWEEM_SQUARES[sq1][sq2];
 	}
 }
 

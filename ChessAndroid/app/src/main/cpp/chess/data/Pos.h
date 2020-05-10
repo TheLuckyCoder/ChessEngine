@@ -66,11 +66,6 @@ public:
 		return ::toSquare(x, y);
 	}
 
-	constexpr U64 toBitboard() const noexcept
-	{
-		return Bits::shiftedBoards[toSquare()];
-	}
-
 	byte x;
 	byte y;
 };

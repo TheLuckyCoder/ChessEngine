@@ -2,6 +2,8 @@
 
 #include "Attacks.h"
 
+using namespace Bits;
+
 namespace
 {
 	template <Color Us>
@@ -71,7 +73,7 @@ namespace
 
 			while (attacks)
 			{
-				const byte to = findNextSquare(attacks);
+				const byte to = popLsb(attacks);
 				addCaptureMove(from, to, bb);
 			}
 
@@ -121,8 +123,8 @@ namespace
 
 			while (attacks)
 			{
-				const byte to = Bits::findNextSquare(attacks);
-				const U64 bb = Bits::getSquare64(to);
+				const byte to = popLsb(attacks);
+				const U64 bb = getSquare64(to);
 
 				Move move{ from, to, P };
 				if (bb & board.allPieces[Them])
@@ -159,16 +161,16 @@ namespace
 				attackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
 
 			while (bishopAttackers)
-				moves &= ~Attacks::bishopXRayAttacks(Bits::popLsb(bishopAttackers));
+				moves &= ~Bits::getRayBetween(popLsb(bishopAttackers), kingSq);
 
 			while (rookAttackers)
-				moves &= ~Attacks::rookXRayAttacks(Bits::popLsb(rookAttackers));
+				moves &= ~Bits::getRayBetween(popLsb(rookAttackers), kingSq);
 		}
 
 		while (moves)
 		{
-			const byte to = Bits::findNextSquare(moves);
-			const U64 bb = Bits::getSquare64(to);
+			const byte to = popLsb(moves);
+			const U64 bb = getSquare64(to);
 
 			Move move{ kingSq, to, KING };
 			if (bb & board.allPieces[Them])
@@ -185,19 +187,19 @@ namespace
 		const auto addCastleMove = [&, kingSq](const byte kingTo, const byte rookSq,
 											   const byte rookTo, const Move::Flag castleSide)
 		{
-			U64 mask = Bits::getRayBetween(kingSq, kingTo) | Bits::getSquare64(kingTo);
-			mask |= Bits::getRayBetween(rookSq, rookTo) | Bits::getSquare64(rookTo);
-			mask &= ~(Bits::getSquare64(kingSq) | Bits::getSquare64(rookSq));
+			U64 mask = getRayBetween(kingSq, kingTo) | getSquare64(kingTo);
+			mask |= getRayBetween(rookSq, rookTo) | getSquare64(rookTo);
+			mask &= ~(getSquare64(kingSq) | getSquare64(rookSq));
 
 			// There can't be any pieces in between the rook and king
 			if (board.occupied & mask)
 				return;
 
 			// The King can't pass through a checked square
-			mask = Bits::getRayBetween(kingSq, rookTo);
+			mask = getRayBetween(kingSq, kingTo);
 			while (mask)
 			{
-				if (board.isAttackedByAny(Them, Bits::popLsb(mask)))
+				if (board.isAttackedByAny(Them, popLsb(mask)))
 					return;
 			}
 
@@ -230,7 +232,7 @@ namespace
 		constexpr Color Them = ~Us;
 
 		const U64 kingTargets = ~board.allPieces[Us];
-		if (Bits::several(board.kingAttackers))
+		if (several(board.kingAttackers))
 			return generateKingMoves<Us>(board, moveList, kingTargets);
 
 		U64 targets{};

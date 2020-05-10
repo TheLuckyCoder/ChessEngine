@@ -129,8 +129,10 @@ bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) cons
 	if constexpr (P == PAWN)
 	{
 		const U64 bb = Bits::getSquare64(targetSquare);
-		return type & ~colorAttacking
-			   ? Attacks::pawnAttacks<WHITE>(bb) : Attacks::pawnAttacks<BLACK>(bb);
+		const U64 pawnAttacks = colorAttacking
+			   ? Attacks::pawnAttacks<WHITE>(type) : Attacks::pawnAttacks<BLACK>(type);
+
+		return pawnAttacks & bb;
 	} else if constexpr (P == KNIGHT)
 		return type & Attacks::knightAttacks(targetSquare);
 	else if constexpr (P == BISHOP)

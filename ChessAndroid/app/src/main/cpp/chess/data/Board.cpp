@@ -435,7 +435,7 @@ void Board::removePiece(const byte square) noexcept
 
 void Board::updatePieceList() noexcept
 {
-	pieceCount.fill(0);
+	pieceCount.fill({});
 
 	for (byte square = 0u; square < SQUARE_NB; ++square)
 		if (const Piece piece = getPiece(square))

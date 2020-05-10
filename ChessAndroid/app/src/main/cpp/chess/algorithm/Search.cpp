@@ -31,9 +31,8 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	//	const auto threadCount = settings.getThreadCount();
 	_quiescenceSearchEnabled = settings.performQuiescenceSearch();
 
-	// If the Transposition Table wasn't resized, increment its age
-	if (!_transpTable.setSize(settings.getCacheTableSizeMb()))
-		_transpTable.incrementAge();
+	_transpTable.incrementAge();
+	_transpTable.setSize(settings.getCacheTableSizeMb());
 
 	// Update ThreadPool size if needed
 	//	if (_threadPool.getThreadCount() != threadCount)

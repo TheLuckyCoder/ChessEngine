@@ -39,12 +39,8 @@ class GameManager(
 
         if (initialized) {
             isPlayerWhite = playerWhite
-
-            listener.redrawPieces(getPiecesList(), playerWhite)
         } else {
             initialized = true
-
-            listener.redrawBoard(playerWhite)
 
             isPlayerWhite =
                 if (SaveManager.loadFromFile(context)) Native.isPlayerWhite() else playerWhite

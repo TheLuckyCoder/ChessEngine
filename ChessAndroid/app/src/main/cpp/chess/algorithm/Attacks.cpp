@@ -111,7 +111,7 @@ U64 getBlockersFromIndex(const int index, U64 mask)
 	{
 		const byte bitPos = Bits::popLsb(mask);
 		if (index & (1 << i))
-			blockers |= Bits::shiftedBoards[bitPos];
+			blockers |= Bits::_SQUARES[bitPos];
 	}
 
 	return blockers;

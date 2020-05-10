@@ -37,9 +37,9 @@ U64 Hash::compute(const Board &board)
 {
 	U64 hash{};
 
-	for (byte i = 0; i < SQUARE_NB; ++i)
-		if (const Piece &piece = board.getPiece(i); piece)
-			hash ^= _pieces[i][piece.color()][piece.type()];
+	for (byte sq = 0; sq < SQUARE_NB; ++sq)
+		if (const Piece &piece = board.getPiece(sq); piece)
+			hash ^= _pieces[sq][piece.color()][piece.type()];
 
 	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
 	xorEnPassant(hash, board.enPassantSq);

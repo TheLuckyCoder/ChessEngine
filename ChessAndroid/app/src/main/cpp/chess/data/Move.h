@@ -126,8 +126,8 @@ public:
 		std::string str;
 		str.reserve(5);
 
-		const Pos fromPos{ from() };
-		const Pos toPos{ to() };
+		const byte fromSq{ from() };
+		const byte toSq{ to() };
 
 		{
 			const PieceType p = piece();
@@ -146,10 +146,10 @@ public:
 			str += pChar;
 		}
 
-		str += 'a' + fromPos.x;
-		str += '1' + fromPos.y;
-		str += 'a' + toPos.x;
-		str += '1' + toPos.y;
+		str += 'a' + col(fromSq);
+		str += '1' + row(fromSq);
+		str += 'a' + col(toSq);
+		str += '1' + row(toSq);
 
 		if (flags() & Flag::PROMOTION)
 		{
