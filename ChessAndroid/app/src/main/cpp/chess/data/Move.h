@@ -3,7 +3,6 @@
 #include <string>
 
 #include "Defs.h"
-#include "Pos.h"
 
 class Move final
 {

@@ -11,7 +11,6 @@
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/algorithm/Evaluation.h"
 #include "chess/algorithm/MoveGen.h"
-#include "chess/data/Pos.h"
 
 #define external extern "C"
 
@@ -38,10 +37,11 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 
 	for (unsigned i = 0; i < moved.size(); ++i)
 	{
-		const Pos startPos{ moved[i].first };
-		const Pos destPos{ moved[i].second };
+		const byte startSq = moved[i].first;
+		const byte destSq = moved[i].second;
+
 		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
-									 startPos.x, startPos.y, destPos.x, destPos.y);
+									 col(startSq), row(startSq), col(destSq), row(destSq));
 
 		env->SetObjectArrayElement(result, i, obj);
 	}
@@ -153,7 +153,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 
 	const static auto constructorId = pEnv->GetMethodID(Cache::pieceClass, "<init>", "(IIB)V");
 
-	std::vector<std::pair<Pos, byte>> pieceList;
+	std::vector<std::pair<byte, byte>> pieceList;
 	pieceList.reserve(32);
 
 	const auto &board = BoardManager::getBoard();
@@ -166,7 +166,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 			{
 				const byte sq = board.pieceList[piece][pieceNumber];
 
-				pieceList.emplace_back(Pos{ sq }, color == BLACK ? byte(pieceType + 6u) : pieceType);
+				pieceList.emplace_back(sq, color == BLACK ? byte(pieceType + 6u) : pieceType);
 			}
 		}
 	}
@@ -178,7 +178,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 	{
 		const auto &it = pieceList[i];
 		jobject obj =
-			pEnv->NewObject(Cache::pieceClass, constructorId, int(it.first.x), int(it.first.y),
+			pEnv->NewObject(Cache::pieceClass, constructorId, col(it.first), row(it.first),
 							it.second);
 		pEnv->SetObjectArrayElement(array, i, obj);
 	}

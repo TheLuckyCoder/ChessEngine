@@ -1,6 +1,5 @@
 #include "Board.h"
 
-#include "Pos.h"
 #include "../algorithm/Hash.h"
 #include "../algorithm/Evaluation.h"
 #include "../algorithm/MoveGen.h"
@@ -120,9 +119,8 @@ bool Board::makeMove(const Move move) noexcept
 	// Handle en passant capture and castling
 	if (flags & Move::EN_PASSANT)
 	{
-		Pos capturedPos{ to };
-		capturedPos.y += static_cast<byte>(side ? -1 : 1);
-		removePiece(capturedPos.toSquare());
+		const byte capturedSq = to + static_cast<byte>(side ? -8 : 8);
+		removePiece(capturedSq);
 	} else if (flags & Move::KSIDE_CASTLE)
 	{
 		switch (to)
@@ -204,9 +202,7 @@ bool Board::makeMove(const Move move) noexcept
 
 		if (move.flags() & Move::DOUBLE_PAWN_PUSH)
 		{
-			Pos enPassantPos{ from };
-			enPassantPos.y += static_cast<byte>(side ? 1 : -1);
-			enPassantSq = enPassantPos.toSquare();
+			enPassantSq = from + static_cast<byte>(side ? 8 : -8);
 
 			Hash::xorEnPassant(zKey, enPassantSq);
 			const U64 enPassantRank = Bits::getRank(enPassantSq);
@@ -266,9 +262,8 @@ void Board::undoMove() noexcept
 
 	if (flags & Move::EN_PASSANT)
 	{
-		Pos capturedPos{ to };
-		capturedPos.y += static_cast<byte>(colorToMove ? -1 : 1);
-		addPiece(capturedPos.toSquare(), { PAWN, ~colorToMove });
+		const byte capturesSq = to + static_cast<byte>(colorToMove ? -8 : 8);
+		addPiece(capturesSq, { PAWN, ~colorToMove });
 	} else if (flags & Move::KSIDE_CASTLE)
 	{
 		switch (to)

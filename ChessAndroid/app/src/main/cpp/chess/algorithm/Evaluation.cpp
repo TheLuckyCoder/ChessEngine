@@ -3,7 +3,6 @@
 #include "../Stats.h"
 #include "../data/Board.h"
 #include "../data/Psqt.h"
-#include "../data/Pos.h"
 #include "Attacks.h"
 
 namespace
@@ -105,7 +104,7 @@ namespace Masks
 Evaluation::Result Evaluation::evaluate(const Board &board) noexcept
 {
 	Result result{ board };
-	Evaluation evaluator(board);
+	Evaluation evaluator{ board };
 
 	Stats::incBoardsEvaluated();
 
@@ -194,7 +193,7 @@ Score Evaluation::evaluatePieces() noexcept
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
-		score -= KING_PROTECTOR * getDistance(square, board.getKingSq(Us));
+		score -= KING_PROTECTOR * getDistanceBetween(square, board.getKingSq(Us));
 
 		if (getSquare64(square) & shift<Behind>(board.getType(PAWN, Us)))
 			score += MINOR_PAWN_SHIELD;
@@ -265,27 +264,28 @@ Score Evaluation::evaluateAttacks() const noexcept
 	const U64 nonPawnEnemies = board.allPieces[Them] & ~board.getType(PAWN, Us);
 	const U64 stronglyProtected = _attacks[Them][PAWN]
 								  | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
-	const U64 weak = board.allPieces[Them] & ~stronglyProtected & _attacksAll[Us];
+	const U64 poorlyDefended = board.allPieces[Them] & ~stronglyProtected & _attacksAll[Us];
 	const U64 defended = nonPawnEnemies & stronglyProtected;
 	const U64 safe = ~_attacksAll[Them] | _attacksAll[Us];
 
-	if (weak | defended)
+	if (poorlyDefended | defended)
 	{
-		U64 minorThreats = (defended | weak) & (_attacks[Us][KNIGHT] | _attacks[Us][BISHOP]) & board.allPieces[Them];
+		U64 minorThreats = (defended | poorlyDefended) & (_attacks[Us][KNIGHT] | _attacks[Us][BISHOP]) &
+						   board.allPieces[Them];
 		while (minorThreats)
-			score += MINOR_THREATS[board.getPiece(findNextSquare(minorThreats)).type()];
+			score += MINOR_THREATS[board.getPiece(popLsb(minorThreats)).type()];
 
-		U64 rookThreats = weak & _attacks[Us][ROOK] & board.allPieces[Them];
+		U64 rookThreats = poorlyDefended & _attacks[Us][ROOK] & board.allPieces[Them];
 		while (rookThreats)
-			score += ROOK_THREATS[board.getPiece(findNextSquare(rookThreats)).type()];
+			score += ROOK_THREATS[board.getPiece(popLsb(rookThreats)).type()];
 
-		if (weak & _attacks[Us][KING])
+		if (poorlyDefended & _attacks[Us][KING])
 			score += THREAT_BY_KING;
 
 		const U64 hangingPieces = ~_attacksAll[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
-		score += HANGING * popCount(weak & hangingPieces);
+		score += HANGING * popCount(poorlyDefended & hangingPieces);
 
-		score += WEAK_QUEEN_PROTECTION * popCount(weak & _attacks[Them][QUEEN]);
+		score += WEAK_QUEEN_PROTECTION * popCount(poorlyDefended & _attacks[Them][QUEEN]);
 	}
 
 	// Bonus for threats on the next moves against enemy queen
@@ -300,7 +300,7 @@ Score Evaluation::evaluateAttacks() const noexcept
 
 		const U64 sliderAttacks = (_attacks[Us][BISHOP] &
 								   Attacks::bishopAttacks(sq, board.occupied))
-			 | (_attacks[Us][ROOK] & Attacks::rookAttacks(sq, board.occupied));
+								  | (_attacks[Us][ROOK] & Attacks::rookAttacks(sq, board.occupied));
 
 		score += QUEEN_SLIDER_THREAT * popCount(sliderAttacks & safe & _attacksMultiple[Us]);
 	}
@@ -321,19 +321,18 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 	constexpr Color Them = ~Us;
 	constexpr Dir ForwardDir = Us ? NORTH : SOUTH;
 	constexpr Dir BehindDir = Us ? SOUTH : NORTH;
-	constexpr byte Behind = Us ? -1 : 1;
 
 	Score value = Psqt::BONUS[PAWN][square];
 
-	const Pos pos{ square };
-	const byte rank = (Us ? pos.y : 7u - pos.y) - 1u;
+	const U64 bb = getSquare64(square);
+	const byte rank = (Us ? row(square) : 7u - row(square)) - 1u;
 
 	const U64 adjacentFiles = getAdjacentFiles(square);
 	const U64 opposed = board.getType(PAWN, Them) & getRay(ForwardDir, square);
 	const U64 neighbours = board.getType(PAWN, Us) & adjacentFiles;
 	const U64 connected = neighbours & getRank(square);
-	const U64 support = neighbours & getRank(toSquare(pos.x + Behind, pos.y));
-	const bool isDoubled = shift<BehindDir>(getSquare64(square)) & board.getType(PAWN, Us);
+	const U64 support = neighbours & getRank(bitScanForward(shift<BehindDir>(bb)));
+	const bool isDoubled = shift<BehindDir>(bb) & board.getType(PAWN, Us);
 
 	if (support | connected)
 	{
@@ -399,7 +398,6 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
 
-	const Pos pos{ square };
 	Score value = Psqt::BONUS[ROOK][square];
 
 	const int mobility = popCount(
@@ -411,9 +409,9 @@ Score Evaluation::evaluateRook(const byte square) const noexcept
 		value += ROOK_ON_FILE[!(board.getType(PAWN, Them) & file)];
 	else if (mobility <= 3)
 	{
-		const byte kx = col(board.pieceList[Piece{ KING, Us }][0]);
+		const byte kx = col(board.getKingSq(Us));
 
-		if ((kx < 4) == (pos.x < kx))
+		if ((kx < 4) == (col(square) < kx))
 			value -= TRAPPED_ROOK * (1 + !board.canCastle<Us>());
 	}
 
@@ -434,7 +432,7 @@ Score Evaluation::evaluateQueen(const byte square) const noexcept
 	value += QUEEN_MOBILITY[mobility];
 
 	constexpr U64 InitialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
-	if ((InitialPosition & shiftedBoards[square]) == 0)
+	if ((InitialPosition & getSquare64(square)) == 0)
 		value.mg -= 14;
 
 	return value;

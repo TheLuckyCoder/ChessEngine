@@ -1,7 +1,5 @@
 #include "Attacks.h"
 
-#include "../data/Pos.h"
-
 static constexpr std::array<byte, SQUARE_NB> rookIndexBits
 {
 	12, 11, 11, 11, 11, 11, 11, 12,
