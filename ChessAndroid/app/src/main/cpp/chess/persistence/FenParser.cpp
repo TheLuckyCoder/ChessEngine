@@ -123,7 +123,7 @@ void FenParser::parsePieces(std::istringstream &stream) const
 	for (byte square = 0u; square < SQUARE_NB; ++square)
 	{
 		const Piece piece = _board.data[square];
-		const U64 bb = Bits::getSquare64([square);
+		const U64 bb = Bits::getSquare64(square);
 
 		_board.getType(piece) |= bb;
 

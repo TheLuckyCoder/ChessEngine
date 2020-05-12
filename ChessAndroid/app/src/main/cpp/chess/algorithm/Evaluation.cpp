@@ -7,7 +7,6 @@
 
 namespace
 {
-	constexpr short TEMPO_BONUS = 20;
 	constexpr Score CHECK_BONUS{ 30, 42 };
 
 	/*
@@ -108,27 +107,26 @@ Evaluation::Result Evaluation::evaluate(const Board &board) noexcept
 
 	Stats::incBoardsEvaluated();
 
-	const Score piecesScore = evaluator.evaluatePieces<WHITE>() - evaluator.evaluatePieces<BLACK>();
-	const Score attacksScore =
+	Score score = evaluator.evaluatePieces<WHITE>() - evaluator.evaluatePieces<BLACK>()
+				  + evaluator.evaluateAttacks<WHITE>() - evaluator.evaluateAttacks<BLACK>();
 		evaluator.evaluateAttacks<WHITE>() - evaluator.evaluateAttacks<BLACK>();
-	Score finalScore = piecesScore + attacksScore;
 
 	if (board.colorToMove)
 	{
-		finalScore += TEMPO_BONUS;
+		score += TEMPO_BONUS;
 
 		if (Bits::getSquare64(board.getKingSq(BLACK)) & evaluator._attacksAll[WHITE])
-			finalScore += CHECK_BONUS;
+			score += CHECK_BONUS;
 	} else
 	{
-		finalScore -= TEMPO_BONUS;
+		score -= TEMPO_BONUS;
 
 		if (Bits::getSquare64(board.getKingSq(WHITE)) & evaluator._attacksAll[BLACK])
-			finalScore -= CHECK_BONUS;
+			score -= CHECK_BONUS;
 	}
 
 	const Phase phase = board.getPhase();
-	result.value = (finalScore.mg * phase + (finalScore.eg * (128 - phase))) / 128;
+	result.value = (score.mg * phase + (score.eg * (128 - phase))) / 128;
 	return result;
 }
 

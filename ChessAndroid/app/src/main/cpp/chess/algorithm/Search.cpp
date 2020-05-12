@@ -10,6 +10,9 @@
 #include "Evaluation.h"
 #include "../data/Psqt.h"
 
+constexpr int WINDOW_MIN_DEPTH = 5;
+constexpr int WINDOW_SIZE = 12;
+
 constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
 constexpr int REVERSE_FUTILITY_MARGIN = 220;
 
@@ -81,11 +84,11 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	};
 
 	Move bestMove;
+	int bestScore = VALUE_MIN;
 
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
-		const int bestScore = search(board, Value::VALUE_MIN, Value::VALUE_MAX, currentDepth, true,
-									 true, true);
+		bestScore = aspirationWindow(board, currentDepth, bestScore);
 		const int pvMoves = getPvLine(currentDepth);
 		bestMove = pvArray[0];
 
@@ -99,6 +102,49 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 	return bestMove;
 }
 
+int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
+{
+	int alpha = VALUE_MIN - 1;
+	int beta = VALUE_MAX + 1;
+	int delta = WINDOW_SIZE;
+
+	int failHigh = 0;
+	int failLow = 0;
+
+	if (depth >= WINDOW_MIN_DEPTH)
+	{
+		alpha = std::max<int>(VALUE_MIN, bestScore - delta);
+		beta = std::min<int>(VALUE_MAX, bestScore + delta);
+	}
+
+	while (true)
+	{
+		const int searchedValue = search(board, alpha, beta, depth, true, true, true);
+
+		// If the search returned a result within our window, return the value
+		if (searchedValue > alpha && searchedValue < beta)
+		{
+			if (failHigh | failLow)
+				std::cout << "\tWindow -> FailHigh: " << failHigh << ", FailLow: " << failLow << '\n';
+			return searchedValue;
+		}
+
+		if (searchedValue <= alpha)
+		{
+			++failHigh;
+			beta = (alpha + beta) / 2;
+			alpha = std::max<int>(VALUE_MIN, alpha - delta);
+		} else if (searchedValue >= beta)
+		{
+			++failLow;
+			beta = std::min<int>(VALUE_MAX, beta + delta);
+		}
+
+		// Expand the search Window
+		delta += delta / 2;
+	}
+}
+
 int Search::search(Board &board, int alpha, int beta, const int depth, const bool isPvNode,
 				   const bool doNull, const bool doLmr)
 {
@@ -110,12 +156,12 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		return 0;
 
 	if (board.ply >= MAX_DEPTH)
-		return Evaluation::evaluate(board).getInvertedValue();
+		return Evaluation::evaluate(board).invertedValue();
 
 	if (depth <= 0)
 		return _quiescenceSearchEnabled
 			   ? searchCaptures(board, alpha, beta, depth)
-			   : Evaluation::evaluate(board).getInvertedValue();
+			   : Evaluation::evaluate(board).invertedValue();
 
 	const int originalAlpha = alpha;
 	const int startPly = board.ply;
@@ -140,7 +186,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return entryScore;
 	}
 
-	const int eval = Evaluation::evaluate(board).getInvertedValue();
+	const int eval = Evaluation::evaluate(board).invertedValue();
 	const bool nodeInCheck = board.isSideInCheck();
 	_evalHistory[board.ply] = eval;
 
@@ -307,7 +353,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	const short startPly = board.ply;
 
 	if (startPly >= MAX_DEPTH)
-		return Evaluation::evaluate(board).getInvertedValue();
+		return Evaluation::evaluate(board).invertedValue();
 
 	const bool inCheck = board.isSideInCheck();
 
@@ -336,7 +382,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 				return entryScore;
 		}
 
-		standPat = Evaluation::evaluate(board).getInvertedValue();
+		standPat = Evaluation::evaluate(board).invertedValue();
 
 		alpha = std::max(alpha, standPat);
 		if (alpha >= beta)

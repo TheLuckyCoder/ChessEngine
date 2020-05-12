@@ -17,7 +17,7 @@ constexpr Color operator~(const Color c) noexcept
 	return Color(c ^ WHITE); // Toggle color
 }
 
-enum Dir
+enum Dir : std::int16_t
 {
 	NORTH,
 	SOUTH,
@@ -66,8 +66,8 @@ enum Value : short
 	VALUE_MAX = 32001,
 	VALUE_MIN = -VALUE_MAX,
 
-	VALUE_WINNER_WHITE = VALUE_MAX - 1,
-	VALUE_WINNER_BLACK = -VALUE_WINNER_WHITE,
+	VALUE_MATE_WHITE = VALUE_MAX - 1,
+	VALUE_MATE_BLACK = -VALUE_MATE_WHITE,
 
 	MAX_MOVES = 256,
 	MAX_DEPTH = 64
@@ -127,4 +127,7 @@ constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos >> 3u
 
 constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos & 7u); }
 
-constexpr byte toSquare(const byte x, const byte y) noexcept { return static_cast<byte>((y << 3u) + x); }
+constexpr byte toSquare(const byte x, const byte y) noexcept
+{
+	return static_cast<byte>((y << 3u) + x);
+}

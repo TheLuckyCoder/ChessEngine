@@ -8,23 +8,25 @@
 
 class Evaluation final
 {
-	static constexpr short PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
+	static constexpr short _PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
 	static PawnStructureTable _pawnTable;
 
 public:
+	static constexpr short TEMPO_BONUS = 20;
+
 	struct Result
 	{
 		const Board &board;
 		short value{};
 
-		short getInvertedValue() const noexcept { return board.colorToMove ? value : -value; }
+		short invertedValue() const noexcept { return board.colorToMove ? value : -value; }
 	};
 	
 	static Result evaluate(const Board &board) noexcept;
 	
 	static constexpr short getPieceValue(const PieceType type) noexcept
 	{
-		return PIECE_VALUE[type];
+		return _PIECE_VALUE[type];
 	}
 
 private:

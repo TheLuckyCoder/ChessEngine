@@ -34,6 +34,7 @@ public:
 
 private:
 	static Move iterativeDeepening(Board &board, int depth);
+	static int aspirationWindow(Board &board, int depth, int bestScore);
 	static int search(Board &board, int alpha, int beta, int depth, bool isPvNode, bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
