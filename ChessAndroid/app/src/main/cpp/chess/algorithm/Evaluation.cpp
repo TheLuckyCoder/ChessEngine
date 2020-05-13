@@ -346,8 +346,7 @@ Score Evaluation::evaluatePawn(const byte square) const noexcept
 
 	{ // Passed Pawn
 		U64 rays = getRay(ForwardDir, square);
-		const U64 adjacentRays = shift<WEST>(rays) | shift<EAST>(rays);
-		rays |= Us ? shift<NORTH>(adjacentRays) : shift<SOUTH>(adjacentRays);
+		rays |= shift<WEST>(rays) | shift<EAST>(rays);
 
 		const bool isPassedPawn = !(rays & board.getType(PAWN, Them));
 
@@ -442,7 +441,7 @@ Score Evaluation::evaluateKing(const byte square) const noexcept
 	Score value = Psqt::BONUS[KNIGHT][square];
 
 	if (board.isCastled<Us>())
-		value.mg += 59;
+		value.mg += 60;
 	else
 	{
 		const short count = short(board.canCastleKs<Us>()) + short(board.canCastleQs<Us>());

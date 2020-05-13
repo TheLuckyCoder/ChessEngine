@@ -10,9 +10,11 @@ FenParser::FenParser(Board &board)
 {
 }
 
-void FenParser::parseFen(const std::string &fen)
+bool FenParser::parseFen(const std::string &fen)
 {
-	std::istringstream fenStream(fen);
+	std::istringstream stream(fen);
+
+	if (!stream) return false;
 
 	// Clean board
 	_board.data.fill({});
@@ -20,17 +22,18 @@ void FenParser::parseFen(const std::string &fen)
 	_board.occupied = 0ull;
 	_board.npm = 0;
 
-	parsePieces(fenStream);
+	parsePieces(stream);
 
 	// Next to move
-	std::string token;
-	fenStream >> token;
-	_board.colorToMove = token == "w" ? WHITE : BLACK;
+	std::string side;
+	stream >> side;
+	_board.colorToMove = side == "w" ? WHITE : BLACK;
 
 	// Castling availability
-	fenStream >> token;
+	std::string castling = "-";
+	stream >> castling;
 	_board.castlingRights = CastlingRights::CASTLE_NONE;
-	for (char currChar : token) {
+	for (char currChar : castling) {
 		switch (currChar) {
 			case 'K': _board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
@@ -45,14 +48,25 @@ void FenParser::parseFen(const std::string &fen)
 		}
 	}
 
-	// TODO: En passant target square
-	fenStream >> token;
-	_board.enPassantSq = 64u;
-	//_board.enPassant = token == "-" ? 0ull : 1 << x;
+	std::string ep = "-";
+	stream >> ep;
+	_board.enPassantSq = SQUARE_NB;
+	if (ep != "-")
+	{
+		if (ep.length() != 2)
+			return false;
+		if (!(ep[0] >= 'a' && ep[0] <= 'h'))
+			return false;
+		if (!((side == "w" && ep[1] == '6') || (side == "b" && ep[1] == '3')))
+			return false;
+
+		const byte sq = ::toSquare(static_cast<byte>(ep[0] - 'a'), static_cast<byte>(ep[1] - '1'));
+		_board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
+	}
 
 	// HalfMove Clock
-	int halfMove;
-	fenStream >> halfMove;
+	int halfMove{};
+	stream >> halfMove;
 	_board.fiftyMoveRule = static_cast<byte>(halfMove);
 
 	_board.updatePieceList();
@@ -60,14 +74,15 @@ void FenParser::parseFen(const std::string &fen)
 	_board.zKey = Hash::compute(_board);
 
 	_board.kingAttackers = _board.colorToMove ? _board.allKingAttackers<WHITE>() : _board.allKingAttackers<BLACK>();
+	return true;
 }
 
 std::string FenParser::exportToFen()
 {
-	return std::string();
+	return {};
 }
 
-void FenParser::parsePieces(std::istringstream &stream) const
+void FenParser::parsePieces(std::istringstream &stream)
 {
 	std::string token;
 

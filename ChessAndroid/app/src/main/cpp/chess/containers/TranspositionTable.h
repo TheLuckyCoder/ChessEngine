@@ -8,6 +8,7 @@ struct SearchEntry
 {
 	enum class Flag : byte
 	{
+		NONE,
 		EXACT,
 		ALPHA,
 		BETA

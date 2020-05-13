@@ -104,6 +104,12 @@ public:
 		_move = (_move & ~mask) | ((flags << 22u) & mask);
 	}
 
+	constexpr bool isTactical() const noexcept
+	{
+		const auto f = flags();
+		return (f & Flag::CAPTURE) | (f & Flag::PROMOTION);
+	}
+
 	constexpr bool isAdvancedPawnPush() const noexcept
 	{
 		const byte y = row(to());

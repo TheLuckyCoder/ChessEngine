@@ -38,5 +38,5 @@ private:
 	static int search(Board &board, int alpha, int beta, int depth, bool isPvNode, bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
-	inline static void storeTtAlphaExact(Move bestMove, U64 key, int alpha, int originalAlpha, int depth, bool qSearch);
+	inline static void storeTtEntry(const Move &bestMove, U64 key, int alpha, int originalAlpha, int depth, bool qSearch);
 };
