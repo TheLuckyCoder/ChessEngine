@@ -40,11 +40,6 @@ public:
 		return static_cast<PieceType>(_piece & 7u);
 	}
 
-	constexpr bool isSameColor(const Piece &other) const noexcept
-	{
-		return color() == other.color();
-	}
-
 	constexpr bool isValid() const noexcept
 	{
 		return isValid(type());

@@ -36,6 +36,10 @@ public:
 		std::array<Score, 2> weakQueenProtection{};
 		std::array<Score, 2> queenThreatByKnight{};
 		std::array<Score, 2> queenThreatBySlider{};
+		std::array<Score, 2> restrictedMovement{};
+		std::array<Score, 2> attacksTotal{};
+
+		std::array<Score, 2> total{};
 	};
 
 	static int value(const Board &board) noexcept;

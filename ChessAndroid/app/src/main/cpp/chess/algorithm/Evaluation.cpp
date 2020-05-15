@@ -148,8 +148,8 @@ private:
 	std::array<U64, 2> _allAttacks{};
 	std::array<U64, 2> _mobilityArea{};
 
-	const std::array<U64, 2> _kingRing{ Bits::getSquare64(board.getKingSq(WHITE)),
-										Bits::getSquare64(board.getKingSq(BLACK)) };
+	const std::array<U64, 2> _kingRing{ Bits::getSquare64(board.getKingSq<WHITE>()),
+										Bits::getSquare64(board.getKingSq<BLACK>()) };
 	std::array<byte, 2> _kingAttacksCount{};
 	std::array<byte, 2> _kingAttackersCount{};
 	std::array<int, 2> _kingAttackersWeight{};
@@ -157,11 +157,8 @@ private:
 
 int Evaluation::value(const Board &board) noexcept
 {
-	Eval<false> eval{ board };
-
 	Stats::incBoardsEvaluated();
-
-	return eval.computeValue();
+	return Eval<false>{ board }.computeValue();
 }
 
 int Evaluation::invertedValue(const Board &board) noexcept
@@ -173,30 +170,33 @@ int Evaluation::invertedValue(const Board &board) noexcept
 std::string Evaluation::traceValue(const Board &board)
 {
 	Eval<true> eval{ board };
-	std::ostringstream output;
 	const int result = eval.computeValue();
-	const auto &trace = eval.getTrace();
 
-	const auto element = [&output](const std::string_view name, const std::array<Score, 2> &elem)
+	const auto &trace = eval.getTrace();
+	std::ostringstream output;
+
+
+	const auto element = [&](const std::string_view name, const std::array<Score, 2> &elem)
 	{
 		constexpr int MaxLetters = 24;
 		constexpr int MaxDigits = 5;
 
 		output << "| "
-			<< std::setfill(' ') << std::setw(MaxLetters) << name << " | "
-			<< std::setw(MaxDigits) << elem[WHITE].mg << ' '
-			<< std::setw(MaxDigits) << elem[WHITE].eg << " | "
-			<< std::setw(MaxDigits) << elem[BLACK].mg << ' '
-			<< std::setw(MaxDigits) << elem[BLACK].eg << " | "
-			<< std::setw(MaxDigits) << elem[WHITE].mg - elem[BLACK].mg << ' '
-			<< std::setw(MaxDigits) << elem[WHITE].eg - elem[BLACK].eg << " |\n";
+			   << std::setfill(' ') << std::setw(MaxLetters) << name << " | "
+			   << std::setw(MaxDigits) << elem[WHITE].mg << ' '
+			   << std::setw(MaxDigits) << elem[WHITE].eg << " | "
+			   << std::setw(MaxDigits) << elem[BLACK].mg << ' '
+			   << std::setw(MaxDigits) << elem[BLACK].eg << " | "
+			   << std::setw(MaxDigits) << elem[WHITE].mg - elem[BLACK].mg << ' '
+			   << std::setw(MaxDigits) << elem[WHITE].eg - elem[BLACK].eg << " |\n";
 	};
 
-	output << "+--------------------------+-------------+-------------+-------------+\n"
+	const auto Separator = "+--------------------------+-------------+-------------+-------------+\n";
+	output << Separator
 		   << "|                          |    WHITE    |    BLACK    |    TOTAL    |\n"
 		   << "|                          |   MG   EG   |   MG   EG   |   MG   EG   |\n"
-		   << "+--------------------------+-------------+-------------+-------------+\n";
-	
+		   << Separator;
+
 	element("Pawns", trace.pawnValue);
 	element("Knights", trace.knightValue);
 	element("Bishops", trace.bishopValue);
@@ -213,8 +213,14 @@ std::string Evaluation::traceValue(const Board &board)
 	element("Protection by Weak Queen", trace.weakQueenProtection);
 	element("Queen Threat By Knight", trace.queenThreatByKnight);
 	element("Queen Threat By Slider", trace.queenThreatBySlider);
-	
-	output << "+--------------------------+-------------+-------------+-------------+\n";
+	element("Restricted Movement", trace.restrictedMovement);
+	element("Attacks Total", trace.attacksTotal);
+
+	output << Separator;
+	element("Total", trace.total);
+	output << "|                   Scaled |             |             | "
+		   << std::setw(11) << result << " |\n"
+		   << Separator;
 
 	return output.str();
 }
@@ -222,8 +228,17 @@ std::string Evaluation::traceValue(const Board &board)
 template <bool Trace>
 int Eval<Trace>::computeValue() noexcept
 {
-	Score score = evaluatePieces<WHITE>() - evaluatePieces<BLACK>()
-				  + evaluateAttacks<WHITE>() - evaluateAttacks<BLACK>();
+	Score totalWhite = evaluatePieces<WHITE>();
+	Score totalBlack = evaluatePieces<BLACK>();
+	totalWhite += evaluateAttacks<WHITE>();
+	totalBlack += evaluateAttacks<BLACK>();
+	Score score = totalWhite - totalBlack;
+
+	if constexpr (Trace)
+	{
+		trace->total[WHITE] = totalWhite;
+		trace->total[BLACK] = totalBlack;
+	}
 
 	if (board.colorToMove)
 		score += Evaluation::TEMPO_BONUS;
@@ -231,8 +246,7 @@ int Eval<Trace>::computeValue() noexcept
 		score -= Evaluation::TEMPO_BONUS;
 
 	const Phase phase = board.getPhase();
-	const int value = (score.mg * phase + (score.eg * (128 - phase))) / 128;
-	return value;
+	return (score.mg * phase + (score.eg * (128 - phase))) / 128;
 }
 
 template <bool Trace>
@@ -243,7 +257,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	Score score;
 
 	{
-		const byte square = board.getKingSq(Us);
+		const byte square = board.getKingSq<Us>();
 		const auto kingScore = evaluateKing<Us>(square);
 
 		if constexpr (Trace)
@@ -298,7 +312,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
 		const auto kingProtectorScore =
-			KING_PROTECTOR * getDistanceBetween(square, board.getKingSq(Us));
+			KING_PROTECTOR * getDistanceBetween(square, board.getKingSq<Us>());
 		score -= kingProtectorScore;
 		if constexpr (Trace)
 			trace->kingProtector[Us] -= kingProtectorScore;
@@ -393,8 +407,6 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 {
 	constexpr Color Them = ~Us;
 	Score totalValue{};
-	if constexpr (Trace)
-		totalValue += 10;
 
 	const U64 nonPawnEnemies = board.allPieces[Them] & ~board.getType(PAWN, Us);
 	const U64 stronglyProtected = _pieceAttacks[Them][PAWN]
@@ -471,15 +483,21 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		}
 	}
 
-	const U64 restrictedMovement = _allAttacks[Them] & _allAttacks[Us] & ~stronglyProtected;
-	totalValue += RESTRICTED_PIECE_MOVEMENT * short(popCount(restrictedMovement));
-
 	const U64 safePawnsAttacks =
 		Attacks::pawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
 	const auto safePawnThreatScore = THREAT_BY_SAFE_PAWN * popCount(safePawnsAttacks);
 	totalValue += safePawnThreatScore;
+
+	const U64 restrictedMovement = _allAttacks[Them] & _allAttacks[Us] & ~stronglyProtected;
+	const Score restrictedMovementScore = RESTRICTED_PIECE_MOVEMENT * popCount(restrictedMovement);
+	totalValue += restrictedMovementScore;
+
 	if constexpr (Trace)
+	{
 		trace->threatBySafePawn[Us] = safePawnThreatScore;
+		trace->restrictedMovement[Us] = restrictedMovementScore;
+		trace->attacksTotal[Us] = totalValue;
+	}
 
 	return totalValue;
 }
@@ -581,7 +599,7 @@ Score Eval<Trace>::evaluateRook(const byte square) const noexcept
 		value += ROOK_ON_FILE[!(board.getType(PAWN, Them) & file)];
 	else if (mobility <= 3)
 	{
-		const byte kx = col(board.getKingSq(Us));
+		const byte kx = col(board.getKingSq<Us>());
 
 		if ((kx < 4) == (col(square) < kx))
 			value -= TRAPPED_ROOK * (1 + !board.canCastle<Us>());

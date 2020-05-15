@@ -51,11 +51,6 @@ U64 Board::getType(const PieceType type, const Color color) const noexcept
 	return pieces[color][type];
 }
 
-byte Board::getKingSq(const Color color) const noexcept
-{
-	return pieceList[Piece{ KING, color }][0];
-}
-
 bool Board::isDrawn() const noexcept
 {
 	// Fifty Move Rules
@@ -430,9 +425,20 @@ void Board::removePiece(const byte square) noexcept
 
 void Board::updatePieceList() noexcept
 {
+	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	{
+		const Piece piece = data[sq];
+		const U64 bb = Bits::getSquare64(sq);
+
+		getType(piece) |= bb;
+
+		if (piece.type() != PAWN)
+			npm += Evaluation::getPieceValue(piece.type());
+	}
+
 	pieceCount.fill({});
 
-	for (byte square = 0u; square < SQUARE_NB; ++square)
+	for (byte square{}; square < SQUARE_NB; ++square)
 		if (const Piece piece = getPiece(square))
 			pieceList[piece][pieceCount[piece]++] = square;
 }

@@ -105,6 +105,10 @@
             android:key="key_perft_test"
             android:title="Execute Perft Test" />
 
+        <Preference
+            android:key="key_evaluation_test"
+            android:title="Execute Evaluation Test" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

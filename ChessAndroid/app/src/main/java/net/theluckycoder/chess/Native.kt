@@ -38,5 +38,6 @@ object Native {
 
     external fun saveMoves(): String?
 
-    external fun perft()
+    external fun perftTest()
+    external fun evaluationTest(): String?
 }

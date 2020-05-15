@@ -25,8 +25,6 @@ public:
 
 class Board final
 {
-	friend class FenParser;
-
 public:
 	U64 zKey{};
 	U64 occupied{};
@@ -68,7 +66,8 @@ public:
 	U64 getType(Piece piece) const noexcept;
 	U64 &getType(PieceType type, Color color) noexcept;
 	U64 getType(PieceType type, Color color) const noexcept;
-	byte getKingSq(Color color) const noexcept;
+	template <Color C>
+	byte getKingSq() const noexcept;
 
 	bool isDrawn() const noexcept;
 	Phase getPhase() const noexcept;
@@ -89,7 +88,8 @@ private:
 	void addPiece(byte square, Piece piece) noexcept;
 	void movePiece(byte from, byte to) noexcept;
 	void removePiece(byte square) noexcept;
-	
+
+public:
 	void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
 };
@@ -116,6 +116,12 @@ template <Color C>
 bool Board::isCastled() const noexcept
 {
 	return castlingRights & (C == BLACK ? CASTLED_BLACK : CASTLED_WHITE);
+}
+
+template <Color C>
+byte Board::getKingSq() const noexcept
+{
+	return pieceList[Piece{ KING, C }][0];
 }
 
 template <PieceType P>
@@ -151,7 +157,7 @@ template <Color C>
 U64 Board::allKingAttackers() const noexcept
 {
 	constexpr Color ColorAttacking = ~C;
-	const byte kingSq = getKingSq(C);
+	const byte kingSq = getKingSq<C>();
 	assert(kingSq < SQUARE_NB);
 
 	const U64 queens = getType(QUEEN, ColorAttacking);

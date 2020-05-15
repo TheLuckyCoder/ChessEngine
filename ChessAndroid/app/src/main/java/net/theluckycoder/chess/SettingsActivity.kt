@@ -1,6 +1,7 @@
 package net.theluckycoder.chess
 
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
@@ -53,7 +54,15 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<Preference>(AppPreferences.KEY_PERFT_TEST)?.setOnPreferenceClickListener {
                 thread {
-                    Native.perft()
+                    Native.perftTest()
+                }
+                true
+            }
+
+            findPreference<Preference>(AppPreferences.KEY_EVALUATION_TEST)?.setOnPreferenceClickListener {
+                thread {
+                    val result = Native.evaluationTest() ?: "Completed Successfully"
+                    Log.v("Evaluation Test", result)
                 }
                 true
             }

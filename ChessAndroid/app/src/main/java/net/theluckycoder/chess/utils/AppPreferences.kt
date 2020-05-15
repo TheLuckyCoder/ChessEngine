@@ -23,9 +23,12 @@ class AppPreferences(private val context: Context) {
         const val KEY_CACHE_SIZE = "key_cache_size"
         const val KEY_QUIET_SEARCH = "key_quiet_search"
         const val KEY_DIFFICULTY_LEVEL = "key_difficulty_level"
+
         const val KEY_DEBUG_INFO_BASIC = "key_show_debug_basic"
         const val KEY_DEBUG_INFO_ADVANCED = "key_show_debug_advanced"
+
         const val KEY_PERFT_TEST = "key_perft_test"
+        const val KEY_EVALUATION_TEST = "key_evaluation_test"
     }
 
     private val manager by lazy { PreferenceManager.getDefaultSharedPreferences(context) }
