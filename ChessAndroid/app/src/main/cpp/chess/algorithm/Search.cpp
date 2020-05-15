@@ -11,7 +11,7 @@
 #include "../data/Psqt.h"
 
 constexpr int WINDOW_MIN_DEPTH = 5;
-constexpr int WINDOW_SIZE = 12;
+constexpr int WINDOW_SIZE = 15;
 
 constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
 constexpr int REVERSE_FUTILITY_MARGIN = 220;
@@ -161,13 +161,13 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return 0;
 
 		if (board.ply >= MAX_DEPTH)
-			return Evaluation::evaluate(board).invertedValue();
+			return Evaluation::invertedValue(board);
 	}
 
 	if (depth <= 0)
 		return _quiescenceSearchEnabled
 			   ? searchCaptures(board, alpha, beta, depth)
-			   : Evaluation::evaluate(board).invertedValue();
+			   : Evaluation::invertedValue(board);
 
 	const int originalAlpha = alpha;
 	const int startPly = board.ply;
@@ -192,7 +192,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			return entryScore;
 	}
 
-	const int eval = Evaluation::evaluate(board).invertedValue();
+	const int eval = Evaluation::invertedValue(board);
 	const bool nodeInCheck = board.isSideInCheck();
 	_evalHistory[board.ply] = eval;
 
@@ -316,6 +316,12 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		{
 			bestScore = moveScore;
 			bestMove = move;
+
+			if (bestScore > alpha)
+			{
+				alpha = bestScore;
+				_searchHistory[move.from()][move.to()] += depth;
+			}
 		}
 
 		// Alpha-Beta Pruning
@@ -327,16 +333,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 				_searchKillers[0][startPly] = move.getContents();
 			}
 
-			bestMove.setScore(bestScore);
-			_transpTable.insert(
-				{ board.zKey, bestMove, static_cast<short>(depth), SearchEntry::Flag::BETA });
-			return beta;
-		}
-
-		if (bestScore > alpha)
-		{
-			alpha = bestScore;
-			_searchHistory[move.from()][move.to()] += depth;
+			break;
 		}
 	}
 
@@ -346,7 +343,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	Stats::incNodesSearched(searchedCount);
 
 	bestMove.setScore(bestScore);
-	storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, depth, false);
+	storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, false);
 
 	assert(bestScore != VALUE_MAX || bestScore != VALUE_MIN);
 	return alpha;
@@ -360,7 +357,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	const short startPly = board.ply;
 
 	if (startPly >= MAX_DEPTH)
-		return Evaluation::evaluate(board).invertedValue();
+		return Evaluation::invertedValue(board);
 
 	const bool nodeInCheck = board.isSideInCheck();
 
@@ -389,7 +386,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 				return entryScore;
 		}
 
-		standPat = Evaluation::evaluate(board).invertedValue();
+		standPat = Evaluation::invertedValue(board);
 
 		alpha = std::max(alpha, standPat);
 		if (alpha >= beta)
@@ -420,7 +417,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 			break; // The moves are sorted so we can break if is not a capture
 		}
 
-		const int futilityEval = standPat + Psqt::BONUS[move.piece()][move.to()].eg
+		const int futilityEval = standPat + PSQT[move.piece()][move.to()].eg
 								 + Evaluation::getPieceValue(move.promotedPiece())
 								 + FUTILITY_QUIESCENCE_MARGIN;
 		// Futility Pruning
@@ -449,12 +446,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 		if (bestScore >= beta)
 		{
 			Stats::incNodesSearched(searchedCount);
-			if (!nodeInCheck)
-			{
-				bestMove.setScore(bestScore);
-				_transpTable.insert({ board.zKey, bestMove, static_cast<short>(depth), SearchEntry::Flag::BETA, true });
-			}
-			return bestScore;
+			break;
 		}
 
 		alpha = std::max(alpha, moveScore);
@@ -466,7 +458,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	if (!nodeInCheck)
 	{
 		bestMove.setScore(bestScore);
-		storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, depth, true);
+		storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, true);
 	}
 
 	Stats::incNodesSearched(searchedCount);
@@ -475,7 +467,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 }
 
 inline void Search::storeTtEntry(const Move &bestMove, const U64 key, const int alpha,
-								 const int originalAlpha, const int depth, const bool qSearch)
+								 const int originalAlpha, const int beta, const int depth, const bool qSearch)
 {
 	// Avoid putting an empty move in the Transposition Table if alpha was not raised
 	assert(!bestMove.empty());
@@ -484,6 +476,8 @@ inline void Search::storeTtEntry(const Move &bestMove, const U64 key, const int 
 	auto flag = SearchEntry::Flag::EXACT;
 	if (alpha <= originalAlpha)
 		flag = SearchEntry::Flag::ALPHA;
+	else if (bestMove.getScore() >= beta)
+		flag = SearchEntry::Flag::BETA;
 
 	_transpTable.insert({ key, bestMove, static_cast<short>(depth), flag, qSearch });
 }

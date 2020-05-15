@@ -9,49 +9,40 @@
 class Evaluation final
 {
 	static constexpr short _PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
-	static PawnStructureTable _pawnTable;
 
 public:
 	static constexpr short TEMPO_BONUS = 20;
 
-	struct Result
+	struct Trace
 	{
-		const Board &board;
-		short value{};
+		// Pieces
+		std::array<Score, 2> pawnValue{};
+		std::array<Score, 2> knightValue{};
+		std::array<Score, 2> bishopValue{};
+		std::array<Score, 2> rookValue{};
+		std::array<Score, 2> queenValue{};
+		std::array<Score, 2> kingValue{};
 
-		short invertedValue() const noexcept { return board.colorToMove ? value : -value; }
+		std::array<Score, 2> kingProtector{};
+		std::array<Score, 2> minorPawnShield{};
+
+		// Threats
+		std::array<Score, 2> threatsByMinor{};
+		std::array<Score, 2> threatsByRook{};
+		std::array<Score, 2> threatsByKing{};
+		std::array<Score, 2> piecesHanging{};
+		std::array<Score, 2> weakQueenProtection{};
+		std::array<Score, 2> queenThreatByKnight{};
+		std::array<Score, 2> queenThreatBySlider{};
+		std::array<Score, 2> threatBySafePawn{};
 	};
-	
-	static Result evaluate(const Board &board) noexcept;
-	
+
+	static int value(const Board &board) noexcept;
+	static int invertedValue(const Board &board) noexcept;
+	static std::string traceValue(const Board &board) noexcept;
+
 	static constexpr short getPieceValue(const PieceType type) noexcept
 	{
 		return _PIECE_VALUE[type];
 	}
-
-private:
-	explicit Evaluation(const Board &board);
-	
-	template <Color Us>
-	Score evaluatePieces() noexcept;
-	template <Color Us>
-	Score evaluateAttacks() const noexcept;
-	template <Color Us>
-	Score evaluatePawn(byte square) const noexcept;
-	template <Color Us>
-	Score evaluateKnight(byte square) const noexcept;
-	template <Color Us>
-	Score evaluateBishop(byte square) const noexcept;
-	template <Color Us>
-	Score evaluateRook(byte square) const noexcept;
-	template <Color Us>
-	Score evaluateQueen(byte square) const noexcept;
-	template <Color Us>
-	Score evaluateKing(byte square) const noexcept;
-
-	const Board &board;
-	std::array<std::array<U64, 7>, 2> _attacks{};
-	std::array<U64, 2> _attacksMultiple{};
-	std::array<U64, 2> _attacksAll{};
-	std::array<U64, 2> _mobilityArea{};
 };

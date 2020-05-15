@@ -135,7 +135,7 @@ Java_net_theluckycoder_chess_Native_getSearchTime(JNIEnv *, jobject)
 external JNIEXPORT jint JNICALL
 Java_net_theluckycoder_chess_Native_getCurrentBoardValue(JNIEnv *, jobject)
 {
-	return static_cast<jint>(Evaluation::evaluate(BoardManager::getBoard()).value);
+	return static_cast<jint>(Evaluation::value(BoardManager::getBoard()));
 }
 
 external JNIEXPORT jstring JNICALL

@@ -95,7 +95,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 	const State state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()
-			  << "; Evaluated at: " << Evaluation::evaluate(_board).value << '\n';
+			  << "; Evaluated at: " << Evaluation::value(_board) << '\n';
 	_listener(state, shouldRedraw, {{ move.from(), move.to() }});
 
 	if (movedByPlayer &&
