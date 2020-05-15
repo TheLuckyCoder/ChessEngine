@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <string>
 
 #include "../data/Board.h"
 #include "../data/Score.h"
@@ -30,16 +31,16 @@ public:
 		std::array<Score, 2> threatsByMinor{};
 		std::array<Score, 2> threatsByRook{};
 		std::array<Score, 2> threatsByKing{};
+		std::array<Score, 2> threatBySafePawn{};
 		std::array<Score, 2> piecesHanging{};
 		std::array<Score, 2> weakQueenProtection{};
 		std::array<Score, 2> queenThreatByKnight{};
 		std::array<Score, 2> queenThreatBySlider{};
-		std::array<Score, 2> threatBySafePawn{};
 	};
 
 	static int value(const Board &board) noexcept;
 	static int invertedValue(const Board &board) noexcept;
-	static std::string traceValue(const Board &board) noexcept;
+	static std::string traceValue(const Board &board);
 
 	static constexpr short getPieceValue(const PieceType type) noexcept
 	{

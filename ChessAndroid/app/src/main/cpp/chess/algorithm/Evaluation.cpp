@@ -1,5 +1,8 @@
 #include "Evaluation.h"
 
+#include <sstream>
+#include <iomanip>
+
 #include "../Stats.h"
 #include "../data/Board.h"
 #include "../data/Psqt.h"
@@ -167,14 +170,53 @@ int Evaluation::invertedValue(const Board &board) noexcept
 	return board.colorToMove ? result : -result;
 }
 
-std::string Evaluation::traceValue(const Board &board) noexcept
+std::string Evaluation::traceValue(const Board &board)
 {
 	Eval<true> eval{ board };
-
+	std::ostringstream output;
 	const int result = eval.computeValue();
 	const auto &trace = eval.getTrace();
 
-	return {};
+	const auto element = [&output](const std::string_view name, const std::array<Score, 2> &elem)
+	{
+		constexpr int MaxLetters = 24;
+		constexpr int MaxDigits = 5;
+
+		output << "| "
+			<< std::setfill(' ') << std::setw(MaxLetters) << name << " | "
+			<< std::setw(MaxDigits) << elem[WHITE].mg << ' '
+			<< std::setw(MaxDigits) << elem[WHITE].eg << " | "
+			<< std::setw(MaxDigits) << elem[BLACK].mg << ' '
+			<< std::setw(MaxDigits) << elem[BLACK].eg << " | "
+			<< std::setw(MaxDigits) << elem[WHITE].mg - elem[BLACK].mg << ' '
+			<< std::setw(MaxDigits) << elem[WHITE].eg - elem[BLACK].eg << " |\n";
+	};
+
+	output << "+--------------------------+-------------+-------------+-------------+\n"
+		   << "|                          |    WHITE    |    BLACK    |    TOTAL    |\n"
+		   << "|                          |   MG   EG   |   MG   EG   |   MG   EG   |\n"
+		   << "+--------------------------+-------------+-------------+-------------+\n";
+	
+	element("Pawns", trace.pawnValue);
+	element("Knights", trace.knightValue);
+	element("Bishops", trace.bishopValue);
+	element("Rooks", trace.rookValue);
+	element("Queens", trace.queenValue);
+	element("King", trace.kingValue);
+	element("King Protectors", trace.kingProtector);
+	element("Minors Pawn Shield", trace.minorPawnShield);
+	element("Threats By Minor", trace.threatsByMinor);
+	element("Threats By Rook", trace.threatsByRook);
+	element("Threats By King", trace.threatsByKing);
+	element("Threat By Safe-Pawns", trace.threatBySafePawn);
+	element("Hanging Pieces", trace.piecesHanging);
+	element("Protection by Weak Queen", trace.weakQueenProtection);
+	element("Queen Threat By Knight", trace.queenThreatByKnight);
+	element("Queen Threat By Slider", trace.queenThreatBySlider);
+	
+	output << "+--------------------------+-------------+-------------+-------------+\n";
+
+	return output.str();
 }
 
 template <bool Trace>
@@ -193,7 +235,8 @@ int Eval<Trace>::computeValue() noexcept
 	return value;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluatePieces() noexcept
 {
 	constexpr Color Them = ~Us;
@@ -254,7 +297,8 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
-		const auto kingProtectorScore = KING_PROTECTOR * getDistanceBetween(square, board.getKingSq(Us));
+		const auto kingProtectorScore =
+			KING_PROTECTOR * getDistanceBetween(square, board.getKingSq(Us));
 		score -= kingProtectorScore;
 		if constexpr (Trace)
 			trace->kingProtector[Us] -= kingProtectorScore;
@@ -289,7 +333,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	for (byte pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
 	{
 		const byte square = board.pieceList[piece][pieceNumber];
-		const auto bishopScore =evaluateBishop<Us>(square);
+		const auto bishopScore = evaluateBishop<Us>(square);
 		knightBishop(square);
 
 		if constexpr (Trace)
@@ -343,7 +387,8 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	return score + pawnScore;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluateAttacks() const noexcept
 {
 	constexpr Color Them = ~Us;
@@ -360,8 +405,9 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 	if (poorlyDefended | defended)
 	{
-		U64 minorThreats = (defended | poorlyDefended) & (_pieceAttacks[Us][KNIGHT] | _pieceAttacks[Us][BISHOP]) &
-						   board.allPieces[Them];
+		U64 minorThreats =
+			(defended | poorlyDefended) & (_pieceAttacks[Us][KNIGHT] | _pieceAttacks[Us][BISHOP]) &
+			board.allPieces[Them];
 		while (minorThreats)
 		{
 			const auto value = THREATS_BY_MINOR[board.getPiece(popLsb(minorThreats)).type()];
@@ -393,7 +439,8 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		if constexpr (Trace)
 			trace->piecesHanging[Us] = hangingScore;
 
-		const auto weakQueenScore = WEAK_QUEEN_PROTECTION * popCount(poorlyDefended & _pieceAttacks[Them][QUEEN]);
+		const auto weakQueenScore =
+			WEAK_QUEEN_PROTECTION * popCount(poorlyDefended & _pieceAttacks[Them][QUEEN]);
 		totalValue += weakQueenScore;
 		if constexpr (Trace)
 			trace->weakQueenProtection[Us] = weakQueenScore;
@@ -408,10 +455,13 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		const U64 knightAttacks = _pieceAttacks[Us][KNIGHT] & Attacks::knightAttacks(sq);
 		const U64 sliderAttacks = (_pieceAttacks[Us][BISHOP] &
 								   Attacks::bishopAttacks(sq, board.occupied))
-								  | (_pieceAttacks[Us][ROOK] & Attacks::rookAttacks(sq, board.occupied));
+								  | (_pieceAttacks[Us][ROOK] &
+									 Attacks::rookAttacks(sq, board.occupied));
 
-		const auto knightAttacksScore = QUEEN_THREAT_BY_KNIGHT * popCount(knightAttacks & safeSpots);
-		const auto sliderAttacksScore = QUEEN_THREAT_BY_SLIDER * popCount(sliderAttacks & safe & _attacksMultiple[Us]);
+		const auto knightAttacksScore =
+			QUEEN_THREAT_BY_KNIGHT * popCount(knightAttacks & safeSpots);
+		const auto sliderAttacksScore =
+			QUEEN_THREAT_BY_SLIDER * popCount(sliderAttacks & safe & _attacksMultiple[Us]);
 
 		totalValue += knightAttacksScore + sliderAttacksScore;
 		if constexpr (Trace)
@@ -434,7 +484,8 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 	return totalValue;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluatePawn(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
@@ -478,7 +529,8 @@ Score Eval<Trace>::evaluatePawn(const byte square) const noexcept
 	return value;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluateKnight(const byte square) const noexcept
 {
 	Score value = PSQT[KNIGHT][square];
@@ -489,7 +541,8 @@ Score Eval<Trace>::evaluateKnight(const byte square) const noexcept
 	return value;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluateBishop(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
@@ -511,7 +564,8 @@ Score Eval<Trace>::evaluateBishop(const byte square) const noexcept
 	return value;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluateRook(const byte square) const noexcept
 {
 	constexpr Color Them = ~Us;
@@ -540,7 +594,8 @@ Score Eval<Trace>::evaluateRook(const byte square) const noexcept
 	return value;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluateQueen(const byte square) const noexcept
 {
 	Score value = PSQT[QUEEN][square];
@@ -556,7 +611,8 @@ Score Eval<Trace>::evaluateQueen(const byte square) const noexcept
 	return value;
 }
 
-template <bool Trace> template <Color Us>
+template <bool Trace>
+template <Color Us>
 Score Eval<Trace>::evaluateKing(const byte square) const noexcept
 {
 	Score value = PSQT[KNIGHT][square];
