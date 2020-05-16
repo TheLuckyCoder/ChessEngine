@@ -48,7 +48,7 @@ public:
 	UndoMove history[MAX_MOVES]{};
 
 	void initDefaultBoard();
-	void setToFen(const std::string &fen);
+	bool setToFen(const std::string &fen);
 
 	bool canCastle(Color color) const noexcept;
 	template <Color C>

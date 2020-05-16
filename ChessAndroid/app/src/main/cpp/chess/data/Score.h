@@ -8,28 +8,35 @@ public:
 	constexpr Score(const short mg, const short eg) noexcept
 		: mg(mg), eg(eg) {}
 
-	constexpr void operator+=(const Score &other) noexcept
+	constexpr Score &operator=(const int rhs) noexcept
 	{
-		mg += other.mg;
-		eg += other.eg;
+		mg = rhs;
+		eg = rhs;
+		return *this;
 	}
 
-	constexpr void operator-=(const Score &other) noexcept
+	constexpr void operator+=(const Score &rhs) noexcept
 	{
-		mg -= other.mg;
-		eg -= other.eg;
+		mg += rhs.mg;
+		eg += rhs.eg;
 	}
 
-	constexpr void operator+=(const short score) noexcept
+	constexpr void operator-=(const Score &rhs) noexcept
 	{
-		mg += score;
-		eg += score;
+		mg -= rhs.mg;
+		eg -= rhs.eg;
 	}
 
-	constexpr void operator-=(const short score) noexcept
+	constexpr void operator+=(const short rhs) noexcept
 	{
-		mg -= score;
-		eg -= score;
+		mg += rhs;
+		eg += rhs;
+	}
+
+	constexpr void operator-=(const short rhs) noexcept
+	{
+		mg -= rhs;
+		eg -= rhs;
 	}
 
 	constexpr Score operator+(const Score &rhs) const noexcept

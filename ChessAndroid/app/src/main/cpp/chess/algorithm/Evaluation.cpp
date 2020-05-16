@@ -197,18 +197,20 @@ std::string Evaluation::traceValue(const Board &board)
 		   << "|                          |   MG   EG   |   MG   EG   |   MG   EG   |\n"
 		   << Separator;
 
-	element("Pawns", trace.pawnValue);
-	element("Knights", trace.knightValue);
-	element("Bishops", trace.bishopValue);
-	element("Rooks", trace.rookValue);
-	element("Queens", trace.queenValue);
-	element("King", trace.kingValue);
+	element("Pawns", trace.pawns);
+	element("Knights", trace.knights);
+	element("Bishops", trace.bishops);
+	element("Rooks", trace.rooks);
+	element("Queens", trace.queen);
+	element("King", trace.king);
+	element("Mobility", trace.mobility);
+	element("Pieces Total", trace.piecesTotal);
 	element("King Protectors", trace.kingProtector);
 	element("Minors Pawn Shield", trace.minorPawnShield);
 	element("Threats By Minor", trace.threatsByMinor);
 	element("Threats By Rook", trace.threatsByRook);
 	element("Threats By King", trace.threatsByKing);
-	element("Threat By Safe-Pawns", trace.threatBySafePawn);
+	element("Threats By Safe-Pawns", trace.threatBySafePawn);
 	element("Hanging Pieces", trace.piecesHanging);
 	element("Protection by Weak Queen", trace.weakQueenProtection);
 	element("Queen Threat By Knight", trace.queenThreatByKnight);
@@ -261,7 +263,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		const auto kingScore = evaluateKing<Us>(square);
 
 		if constexpr (Trace)
-			trace->kingValue[Us] += kingScore;
+			trace->king[Us] += kingScore;
 		score += kingScore;
 
 		const U64 attacks = Attacks::kingAttacks(square);
@@ -334,7 +336,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		knightBishop(square);
 
 		if constexpr (Trace)
-			trace->knightValue[Us] += knightScore;
+			trace->knights[Us] += knightScore;
 		score += knightScore;
 
 		const U64 attacks = Attacks::knightAttacks(square);
@@ -351,7 +353,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		knightBishop(square);
 
 		if constexpr (Trace)
-			trace->bishopValue[Us] += bishopScore;
+			trace->bishops[Us] += bishopScore;
 		score += bishopScore;
 
 		const U64 attacks = Attacks::bishopAttacks(square, board.occupied);
@@ -370,7 +372,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		const auto rookScore = evaluateRook<Us>(square);
 
 		if constexpr (Trace)
-			trace->rookValue[Us] += rookScore;
+			trace->rooks[Us] += rookScore;
 		score += rookScore;
 
 		const U64 attacks = Attacks::rookAttacks(square, board.occupied);
@@ -386,7 +388,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		const auto queenScore = evaluateQueen<Us>(square);
 
 		if constexpr (Trace)
-			trace->queenValue[Us] += queenScore;
+			trace->queen[Us] += queenScore;
 		score += queenScore;
 
 		const U64 attacks = Attacks::queenAttacks(square, board.occupied);
@@ -396,7 +398,10 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	}
 
 	if constexpr (Trace)
-		trace->pawnValue[Us] = pawnScore;
+	{
+		trace->pawns[Us] = pawnScore;
+		trace->piecesTotal[Us] = score + pawnScore;
+	}
 
 	return score + pawnScore;
 }
@@ -556,6 +561,9 @@ Score Eval<Trace>::evaluateKnight(const byte square) const noexcept
 	const int mobility = popCount(Attacks::knightAttacks(square) & _mobilityArea[Us]);
 	value += KNIGHT_MOBILITY[mobility];
 
+	if constexpr (Trace)
+		trace->mobility[Us] = mobility;
+
 	return value;
 }
 
@@ -572,6 +580,9 @@ Score Eval<Trace>::evaluateBishop(const byte square) const noexcept
 	const int mobility = popCount(
 		Attacks::bishopAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += BISHOP_MOBILITY[mobility];
+
+	if constexpr (Trace)
+		trace->mobility[Us] = mobility;
 
 	// Long Diagonal Bishop
 	const U64 centerAttacks =
@@ -593,6 +604,9 @@ Score Eval<Trace>::evaluateRook(const byte square) const noexcept
 	const int mobility = popCount(
 		Attacks::rookAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += ROOK_MOBILITY[mobility];
+
+	if constexpr (Trace)
+		trace->mobility[Us] = mobility;
 
 	const U64 file = getFile(square);
 	if (!(board.getType(PAWN, Us) & file))
@@ -622,6 +636,9 @@ Score Eval<Trace>::evaluateQueen(const byte square) const noexcept
 		Attacks::queenAttacks(square, board.occupied) & _mobilityArea[Us]);
 	value += QUEEN_MOBILITY[mobility];
 
+	if constexpr (Trace)
+		trace->mobility[Us] = mobility;
+
 	constexpr U64 InitialPosition = FILE_D & (Us ? RANK_1 : RANK_8);
 	if ((InitialPosition & getSquare64(square)) == 0)
 		value.mg -= 14;
@@ -633,6 +650,8 @@ template <bool Trace>
 template <Color Us>
 Score Eval<Trace>::evaluateKing(const byte square) const noexcept
 {
+	constexpr Color Them = ~Us;
+
 	Score value = PSQT[KNIGHT][square];
 
 	if (board.isCastled<Us>())

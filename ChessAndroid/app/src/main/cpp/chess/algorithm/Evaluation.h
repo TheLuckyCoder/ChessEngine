@@ -17,12 +17,14 @@ public:
 	struct Trace
 	{
 		// Pieces
-		std::array<Score, 2> pawnValue{};
-		std::array<Score, 2> knightValue{};
-		std::array<Score, 2> bishopValue{};
-		std::array<Score, 2> rookValue{};
-		std::array<Score, 2> queenValue{};
-		std::array<Score, 2> kingValue{};
+		std::array<Score, 2> pawns{};
+		std::array<Score, 2> knights{};
+		std::array<Score, 2> bishops{};
+		std::array<Score, 2> rooks{};
+		std::array<Score, 2> queen{};
+		std::array<Score, 2> king{};
+		std::array<Score, 2> mobility{};
+		std::array<Score, 2> piecesTotal{};
 
 		std::array<Score, 2> kingProtector{};
 		std::array<Score, 2> minorPawnShield{};

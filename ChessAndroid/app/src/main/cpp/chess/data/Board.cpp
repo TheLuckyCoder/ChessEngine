@@ -10,10 +10,10 @@ void Board::initDefaultBoard()
 	setToFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-void Board::setToFen(const std::string &fen)
+bool Board::setToFen(const std::string &fen)
 {
 	FenParser parser(*this);
-	parser.parseFen(fen);
+	return parser.parseFen(fen);
 }
 
 bool Board::canCastle(const Color color) const noexcept
@@ -58,7 +58,7 @@ bool Board::isDrawn() const noexcept
 		return true;
 
 	// Three-fold repetition
-	byte repetitions{};
+	byte repetitions = 1;
 	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
 	{
 		if (zKey == history[i].zKey)
