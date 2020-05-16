@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-    android: circleci/android@0.2.0
 jobs:
   build:
     working_directory: ~/ChessEngine/ChessAndroid
@@ -28,12 +26,12 @@ jobs:
         key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
     - run:
         name: Build Artifact
-        command: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$KEYSTORE -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEYSTORE_PASSWORD
+        command: ./gradlew assembleRelease
     - store_artifacts:
         name: Store Reports
         path: app/build/reports
         destination: reports
     - store_artifacts:
         name: Store APK
-        path: app/build/outputs/apk/app-release.apk
-        destination: app-release.apk
+        path: app/build/outputs/apk/app-release-unsigned.apk
+        destination: app-release-unsigned.apk

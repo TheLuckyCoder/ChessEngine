@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "algorithm/Evaluation.h"
-#include "Stats.h"
 #include "data/Board.h"
 #include "algorithm/Hash.h"
 #include "algorithm/MoveGen.h"
@@ -22,8 +21,6 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 	_board.initDefaultBoard();
 	_listener = listener;
 
-	Stats::resetStats();
-
 	_isPlayerWhite = isPlayerWhite;
 
 	if (!isPlayerWhite)
@@ -32,8 +29,10 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 
 void BoardManager::loadGame(const std::string &fen)
 {
-	_board.setToFen(fen);
-	_listener(getBoardState(), true, {});
+	if (_board.setToFen(fen))
+	{
+		_listener(getBoardState(), true, {});
+	}
 }
 
 void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerWhite)
@@ -113,12 +112,9 @@ void BoardManager::forceMove()
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
 	_isWorking = true;
-	Stats::resetStats();
-	Stats::startTimer();
 
 	const Move bestMove = Search::findBestMove(_board, settings);
 
-	Stats::stopTimer();
 	makeMove(bestMove, false);
 
 	_isWorking = false;

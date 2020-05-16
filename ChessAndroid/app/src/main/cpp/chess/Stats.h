@@ -7,7 +7,6 @@
 class Stats final
 {
 	inline static bool _statsEnabled = false;
-	inline static double _elapsedTime = 0;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> _startTime;
 
 	static std::atomic_size_t _boardsEvaluated;
@@ -32,8 +31,9 @@ public:
 	static void incFutilityCuts() noexcept;
 	static void incLmrCount() noexcept;
 
-	static void startTimer() noexcept;
-	static void stopTimer() noexcept;
+	static size_t getNodesCount() noexcept;
+
+	static void restartTimer() noexcept;
 	static double getElapsedMs() noexcept;
 
 	static std::string formatStats(char separator) noexcept(false);

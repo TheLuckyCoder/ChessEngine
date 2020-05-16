@@ -126,7 +126,7 @@ public:
 		return _move != rhs._move;
 	}
 
-	std::string toString() const
+	std::string toString(const bool showPiece = false) const
 	{
 		std::string str;
 		str.reserve(5);
@@ -134,6 +134,7 @@ public:
 		const byte fromSq{ from() };
 		const byte toSq{ to() };
 
+		if (showPiece)
 		{
 			const PieceType p = piece();
 			char pChar = 'K';
@@ -159,7 +160,8 @@ public:
 		if (flags() & Flag::PROMOTION)
 		{
 			const PieceType promoted = promotedPiece();
-			str.erase(0, 1);
+			if (showPiece)
+				str.erase(0, 1);
 			char p = 'Q';
 			if (promoted == ROOK)
 				p = 'R';

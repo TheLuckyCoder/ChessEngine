@@ -53,28 +53,27 @@ void Stats::incLmrCount() noexcept
 		++_lmrCount;
 }
 
-void Stats::startTimer() noexcept
+size_t Stats::getNodesCount() noexcept
 {
-	_startTime = std::chrono::high_resolution_clock::now();
-	_elapsedTime = 0;
+	return static_cast<size_t>(_nodesSearched);
 }
 
-void Stats::stopTimer() noexcept
+void Stats::restartTimer() noexcept
 {
-	const auto currentTime = std::chrono::high_resolution_clock::now();
-	_elapsedTime = std::chrono::duration<double, std::milli>(currentTime - _startTime).count();
+	_startTime = std::chrono::high_resolution_clock::now();
 }
 
 double Stats::getElapsedMs() noexcept
 {
-	return _elapsedTime;
+	const auto currentTime = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration<double, std::milli>(currentTime - _startTime).count();;
 }
 
 std::string Stats::formatStats(const char separator) noexcept(false)
 {
 	std::stringstream stream;
 
-	const double timeMs = getElapsedMs();
+	const size_t timeMs = getElapsedMs();
 
 	stream << "Elapsed Time: " << timeMs << "ms" << separator;
 

@@ -80,7 +80,7 @@ namespace
 	};
 }
 
-PawnStructureTable _pawnTable{ 4 };
+PawnStructureTable _pawnTable{ 8 };
 
 using namespace Bits;
 
