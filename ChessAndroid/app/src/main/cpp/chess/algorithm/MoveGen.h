@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <string>
 
 #include "../data/Move.h"
 #include "../data/Board.h"
@@ -70,4 +71,38 @@ inline bool moveExists(Board &board, const Move &move) noexcept
 	}
 
 	return false;
+}
+
+inline Move parseMove(Board &board, const std::string &str)
+{
+	if (str[1] > '8' || str[1] < '1'
+		|| str[3] > '8' || str[3] < '1'
+		|| str[0] > 'h' || str[0] < 'a'
+		|| str[2] > 'h' || str[2] < 'a') return {};
+
+    const byte from = toSquare(str[0] - 'a', str[1] - '1');
+    const byte to = toSquare(str[2] - 'a', str[3] - '1');	
+
+	const MoveList moveList(board);
+
+	for (const Move &move : moveList)
+	{
+		if (move.from() == from && move.to() == to)
+		{
+			if (move.flags() & Move::PROMOTION)
+			{
+				const PieceType promoted = move.promotedPiece();
+				if ((promoted == KNIGHT && str[4] == 'k')
+					|| (promoted == BISHOP && str[4] == 'b')
+					|| (promoted == ROOK && str[4] == 'r')
+					|| (promoted == ROOK && str[4] == 'q'))
+					return move;
+				
+				continue;
+			}
+			return move;
+		}
+	}
+
+	return {};
 }

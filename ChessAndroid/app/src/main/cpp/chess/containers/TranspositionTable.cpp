@@ -1,8 +1,9 @@
 #include "TranspositionTable.h"
 
+#include <cstring>
 #include <iostream>
 
-TranspositionTable::TranspositionTable(const std::size_t sizeMb) noexcept
+TranspositionTable::TranspositionTable(const std::size_t sizeMb)
 {
 	setSize(sizeMb);
 }
@@ -15,16 +16,18 @@ TranspositionTable::~TranspositionTable() noexcept
 SearchEntry TranspositionTable::operator[](const U64 key) const noexcept
 {
 	const auto index = key % _size;
-	std::shared_lock lock(_mutexes[index % MUTEX_COUNT]);
+	std::shared_lock lock{ _mutexes[index % MUTEX_COUNT] };
 	return _entries[index];
 }
 
-void TranspositionTable::insert(const SearchEntry &value) const noexcept
+void TranspositionTable::insert(const SearchEntry &value) noexcept
 {
 	const auto index = value.key % _size;
-	std::lock_guard lock(_mutexes[index % MUTEX_COUNT]);
+	std::lock_guard lock{ _mutexes[index % MUTEX_COUNT] };
 
 	SearchEntry &ref = _entries[index];
+	if (ref.flag == SearchEntry::Flag::NONE)
+		++_usage;
 	if (ref.depth <= value.depth || ref.age != _currentAge)
 	{
 		ref = value;
@@ -32,7 +35,7 @@ void TranspositionTable::insert(const SearchEntry &value) const noexcept
 	}
 }
 
-bool TranspositionTable::setSize(std::size_t sizeMb) noexcept(false)
+bool TranspositionTable::setSize(std::size_t sizeMb)
 {
 	const auto newSize = (sizeMb << 20u) / sizeof(SearchEntry);
 
@@ -42,11 +45,16 @@ bool TranspositionTable::setSize(std::size_t sizeMb) noexcept(false)
 	delete[] _entries;
 	_entries = nullptr;
 	_currentAge = 0u;
+	_usage = 0;
 
 	while (!_entries && sizeMb)
 	{
-		_entries = new(std::nothrow) SearchEntry[_size]{};
-		if (!_entries)
+		const size_t bytesSize = _size * sizeof(SearchEntry);
+		_entries = static_cast<SearchEntry *>(operator new [](bytesSize, std::nothrow));
+		
+		if (_entries)
+			std::memset(_entries, 0, bytesSize);
+		else
 		{
 			std::cerr << "Failed to allocate " << sizeMb << "MB for the Transposition Table\n";
 			sizeMb /= 2;
@@ -60,11 +68,18 @@ bool TranspositionTable::setSize(std::size_t sizeMb) noexcept(false)
 void TranspositionTable::incrementAge() noexcept
 {
 	++_currentAge;
+	_usage = 0;
 }
 
 byte TranspositionTable::currentAge() const noexcept
 {
 	return _currentAge;
+}
+
+float TranspositionTable::usagePercentage() const noexcept
+{
+	const auto usage = static_cast<double>(_usage);
+	return static_cast<float>(usage / _size);
 }
 
 void TranspositionTable::clear() noexcept

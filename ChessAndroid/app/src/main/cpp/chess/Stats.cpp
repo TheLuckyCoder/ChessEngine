@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-std::chrono::time_point<std::chrono::steady_clock> Stats::_startTime;
+std::chrono::time_point<std::chrono::high_resolution_clock> Stats::_startTime;
 std::atomic_size_t Stats::_boardsEvaluated;
 std::atomic_size_t Stats::_nodesSearched;
 std::atomic_size_t Stats::_nullCuts;
@@ -69,7 +69,7 @@ double Stats::getElapsedMs() noexcept
 	return std::chrono::duration<double, std::milli>(currentTime - _startTime).count();;
 }
 
-std::string Stats::formatStats(const char separator) noexcept(false)
+std::string Stats::formatStats(const char separator)
 {
 	std::stringstream stream;
 

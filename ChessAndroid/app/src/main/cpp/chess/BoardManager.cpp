@@ -18,7 +18,7 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 	Hash::init();
 	Attacks::init();
 
-	_board.initDefaultBoard();
+	_board.setToStartPos();
 	_listener = listener;
 
 	_isPlayerWhite = isPlayerWhite;
@@ -39,7 +39,7 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 {
 	_isPlayerWhite = isPlayerWhite;
 
-	_board.initDefaultBoard();
+	_board.setToStartPos();
 
 	assert(moves.size() < MAX_MOVES);
 

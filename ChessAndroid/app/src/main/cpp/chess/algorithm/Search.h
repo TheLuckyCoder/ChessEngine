@@ -5,7 +5,6 @@
 #include "../Settings.h"
 #include "../data/Move.h"
 #include "../containers/TranspositionTable.h"
-#include "../containers/ThreadPool.h"
 
 class Board;
 
@@ -16,7 +15,8 @@ class Search final
 		bool stopped{};
 		bool doQuietSearch = true;
 		bool useTime{};
-		U64 time{};
+		size_t time{};
+		U64 nodes{};
 	};
 
 	static TranspositionTable _transpTable;
@@ -35,6 +35,7 @@ public:
 
 	static void clearAll();
 	static void stopSearch();
+	static bool setTableSize(size_t sizeMb);
 
 	static Move findBestMove(Board board, const Settings &settings);
 

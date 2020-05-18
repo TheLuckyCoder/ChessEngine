@@ -1,9 +1,7 @@
 #include "MovesPersistence.h"
 
-#include <charconv>
+#include <algorithm>
 #include <sstream>
-
-#include "../data/Board.h"
 
 MovesPersistence::MovesPersistence(std::string content)
 	: _content(std::move(content))

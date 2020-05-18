@@ -5,7 +5,7 @@
 #include "../algorithm/MoveGen.h"
 #include "../persistence/FenParser.h"
 
-void Board::initDefaultBoard()
+void Board::setToStartPos()
 {
 	setToFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }

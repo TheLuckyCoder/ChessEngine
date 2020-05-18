@@ -65,12 +65,12 @@ enum Value : short
 {
 	VALUE_MAX = 32001,
 	VALUE_MIN = -VALUE_MAX,
-
-	VALUE_MATE_WHITE = VALUE_MAX - 1,
-	VALUE_MATE_BLACK = -VALUE_MATE_WHITE,
+	VALUE_MATE = VALUE_MAX - 1,
 
 	MAX_MOVES = 256,
-	MAX_DEPTH = 64
+	MAX_DEPTH = 64,
+
+	VALUE_MATE_MAX_DEPTH = VALUE_MATE - MAX_DEPTH
 };
 
 constexpr bool isMateValue(const Value value) noexcept

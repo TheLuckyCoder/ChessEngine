@@ -47,7 +47,7 @@ public:
 	short historyPly{};
 	UndoMove history[MAX_MOVES]{};
 
-	void initDefaultBoard();
+	void setToStartPos();
 	bool setToFen(const std::string &fen);
 
 	bool canCastle(Color color) const noexcept;

@@ -27,7 +27,7 @@ class TranspositionTable
 	static constexpr int MUTEX_COUNT = 2048;
 
 public:
-    explicit TranspositionTable(std::size_t sizeMb) noexcept;
+    explicit TranspositionTable(std::size_t sizeMb);
 
 	TranspositionTable(const TranspositionTable&) = delete;
 	TranspositionTable(TranspositionTable&&) = delete;
@@ -38,15 +38,17 @@ public:
 
 	SearchEntry operator[](U64 key) const noexcept;
 
-    void insert(const SearchEntry &value) const noexcept;
-	bool setSize(std::size_t sizeMb) noexcept(false);
+    void insert(const SearchEntry &value) noexcept;
+	bool setSize(std::size_t sizeMb);
 	void incrementAge() noexcept;
 	byte currentAge() const noexcept;
+	float usagePercentage() const noexcept;
 	void clear() noexcept;
 
 private:
     std::size_t _size{};
     byte _currentAge{};
 	SearchEntry *_entries = nullptr;
+	std::size_t _usage{};
 	mutable std::shared_mutex _mutexes[MUTEX_COUNT];
 };

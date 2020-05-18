@@ -36,5 +36,5 @@ public:
 	static void restartTimer() noexcept;
 	static double getElapsedMs() noexcept;
 
-	static std::string formatStats(char separator) noexcept(false);
+	static std::string formatStats(char separator);
 };

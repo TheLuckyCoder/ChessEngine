@@ -17,10 +17,7 @@ bool FenParser::parseFen(const std::string &fen)
 	if (!stream) return false;
 
 	// Clean board
-	_board.data.fill({});
-	_board.pieces.fill({});
-	_board.occupied = 0ull;
-	_board.npm = 0;
+	_board = {};
 
 	parsePieces(stream);
 
@@ -85,6 +82,7 @@ std::string FenParser::exportToFen()
 void FenParser::parsePieces(std::istringstream &stream)
 {
 	std::string token;
+	token.reserve(32);
 
 	U64 boardPos = 56ull; // Fen string starts at a8 = index 56
 	stream >> token;

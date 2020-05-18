@@ -39,6 +39,11 @@ void Search::stopSearch()
 	_state.stopped = true;
 }
 
+bool Search::setTableSize(const size_t sizeMb)
+{
+	return _transpTable.setSize(sizeMb);
+}
+
 Move Search::findBestMove(Board board, const Settings &settings)
 {
 	Stats::resetStats();
@@ -47,7 +52,8 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	//	const auto threadCount = settings.getThreadCount();
 
 	_transpTable.incrementAge();
-	_transpTable.setSize(settings.getCacheTableSizeMb());
+	if (settings.getTableSizeMb() != 0)
+		_transpTable.setSize(settings.getTableSizeMb());
 
 	// Update ThreadPool size if needed
 	//	if (_threadPool.getThreadCount() != threadCount)
@@ -63,7 +69,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	_state = { false, settings.doQuiescenceSearch(), time != 0ull, time };
 
 	if (board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3)
-		++depth;
+		depth = std::min<int>(MAX_DEPTH, depth + 1);
 
 	return iterativeDeepening(board, depth);
 }
@@ -105,29 +111,39 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 
 	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
+		// Stop if we have found a mate value
+		if (bestScore > VALUE_MATE_MAX_DEPTH && !bestMove.empty())
+			break;
+
+		_state.nodes = 0;
 		bestScore = aspirationWindow(board, currentDepth, bestScore);
 		if (_state.stopped)
 			break;
+
 		const int pvMoves = getPvLine(currentDepth);
 		bestMove = pvArray[0];
 
-		std::cout << "info score cp " << bestScore << " depth " << currentDepth
-			<< " nodes " << Stats::getNodesCount() << " time " << Stats::getElapsedMs();
+		const int cp = bestScore * 100 / 213;
+		std::cout << "info score cp " << cp  << " depth " << currentDepth
+			<< " nodes " << _state.nodes << " time " << static_cast<size_t>(Stats::getElapsedMs())
+			<< " hashfull " << static_cast<int>(_transpTable.usagePercentage() * 1000);
 
 		std::cout << " pv: ";
 		for (int pvCount = 0; pvCount < pvMoves; ++pvCount)
-			std::cout << pvArray[pvCount].toString() << ", ";
+			std::cout << pvArray[pvCount].toString() << ' ';
 
-		std::cout << '\n';
+		std::cout << std::endl;
 	}
+
+	std::cout << "bestmove " << bestMove.toString() << std::endl;
 
 	return bestMove;
 }
 
 int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
 {
-	int alpha = VALUE_MIN - 1;
-	int beta = VALUE_MAX + 1;
+	int alpha = VALUE_MIN;
+	int beta = VALUE_MAX;
 	int delta = WINDOW_SIZE;
 
 	if (depth >= WINDOW_MIN_DEPTH)
@@ -172,6 +188,11 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	if (rootNode)
 		assert(isPvNode);
 
+	if (checkTimeAndStop())
+		return 0;
+
+	++_state.nodes;
+
 	if (!rootNode)
 	{
 		if (board.isDrawn())
@@ -185,9 +206,6 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		return _state.doQuietSearch
 			   ? searchCaptures(board, alpha, beta, depth)
 			   : Evaluation::invertedValue(board);
-
-	if (checkTimeAndStop())
-		return 0;
 
 	const int originalAlpha = alpha;
 	const int startPly = board.ply;
@@ -371,13 +389,15 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 {
+	if (checkTimeAndStop())
+		return 0;
+
 	if (board.isDrawn())
 		return 0;
 
-	const short startPly = board.ply;
+	++_state.nodes;
 
-	if (checkTimeAndStop())
-		return 0;
+	const short startPly = board.ply;
 
 	if (startPly >= MAX_DEPTH)
 		return Evaluation::invertedValue(board);
@@ -422,6 +442,8 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	size_t legalCount{};
 	size_t searchedCount{};
 
+	const bool isEndGame = board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3;
+
 	while (!moveList.empty())
 	{
 		assert(startPly == board.ply);
@@ -445,6 +467,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 								 + FUTILITY_QUIESCENCE_MARGIN;
 		// Futility Pruning
 		if (!nodeInCheck
+			&& !isEndGame
 			&& board.ply > 2
 			&& standPat != VALUE_MIN
 			&& searchedCount
@@ -511,7 +534,7 @@ inline void Search::storeTtEntry(const Move &bestMove, const U64 key, const int 
 
 bool Search::checkTimeAndStop()
 {
-	if (_state.useTime && (Stats::getNodesCount() & 2047) == 0 && Stats::getElapsedMs() >= _state.time)
+	if (_state.useTime && (_state.nodes & 2047u) == 0 && static_cast<size_t>(Stats::getElapsedMs()) >= _state.time)
 		stopSearch();
 	return _state.stopped;
 }
