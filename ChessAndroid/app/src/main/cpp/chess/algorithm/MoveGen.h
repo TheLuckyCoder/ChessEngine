@@ -89,7 +89,7 @@ inline Move parseMove(Board &board, const std::string &str)
 	{
 		if (move.from() == from && move.to() == to)
 		{
-			if (move.flags() & Move::PROMOTION)
+			if (move.flags().promotion())
 			{
 				const PieceType promoted = move.promotedPiece();
 				if ((promoted == KNIGHT && str[4] == 'k')

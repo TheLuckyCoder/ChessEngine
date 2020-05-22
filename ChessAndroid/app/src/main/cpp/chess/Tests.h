@@ -36,13 +36,18 @@ namespace Tests
 		}
 
 		// Castling
-		const auto originalRights = board.castlingRights;
+		const byte originalRights = board.castlingRights;
 		auto &rights = result.castlingRights;
-		rights |= (originalRights & 0b111) << 3u; // Black -> White
+		rights |= (originalRights & 0b111u) << 3u; // Black -> White
 		rights |= originalRights >> 3u; // White -> Black
+
+		if (board.enPassantSq < SQ_NONE)
+			result.enPassantSq = MirrorSquare[board.enPassantSq];
 
 		result.updatePieceList();
 		result.updateNonPieceBitboards();
+		result.fiftyMoveRule = board.fiftyMoveRule;
+		result.kingAttackers = result.colorToMove ? result.allKingAttackers<WHITE>() : result.allKingAttackers<BLACK>();
 
 		return result;
 	}
@@ -162,11 +167,13 @@ namespace Tests
 
 			if (boardEval != mirroredBoardEval)
 			{
-				output << "Evaluation Asymmetrical for: " << pos << '\t'
-					   << boardEval << '/' << mirroredBoardEval << '\n'
+				output << "Evaluation Asymmetrical for: " << pos << '\n'
+					   << board.printBoard()
+					   << mirroredBoard.printBoard() << '\n'
 					   << Evaluation::traceValue(board)
 					   << Evaluation::traceValue(mirroredBoard)
 					   << '\n';
+				break;
 			}
 		}
 
@@ -213,9 +220,9 @@ namespace Tests
 			const auto startTime = std::chrono::high_resolution_clock::now();
 			const U64 nodeCount = perft(board, i);
 
-			const auto currentTime = std::chrono::high_resolution_clock::now();
+			const auto endTime = std::chrono::high_resolution_clock::now();
 			const auto timeNeeded =
-				std::chrono::duration<double, std::milli>(currentTime - startTime).count();
+				std::chrono::duration<double, std::milli>(endTime - startTime).count();
 
 			std::cout << TAG << "Time needed: " << timeNeeded << '\n';
 

@@ -26,8 +26,6 @@ void TranspositionTable::insert(const SearchEntry &value) noexcept
 	std::lock_guard lock{ _mutexes[index % MUTEX_COUNT] };
 
 	SearchEntry &ref = _entries[index];
-	if (ref.flag == SearchEntry::Flag::NONE)
-		++_usage;
 	if (ref.depth <= value.depth || ref.age != _currentAge)
 	{
 		ref = value;
@@ -45,7 +43,6 @@ bool TranspositionTable::setSize(std::size_t sizeMb)
 	delete[] _entries;
 	_entries = nullptr;
 	_currentAge = 0u;
-	_usage = 0;
 
 	while (!_entries && sizeMb)
 	{
@@ -68,18 +65,11 @@ bool TranspositionTable::setSize(std::size_t sizeMb)
 void TranspositionTable::incrementAge() noexcept
 {
 	++_currentAge;
-	_usage = 0;
 }
 
 byte TranspositionTable::currentAge() const noexcept
 {
 	return _currentAge;
-}
-
-float TranspositionTable::usagePercentage() const noexcept
-{
-	const auto usage = static_cast<double>(_usage);
-	return static_cast<float>(usage / _size);
 }
 
 void TranspositionTable::clear() noexcept

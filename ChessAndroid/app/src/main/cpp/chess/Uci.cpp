@@ -16,6 +16,12 @@ void Uci::init()
 {
 	Hash::init();
 	Attacks::init();
+	const auto results = Tests::runEvaluationTests();
+	if (results.empty())
+		std::cout << "Test Completed Successfully";
+	else
+		std::cout << results;
+	std::cout << std::endl;
 }
 
 void Uci::parsePosition(std::istringstream &is)
@@ -167,6 +173,22 @@ void Uci::loop()
 		{
 			board.setToStartPos();
 			Search::clearAll();
+		} else if (token == "debug")
+		{
+			is >> token;
+			
+			if (token == "on")
+			{
+				Stats::setEnabled(true);
+				std::cout << "Stats turned on";
+			}
+			else if (token == "off")
+			{
+				Stats::setEnabled(false);
+				std::cout << "Stats turned off";
+			}
+
+			std::cout << std::endl;
 		} else if (token == "stop")
 		{
 			Search::stopSearch();

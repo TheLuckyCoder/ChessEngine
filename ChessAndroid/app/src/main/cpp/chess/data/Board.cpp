@@ -36,11 +36,6 @@ U64 &Board::getType(const Piece piece) noexcept
 	return pieces[piece.color()][piece.type()];
 }
 
-U64 Board::getType(const Piece piece) const noexcept
-{
-	return pieces[piece.color()][piece.type()];
-}
-
 U64 &Board::getType(const PieceType type, const Color color) noexcept
 {
 	return pieces[color][type];
@@ -112,11 +107,11 @@ bool Board::makeMove(const Move move) noexcept
 	assert(getPiece(from).type() == movedPiece);
 
 	// Handle en passant capture and castling
-	if (flags & Move::EN_PASSANT)
+	if (flags.enPassant())
 	{
 		const byte capturedSq = to + static_cast<byte>(side ? -8 : 8);
 		removePiece(capturedSq);
-	} else if (flags & Move::KSIDE_CASTLE)
+	} else if (flags.kSideCastle())
 	{
 		switch (to)
 		{
@@ -131,7 +126,7 @@ bool Board::makeMove(const Move move) noexcept
 		}
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
-	} else if (flags & Move::QSIDE_CASTLE)
+	} else if (flags.qSideCastle())
 	{
 		switch (to)
 		{
@@ -152,8 +147,7 @@ bool Board::makeMove(const Move move) noexcept
 	Hash::xorCastlingRights(zKey, CastlingRights(castlingRights));
 
 	// Store the position info in history
-	history[historyPly] = { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq,
-							fiftyMoveRule };
+	history[historyPly] = { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq, fiftyMoveRule };
 
 	if (canCastle(side))
 	{
@@ -195,7 +189,7 @@ bool Board::makeMove(const Move move) noexcept
 	{
 		fiftyMoveRule = 0;
 
-		if (move.flags() & Move::DOUBLE_PAWN_PUSH)
+		if (move.flags().doublePawnPush())
 		{
 			enPassantSq = from + static_cast<byte>(side ? 8 : -8);
 
@@ -207,7 +201,7 @@ bool Board::makeMove(const Move move) noexcept
 
 	movePiece(from, to);
 
-	if (move.flags() & Move::PROMOTION)
+	if (move.flags().promotion())
 	{
 		const PieceType promotedPiece = move.promotedPiece();
 		assert(Piece::isValid(promotedPiece));
@@ -222,7 +216,7 @@ bool Board::makeMove(const Move move) noexcept
 
 	updateNonPieceBitboards();
 
-	if ((flags & Move::CAPTURE && move.capturedPiece() == KING)
+	if (move.capturedPiece() == KING
 		|| (side ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>()))
 	{
 		undoMove();
@@ -255,11 +249,11 @@ void Board::undoMove() noexcept
 
 	colorToMove = ~colorToMove;
 
-	if (flags & Move::EN_PASSANT)
+	if (flags.enPassant())
 	{
 		const byte capturesSq = to + static_cast<byte>(colorToMove ? -8 : 8);
 		addPiece(capturesSq, { PAWN, ~colorToMove });
-	} else if (flags & Move::KSIDE_CASTLE)
+	} else if (flags.kSideCastle())
 	{
 		switch (to)
 		{
@@ -272,7 +266,7 @@ void Board::undoMove() noexcept
 			default:
 				assert(false);
 		}
-	} else if (flags & Move::QSIDE_CASTLE)
+	} else if (flags.qSideCastle())
 	{
 		switch (to)
 		{
@@ -293,7 +287,7 @@ void Board::undoMove() noexcept
 		capturedType != NO_PIECE_TYPE)
 		addPiece(to, Piece(capturedType, ~colorToMove));
 
-	if (flags & Move::PROMOTION)
+	if (flags.promotion())
 	{
 		removePiece(from);
 		addPiece(from, Piece(PAWN, colorToMove));
@@ -425,22 +419,23 @@ void Board::removePiece(const byte square) noexcept
 
 void Board::updatePieceList() noexcept
 {
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
-	{
-		const Piece piece = data[sq];
-		const U64 bb = Bits::getSquare64(sq);
-
-		getType(piece) |= bb;
-
-		if (piece.type() != PAWN)
-			npm += Evaluation::getPieceValue(piece.type());
-	}
-
 	pieceCount.fill({});
 
-	for (byte square{}; square < SQUARE_NB; ++square)
-		if (const Piece piece = getPiece(square))
-			pieceList[piece][pieceCount[piece]++] = square;
+	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	{
+		const Piece &piece = data[sq];
+		if (piece)
+		{
+			pieceList[piece][pieceCount[piece]++] = sq;
+
+			const U64 bb = Bits::getSquare64(sq);
+
+			getType(piece) |= bb;
+
+			if (piece.type() != PAWN)
+				npm += Evaluation::getPieceValue(piece.type());
+		}
+	}
 }
 
 void Board::updateNonPieceBitboards() noexcept
@@ -460,4 +455,47 @@ void Board::updateNonPieceBitboards() noexcept
 					   | getType(KING, WHITE);
 
 	occupied = allPieces[BLACK] | allPieces[WHITE];
+}
+
+std::string Board::printBoard() const noexcept
+{
+	std::ostringstream ss;
+
+	constexpr auto Delimiter = "+---+---+---+---+---+---+---+---+";
+
+	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	{
+		if (sq % 8 == 0)
+			ss << '\n' << Delimiter << '\n' << '|';
+
+		const Piece piece = data[sq];
+		const auto type = piece.type();
+		const bool color = piece.color();
+
+		const char c = [&] {
+			switch (type)
+			{
+				case NO_PIECE_TYPE:
+					return ' ';
+				case PAWN:
+					return color ? 'P' : 'p';
+				case KNIGHT:
+					return color ? 'N' : 'n';
+				case BISHOP:
+					return color ? 'B' : 'b';
+				case ROOK:
+					return color ? 'R' : 'r';
+				case QUEEN:
+					return color ? 'Q' : 'q';
+				case KING:
+					return color ? 'K' : 'k';
+			}
+		}();
+
+		ss << ' ' << c << " |";
+	}
+
+	ss <<'\n' << Delimiter;
+
+	return ss.str();
 }

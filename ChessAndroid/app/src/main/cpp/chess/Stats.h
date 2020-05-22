@@ -31,8 +31,6 @@ public:
 	static void incFutilityCuts() noexcept;
 	static void incLmrCount() noexcept;
 
-	static size_t getNodesCount() noexcept;
-
 	static void restartTimer() noexcept;
 	static double getElapsedMs() noexcept;
 

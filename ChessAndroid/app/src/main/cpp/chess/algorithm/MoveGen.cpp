@@ -23,7 +23,7 @@ namespace
 
 			if (LastRank & pos)
 			{
-				move.setFlags(Move::PROMOTION);
+				move.setFlags(Move::Flags::PROMOTION);
 				for (byte promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
@@ -35,12 +35,12 @@ namespace
 
 		const auto addCaptureMove = [&](const byte from, const byte to, const U64 pos)
 		{
-			Move move{ from, to, PAWN, Move::CAPTURE };
+			Move move{ from, to, PAWN, Move::Flags::CAPTURE };
 			move.setCapturedPiece(board.getPiece(to).type());
 
 			if (LastRank & pos)
 			{
-				move.setFlags(Move::CAPTURE | Move::PROMOTION);
+				move.setFlags(Move::Flags::CAPTURE | Move::Flags::PROMOTION);
 				for (byte promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
@@ -65,7 +65,7 @@ namespace
 				if (board.getType(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
 				{
 					attacks &= ~enPassantCapture;
-					*moveList++ = { from, board.enPassantSq, PAWN, Move::EN_PASSANT };
+					*moveList++ = { from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT };
 				}
 			}
 
@@ -88,8 +88,10 @@ namespace
 					const U64 doublePushBb = shift<Forward>(moveBB);
 
 					if (!(board.occupied & doublePushBb))
-						*moveList++ = { from, bitScanForward(doublePushBb), PAWN,
-										Move::DOUBLE_PAWN_PUSH };
+					{
+						const byte targetSq = bitScanForward(doublePushBb);
+						*moveList++ = { from, targetSq, PAWN,Move::Flags::DOUBLE_PAWN_PUSH };
+					}
 				}
 			}
 		}
@@ -129,7 +131,7 @@ namespace
 				Move move{ from, to, P };
 				if (bb & board.allPieces[Them])
 				{
-					move.setFlags(Move::CAPTURE);
+					move.setFlags(Move::Flags::CAPTURE);
 					move.setCapturedPiece(board.getPiece(to).type());
 				}
 
@@ -175,7 +177,7 @@ namespace
 			Move move{ kingSq, to, KING };
 			if (bb & board.allPieces[Them])
 			{
-				move.setFlags(Move::CAPTURE);
+				move.setFlags(Move::Flags::CAPTURE);
 				move.setCapturedPiece(board.getPiece(to).type());
 			}
 			*moveList++ = move;
@@ -185,7 +187,7 @@ namespace
 			return moveList;
 
 		const auto addCastleMove = [&, kingSq](const byte kingTo, const byte rookSq,
-											   const byte rookTo, const Move::Flag castleSide)
+											   const byte rookTo, const byte castleSide)
 		{
 			U64 mask = getRayBetween(kingSq, kingTo) | getSquare64(kingTo);
 			mask |= getRayBetween(rookSq, rookTo) | getSquare64(rookTo);
@@ -203,7 +205,7 @@ namespace
 					return;
 			}
 
-			*moveList++ = { kingSq, kingTo, KING, static_cast<unsigned>(castleSide) };
+			*moveList++ = { kingSq, kingTo, KING, castleSide };
 		};
 
 		if (board.canCastleKs<Us>())
@@ -211,7 +213,7 @@ namespace
 			constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
 			constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
 			constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
-			addCastleMove(KingTo, RookSq, RookTo, Move::KSIDE_CASTLE);
+			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::KSIDE_CASTLE);
 		}
 
 		if (board.canCastleQs<Us>())
@@ -219,7 +221,7 @@ namespace
 			constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
 			constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
 			constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
-			addCastleMove(KingTo, RookSq, RookTo, Move::QSIDE_CASTLE);
+			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::QSIDE_CASTLE);
 		}
 
 		return moveList;

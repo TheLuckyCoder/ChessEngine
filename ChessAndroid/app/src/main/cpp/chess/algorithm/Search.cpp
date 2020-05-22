@@ -116,6 +116,8 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 			break;
 
 		_state.nodes = 0;
+		/*if((System.currentTimeMillis() - startTime) * 2 > timeForThisMove)
+			break;*/
 		bestScore = aspirationWindow(board, currentDepth, bestScore);
 		if (_state.stopped)
 			break;
@@ -124,9 +126,8 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 		bestMove = pvArray[0];
 
 		const int cp = bestScore * 100 / 213;
-		std::cout << "info score cp " << cp  << " depth " << currentDepth
-			<< " nodes " << _state.nodes << " time " << static_cast<size_t>(Stats::getElapsedMs())
-			<< " hashfull " << static_cast<int>(_transpTable.usagePercentage() * 1000);
+		std::cout << "info depth " << currentDepth << " score cp " << cp
+			<< " nodes " << _state.nodes << " time " << static_cast<size_t>(Stats::getElapsedMs());
 
 		std::cout << " pv: ";
 		for (int pvCount = 0; pvCount < pvMoves; ++pvCount)
@@ -291,7 +292,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& futilityMarginEval <= alpha
 			&& !isMateValue(static_cast<Value>(alpha))
 			&& !move.isTactical()
-			&& !(move.flags() & Move::DOUBLE_PAWN_PUSH)
+			&& !(move.flags().doublePawnPush())
 			&& !move.isAdvancedPawnPush()
 			&& !nodeInCheck
 			&& !board.isSideInCheck())

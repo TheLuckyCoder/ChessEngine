@@ -38,11 +38,11 @@ namespace MoveOrdering
 
 			if (move == pvMove)
 				move.setScore(PV_SCORE);
-			else if (flags & Move::Flag::CAPTURE)
+			else if (flags.capture())
 				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()] + NORMAL_SCORE);
-			else if (flags & Move::PROMOTION)
+			else if (flags.promotion())
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE);
-			else if (flags & Move::Flag::EN_PASSANT)
+			else if (flags.enPassant())
 				move.setScore(EN_PASSANT_SCORE + NORMAL_SCORE);
 			else if (searchKillers[0][board.ply] == move.getContents())
 				move.setScore(900000);
@@ -59,11 +59,11 @@ namespace MoveOrdering
 		{
 			const auto flags = move.flags();
 
-			if (flags & Move::Flag::CAPTURE)
+			if (flags.capture())
 				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()]);
-			else if (flags & Move::PROMOTION)
+			else if (flags.promotion())
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()));
-			else if (flags & Move::Flag::EN_PASSANT)
+			else if (flags.enPassant())
 				move.setScore(EN_PASSANT_SCORE);
 		}
 	}

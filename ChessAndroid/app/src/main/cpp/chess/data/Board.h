@@ -63,7 +63,6 @@ public:
 	Piece &getPiece(byte squareIndex) noexcept; 
 	Piece getPiece(byte squareIndex) const noexcept;
 	U64 &getType(Piece piece) noexcept;
-	U64 getType(Piece piece) const noexcept;
 	U64 &getType(PieceType type, Color color) noexcept;
 	U64 getType(PieceType type, Color color) const noexcept;
 	template <Color C>
@@ -78,7 +77,7 @@ public:
 	void undoNullMove() noexcept;
 
 	template <PieceType>
-	bool isAttacked(Color colorAttacking, byte targetSquare) const noexcept;
+	bool isAttacked(Color attackerColor, byte targetSquare) const noexcept;
 	bool isAttackedByAny(Color attackerColor, byte targetSquare) const noexcept;
 	template <Color C>
 	U64 allKingAttackers() const noexcept;
@@ -92,6 +91,8 @@ private:
 public:
 	void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
+
+	std::string printBoard() const noexcept;
 };
 
 template <Color C>
@@ -125,17 +126,17 @@ byte Board::getKingSq() const noexcept
 }
 
 template <PieceType P>
-bool Board::isAttacked(const Color colorAttacking, const byte targetSquare) const noexcept
+bool Board::isAttacked(const Color attackerColor, const byte targetSquare) const noexcept
 {
 	static_assert(PAWN <= P);
 	static_assert(P <= KING);
 
-	const U64 type = getType(P, colorAttacking);
+	const U64 type = getType(P, attackerColor);
 
 	if constexpr (P == PAWN)
 	{
 		const U64 bb = Bits::getSquare64(targetSquare);
-		const U64 pawnAttacks = colorAttacking
+		const U64 pawnAttacks = attackerColor
 			   ? Attacks::pawnAttacks<WHITE>(type) : Attacks::pawnAttacks<BLACK>(type);
 
 		return pawnAttacks & bb;

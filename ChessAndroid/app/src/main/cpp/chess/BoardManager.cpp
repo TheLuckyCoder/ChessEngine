@@ -89,8 +89,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 	_board.makeMove(move);
 
 	const auto flags = move.flags();
-	const bool shouldRedraw = flags & Move::PROMOTION || flags & Move::CASTLE
-							  || flags & Move::EN_PASSANT;
+	const bool shouldRedraw = flags.promotion() | flags.castle() | flags.enPassant();
 	const State state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()

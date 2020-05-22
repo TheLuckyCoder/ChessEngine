@@ -53,11 +53,6 @@ void Stats::incLmrCount() noexcept
 		++_lmrCount;
 }
 
-size_t Stats::getNodesCount() noexcept
-{
-	return static_cast<size_t>(_nodesSearched);
-}
-
 void Stats::restartTimer() noexcept
 {
 	_startTime = std::chrono::high_resolution_clock::now();

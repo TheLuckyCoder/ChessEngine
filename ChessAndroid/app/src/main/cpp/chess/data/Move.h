@@ -7,15 +7,43 @@
 class Move final
 {
 public:
-	enum Flag
+	class Flags final
 	{
-		CAPTURE = 1 << 1, // The move is a capture
-		PROMOTION = 1 << 2, // The move is a promotion
-		KSIDE_CASTLE = 1 << 3, // The move is a king side castle
-		QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
-		CASTLE = KSIDE_CASTLE | QSIDE_CASTLE,
-		DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
-		EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag additionally)
+	public:
+		enum Internal
+		{
+			CAPTURE = 1 << 1, // The move is a capture
+			PROMOTION = 1 << 2, // The move is a promotion
+			KSIDE_CASTLE = 1 << 3, // The move is a king side castle
+			QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
+			CASTLE = KSIDE_CASTLE | QSIDE_CASTLE,
+			DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
+			EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag too)
+		};
+
+	public:
+		constexpr Flags(const byte flags) noexcept : _flags(flags & 0x7F) {}
+
+		constexpr bool capture() const noexcept { return _flags & Internal::CAPTURE; }
+
+		constexpr bool promotion() const noexcept { return _flags & Internal::PROMOTION; }
+
+		constexpr bool kSideCastle() const noexcept { return _flags & Internal::KSIDE_CASTLE; }
+
+		constexpr bool qSideCastle() const noexcept { return _flags & Internal::QSIDE_CASTLE; }
+
+		constexpr bool castle() const noexcept { return _flags & Internal::CASTLE; }
+
+		constexpr bool doublePawnPush() const noexcept { return _flags & Internal::DOUBLE_PAWN_PUSH; }
+
+		constexpr bool enPassant() const noexcept { return _flags & Internal::EN_PASSANT; }
+
+		constexpr byte getContents() const noexcept { return _flags; }
+
+		constexpr void clearAll() noexcept { _flags = {}; }
+
+	private:
+		byte _flags;
 	};
 
 	Move() = default;
@@ -31,7 +59,7 @@ public:
 	}
 
 	constexpr Move(const byte from, const byte to, const PieceType piece,
-				   const unsigned int flags) noexcept
+				   const byte flags) noexcept
 		: _move(((flags & 0x7F) << 22u) | ((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
 	{
 	}
@@ -53,7 +81,7 @@ public:
 
 	constexpr void setScore(const int score) noexcept
 	{
-		this->_score = score;
+		_score = score;
 	}
 
 	constexpr PieceType piece() const noexcept
@@ -93,12 +121,12 @@ public:
 		return (_move >> 15u) & 0x3F;
 	}
 
-	constexpr unsigned int flags() const noexcept
+	constexpr Flags flags() const noexcept
 	{
-		return (_move >> 22u) & 0x7F;
+		return Flags(static_cast<byte>(_move >> 22u));
 	}
 
-	constexpr void setFlags(const unsigned int flags) noexcept
+	constexpr void setFlags(const byte flags) noexcept
 	{
 		constexpr unsigned int mask = 0x7F << 22u;
 		_move = (_move & ~mask) | ((flags << 22u) & mask);
@@ -107,7 +135,7 @@ public:
 	constexpr bool isTactical() const noexcept
 	{
 		const auto f = flags();
-		return (f & Flag::CAPTURE) | (f & Flag::PROMOTION);
+		return f.capture() | f.promotion();
 	}
 
 	constexpr bool isAdvancedPawnPush() const noexcept
@@ -157,7 +185,7 @@ public:
 		str += 'a' + col(toSq);
 		str += '1' + row(toSq);
 
-		if (flags() & Flag::PROMOTION)
+		if (flags().promotion())
 		{
 			const PieceType promoted = promotedPiece();
 			if (showPiece)

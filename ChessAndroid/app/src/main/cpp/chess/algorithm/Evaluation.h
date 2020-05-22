@@ -41,6 +41,8 @@ public:
 		std::array<Score, 2> restrictedMovement{};
 		std::array<Score, 2> attacksTotal{};
 
+		std::array<Score, 2> kingSafety{};
+
 		std::array<Score, 2> total{};
 	};
 

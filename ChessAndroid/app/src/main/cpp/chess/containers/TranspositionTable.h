@@ -42,13 +42,11 @@ public:
 	bool setSize(std::size_t sizeMb);
 	void incrementAge() noexcept;
 	byte currentAge() const noexcept;
-	float usagePercentage() const noexcept;
 	void clear() noexcept;
 
 private:
     std::size_t _size{};
     byte _currentAge{};
 	SearchEntry *_entries = nullptr;
-	std::size_t _usage{};
 	mutable std::shared_mutex _mutexes[MUTEX_COUNT];
 };
