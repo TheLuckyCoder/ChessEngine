@@ -3,7 +3,7 @@
 #include <array>
 
 #include "../Settings.h"
-#include "../data/Move.h"
+#include "../Move.h"
 #include "../containers/TranspositionTable.h"
 
 class Board;

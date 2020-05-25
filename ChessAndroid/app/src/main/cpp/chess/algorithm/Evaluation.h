@@ -3,8 +3,8 @@
 #include <array>
 #include <string>
 
-#include "../data/Board.h"
-#include "../data/Score.h"
+#include "../Board.h"
+#include "../Score.h"
 #include "../containers/PawnStructureTable.h"
 
 class Evaluation final

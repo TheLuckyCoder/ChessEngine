@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 
-#include "data/Board.h"
+#include "Board.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Evaluation.h"
 

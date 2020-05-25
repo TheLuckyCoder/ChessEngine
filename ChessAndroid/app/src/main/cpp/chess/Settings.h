@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <thread>
 
-#include "data/Defs.h"
+#include "Defs.h"
 
 class Settings final
 {

@@ -4,7 +4,7 @@
 
 #include "Evaluation.h"
 #include "Search.h"
-#include "../data/Board.h"
+#include "../Board.h"
 
 namespace MoveOrdering
 {

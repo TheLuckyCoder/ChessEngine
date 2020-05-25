@@ -4,7 +4,7 @@
 #include <sstream>
 #include <thread>
 
-#include "data/Board.h"
+#include "Board.h"
 
 class Uci
 {

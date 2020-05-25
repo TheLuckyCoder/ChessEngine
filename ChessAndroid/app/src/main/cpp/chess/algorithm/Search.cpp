@@ -4,11 +4,11 @@
 #include <iostream>
 
 #include "../Stats.h"
-#include "../data/Board.h"
+#include "../Board.h"
 #include "MoveGen.h"
 #include "MoveOrdering.h"
 #include "Evaluation.h"
-#include "../data/Psqt.h"
+#include "../Psqt.h"
 
 constexpr int WINDOW_MIN_DEPTH = 5;
 constexpr int WINDOW_SIZE = 15;

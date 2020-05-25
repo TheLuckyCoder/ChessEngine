@@ -2,8 +2,8 @@
 
 #include <array>
 
-#include "../data/Defs.h"
-#include "../data/Piece.h"
+#include "../Defs.h"
+#include "../Piece.h"
 
 class Board;
 

@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "algorithm/Evaluation.h"
-#include "data/Board.h"
+#include "Board.h"
 #include "algorithm/Hash.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"

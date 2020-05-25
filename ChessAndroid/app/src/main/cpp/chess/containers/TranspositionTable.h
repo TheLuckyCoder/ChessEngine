@@ -2,7 +2,7 @@
 
 #include <shared_mutex>
 
-#include "../data/Move.h"
+#include "../Move.h"
 
 struct SearchEntry
 {

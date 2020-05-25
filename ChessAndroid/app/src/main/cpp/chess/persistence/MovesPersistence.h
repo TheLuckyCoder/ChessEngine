@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "../data/Move.h"
+#include "../Move.h"
 
 class MovesPersistence final
 {

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <string>
 
-#include "../data/Move.h"
-#include "../data/Board.h"
+#include "../Move.h"
+#include "../Board.h"
 
 Move *generateMoves(const Board &board, Move *moveList) noexcept;
 

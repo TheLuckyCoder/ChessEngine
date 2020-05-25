@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "../data/Board.h"
+#include "../Board.h"
 
 Hash::HashArray Hash::_pieces{};
 U64 Hash::_side;

@@ -1,8 +1,8 @@
 #include "FenParser.h"
 
 #include "../algorithm/Evaluation.h"
-#include "../data/Bits.h"
-#include "../data/Board.h"
+#include "../Bits.h"
+#include "../Board.h"
 #include "../algorithm/Hash.h"
 
 FenParser::FenParser(Board &board)

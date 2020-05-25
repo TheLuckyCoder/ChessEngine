@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "Settings.h"
-#include "data/Move.h"
-#include "data/Board.h"
+#include "Move.h"
+#include "Board.h"
 
 class BoardManager final
 {

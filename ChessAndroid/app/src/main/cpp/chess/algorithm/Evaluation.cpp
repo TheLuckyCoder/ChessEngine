@@ -4,8 +4,8 @@
 #include <iomanip>
 
 #include "../Stats.h"
-#include "../data/Board.h"
-#include "../data/Psqt.h"
+#include "../Board.h"
+#include "../Psqt.h"
 #include "Attacks.h"
 
 namespace
@@ -298,13 +298,13 @@ Score Eval<Trace>::evaluatePieces() noexcept
 
 	const auto updateKingAttacks = [&](const PieceType type, const U64 attacks)
 	{
-		constexpr Color Them = ~Us;
+		/*constexpr Color Them = ~Us;
 		if (attacks & _kingRing[Them])
 		{
 			++_kingAttackersCount[Us];
 			_kingAttackersWeight[Us] += KING_ATTACK_WEIGHT[type];
 			_kingAttacksCount[Us] += popCount(attacks & _kingRing[Them]);
-		}
+		}*/
 	};
 
 	Score pawnScore;
