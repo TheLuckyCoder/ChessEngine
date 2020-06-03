@@ -16,48 +16,83 @@ void Uci::init()
 {
 	Hash::init();
 	Attacks::init();
-	const auto results = Tests::runEvaluationTests();
-	if (results.empty())
-		std::cout << "Test Completed Successfully";
-	else
-		std::cout << results;
-	std::cout << std::endl;
+	board.setToStartPos();
 }
 
-void Uci::parsePosition(std::istringstream &is)
+void Uci::loop()
 {
+	std::string line;
 	std::string token;
-	is >> token;
+	line.reserve(2048);
+	token.reserve(64);
 
-	if (token == "fen")
+	printEngineInfo();
+
+	board.setToStartPos();
+
+	while (std::getline(std::cin, line))
 	{
-		std::string fen;
-		fen.reserve(64);
+		std::istringstream is(line);
+		bool quit{};
 
-		while (is >> token && token != "moves")
+		if (line.empty())
+			continue;
+
+		is >> token;
+
+		if (token == "isready")
+			std::cout << "readyok\n";
+		else if (token == "position" || token == "pos")
+			parsePosition(is);
+		else if (token == "go")
+			parseGo(is);
+		else if (token == "uci")
+			printEngineInfo();
+		else if (token == "ucinewgame")
 		{
-			fen += token;
-			fen += ' ';
-		}
-		board.setToFen(fen);
-	} else
-	{
-		// Load the default position anyhow
-		board.setToStartPos();
-	}
-
-	if (is >> token && token == "moves")
-	{
-		while (true)
+			board.setToStartPos();
+			Search::clearAll();
+		} else if (token == "debug")
 		{
-			if (!(is >> token))
-				break;
-			const Move move = parseMove(board, token);
-			if (!move.empty())
-				board.makeMove(move);
-		}
+			is >> token;
+
+			if (token == "on")
+			{
+				Stats::setEnabled(true);
+				std::cout << "Stats turned on";
+			}
+			else if (token == "off")
+			{
+				Stats::setEnabled(false);
+				std::cout << "Stats turned off";
+			}
+
+			std::cout << std::endl;
+		} else if (token == "stop")
+		{
+			Search::stopSearch();
+			searchThread.join();
+			std::cout << "Joined Thread" << std::endl;
+		} else if (token == "quit")
+			quit = true;
+
+			// Non-Uci Commands
+		else if (token == "evaltest")
+		{
+			const auto results = Tests::runEvaluationTests();
+			if (results.empty())
+				std::cout << "Test Completed Successfully";
+			else
+				std::cout << results;
+			std::cout << std::endl;
+		} else if (token == "perft")
+			Tests::runPerftTests();
+
+		if (quit)
+			break;
+
+		line.clear();
 	}
-	std::cout << "Loaded Pos" << std::endl;
 }
 
 void Uci::parseGo(std::istringstream &is)
@@ -133,85 +168,46 @@ void Uci::parseGo(std::istringstream &is)
 	searchThread = std::thread(Search::findBestMove, board, settings);
 }
 
-void printEngineInfo()
+void Uci::parsePosition(std::istringstream &is)
+{
+	std::string token;
+	is >> token;
+
+	if (token == "fen")
+	{
+		std::string fen;
+		fen.reserve(92);
+
+		while (is >> token && token != "moves")
+		{
+			fen += token;
+			fen += ' ';
+		}
+		board.setToFen(fen);
+	} else
+	{
+		// Load the default position anyhow
+		board.setToStartPos();
+	}
+
+	if (is >> token && token == "moves")
+	{
+		while (true)
+		{
+			if (!(is >> token))
+				break;
+			const Move move = parseMove(board, token);
+			if (!move.empty())
+				board.makeMove(move);
+		}
+	}
+
+	std::cout << "Loaded Pos" << std::endl;
+}
+
+void Uci::printEngineInfo()
 {
 	std::cout << "id name TestEngine\n"
 			  << "id author TheLuckyCoder\n"
 			  << "uciok" << std::endl;
-}
-
-void Uci::loop()
-{
-	std::string line;
-	std::string token;
-	line.reserve(2048);
-	token.reserve(64);
-
-	printEngineInfo();
-
-	board.setToStartPos();
-
-	while (std::getline(std::cin, line))
-	{
-		std::istringstream is(line);
-		bool quit{};
-
-		if (line.empty())
-			continue;
-
-		is >> token;
-
-		if (token == "isready")
-			std::cout << "readyok\n";
-		else if (token == "position" || token == "pos")
-			parsePosition(is);
-		else if (token == "go")
-			parseGo(is);
-		else if (token == "uci")
-			printEngineInfo();
-		else if (token == "ucinewgame")
-		{
-			board.setToStartPos();
-			Search::clearAll();
-		} else if (token == "debug")
-		{
-			is >> token;
-			
-			if (token == "on")
-			{
-				Stats::setEnabled(true);
-				std::cout << "Stats turned on";
-			}
-			else if (token == "off")
-			{
-				Stats::setEnabled(false);
-				std::cout << "Stats turned off";
-			}
-
-			std::cout << std::endl;
-		} else if (token == "stop")
-		{
-			Search::stopSearch();
-			searchThread.join();
-			std::cout << "Joined Thread" << std::endl;
-		} else if (token == "quit")
-			quit = true;
-
-			// Non-Uci Commands
-		else if (token == "evaltest")
-		{
-			const auto results = Tests::runEvaluationTests();
-			if (results.empty())
-				std::cout << "Test Completed Successfully";
-			else
-				std::cout << results;
-			std::cout << std::endl;
-		} else if (token == "perft")
-			Tests::runPerftTests();
-
-		if (quit)
-			break;
-
-		line.clear();
-	}
 }

@@ -1,10 +1,10 @@
 package net.theluckycoder.chess.utils
 
 import android.content.Context
-import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.Settings
+import net.theluckycoder.chess.model.Settings
+import net.theluckycoder.chess.model.ChessColors
 
 class AppPreferences(private val context: Context) {
 
@@ -45,7 +45,7 @@ class AppPreferences(private val context: Context) {
         get() = manager.getInt(KEY_TILE_BLACK, getColor(context, R.color.tile_black))
         set(value) = manager.edit().putInt(KEY_TILE_BLACK, value).apply()
 
-    var possibleTileColor: Int
+    var possibleMoveColor: Int
         get() = manager.getInt(KEY_TILE_POSSIBLE, getColor(context, R.color.tile_possible))
         set(value) = manager.edit().putInt(KEY_TILE_POSSIBLE, value).apply()
 
@@ -53,9 +53,18 @@ class AppPreferences(private val context: Context) {
         get() = manager.getInt(KEY_TILE_LAST_MOVED, getColor(context, R.color.tile_last_moved))
         set(value) = manager.edit().putInt(KEY_TILE_LAST_MOVED, value).apply()
 
-    var kingInChessColor: Int
+    var inCheckColor: Int
         get() = manager.getInt(KEY_KING_IN_CHECK, getColor(context, R.color.king_in_check))
         set(value) = manager.edit().putInt(KEY_KING_IN_CHECK, value).apply()
+
+    val chessColors: ChessColors
+        get() = ChessColors(
+            whiteTileColor,
+            blackTileColor,
+            possibleMoveColor,
+            lastMovedTileColor,
+            inCheckColor
+        )
 
     var settings: Settings
         get() = Settings.create(

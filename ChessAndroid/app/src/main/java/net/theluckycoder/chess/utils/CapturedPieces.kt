@@ -1,6 +1,6 @@
 package net.theluckycoder.chess.utils
 
-import net.theluckycoder.chess.Piece
+import net.theluckycoder.chess.model.Piece
 
 class CapturedPieces {
 

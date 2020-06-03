@@ -1,27 +1,23 @@
 package net.theluckycoder.chess.views
 
 import android.annotation.SuppressLint
-import android.graphics.Bitmap
-import android.graphics.BlurMaskFilter
-import android.graphics.Canvas
-import android.graphics.Paint
-import net.theluckycoder.chess.ChessActivity
+import android.content.Context
+import android.graphics.*
 import net.theluckycoder.chess.utils.PieceResourceManager
-import net.theluckycoder.chess.Pos
+import net.theluckycoder.chess.model.Pos
 
 @SuppressLint("ViewConstructor")
 class PieceView(
-    private val activity: ChessActivity,
-    clickable: Boolean,
-    val res: Int,
+    context: Context,
+    val pieceImage: Int,
     var pos: Pos,
-    private val listener: ClickListener
-) : CustomView(activity) {
+    listener: SimpleClickListener?
+) : CustomView(context) {
 
-    private val bitmap: Bitmap = PieceResourceManager.getBitmap(res)
+    private val bitmap: Bitmap = PieceResourceManager.getBitmap(pieceImage)
 
     init {
-        if (clickable) {
+        if (listener != null) {
             setOnClickListener {
                 listener.onClick(this)
             }
@@ -37,11 +33,17 @@ class PieceView(
             invalidate()
         }
 
-    override fun onDraw(canvas: Canvas) {
-        if (isInCheck) {
-            redBlurPaint.color = activity.preferences.kingInChessColor
-            canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, redBlurPaint)
+    fun setCheckColor(value: Int) {
+        if (value != redBlurPaint.color) {
+            redBlurPaint.color = value
+            invalidate()
         }
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        if (isInCheck)
+            canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, redBlurPaint)
+
         canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }

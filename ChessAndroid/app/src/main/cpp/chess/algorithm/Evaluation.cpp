@@ -6,7 +6,6 @@
 #include "../Stats.h"
 #include "../Board.h"
 #include "../Psqt.h"
-#include "Attacks.h"
 
 namespace
 {
@@ -269,7 +268,6 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	// Bonuses for Knights and Bishops
 	const auto knightBishopBonus = [&](const byte square)
 	{
-		const bool T = Trace;
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
 		const auto kingProtectorScore =
@@ -675,13 +673,13 @@ template<bool Trace>
 template<Color Us>
 Score Eval<Trace>::evaluateKing() const noexcept
 {
-	constexpr Color Them = ~Us;
+	// constexpr Color Them = ~Us;
 	const byte square = board.getKingSq<Us>();
 
 	Score value = PSQT[KNIGHT][square];
 
 	if (board.isCastled<Us>())
-		value.mg += 65;
+		value.mg += 70;
 	else
 	{
 		const short count = short(board.canCastleKs<Us>()) + short(board.canCastleQs<Us>());

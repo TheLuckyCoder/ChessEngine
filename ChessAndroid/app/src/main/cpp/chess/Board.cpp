@@ -2,7 +2,6 @@
 
 #include "algorithm/Hash.h"
 #include "algorithm/Evaluation.h"
-#include "algorithm/MoveGen.h"
 #include "persistence/FenParser.h"
 
 void Board::setToStartPos()

@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.theluckycoder.chess.model.*
 
 class GameManager(
     private val context: Context,
@@ -13,7 +14,7 @@ class GameManager(
 
     interface OnEventListener {
         // Called before a move was made by the player or the engine
-        fun onMove(gameState: State)
+        fun onMove(gameState: GameState)
 
         // Called when a specific piece was moved
         fun onPieceMoved(startPos: Pos, destPos: Pos, isPlayerWhite: Boolean)
@@ -42,10 +43,10 @@ class GameManager(
         } else {
             initialized = true
 
+            initBoardNative(true, isPlayerWhite)
+
             isPlayerWhite =
                 if (SaveManager.loadFromFile(context)) Native.isPlayerWhite() else playerWhite
-
-            initBoardNative(true, isPlayerWhite)
         }
 
         listener.redrawBoard(isPlayerWhite)
@@ -71,12 +72,12 @@ class GameManager(
     @Suppress("unused") // Called by native code
     private fun callback(gameState: Int, shouldRedrawPieces: Boolean, moves: Array<PosPair>) {
         val state = when (gameState) {
-            1 -> State.WINNER_WHITE
-            2 -> State.WINNER_BLACK
-            3 -> State.DRAW
-            4 -> State.WHITE_IN_CHESS
-            5 -> State.BLACK_IN_CHESS
-            else -> State.NONE
+            1 -> GameState.WINNER_WHITE
+            2 -> GameState.WINNER_BLACK
+            3 -> GameState.DRAW
+            4 -> GameState.WHITE_IN_CHESS
+            5 -> GameState.BLACK_IN_CHESS
+            else -> GameState.NONE
         }
 
         GlobalScope.launch(Dispatchers.Default) { SaveManager.saveToFile(context) }

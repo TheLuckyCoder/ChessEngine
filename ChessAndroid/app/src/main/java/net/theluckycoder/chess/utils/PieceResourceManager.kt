@@ -30,7 +30,12 @@ object PieceResourceManager {
 
         piecesResources.forEach { res ->
             val decodedBitmap = BitmapFactory.decodeResource(resources, res)
-            piecesBitmaps.put(res, Bitmap.createScaledBitmap(decodedBitmap, viewSize, viewSize, true))
+
+            piecesBitmaps.put(
+                res,
+                Bitmap.createScaledBitmap(decodedBitmap, viewSize, viewSize, true)
+            )
+
             decodedBitmap.recycle()
         }
     }

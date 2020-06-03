@@ -6,13 +6,23 @@
 #include <vector>
 
 #include "Settings.h"
-#include "Move.h"
 #include "Board.h"
+
+enum class GameState : byte
+{
+	NONE,
+	WINNER_WHITE,
+	WINNER_BLACK,
+	DRAW,
+	WHITE_IN_CHECK,
+	BLACK_IN_CHECK,
+	INVALID = 10
+};
 
 class BoardManager final
 {
 public:
-	using PieceChangeListener = std::function<void(State state, bool shouldRedraw, const std::vector<std::pair<byte, byte>> &moved)>;
+	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const std::vector<std::pair<byte, byte>> &moved)>;
 
 private:
 	static Settings _settings;
@@ -39,5 +49,5 @@ public:
 
 private:
 	static void moveComputerPlayer(const Settings &settings);
-	static State getBoardState();
+	static GameState getBoardState();
 };

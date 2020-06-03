@@ -38,10 +38,6 @@ public:
 
 		constexpr bool enPassant() const noexcept { return _flags & Internal::EN_PASSANT; }
 
-		constexpr byte getContents() const noexcept { return _flags; }
-
-		constexpr void clearAll() noexcept { _flags = {}; }
-
 	private:
 		byte _flags;
 	};
@@ -54,13 +50,13 @@ public:
 	}
 
 	constexpr Move(const byte from, const byte to, const PieceType piece) noexcept
-		: _move(((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
+		: _move(((to & 0x3Fu) << 15u) | ((from & 0x3Fu) << 9u) | (piece & 0x7))
 	{
 	}
 
 	constexpr Move(const byte from, const byte to, const PieceType piece,
 				   const byte flags) noexcept
-		: _move(((flags & 0x7F) << 22u) | ((to & 0x3F) << 15u) | ((from & 0x3F) << 9u) | (piece & 0x7))
+		: _move(((flags & 0x7Fu) << 22u) | ((to & 0x3Fu) << 15u) | ((from & 0x3Fu) << 9u) | (piece & 0x7u))
 	{
 	}
 
@@ -96,8 +92,8 @@ public:
 
 	constexpr void setCapturedPiece(const PieceType type) noexcept
 	{
-		constexpr unsigned int mask = 0x7 << 3u;
-		_move = (_move & ~mask) | ((type << 3u) & mask);
+		constexpr unsigned Mask = 0x7u << 3u;
+		_move = (_move & ~Mask) | ((type << 3u) & Mask);
 	}
 
 	constexpr PieceType promotedPiece() const noexcept
@@ -107,8 +103,8 @@ public:
 
 	constexpr void setPromotedPiece(const PieceType type) noexcept
 	{
-		constexpr unsigned int mask = 0x7 << 6u;
-		_move = (_move & ~mask) | ((type << 6u) & mask);
+		constexpr unsigned Mask = 0x7u << 6u;
+		_move = (_move & ~Mask) | ((type << 6u) & Mask);
 	}
 
 	constexpr byte from() const noexcept
@@ -128,8 +124,8 @@ public:
 
 	constexpr void setFlags(const byte flags) noexcept
 	{
-		constexpr unsigned int mask = 0x7F << 22u;
-		_move = (_move & ~mask) | ((flags << 22u) & mask);
+		constexpr unsigned Mask = 0x7Fu << 22u;
+		_move = (_move & ~Mask) | ((flags << 22u) & Mask);
 	}
 
 	constexpr bool isTactical() const noexcept

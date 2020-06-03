@@ -16,6 +16,7 @@ public:
 	static void loop();
 
 private:
+	static void printEngineInfo();
 	static void parsePosition(std::istringstream &is);
 	static void parseGo(std::istringstream &is);
 };

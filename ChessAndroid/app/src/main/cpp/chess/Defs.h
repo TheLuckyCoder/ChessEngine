@@ -29,17 +29,6 @@ enum Dir : std::int16_t
 	SOUTH_WEST
 };
 
-enum class State : byte
-{
-	NONE,
-	WINNER_WHITE,
-	WINNER_BLACK,
-	DRAW,
-	WHITE_IN_CHECK,
-	BLACK_IN_CHECK,
-	INVALID = 10
-};
-
 enum CastlingRights : byte
 {
 	CASTLE_NONE = 0,

@@ -1,7 +1,5 @@
 #include <jni.h>
 
-#include <chrono>
-
 #include "Log.h"
 #include "Cache.h"
 
@@ -17,7 +15,7 @@
 static JavaVM *jvm = nullptr;
 static jobject gameManagerInstance;
 
-const BoardManager::PieceChangeListener listener = [](State state, bool shouldRedraw,
+const BoardManager::PieceChangeListener listener = [](GameState state, bool shouldRedraw,
 													  const std::vector<std::pair<byte, byte>> &moved)
 {
 	JNIEnv *env;
@@ -47,7 +45,7 @@ const BoardManager::PieceChangeListener listener = [](State state, bool shouldRe
 	}
 
 	const static auto callbackId = env->GetMethodID(Cache::gameManagerClass, "callback",
-													"(IZ[Lnet/theluckycoder/chess/PosPair;)V");
+													"(IZ[Lnet/theluckycoder/chess/model/PosPair;)V");
 	env->CallVoidMethod(gameManagerInstance, callbackId,
 						static_cast<jint>(state), static_cast<jboolean>(shouldRedraw), result);
 
@@ -99,8 +97,6 @@ Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject i
 	{
 		pEnv->DeleteGlobalRef(gameManagerInstance);
 		gameManagerInstance = pEnv->NewGlobalRef(instance);
-		Cache::gameManagerClass = Cache::cacheClass(pEnv,
-													pEnv->GetObjectClass(gameManagerInstance));
 
 		boardManagerInitialized = true;
 		BoardManager::initBoardManager(listener);

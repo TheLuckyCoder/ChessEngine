@@ -13,6 +13,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import net.theluckycoder.chess.databinding.ActivityChessBinding
 import net.theluckycoder.chess.databinding.DialogRestartBinding
+import net.theluckycoder.chess.model.Piece
+import net.theluckycoder.chess.model.Pos
+import net.theluckycoder.chess.model.Settings
+import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.CapturedPieces
 import net.theluckycoder.chess.utils.PieceResourceManager
@@ -22,15 +26,17 @@ import net.theluckycoder.chess.views.TileView
 import kotlin.concurrent.thread
 import kotlin.random.Random
 
-class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager.OnEventListener {
+class ChessActivity : AppCompatActivity(),
+    CustomView.SimpleClickListener,
+    GameManager.OnEventListener {
 
     private val gameManager by lazy(LazyThreadSafetyMode.NONE) { GameManager(this, this) }
     private val tiles = HashMap<Pos, TileView>(64)
     private val capturedPieces = CapturedPieces()
     private var viewSize = 0
 
-    val preferences = AppPreferences(this)
-    val pieces = HashMap<Pos, PieceView>(32)
+    private val preferences = AppPreferences(this)
+    private val pieces = HashMap<Pos, PieceView>(32)
 
     private var selectedPos = Pos()
     private var canMove = true
@@ -112,13 +118,20 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     override fun onStart() {
         super.onStart()
 
-        tiles.forEach {
-            it.value.invalidate()
-        }
         with(gameManager) {
             basicStatsEnabled = preferences.basicDebugInfo
             advancedStatsEnabled = preferences.advancedDebugInfo
             updateSettings(preferences.settings)
+        }
+
+        val chessColor = preferences.chessColors
+
+        tiles.forEach {
+            it.value.colors = chessColor
+        }
+
+        pieces.forEach {
+            it.value.setCheckColor(chessColor.kingInCheck)
         }
     }
 
@@ -153,11 +166,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         }
     }
 
-    private fun setKingInChess(white: Boolean) {
+    private fun setKingInCheck(white: Boolean) {
         val drawable = if (white) R.drawable.w_king else R.drawable.b_king
 
         pieces.forEach {
-            if (it.value.res == drawable)
+            if (it.value.pieceImage == drawable)
                 it.value.isInCheck = true
         }
     }
@@ -191,7 +204,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         }
     }
 
-    private fun updateState(state: State) {
+    private fun updateState(gameState: GameState) {
         canMove = true
         val tvDebug = binding.tvDebug
 
@@ -211,10 +224,10 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             tvDebug.visibility = View.GONE
         }
 
-        val message = when (state) {
-            State.WINNER_WHITE -> "White has won!"
-            State.WINNER_BLACK -> "Black has won!"
-            State.DRAW -> "Draw"
+        val message = when (gameState) {
+            GameState.WINNER_WHITE -> "White has won!"
+            GameState.WINNER_BLACK -> "Black has won!"
+            GameState.DRAW -> "Draw"
             else -> null
         }
 
@@ -231,10 +244,10 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 if (gameManager.isWorking) View.VISIBLE else View.INVISIBLE
         }
 
-        if (state == State.WHITE_IN_CHESS || state == State.WINNER_BLACK) {
-            setKingInChess(true)
-        } else if (state == State.BLACK_IN_CHESS || state == State.WINNER_WHITE) {
-            setKingInChess(false)
+        if (gameState == GameState.WHITE_IN_CHESS || gameState == GameState.WINNER_BLACK) {
+            setKingInCheck(true)
+        } else if (gameState == GameState.BLACK_IN_CHESS || gameState == GameState.WINNER_WHITE) {
+            setKingInCheck(false)
         } else {
             pieces.forEach {
                 if (it.value.isInCheck)
@@ -250,7 +263,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         val restart = {
             gameManager.initBoard(true, isPlayerWhite)
             clearTiles(true)
-            updateState(State.NONE)
+            updateState(GameState.NONE)
             capturedPieces.reset()
             canMove = true
             restarting = false
@@ -268,6 +281,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
     }
 
     override fun redrawBoard(isPlayerWhite: Boolean) {
+        val chessColors = preferences.chessColors
         tiles.forEach {
             binding.layoutBoard.removeView(it.value)
         }
@@ -280,10 +294,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
 
-            val tileView = TileView(this, isWhite, pos, this).apply {
+            val tileView = TileView(this, isWhite, pos, pieces, this).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xSize.toFloat()
                 y = ySize.toFloat()
+                colors = chessColors
             }
 
             tiles[pos] = tileView
@@ -297,6 +312,8 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         }
         pieces.clear()
 
+        val checkColor = preferences.inCheckColor
+
         newPieces.forEach {
             val isWhite = it.type in 1..6
             val resource = PieceResourceManager.piecesResources[it.type.toInt() - 1]
@@ -307,10 +324,11 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
             val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
 
-            val pieceView = PieceView(this, clickable, resource, pos, this).apply {
+            val pieceView = PieceView(this, resource, pos, this.takeIf { clickable }).apply {
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xSize.toFloat()
                 y = ySize.toFloat()
+                setCheckColor(checkColor)
             }
 
             pieces[pos] = pieceView
@@ -318,7 +336,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
         }
     }
 
-    override fun onMove(gameState: State) {
+    override fun onMove(gameState: GameState) {
         clearTiles(true)
         updateState(gameState)
     }
@@ -346,7 +364,7 @@ class ChessActivity : AppCompatActivity(), CustomView.ClickListener, GameManager
                 // Remove the Destination Piece
                 binding.layoutBoard.removeView(destView)
 
-                val type = PieceResourceManager.piecesResources.indexOf(destView.res) + 1
+                val type = PieceResourceManager.piecesResources.indexOf(destView.pieceImage) + 1
                 val piece = Piece(
                     invertIf(!isPlayerWhite, destView.pos.x),
                     invertIf(isPlayerWhite, destView.pos.y),

@@ -1,5 +1,7 @@
 package net.theluckycoder.chess
 
+import net.theluckycoder.chess.model.Piece
+
 object Native {
     external fun isWorking(): Boolean
 

@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "algorithm/Evaluation.h"
-#include "Board.h"
 #include "algorithm/Hash.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
@@ -90,14 +89,14 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 
 	const auto flags = move.flags();
 	const bool shouldRedraw = flags.promotion() | flags.castle() | flags.enPassant();
-	const State state = getBoardState();
+	const GameState state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()
 			  << "; Evaluated at: " << Evaluation::value(_board) << '\n';
 	_listener(state, shouldRedraw, {{ move.from(), move.to() }});
 
 	if (movedByPlayer &&
-		(state == State::NONE || state == State::WHITE_IN_CHECK || state == State::BLACK_IN_CHECK))
+		(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
 		_workerThread = std::thread(moveComputerPlayer, _settings);
 }
 
@@ -142,23 +141,23 @@ bool BoardManager::undoLastMoves()
 	return true;
 }
 
-State BoardManager::getBoardState()
+GameState BoardManager::getBoardState()
 {
 	if (_board.isDrawn())
-		return State::DRAW;
+		return GameState::DRAW;
 
 	const bool whiteInCheck = _board.allKingAttackers<WHITE>();
 	const bool blackInCheck = _board.allKingAttackers<BLACK>();
 
 	if (whiteInCheck && blackInCheck)
-		return State::INVALID;
+		return GameState::INVALID;
 
-	auto state = State::NONE;
+	auto state = GameState::NONE;
 
 	if (whiteInCheck)
-		state = State::WHITE_IN_CHECK;
+		state = GameState::WHITE_IN_CHECK;
 	else if (blackInCheck)
-		state = State::BLACK_IN_CHECK;
+		state = GameState::BLACK_IN_CHECK;
 
 	MoveList moveList(_board);
 	moveList.keepLegalMoves();
@@ -166,9 +165,9 @@ State BoardManager::getBoardState()
 	if (moveList.empty())
 	{
 		if (_board.colorToMove)
-			state = whiteInCheck ? State::WINNER_BLACK : State::DRAW;
+			state = whiteInCheck ? GameState::WINNER_BLACK : GameState::DRAW;
 		else
-			state = blackInCheck ? State::WINNER_WHITE : State::DRAW;
+			state = blackInCheck ? GameState::WINNER_WHITE : GameState::DRAW;
 	}
 
 	return state;

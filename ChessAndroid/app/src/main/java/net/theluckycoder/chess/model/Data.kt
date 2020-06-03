@@ -1,13 +1,4 @@
-package net.theluckycoder.chess
-
-enum class State {
-    NONE,
-    WINNER_WHITE,
-    WINNER_BLACK,
-    DRAW,
-    WHITE_IN_CHESS,
-    BLACK_IN_CHESS,
-}
+package net.theluckycoder.chess.model
 
 data class Piece(
     @JvmField

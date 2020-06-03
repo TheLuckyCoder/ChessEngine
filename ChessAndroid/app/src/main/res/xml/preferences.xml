@@ -49,10 +49,11 @@
 
         <SeekBarPreference
             android:key="key_search_depth"
-            android:max="11"
+            android:max="13"
             android:summary="Base Search Depth of the Algorithm. The value may be tweaked by the engine"
             android:title="Search Depth"
             app:defaultValue="4"
+            app:icon="@drawable/ic_pref_search"
             app:min="2"
             app:showSeekBarValue="true" />
 
