@@ -147,7 +147,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 {
 	pEnv->ExceptionClear();
 
-	const static auto constructorId = pEnv->GetMethodID(Cache::pieceClass, "<init>", "(IIB)V");
+	const static auto constructorId = pEnv->GetMethodID(Cache::pieceClass, "<init>", "(IB)V");
 
 	std::vector<std::pair<byte, byte>> pieceList;
 	pieceList.reserve(32);
@@ -174,8 +174,7 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 	{
 		const auto &it = pieceList[i];
 		jobject obj =
-			pEnv->NewObject(Cache::pieceClass, constructorId, col(it.first), row(it.first),
-							it.second);
+			pEnv->NewObject(Cache::pieceClass, constructorId, it.first, it.second);
 		pEnv->SetObjectArrayElement(array, i, obj);
 	}
 
@@ -193,7 +192,7 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 
 	std::transform(possibleMoves.begin(), possibleMoves.end(), std::back_inserter(longMoves),
 				   [](const Move &c)
-				   { return jlong(c.getContents()); });
+				   { return static_cast<jlong>(c.getContents()); });
 
 	auto result = pEnv->NewLongArray(jsize(possibleMoves.size()));
 
@@ -215,9 +214,9 @@ Java_net_theluckycoder_chess_Native_setSettings(JNIEnv *, jobject, jint baseSear
 												jint cacheSizeMb,
 												jboolean performQuiescenceSearch)
 {
-	BoardManager::setSettings(Settings(static_cast<unsigned int>(baseSearchDepth),
-									   static_cast<unsigned int>(threadCount),
-									   static_cast<unsigned int>(cacheSizeMb),
+	BoardManager::setSettings(Settings(static_cast<unsigned>(baseSearchDepth),
+									   static_cast<unsigned>(threadCount),
+									   static_cast<unsigned>(cacheSizeMb),
 									   static_cast<bool>(performQuiescenceSearch)));
 }
 

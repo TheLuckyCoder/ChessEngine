@@ -61,7 +61,8 @@
             android:defaultValue="true"
             android:key="key_quiet_search"
             android:summary="Perform a Quiescence Search at the end of each normal search"
-            android:title="Quiet Search (Recommended)" />
+            android:title="Quiet Search (Recommended)"
+            app:icon="@drawable/ic_pref_quiet_search" />
 
     </PreferenceCategory>
 

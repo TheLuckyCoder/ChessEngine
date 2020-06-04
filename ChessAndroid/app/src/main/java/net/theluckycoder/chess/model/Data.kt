@@ -2,20 +2,27 @@ package net.theluckycoder.chess.model
 
 data class Piece(
     @JvmField
-    val x: Int,
-    @JvmField
-    val y: Int,
+    val pos: Int,
     @JvmField
     val type: Byte
 ) {
 
     fun getScore() = when (type.toInt()) {
-        1 -> 1 // Pawn
-        2 -> 3 // Knight
-        3 -> 3 // Bishop
-        4 -> 5 // Rook
-        5 -> 9 // Queen
+        PAWN -> 1 // Pawn
+        KNIGHT -> 3 // Knight
+        BISHOP -> 3 // Bishop
+        ROOK -> 5 // Rook
+        QUEEN -> 9 // Queen
         else -> 0
+    }
+
+    companion object {
+        const val PAWN = 1
+        const val KNIGHT = 2
+        const val BISHOP = 3
+        const val ROOK = 4
+        const val QUEEN = 5
+        const val KING = 6
     }
 }
 
@@ -32,6 +39,10 @@ data class Pos(
 
     val isValid
         get() = (x in 0..7 && y in 0..7)
+
+    fun toInt() = y * 8 + x
+
+    fun toByte() = toInt().toByte()
 }
 
 data class PosPair(

@@ -12,6 +12,7 @@ import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import net.theluckycoder.chess.databinding.ActivityChessBinding
+import net.theluckycoder.chess.databinding.DialogPromotionBinding
 import net.theluckycoder.chess.databinding.DialogRestartBinding
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Pos
@@ -30,13 +31,13 @@ class ChessActivity : AppCompatActivity(),
     CustomView.SimpleClickListener,
     GameManager.OnEventListener {
 
-    private val gameManager by lazy(LazyThreadSafetyMode.NONE) { GameManager(this, this) }
+    private val gameManager by lazy { GameManager(this, this) }
     private val tiles = HashMap<Pos, TileView>(64)
+    private val pieces = HashMap<Pos, PieceView>(32)
     private val capturedPieces = CapturedPieces()
     private var viewSize = 0
 
     private val preferences = AppPreferences(this)
-    private val pieces = HashMap<Pos, PieceView>(32)
 
     private var selectedPos = Pos()
     private var canMove = true
@@ -162,7 +163,7 @@ class ChessActivity : AppCompatActivity(),
             if (clearMoved && it.value.lastMoved)
                 it.value.lastMoved = false
             it.value.state = TileView.State.NONE
-            it.value.storedMove = 0
+            it.value.storedMoves.clear()
         }
     }
 
@@ -177,13 +178,68 @@ class ChessActivity : AppCompatActivity(),
 
     private fun movePiece(view: TileView) {
         if (!selectedPos.isValid || !canMove) return
-        if (view.storedMove != 0L) {
-            gameManager.makeMove(view.storedMove)
+        val moves = view.storedMoves
+
+        if (moves.isEmpty()) return
+
+        fun afterMoveMade() {
             clearTiles(true)
             selectedPos = Pos()
 
             binding.pbLoading.visibility = View.VISIBLE
         }
+
+        if (moves.size == 1) {
+            gameManager.makeMove(moves.first())
+            afterMoveMade()
+            return
+        }
+
+        // This should only be possible on promotions
+        check(moves.all { it.flags.promotion }) { "All moves should be promotions in this case" }
+        check(moves.size == 4) { "There should be 4 promotions possible" }
+
+        val dialogBinding = DialogPromotionBinding.inflate(layoutInflater, null, false)
+        val resourceOffset = -1 + if (Native.isPlayerWhite()) 0 else 6
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.promotion_choose_piece)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.ivQueen.setImageResource(PieceResourceManager.piecesResources[Piece.QUEEN + resourceOffset])
+        dialogBinding.ivQueen.setOnClickListener {
+            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.QUEEN })
+            afterMoveMade()
+            dialog.dismiss()
+        }
+
+        dialogBinding.ivRook.setImageResource(PieceResourceManager.piecesResources[Piece.ROOK + resourceOffset])
+        dialogBinding.ivRook.setOnClickListener {
+            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.ROOK })
+            afterMoveMade()
+            dialog.dismiss()
+        }
+
+        dialogBinding.ivBishop.setImageResource(PieceResourceManager.piecesResources[Piece.BISHOP + resourceOffset])
+        dialogBinding.ivBishop.setOnClickListener {
+            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.BISHOP })
+            afterMoveMade()
+            dialog.dismiss()
+        }
+
+        dialogBinding.ivKnight.setImageResource(PieceResourceManager.piecesResources[Piece.KNIGHT + resourceOffset])
+        dialogBinding.ivKnight.setOnClickListener {
+            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.KNIGHT })
+            afterMoveMade()
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun selectPiece(view: PieceView) {
@@ -192,14 +248,12 @@ class ChessActivity : AppCompatActivity(),
         selectedPos = view.pos
         tiles[selectedPos]?.state = TileView.State.SELECTED
 
-        val possibleMoves = gameManager.selectPiece(selectedPos)
+        val possibleMoves = gameManager.getPossibleMoves(selectedPos)
 
         possibleMoves.forEach { move ->
-            val to = (move ushr 15).toInt() and 0x3F
-
-            tiles[Pos(to.toByte())]?.let {
+            tiles[Pos(move.to)]?.let {
                 it.state = TileView.State.POSSIBLE
-                it.storedMove = move
+                it.storedMoves.add(move)
             }
         }
     }
@@ -216,7 +270,7 @@ class ChessActivity : AppCompatActivity(),
 
             tvDebug.text = getString(
                 R.string.basic_stats,
-                Native.getSearchTime(),
+                Native.getSearchTime() / 1000, // Display in Seconds
                 Native.getCurrentBoardValue(),
                 advancedStats
             )
@@ -319,7 +373,7 @@ class ChessActivity : AppCompatActivity(),
             val resource = PieceResourceManager.piecesResources[it.type.toInt() - 1]
             val clickable = isWhite == isPlayerWhite
 
-            val pos = Pos(it.x, it.y)
+            val pos = Pos(it.pos.toByte())
 
             val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
@@ -365,11 +419,11 @@ class ChessActivity : AppCompatActivity(),
                 binding.layoutBoard.removeView(destView)
 
                 val type = PieceResourceManager.piecesResources.indexOf(destView.pieceImage) + 1
-                val piece = Piece(
+                val pos = Pos(
                     invertIf(!isPlayerWhite, destView.pos.x),
-                    invertIf(isPlayerWhite, destView.pos.y),
-                    type.toByte()
+                    invertIf(isPlayerWhite, destView.pos.y)
                 )
+                val piece = Piece(pos.toInt(), type.toByte())
 
                 if (isPlayerWhite)
                     capturedPieces.addBlackPiece(piece)

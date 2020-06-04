@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.util.TypedValue
 import net.theluckycoder.chess.model.Pos
 import net.theluckycoder.chess.model.ChessColors
+import net.theluckycoder.chess.model.Move
 
 @SuppressLint("ViewConstructor")
 class TileView(
@@ -54,7 +55,7 @@ class TileView(
             field = value
             invalidate()
         }
-    var storedMove: Long = 0L
+    val storedMoves = ArrayList<Move>(5)
     var colors = ChessColors(0, 0, 0, 0, 0)
         set(value) {
             if (field != value) {

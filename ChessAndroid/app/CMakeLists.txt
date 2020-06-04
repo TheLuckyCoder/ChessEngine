@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -O3 -s
 add_library(
         chess
         SHARED
+
         src/main/cpp/Main.cpp
         src/main/cpp/chess/BoardManager.cpp
         src/main/cpp/chess/Stats.cpp

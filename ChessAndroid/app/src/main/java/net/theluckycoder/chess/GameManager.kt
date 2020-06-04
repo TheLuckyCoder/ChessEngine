@@ -32,7 +32,7 @@ class GameManager(
     val isWorking
         get() = Native.isWorking()
 
-    fun selectPiece(pos: Pos) = Native.getPossibleMoves(((pos.y shl 3) + pos.x).toByte())
+    fun getPossibleMoves(pos: Pos) = Native.getPossibleMoves(pos.toByte()).map { Move(it) }
 
     fun initBoard(restartGame: Boolean, playerWhite: Boolean = true) {
         initBoardNative(restartGame, playerWhite)
@@ -62,9 +62,9 @@ class GameManager(
         )
     }
 
-    fun makeMove(move: Long) {
+    fun makeMove(move: Move) {
         Native.enableStats(advancedStatsEnabled)
-        Native.makeMove(move)
+        Native.makeMove(move.content)
     }
 
     private fun getPiecesList() = Native.getPieces().filter { it.type.toInt() != 0 }

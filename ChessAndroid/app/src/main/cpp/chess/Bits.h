@@ -38,8 +38,8 @@ namespace Bits
 	{
 		std::array<U64, 64> array{};
 
-		for (auto i = 0u; i < SQUARE_NB; ++i)
-			array[i] = 1ULL << i;
+		for (byte i = 0u; i < SQUARE_NB; ++i)
+			array[i] = 1ull << i;
 
 		return array;
 	}();
