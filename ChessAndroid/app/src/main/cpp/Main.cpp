@@ -5,15 +5,16 @@
 
 #include "chess/BoardManager.h"
 #include "chess/Stats.h"
+#include "chess/Tests.h"
 #include "chess/persistence/MovesPersistence.h"
 #include "chess/algorithm/Evaluation.h"
 #include "chess/algorithm/MoveGen.h"
-#include "chess/Tests.h"
+#include "chess/algorithm/Search.h"
 
 #define external extern "C"
 
 static JavaVM *jvm = nullptr;
-static jobject gameManagerInstance;
+static jobject gameManagerInstance = nullptr;
 
 const BoardManager::PieceChangeListener listener = [](GameState state, bool shouldRedraw,
 													  const std::vector<std::pair<byte, byte>> &moved)
@@ -80,6 +81,7 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 
 	// Clean the caches
 	env->DeleteGlobalRef(gameManagerInstance);
+	gameManagerInstance = nullptr;
 	Cache::cleanCaches(env);
 
 	jvm = nullptr;
@@ -87,23 +89,20 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject instance,
-														 jboolean restartGame,
 														 jboolean isPlayerWhite)
 {
-	static bool boardManagerInitialized = false;
 	pEnv->ExceptionClear();
 
-	if (!boardManagerInitialized)
+	if (!pEnv->IsSameObject(gameManagerInstance, instance))
 	{
+		LOGD("ChessCpp", "initBoardNative");
 		pEnv->DeleteGlobalRef(gameManagerInstance);
 		gameManagerInstance = pEnv->NewGlobalRef(instance);
 
-		boardManagerInitialized = true;
 		BoardManager::initBoardManager(listener);
 	}
 
-	if (restartGame)
-		BoardManager::initBoardManager(listener, isPlayerWhite);
+	BoardManager::initBoardManager(listener, isPlayerWhite);
 }
 
 // Native Class
@@ -231,6 +230,12 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_forceMove(JNIEnv *, jobject)
 {
 	BoardManager::forceMove();
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_cancelSearch(JNIEnv *, jobject)
+{
+	Search::stopSearch();
 }
 
 

@@ -1,6 +1,8 @@
 package net.theluckycoder.chess
 
 import android.content.Intent
+import android.content.res.Configuration
+import android.content.res.TypedArray
 import android.graphics.Point
 import android.os.Bundle
 import android.view.Menu
@@ -14,10 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import net.theluckycoder.chess.databinding.ActivityChessBinding
 import net.theluckycoder.chess.databinding.DialogPromotionBinding
 import net.theluckycoder.chess.databinding.DialogRestartBinding
+import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Pos
 import net.theluckycoder.chess.model.Settings
-import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.CapturedPieces
 import net.theluckycoder.chess.utils.PieceResourceManager
@@ -53,7 +55,12 @@ class ChessActivity : AppCompatActivity(),
         val point = Point()
         windowManager.defaultDisplay.getSize(point)
 
-        viewSize = point.x / 8
+        viewSize = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            (point.y - (getActionBarHeight() * 1.8f).toInt()) / 8
+        } else {
+            point.x / 8
+        }
+
         PieceResourceManager.init(this, viewSize)
 
         binding.layoutBoard.layoutParams = RelativeLayout.LayoutParams(point.x, point.x)
@@ -74,7 +81,7 @@ class ChessActivity : AppCompatActivity(),
             true
         }
 
-        binding.btnRestartGame.setOnClickListener {
+        binding.ivNewGame.setOnClickListener {
             val dialogBinding = DialogRestartBinding.inflate(layoutInflater)
 
             dialogBinding.spDifficulty.setSelection(preferences.difficultyLevel)
@@ -113,37 +120,43 @@ class ChessActivity : AppCompatActivity(),
             preferences.difficultyLevel = defaultDifficultyLevel
         }
 
-        gameManager.initBoard(false)
+        gameManager.initBoard()
     }
 
     override fun onStart() {
         super.onStart()
 
         with(gameManager) {
-            basicStatsEnabled = preferences.basicDebugInfo
+            val showDebugInfo = preferences.basicDebugInfo
+            if (basicStatsEnabled != showDebugInfo) {
+                basicStatsEnabled = preferences.basicDebugInfo
+                invalidateOptionsMenu()
+            }
             advancedStatsEnabled = preferences.advancedDebugInfo
             updateSettings(preferences.settings)
         }
 
-        val chessColor = preferences.chessColors
+        val chessColor = preferences.boardAppearance
 
         tiles.forEach {
-            it.value.colors = chessColor
-        }
-
-        pieces.forEach {
-            it.value.setCheckColor(chessColor.kingInCheck)
+            it.value.appearance = chessColor
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
+        // Only Load the menu if Debug Info is enabled
+        if (gameManager.basicStatsEnabled) {
+            menuInflater.inflate(R.menu.menu_main, menu)
+        }
         return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_force_move -> Native.forceMove()
+            R.id.action_force_move -> {
+                Native.forceMove()
+                showLoadingBar()
+            }
         }
         return super.onOptionsItemSelected(item)
     }
@@ -171,8 +184,10 @@ class ChessActivity : AppCompatActivity(),
         val drawable = if (white) R.drawable.w_king else R.drawable.b_king
 
         pieces.forEach {
-            if (it.value.pieceImage == drawable)
-                it.value.isInCheck = true
+            if (it.value.pieceImage == drawable) {
+                val pos = it.key
+                tiles[pos]?.isInCheck = true
+            }
         }
     }
 
@@ -186,7 +201,7 @@ class ChessActivity : AppCompatActivity(),
             clearTiles(true)
             selectedPos = Pos()
 
-            binding.pbLoading.visibility = View.VISIBLE
+            showLoadingBar(true)
         }
 
         if (moves.size == 1) {
@@ -287,7 +302,7 @@ class ChessActivity : AppCompatActivity(),
 
         if (message != null) {
             canMove = false
-            binding.pbLoading.visibility = View.INVISIBLE
+            showLoadingBar(false)
 
             AlertDialog.Builder(this)
                 .setTitle(message)
@@ -303,7 +318,7 @@ class ChessActivity : AppCompatActivity(),
         } else if (gameState == GameState.BLACK_IN_CHESS || gameState == GameState.WINNER_WHITE) {
             setKingInCheck(false)
         } else {
-            pieces.forEach {
+            tiles.forEach {
                 if (it.value.isInCheck)
                     it.value.isInCheck = false
             }
@@ -315,7 +330,7 @@ class ChessActivity : AppCompatActivity(),
         restarting = true
 
         val restart = {
-            gameManager.initBoard(true, isPlayerWhite)
+            gameManager.initBoard(isPlayerWhite)
             clearTiles(true)
             updateState(GameState.NONE)
             capturedPieces.reset()
@@ -325,6 +340,7 @@ class ChessActivity : AppCompatActivity(),
         }
 
         if (gameManager.isWorking) {
+            Native.cancelSearch()
             thread {
                 while (gameManager.isWorking)
                     Thread.sleep(20)
@@ -335,7 +351,7 @@ class ChessActivity : AppCompatActivity(),
     }
 
     override fun redrawBoard(isPlayerWhite: Boolean) {
-        val chessColors = preferences.chessColors
+        val chessColors = preferences.boardAppearance
         tiles.forEach {
             binding.layoutBoard.removeView(it.value)
         }
@@ -352,7 +368,7 @@ class ChessActivity : AppCompatActivity(),
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xSize.toFloat()
                 y = ySize.toFloat()
-                colors = chessColors
+                appearance = chessColors
             }
 
             tiles[pos] = tileView
@@ -365,8 +381,6 @@ class ChessActivity : AppCompatActivity(),
             binding.layoutBoard.removeView(it.value)
         }
         pieces.clear()
-
-        val checkColor = preferences.inCheckColor
 
         newPieces.forEach {
             val isWhite = it.type in 1..6
@@ -382,7 +396,6 @@ class ChessActivity : AppCompatActivity(),
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xSize.toFloat()
                 y = ySize.toFloat()
-                setCheckColor(checkColor)
             }
 
             pieces[pos] = pieceView
@@ -440,10 +453,23 @@ class ChessActivity : AppCompatActivity(),
         }
     }
 
-    private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
+    private fun showLoadingBar(show: Boolean = Native.isWorking()) {
+        binding.pbLoading.visibility = if (show) View.VISIBLE else View.INVISIBLE
+    }
+
+    private fun getActionBarHeight(): Int {
+        val styledAttributes: TypedArray =
+            theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
+
+        val actionBarSize = styledAttributes.getDimension(0, 0f).toInt()
+        styledAttributes.recycle()
+        return actionBarSize
+    }
 
     companion object {
-        fun getDifficulty(level: Int, currentSettings: Settings): Settings {
+        private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
+
+        private fun getDifficulty(level: Int, currentSettings: Settings): Settings {
             require(level >= 0)
 
             return currentSettings.copy(

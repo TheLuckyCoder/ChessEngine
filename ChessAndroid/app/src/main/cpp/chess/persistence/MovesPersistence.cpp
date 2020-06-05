@@ -44,7 +44,7 @@ std::string MovesPersistence::saveToString(const std::vector<Move> &moves, const
 	std::ostringstream stream;
 	stream << (isPlayerWhite ? 'W' : 'B');
 
-	for (const Move move : moves)
+	for (const Move &move : moves)
 		stream << move.getContents() << ';';
 
 	return stream.str();

@@ -29,7 +29,7 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             addPreferencesFromResource(R.xml.preferences)
 
-            findPreference<Preference>(AppPreferences.KEY_RESET_COLORS)?.setOnPreferenceClickListener {
+            findPreference<Preference>(AppPreferences.KEY_RESET_APPEARANCE)?.setOnPreferenceClickListener {
                 val activity = activity ?: return@setOnPreferenceClickListener false
 
                 AppPreferences(activity).apply {
@@ -38,6 +38,7 @@ class SettingsActivity : AppCompatActivity() {
                     possibleMoveColor = getColor(activity, R.color.tile_possible)
                     lastMovedTileColor = getColor(activity, R.color.tile_last_moved)
                     inCheckColor = getColor(activity, R.color.king_in_check)
+                    showCoordinates = true
                 }
                 true
             }

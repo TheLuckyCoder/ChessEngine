@@ -15,4 +15,5 @@
     <string name="pref_category_difficulty">Difficulty</string>
     <string name="pref_category_other">Other Algorithm Settings</string>
     <string name="pref_category_debug">Debugging</string>
+    <string name="title_settings">Settings</string>
 </resources>

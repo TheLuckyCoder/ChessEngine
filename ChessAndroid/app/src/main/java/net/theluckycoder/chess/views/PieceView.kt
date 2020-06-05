@@ -24,26 +24,7 @@ class PieceView(
         }
     }
 
-    private val redBlurPaint = Paint().apply {
-        maskFilter = BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL)
-    }
-    var isInCheck = false
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    fun setCheckColor(value: Int) {
-        if (value != redBlurPaint.color) {
-            redBlurPaint.color = value
-            invalidate()
-        }
-    }
-
     override fun onDraw(canvas: Canvas) {
-        if (isInCheck)
-            canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, redBlurPaint)
-
         canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }

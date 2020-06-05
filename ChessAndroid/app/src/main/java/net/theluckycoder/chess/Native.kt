@@ -25,6 +25,8 @@ object Native {
 
     external fun forceMove()
 
+    external fun cancelSearch()
+
     external fun enableStats(enabled: Boolean)
 
     external fun setSettings(

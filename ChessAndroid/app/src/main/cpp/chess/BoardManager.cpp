@@ -92,7 +92,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 	const GameState state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()
-			  << "; Evaluated at: " << Evaluation::value(_board) << '\n';
+			  << "; Evaluated at: " << Evaluation::value(_board) << std::endl;
 	_listener(state, shouldRedraw, {{ move.from(), move.to() }});
 
 	if (movedByPlayer &&
@@ -110,12 +110,11 @@ void BoardManager::forceMove()
 void BoardManager::moveComputerPlayer(const Settings &settings)
 {
 	_isWorking = true;
-
 	const Move bestMove = Search::findBestMove(_board, settings);
+	_isWorking = false;
 
 	makeMove(bestMove, false);
 
-	_isWorking = false;
 	_workerThread.detach();
 }
 

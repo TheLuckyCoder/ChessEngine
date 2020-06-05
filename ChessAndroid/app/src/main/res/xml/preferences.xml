@@ -39,9 +39,14 @@
             app:cpv_colorShape="circle"
             app:cpv_showAlphaSlider="true" />
 
+        <CheckBoxPreference
+            android:key="key_show_coordinates"
+            android:title="Show Coordinates"
+            app:defaultValue="true" />
+
         <Preference
-            android:key="key_reset_colors"
-            android:title="Reset Colors" />
+            android:key="key_reset_appearance"
+            android:title="Reset Appearance" />
 
     </PreferenceCategory>
 
@@ -99,7 +104,7 @@
             android:defaultValue="false"
             android:dependency="key_show_debug_basic"
             android:key="key_show_debug_advanced"
-            android:summary="Displays the number of Evaluated Boards and Searched Nodes"
+            android:summary="Displays various statistics helpful for debugging"
             android:title="Enable Advanced Debug Info"
             app:icon="@drawable/ic_pref_stats" />
 

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/layout_board"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        tools:minWidth="420dp" />
+
+    <TextView
+        android:id="@+id/tv_debug"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/pb_loading"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="12dp"
+        android:layout_toStartOf="@id/iv_new_game"
+        android:layout_toEndOf="@id/layout_board"
+        android:gravity="center_horizontal"
+        android:scrollbars="vertical"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="15.5sp"
+        tools:text="Stats:" />
+
+    <ProgressBar
+        android:id="@+id/pb_loading"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="4dp"
+        android:layout_toStartOf="@id/iv_new_game"
+        android:layout_toEndOf="@id/layout_board"
+        android:indeterminateOnly="true"
+        android:visibility="invisible"
+        tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/iv_settings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/settings"
+        android:padding="8dp"
+        android:src="@drawable/ic_settings" />
+
+    <ImageView
+        android:id="@+id/iv_new_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/iv_settings"
+        android:layout_alignBottom="@+id/iv_undo"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="70dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="70dp"
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/new_game"
+        android:padding="8dp"
+        android:src="@drawable/ic_new_circle" />
+
+    <ImageView
+        android:id="@+id/iv_undo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/undo_move"
+        android:padding="8dp"
+        android:src="@drawable/ic_undo" />
+
+</RelativeLayout>

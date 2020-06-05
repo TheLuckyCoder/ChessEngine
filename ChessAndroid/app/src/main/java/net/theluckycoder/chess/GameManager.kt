@@ -34,20 +34,20 @@ class GameManager(
 
     fun getPossibleMoves(pos: Pos) = Native.getPossibleMoves(pos.toByte()).map { Move(it) }
 
-    fun initBoard(restartGame: Boolean, playerWhite: Boolean = true) {
-        initBoardNative(restartGame, playerWhite)
-        Native.enableStats(advancedStatsEnabled)
-
+    fun initBoard(playerWhite: Boolean = true) {
         if (initialized) {
             isPlayerWhite = playerWhite
+            initBoardNative(isPlayerWhite)
         } else {
             initialized = true
 
-            initBoardNative(true, isPlayerWhite)
+            initBoardNative(isPlayerWhite)
 
             isPlayerWhite =
                 if (SaveManager.loadFromFile(context)) Native.isPlayerWhite() else playerWhite
         }
+
+        Native.enableStats(advancedStatsEnabled)
 
         listener.redrawBoard(isPlayerWhite)
         listener.redrawPieces(getPiecesList(), isPlayerWhite)
@@ -100,5 +100,5 @@ class GameManager(
         }
     }
 
-    private external fun initBoardNative(restartGame: Boolean, isPlayerWhite: Boolean)
+    private external fun initBoardNative(isPlayerWhite: Boolean)
 }

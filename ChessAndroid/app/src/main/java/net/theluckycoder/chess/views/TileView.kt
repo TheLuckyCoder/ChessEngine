@@ -2,11 +2,12 @@ package net.theluckycoder.chess.views
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.TypedValue
 import net.theluckycoder.chess.model.Pos
-import net.theluckycoder.chess.model.ChessColors
+import net.theluckycoder.chess.model.BoardAppearance
 import net.theluckycoder.chess.model.Move
 
 @SuppressLint("ViewConstructor")
@@ -43,6 +44,9 @@ class TileView(
             context.resources.displayMetrics
         )
     }
+    private val checkPaint = Paint().apply {
+        maskFilter = BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL)
+    }
 
     // Public Fields
     var state = State.NONE
@@ -56,13 +60,14 @@ class TileView(
             invalidate()
         }
     val storedMoves = ArrayList<Move>(5)
-    var colors = ChessColors(0, 0, 0, 0, 0)
+    var appearance = BoardAppearance(0, 0, 0, 0, 0, false)
         set(value) {
             if (field != value) {
                 field = value
 
                 selectedStatePaint.color = value.lastMoved
                 possibleStatePaint.color = value.possible
+                checkPaint.color = value.kingInCheck
 
                 tileBackgroundColor = if (isWhiteBackground) {
                     letterPaint.color = value.blackTile
@@ -75,6 +80,11 @@ class TileView(
                 invalidate()
             }
         }
+    var isInCheck = false
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -83,6 +93,9 @@ class TileView(
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(tileBackgroundColor)
+
+        if (isInCheck)
+            canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, checkPaint)
 
         when (state) {
             State.SELECTED -> {
@@ -101,20 +114,22 @@ class TileView(
                     canvas.drawPaint(possibleStatePaint)
                 }
             }
-            else -> if (lastMoved) canvas.drawColor(colors.lastMoved)
+            else -> if (lastMoved) canvas.drawColor(appearance.lastMoved)
         }
 
-        val letterSize = letterPaint.textSize
-        if (pos.x == 0)
-            canvas.drawText(('1' + pos.y).toString(), 0f, letterSize, letterPaint)
+        if (appearance.showCoordinates) {
+            val letterSize = letterPaint.textSize
+            if (pos.y == 0) {
+                canvas.drawText(
+                    ('A' + pos.x).toString(),
+                    measuredWidth.toFloat() - letterSize * 0.75f,
+                    measuredHeight.toFloat(),
+                    letterPaint
+                )
+            }
 
-        if (pos.y == 0) {
-            canvas.drawText(
-                ('A' + pos.x).toString(),
-                measuredWidth.toFloat() - letterSize * 0.75f,
-                measuredHeight.toFloat(),
-                letterPaint
-            )
+            if (pos.x == 0)
+                canvas.drawText(('1' + pos.y).toString(), 0f, letterSize, letterPaint)
         }
     }
 }

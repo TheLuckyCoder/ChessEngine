@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.preference.PreferenceManager
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.Settings
-import net.theluckycoder.chess.model.ChessColors
+import net.theluckycoder.chess.model.BoardAppearance
 
 class AppPreferences(private val context: Context) {
 
@@ -16,7 +16,8 @@ class AppPreferences(private val context: Context) {
         const val KEY_TILE_POSSIBLE = "key_tile_possible"
         const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
         const val KEY_KING_IN_CHECK = "key_king_in_check"
-        const val KEY_RESET_COLORS = "key_reset_colors"
+        const val KEY_SHOW_COORDS = "key_show_coordinates"
+        const val KEY_RESET_APPEARANCE = "key_reset_appearance"
 
         const val KEY_SEARCH_DEPTH = "key_search_depth"
         const val KEY_THREAD_COUNT = "key_thread_count"
@@ -57,13 +58,18 @@ class AppPreferences(private val context: Context) {
         get() = manager.getInt(KEY_KING_IN_CHECK, getColor(context, R.color.king_in_check))
         set(value) = manager.edit().putInt(KEY_KING_IN_CHECK, value).apply()
 
-    val chessColors: ChessColors
-        get() = ChessColors(
+    var showCoordinates: Boolean
+        get() = manager.getBoolean(KEY_SHOW_COORDS, true)
+        set(value) = manager.edit().putBoolean(KEY_SHOW_COORDS, value).apply()
+
+    val boardAppearance: BoardAppearance
+        get() = BoardAppearance(
             whiteTileColor,
             blackTileColor,
             possibleMoveColor,
             lastMovedTileColor,
-            inCheckColor
+            inCheckColor,
+            showCoordinates
         )
 
     var settings: Settings
