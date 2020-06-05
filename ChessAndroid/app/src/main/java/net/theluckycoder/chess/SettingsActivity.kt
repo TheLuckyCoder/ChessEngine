@@ -8,7 +8,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SeekBarPreference
 import net.theluckycoder.chess.utils.AppPreferences
-import net.theluckycoder.chess.utils.getColor
+import net.theluckycoder.chess.utils.getColorCompat
 import kotlin.concurrent.thread
 import kotlin.math.min
 
@@ -30,14 +30,14 @@ class SettingsActivity : AppCompatActivity() {
             addPreferencesFromResource(R.xml.preferences)
 
             findPreference<Preference>(AppPreferences.KEY_RESET_APPEARANCE)?.setOnPreferenceClickListener {
-                val activity = activity ?: return@setOnPreferenceClickListener false
+                val context = requireContext()
 
-                AppPreferences(activity).apply {
-                    whiteTileColor = getColor(activity, R.color.tile_white)
-                    blackTileColor = getColor(activity, R.color.tile_black)
-                    possibleMoveColor = getColor(activity, R.color.tile_possible)
-                    lastMovedTileColor = getColor(activity, R.color.tile_last_moved)
-                    inCheckColor = getColor(activity, R.color.king_in_check)
+                AppPreferences(context).apply {
+                    whiteTileColor = context.getColorCompat(R.color.tile_white)
+                    blackTileColor = context.getColorCompat(R.color.tile_black)
+                    possibleMoveColor = context.getColorCompat(R.color.tile_possible)
+                    lastMovedTileColor = context.getColorCompat(R.color.tile_last_moved)
+                    inCheckColor = context.getColorCompat(R.color.king_in_check)
                     showCoordinates = true
                 }
                 true

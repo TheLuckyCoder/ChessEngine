@@ -2,8 +2,9 @@ package net.theluckycoder.chess
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.content.res.TypedArray
 import android.graphics.Point
+import android.graphics.drawable.ClipDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -14,8 +15,8 @@ import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import net.theluckycoder.chess.databinding.ActivityChessBinding
+import net.theluckycoder.chess.databinding.DialogNewGameBinding
 import net.theluckycoder.chess.databinding.DialogPromotionBinding
-import net.theluckycoder.chess.databinding.DialogRestartBinding
 import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Pos
@@ -82,17 +83,25 @@ class ChessActivity : AppCompatActivity(),
         }
 
         binding.ivNewGame.setOnClickListener {
-            val dialogBinding = DialogRestartBinding.inflate(layoutInflater)
+            val dialogBinding = DialogNewGameBinding.inflate(layoutInflater, null, false)
 
             dialogBinding.spDifficulty.setSelection(preferences.difficultyLevel)
+            val randomSideIcon = dialogBinding.btnSideRandom.icon
+            if (randomSideIcon is LayerDrawable) {
+                for (i in 0 until randomSideIcon.numberOfLayers) {
+                    val layer = randomSideIcon.getDrawable(i)
+                    if (layer is ClipDrawable)
+                        layer.level = 5000
+                }
+            }
 
             AlertDialog.Builder(this)
                 .setTitle(R.string.new_game)
                 .setView(dialogBinding.root)
                 .setPositiveButton(R.string.action_start) { _, _ ->
-                    val playerWhite = when (dialogBinding.spSide.selectedItemPosition) {
-                        0 -> true
-                        1 -> false
+                    val playerWhite = when (dialogBinding.tgSide.checkedButtonId) {
+                        dialogBinding.btnSideWhite.id -> true
+                        dialogBinding.btnSideBlack.id -> false
                         else -> Random.nextBoolean()
                     }
 
@@ -215,7 +224,7 @@ class ChessActivity : AppCompatActivity(),
         check(moves.size == 4) { "There should be 4 promotions possible" }
 
         val dialogBinding = DialogPromotionBinding.inflate(layoutInflater, null, false)
-        val resourceOffset = -1 + if (Native.isPlayerWhite()) 0 else 6
+        val resourceOffset = (if (Native.isPlayerWhite()) 0 else 6) - 1
 
         val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.promotion_choose_piece)
@@ -224,28 +233,28 @@ class ChessActivity : AppCompatActivity(),
 
         dialogBinding.ivQueen.setImageResource(PieceResourceManager.piecesResources[Piece.QUEEN + resourceOffset])
         dialogBinding.ivQueen.setOnClickListener {
-            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.QUEEN })
+            gameManager.makeMove(moves.first { it.promotedPieceType == Piece.QUEEN })
             afterMoveMade()
             dialog.dismiss()
         }
 
         dialogBinding.ivRook.setImageResource(PieceResourceManager.piecesResources[Piece.ROOK + resourceOffset])
         dialogBinding.ivRook.setOnClickListener {
-            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.ROOK })
+            gameManager.makeMove(moves.first { it.promotedPieceType == Piece.ROOK })
             afterMoveMade()
             dialog.dismiss()
         }
 
         dialogBinding.ivBishop.setImageResource(PieceResourceManager.piecesResources[Piece.BISHOP + resourceOffset])
         dialogBinding.ivBishop.setOnClickListener {
-            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.BISHOP })
+            gameManager.makeMove(moves.first { it.promotedPieceType == Piece.BISHOP })
             afterMoveMade()
             dialog.dismiss()
         }
 
         dialogBinding.ivKnight.setImageResource(PieceResourceManager.piecesResources[Piece.KNIGHT + resourceOffset])
         dialogBinding.ivKnight.setOnClickListener {
-            gameManager.makeMove(moves.first { it.promotedPieceType.toInt() == Piece.KNIGHT })
+            gameManager.makeMove(moves.first { it.promotedPieceType == Piece.KNIGHT })
             afterMoveMade()
             dialog.dismiss()
         }
@@ -309,8 +318,7 @@ class ChessActivity : AppCompatActivity(),
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         } else {
-            binding.pbLoading.visibility =
-                if (gameManager.isWorking) View.VISIBLE else View.INVISIBLE
+            showLoadingBar()
         }
 
         if (gameState == GameState.WHITE_IN_CHESS || gameState == GameState.WINNER_BLACK) {
@@ -351,11 +359,12 @@ class ChessActivity : AppCompatActivity(),
     }
 
     override fun redrawBoard(isPlayerWhite: Boolean) {
-        val chessColors = preferences.boardAppearance
         tiles.forEach {
             binding.layoutBoard.removeView(it.value)
         }
         tiles.clear()
+
+        val boardAppearance = preferences.boardAppearance
 
         for (i in 0 until 64) {
             val pos = Pos(i % 8, i / 8)
@@ -368,7 +377,8 @@ class ChessActivity : AppCompatActivity(),
                 layoutParams = FrameLayout.LayoutParams(viewSize, viewSize)
                 x = xSize.toFloat()
                 y = ySize.toFloat()
-                appearance = chessColors
+                appearance = boardAppearance
+                this.isPlayerWhite = isPlayerWhite
             }
 
             tiles[pos] = tileView
@@ -453,13 +463,12 @@ class ChessActivity : AppCompatActivity(),
         }
     }
 
-    private fun showLoadingBar(show: Boolean = Native.isWorking()) {
+    private fun showLoadingBar(show: Boolean = gameManager.isWorking) {
         binding.pbLoading.visibility = if (show) View.VISIBLE else View.INVISIBLE
     }
 
     private fun getActionBarHeight(): Int {
-        val styledAttributes: TypedArray =
-            theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
+        val styledAttributes = theme.obtainStyledAttributes(intArrayOf(R.attr.actionBarSize))
 
         val actionBarSize = styledAttributes.getDimension(0, 0f).toInt()
         styledAttributes.recycle()

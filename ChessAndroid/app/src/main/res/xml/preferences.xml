@@ -39,7 +39,7 @@
             app:cpv_colorShape="circle"
             app:cpv_showAlphaSlider="true" />
 
-        <CheckBoxPreference
+        <SwitchPreference
             android:key="key_show_coordinates"
             android:title="Show Coordinates"
             app:defaultValue="true" />

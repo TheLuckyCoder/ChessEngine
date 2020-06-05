@@ -39,23 +39,23 @@ class AppPreferences(private val context: Context) {
         set(value) = manager.edit().putBoolean(KEY_FIRST_START, value).apply()
 
     var whiteTileColor: Int
-        get() = manager.getInt(KEY_TILE_WHITE, getColor(context, R.color.tile_white))
+        get() = manager.getInt(KEY_TILE_WHITE, context.getColorCompat(R.color.tile_white))
         set(value) = manager.edit().putInt(KEY_TILE_WHITE, value).apply()
 
     var blackTileColor: Int
-        get() = manager.getInt(KEY_TILE_BLACK, getColor(context, R.color.tile_black))
+        get() = manager.getInt(KEY_TILE_BLACK, context.getColorCompat(R.color.tile_black))
         set(value) = manager.edit().putInt(KEY_TILE_BLACK, value).apply()
 
     var possibleMoveColor: Int
-        get() = manager.getInt(KEY_TILE_POSSIBLE, getColor(context, R.color.tile_possible))
+        get() = manager.getInt(KEY_TILE_POSSIBLE, context.getColorCompat(R.color.tile_possible))
         set(value) = manager.edit().putInt(KEY_TILE_POSSIBLE, value).apply()
 
     var lastMovedTileColor: Int
-        get() = manager.getInt(KEY_TILE_LAST_MOVED, getColor(context, R.color.tile_last_moved))
+        get() = manager.getInt(KEY_TILE_LAST_MOVED, context.getColorCompat(R.color.tile_last_moved))
         set(value) = manager.edit().putInt(KEY_TILE_LAST_MOVED, value).apply()
 
     var inCheckColor: Int
-        get() = manager.getInt(KEY_KING_IN_CHECK, getColor(context, R.color.king_in_check))
+        get() = manager.getInt(KEY_KING_IN_CHECK, context.getColorCompat(R.color.king_in_check))
         set(value) = manager.edit().putInt(KEY_KING_IN_CHECK, value).apply()
 
     var showCoordinates: Boolean
@@ -82,7 +82,7 @@ class AppPreferences(private val context: Context) {
             cacheSize = manager.getString(
                 KEY_CACHE_SIZE,
                 null
-            )?.toIntOrNull() ?: 100,
+            )?.toIntOrNull() ?: 64,
             doQuietSearch = manager.getBoolean(KEY_QUIET_SEARCH, true)
         )
         set(value) {

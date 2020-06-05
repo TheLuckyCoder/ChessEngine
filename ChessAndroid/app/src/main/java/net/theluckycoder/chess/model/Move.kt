@@ -1,8 +1,7 @@
 package net.theluckycoder.chess.model
 
+import net.theluckycoder.chess.utils.toBoolean
 import kotlin.experimental.and
-
-fun Byte.toBoolean() = this != 0.toByte()
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 data class Move(val content: Long) {

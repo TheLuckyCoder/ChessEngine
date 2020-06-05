@@ -1,31 +1,5 @@
 package net.theluckycoder.chess.model
 
-data class Piece(
-    @JvmField
-    val pos: Int,
-    @JvmField
-    val type: Byte
-) {
-
-    fun getScore() = when (type.toInt()) {
-        PAWN -> 1 // Pawn
-        KNIGHT -> 3 // Knight
-        BISHOP -> 3 // Bishop
-        ROOK -> 5 // Rook
-        QUEEN -> 9 // Queen
-        else -> 0
-    }
-
-    companion object {
-        const val PAWN = 1
-        const val KNIGHT = 2
-        const val BISHOP = 3
-        const val ROOK = 4
-        const val QUEEN = 5
-        const val KING = 6
-    }
-}
-
 data class Pos(
     @JvmField
     val x: Int,

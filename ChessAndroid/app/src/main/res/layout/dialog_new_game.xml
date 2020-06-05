@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/side"
+        android:textColor="?colorAccent" />
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/tg_side"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        app:checkedButton="@id/btn_side_random"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_side_white"
+            style="@style/Widget.Button.OutlinedButton.IconOnly"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/side_white"
+            android:contentDescription="@string/side_white"
+            app:icon="@drawable/w_king"
+            app:iconGravity="textStart"
+            app:iconSize="54dp"
+            app:iconTint="@null" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_side_random"
+            style="@style/Widget.Button.OutlinedButton.IconOnly"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/side_random"
+            android:contentDescription="@string/side_random"
+            app:icon="@drawable/random_side"
+            app:iconGravity="textStart"
+            app:iconSize="54dp"
+            app:iconTint="@null" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_side_black"
+            style="@style/Widget.Button.OutlinedButton.IconOnly"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/side_black"
+            android:contentDescription="@string/side_black"
+            app:icon="@drawable/b_king"
+            app:iconGravity="textStart"
+            app:iconSize="54dp"
+            app:iconTint="@null" />
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/difficulty"
+        android:textColor="?colorAccent" />
+
+    <Spinner
+        android:id="@+id/sp_difficulty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="6dp"
+        android:backgroundTint="?attr/colorButtonNormal"
+        android:entries="@array/difficulty_levels"
+        android:minHeight="52dp"
+        android:spinnerMode="dialog" />
+
+</LinearLayout>

@@ -2,7 +2,11 @@
 <resources>
     <color name="tile_white">#eeeed2</color>
     <color name="tile_black">#769655</color>
-    <color name="tile_possible">#CC32BF37</color>
-    <color name="tile_last_moved">#8CFBC02D</color>
+    <color name="tile_possible">#cc32bf37</color>
+    <color name="tile_last_moved">#8cfbc02d</color>
     <color name="king_in_check">#aadd0000</color>
+
+    <color name="side_white">#f1f1f1</color>
+    <color name="side_black">#1e1e1e</color>
+    <color name="side_random">#727272</color>
 </resources>

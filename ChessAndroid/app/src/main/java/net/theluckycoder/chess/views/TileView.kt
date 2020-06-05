@@ -2,13 +2,11 @@ package net.theluckycoder.chess.views
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.BlurMaskFilter
-import android.graphics.Canvas
-import android.graphics.Paint
+import android.graphics.*
 import android.util.TypedValue
-import net.theluckycoder.chess.model.Pos
 import net.theluckycoder.chess.model.BoardAppearance
 import net.theluckycoder.chess.model.Move
+import net.theluckycoder.chess.model.Pos
 
 @SuppressLint("ViewConstructor")
 class TileView(
@@ -36,7 +34,9 @@ class TileView(
     private val selectedStatePaint = Paint().apply {
         style = Paint.Style.STROKE
     }
-    private val possibleStatePaint = Paint()
+    private val possibleStatePaint = Paint().apply {
+        style = Paint.Style.FILL
+    }
     private val letterPaint = Paint().apply {
         textSize = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP,
@@ -47,6 +47,7 @@ class TileView(
     private val checkPaint = Paint().apply {
         maskFilter = BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL)
     }
+    private var possiblePaths = emptyArray<Path>()
 
     // Public Fields
     var state = State.NONE
@@ -80,38 +81,47 @@ class TileView(
                 invalidate()
             }
         }
+    var isPlayerWhite = true
     var isInCheck = false
         set(value) {
-            field = value
-            invalidate()
+            if (field != value) {
+                field = value
+                invalidate()
+            }
         }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+
+        val width = measuredWidth.toFloat()
+        val height = measuredHeight.toFloat()
+
         selectedStatePaint.strokeWidth = measuredHeight / 7f
+
+        possiblePaths = arrayOf(
+            genTrianglePath(0f, 0f, width / 3, 0f, 0f, height / 3),
+            genTrianglePath(width, 0f, width - width / 3, 0f, width, height / 3),
+            genTrianglePath(0f, height, 0f, height - height / 3, width / 3, height),
+            genTrianglePath(width, height, width, height - height / 3, width - width / 3, height)
+        )
     }
 
     override fun onDraw(canvas: Canvas) {
+        val width = measuredWidth.toFloat()
+        val height = measuredHeight.toFloat()
         canvas.drawColor(tileBackgroundColor)
 
         if (isInCheck)
             canvas.drawCircle(width / 2f, height / 2f, width / 2.5f, checkPaint)
 
         when (state) {
-            State.SELECTED -> {
-                canvas.drawRect(
-                    0f,
-                    0f,
-                    measuredWidth.toFloat(),
-                    measuredHeight.toFloat(),
-                    selectedStatePaint
-                )
-            }
+            State.SELECTED -> canvas.drawRect(0f, 0f, width, height, selectedStatePaint)
             State.POSSIBLE -> {
                 if (pieces[pos] == null) {
                     canvas.drawCircle(width / 2f, height / 2f, width / 6.5f, possibleStatePaint)
                 } else {
-                    canvas.drawPaint(possibleStatePaint)
+                    for (i in 0 until 4)
+                        canvas.drawPath(possiblePaths[i], possibleStatePaint)
                 }
             }
             else -> if (lastMoved) canvas.drawColor(appearance.lastMoved)
@@ -119,17 +129,29 @@ class TileView(
 
         if (appearance.showCoordinates) {
             val letterSize = letterPaint.textSize
-            if (pos.y == 0) {
+            if ((isPlayerWhite && pos.y == 0) || (!isPlayerWhite && pos.y == 7)) {
                 canvas.drawText(
                     ('A' + pos.x).toString(),
-                    measuredWidth.toFloat() - letterSize * 0.75f,
-                    measuredHeight.toFloat(),
+                    width - letterSize * 0.7f,
+                    height,
                     letterPaint
                 )
             }
 
-            if (pos.x == 0)
+            if ((isPlayerWhite && pos.x == 0) || (!isPlayerWhite && pos.x == 7))
                 canvas.drawText(('1' + pos.y).toString(), 0f, letterSize, letterPaint)
         }
+    }
+
+    private fun genTrianglePath(
+        x1: Float, y1: Float,
+        x2: Float, y2: Float,
+        x3: Float, y3: Float
+    ) = Path().apply {
+        moveTo(x1, y1)
+        lineTo(x2, y2)
+        lineTo(x3, y3)
+        lineTo(x1, y1)
+        close()
     }
 }
