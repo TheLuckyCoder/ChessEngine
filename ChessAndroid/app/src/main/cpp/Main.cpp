@@ -223,7 +223,7 @@ Java_net_theluckycoder_chess_Native_setSettings(JNIEnv *, jobject, jint baseSear
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jlong move)
 {
-	BoardManager::makeMove(Move(static_cast<unsigned>(move & UINT32_MAX), 0));
+	BoardManager::makeMove(Move(static_cast<unsigned>(move & UINT32_MAX)));
 }
 
 external JNIEXPORT void JNICALL
@@ -233,7 +233,7 @@ Java_net_theluckycoder_chess_Native_forceMove(JNIEnv *, jobject)
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_cancelSearch(JNIEnv *, jobject)
+Java_net_theluckycoder_chess_Native_stopSearch(JNIEnv *, jobject)
 {
 	Search::stopSearch();
 }
@@ -243,6 +243,18 @@ external JNIEXPORT jboolean JNICALL
 Java_net_theluckycoder_chess_Native_undoMoves(JNIEnv *, jobject)
 {
 	return static_cast<jboolean>(BoardManager::undoLastMoves());
+}
+
+external JNIEXPORT jboolean JNICALL
+Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jstring fenPosition)
+{
+	const char *nativeString = pEnv->GetStringUTFChars(fenPosition, nullptr);
+
+	const bool loaded = BoardManager::loadGame(nativeString);
+
+	pEnv->ReleaseStringUTFChars(fenPosition, nativeString);
+
+	return static_cast<jboolean>(loaded);
 }
 
 external JNIEXPORT void JNICALL

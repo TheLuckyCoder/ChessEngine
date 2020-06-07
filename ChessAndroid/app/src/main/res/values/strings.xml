@@ -8,16 +8,27 @@
     <string name="side_black">Black Side</string>
     <string name="side_random">Random Side</string>
     <string name="difficulty">Difficulty Level:</string>
-    <string name="action_start">Start</string>
     <string name="settings">Settings</string>
     <string name="undo_move">Undo Move</string>
     <string name="promotion_choose_piece">Choose a Piece</string>
+    <string name="title_settings">Settings</string>
+
+    <!-- Actions -->
+    <string name="action_start">Start</string>
+    <string name="action_load_fen">Load FEN Position</string>
+    <string name="action_force_move">Force Move</string>
+    <string name="action_load">Load</string>
+
+    <string name="fen_position_loaded">FEN Position Loaded</string>
+    <string name="fen_position_error">FEN Position could not be loaded</string>
 
     <!-- Preferences -->
     <string name="pref_category_appearance">Appearance</string>
     <string name="pref_category_difficulty">Difficulty</string>
     <string name="pref_category_other">Other Algorithm Settings</string>
+
     <string name="pref_category_debug">Debugging</string>
-    <string name="title_settings">Settings</string>
-    <string name="action_force_move">Force Move</string>
+    <string name="victory_white">White has won!</string>
+    <string name="victory_black">Black has won!</string>
+    <string name="draw">Draw</string>
 </resources>

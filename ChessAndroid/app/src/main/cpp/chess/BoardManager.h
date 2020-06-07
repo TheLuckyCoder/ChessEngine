@@ -34,7 +34,7 @@ private:
 	
 public:
 	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
-	static void loadGame(const std::string &fen);
+	static bool loadGame(const std::string &fen);
 	static void loadGame(const std::vector<Move> &moves, bool isPlayerWhite);
 	static bool undoLastMoves();
 

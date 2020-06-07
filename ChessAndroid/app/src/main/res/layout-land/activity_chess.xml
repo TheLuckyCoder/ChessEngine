@@ -2,13 +2,14 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:paddingStart="32dp">
 
     <FrameLayout
         android:id="@+id/layout_board"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        tools:minWidth="420dp" />
+        tools:minWidth="400dp" />
 
     <TextView
         android:id="@+id/tv_debug"
@@ -16,7 +17,9 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@id/pb_loading"
         android:layout_alignParentTop="true"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="12dp"
         android:layout_toStartOf="@id/iv_new_game"
         android:layout_toEndOf="@id/layout_board"
@@ -32,7 +35,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="4dp"
+        android:layout_margin="8dp"
         android:layout_toStartOf="@id/iv_new_game"
         android:layout_toEndOf="@id/layout_board"
         android:indeterminateOnly="true"

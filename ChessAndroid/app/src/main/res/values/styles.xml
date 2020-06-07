@@ -1,7 +1,11 @@
 <resources>
 
     <style name="AppTheme" parent="Theme.MaterialComponents">
-        <item name="colorPrimary">#00b0ff</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorSurface">@color/colorPrimary</item>
+        <item name="actionBarSize">@dimen/toolbar_height</item>
     </style>
 
     <style name="Widget.Button.OutlinedButton.IconOnly" parent="Widget.MaterialComponents.Button.OutlinedButton">

@@ -52,7 +52,7 @@ data class Settings(
                 else -> threadCount
             }
             return Settings(
-                if (searchDepth < 0) 1 else searchDepth,
+                if (searchDepth <= 0) 1 else searchDepth,
                 threads,
                 cacheSize,
                 doQuietSearch

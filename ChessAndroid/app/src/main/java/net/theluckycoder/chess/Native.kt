@@ -25,7 +25,7 @@ object Native {
 
     external fun forceMove()
 
-    external fun cancelSearch()
+    external fun stopSearch()
 
     external fun enableStats(enabled: Boolean)
 
@@ -37,6 +37,8 @@ object Native {
     )
 
     external fun undoMoves(): Boolean
+
+    external fun loadFen(position: String): Boolean
 
     external fun loadMoves(moves: String)
 

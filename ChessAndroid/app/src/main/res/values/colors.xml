@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorPrimary">#1a822c</color>
+    <color name="colorPrimaryDark">#005400</color>
+    <color name="colorSecondary">#ffea00</color>
+
     <color name="tile_white">#eeeed2</color>
     <color name="tile_black">#769655</color>
     <color name="tile_possible">#cc32bf37</color>
@@ -8,5 +12,5 @@
 
     <color name="side_white">#f1f1f1</color>
     <color name="side_black">#1e1e1e</color>
-    <color name="side_random">#727272</color>
+    <color name="side_random">#757575</color>
 </resources>

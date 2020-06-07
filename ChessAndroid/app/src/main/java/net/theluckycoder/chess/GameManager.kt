@@ -29,6 +29,12 @@ class GameManager(
 
     var basicStatsEnabled = false
     var advancedStatsEnabled = false
+        set(value) {
+            if (field != value) {
+                field = value
+                Native.enableStats(value)
+            }
+        }
     val isWorking
         get() = Native.isWorking()
 
@@ -39,6 +45,7 @@ class GameManager(
             isPlayerWhite = playerWhite
             initBoardNative(isPlayerWhite)
         } else {
+            // First time it is called, load the last game
             initialized = true
 
             initBoardNative(isPlayerWhite)
@@ -46,8 +53,6 @@ class GameManager(
             isPlayerWhite =
                 if (SaveManager.loadFromFile(context)) Native.isPlayerWhite() else playerWhite
         }
-
-        Native.enableStats(advancedStatsEnabled)
 
         listener.redrawBoard(isPlayerWhite)
         listener.redrawPieces(getPiecesList(), isPlayerWhite)
@@ -63,7 +68,6 @@ class GameManager(
     }
 
     fun makeMove(move: Move) {
-        Native.enableStats(advancedStatsEnabled)
         Native.makeMove(move.content)
     }
 
@@ -94,7 +98,7 @@ class GameManager(
             }
 
             if (shouldRedrawPieces) {
-                delay(260L)
+                delay(260L) // Wait for any piece animations to occur to make the redraw smother
                 listener.redrawPieces(getPiecesList(), isPlayerWhite)
             }
         }

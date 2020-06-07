@@ -26,12 +26,18 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 		_workerThread = std::thread(moveComputerPlayer, _settings);
 }
 
-void BoardManager::loadGame(const std::string &fen)
+bool BoardManager::loadGame(const std::string &fen)
 {
-	if (_board.setToFen(fen))
+	Board tempBoard = _board;
+
+	if (tempBoard.setToFen(fen))
 	{
+		_board = tempBoard;
 		_listener(getBoardState(), true, {});
+		return true;
 	}
+
+	return false;
 }
 
 void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerWhite)
@@ -103,7 +109,10 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 void BoardManager::forceMove()
 {
 	if (!_isWorking)
+	{
+		_isWorking = true;
 		_workerThread = std::thread(moveComputerPlayer, _settings);
+	}
 }
 
 // This function should only be called through the Worker Thread
