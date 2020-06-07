@@ -1,16 +1,20 @@
 # ChessEngine
 
+An UCI-compatible Chess Engine written in C++17 with an Android UI written in Kotlin.
+
 This project uses the evaluation function values (in the file Evaluation.cpp) from the Stockfish Chess Engine, licensed under GNU GPL 3.0.
 
 ## Features
+
 - Search:
   - AlphaBeta Pruning
+  - Aspiration Window
   - Iterative Deepening
   - Futility Pruning
+  - Reverse Futility Pruning
   - Null Move Pruning
   - Late Move Reductions
   - Quiescence Search
-    - Delta Pruning
 - Move Ordering:
   - Hash Move
   - MVV/LVA
@@ -31,8 +35,10 @@ This project uses the evaluation function values (in the file Evaluation.cpp) fr
   - Zobrist Hashing
   - Transposition Table
   - Pawn Structure Table
+
 ## License
-Copyright (C) 2020 TheLuckyCoder
+
+Copyright (C) 2019-2020 Filea Razvan Gheorghe
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
