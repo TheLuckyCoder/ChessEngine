@@ -1,14 +1,10 @@
 package net.theluckycoder.chess
 
-import android.content.Context
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import android.app.Activity
 import net.theluckycoder.chess.model.*
 
 class GameManager(
-    private val context: Context,
+    private val activity: Activity,
     private val listener: OnEventListener
 ) {
 
@@ -51,19 +47,19 @@ class GameManager(
             initBoardNative(isPlayerWhite)
 
             isPlayerWhite =
-                if (SaveManager.loadFromFile(context)) Native.isPlayerWhite() else playerWhite
+                if (SaveManager.loadFromFile(activity)) Native.isPlayerWhite() else playerWhite
         }
 
         listener.redrawBoard(isPlayerWhite)
         listener.redrawPieces(getPiecesList(), isPlayerWhite)
     }
 
-    fun updateSettings(settings: Settings) {
+    fun updateSettings(engineSettings: EngineSettings) {
         Native.setSettings(
-            settings.searchDepth,
-            settings.threadCount,
-            settings.cacheSize,
-            settings.doQuietSearch
+            engineSettings.searchDepth,
+            engineSettings.threadCount,
+            engineSettings.cacheSize,
+            engineSettings.doQuietSearch
         )
     }
 
@@ -84,9 +80,9 @@ class GameManager(
             else -> GameState.NONE
         }
 
-        GlobalScope.launch(Dispatchers.Default) { SaveManager.saveToFile(context) }
+        SaveManager.saveToFileAsync(activity)
 
-        GlobalScope.launch(Dispatchers.Main.immediate) {
+        activity.runOnUiThread {
             listener.onMove(state)
 
             moves.forEach {
@@ -96,9 +92,13 @@ class GameManager(
                     isPlayerWhite
                 )
             }
+        }
 
-            if (shouldRedrawPieces) {
-                delay(260L) // Wait for any piece animations to occur to make the redraw smother
+        if (shouldRedrawPieces) {
+            // Wait for any piece animations to occur to make the redraw smother, there probably is a better way of doing this
+            Thread.sleep(260L)
+
+            activity.runOnUiThread {
                 listener.redrawPieces(getPiecesList(), isPlayerWhite)
             }
         }

@@ -39,7 +39,7 @@ class ChessActivity : AppCompatActivity(),
     private val capturedPieces = CapturedPieces()
     private var viewSize = 0
 
-    private val preferences = AppPreferences(this)
+    private val preferences = AppPreferences
 
     private var selectedPos = Pos()
     private var canMove = true
@@ -91,8 +91,8 @@ class ChessActivity : AppCompatActivity(),
             preferences.firstStart = false
 
             // Set Default Settings
-            val settings = Settings.create(0, 0, 64, true)
-            preferences.settings = getDifficulty(DEFAULT_DIFFICULTY_LEVEL, settings)
+            val settings = EngineSettings.create(0, 0, 64, true)
+            preferences.engineSettings = getDifficulty(DEFAULT_DIFFICULTY_LEVEL, settings)
             preferences.difficultyLevel = DEFAULT_DIFFICULTY_LEVEL
         }
 
@@ -105,11 +105,11 @@ class ChessActivity : AppCompatActivity(),
         with(gameManager) {
             val showDebugInfo = preferences.basicDebugInfo
             if (basicStatsEnabled != showDebugInfo) {
-                basicStatsEnabled = preferences.basicDebugInfo
+                basicStatsEnabled = showDebugInfo
                 invalidateOptionsMenu()
             }
             advancedStatsEnabled = preferences.advancedDebugInfo
-            updateSettings(preferences.settings)
+            updateSettings(preferences.engineSettings)
         }
 
         val boardAppearance = preferences.boardAppearance
@@ -353,9 +353,9 @@ class ChessActivity : AppCompatActivity(),
                 val level = dialogBinding.spDifficulty.selectedItemPosition
                 preferences.difficultyLevel = level
 
-                val newSettings = getDifficulty(level, preferences.settings)
+                val newSettings = getDifficulty(level, preferences.engineSettings)
                 gameManager.updateSettings(newSettings)
-                preferences.settings = newSettings
+                preferences.engineSettings = newSettings
 
                 restartGame(playerWhite)
             }
@@ -514,7 +514,7 @@ class ChessActivity : AppCompatActivity(),
 
         private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
 
-        private fun getDifficulty(level: Int, currentSettings: Settings): Settings {
+        private fun getDifficulty(level: Int, currentSettings: EngineSettings): EngineSettings {
             require(level >= 0)
 
             return currentSettings.copy(

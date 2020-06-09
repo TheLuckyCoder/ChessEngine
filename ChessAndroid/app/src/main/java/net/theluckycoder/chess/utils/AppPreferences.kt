@@ -1,38 +1,51 @@
 package net.theluckycoder.chess.utils
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.model.Settings
+import net.theluckycoder.chess.model.EngineSettings
 import net.theluckycoder.chess.model.BoardAppearance
 
-class AppPreferences(private val context: Context) {
+object AppPreferences {
 
-    companion object {
-        const val KEY_FIRST_START = "key_first_start"
+    const val KEY_FIRST_START = "key_first_start"
 
-        const val KEY_TILE_WHITE = "key_tile_white"
-        const val KEY_TILE_BLACK = "key_tile_black"
-        const val KEY_TILE_POSSIBLE = "key_tile_possible"
-        const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
-        const val KEY_KING_IN_CHECK = "key_king_in_check"
-        const val KEY_SHOW_COORDS = "key_show_coordinates"
-        const val KEY_RESET_APPEARANCE = "key_reset_appearance"
+    const val KEY_TILE_WHITE = "key_tile_white"
+    const val KEY_TILE_BLACK = "key_tile_black"
+    const val KEY_TILE_POSSIBLE = "key_tile_possible"
+    const val KEY_TILE_LAST_MOVED = "key_tile_last_moved"
+    const val KEY_KING_IN_CHECK = "key_king_in_check"
+    const val KEY_SHOW_COORDS = "key_show_coordinates"
+    const val KEY_RESET_APPEARANCE = "key_reset_appearance"
 
-        const val KEY_SEARCH_DEPTH = "key_search_depth"
-        const val KEY_THREAD_COUNT = "key_thread_count"
-        const val KEY_CACHE_SIZE = "key_cache_size"
-        const val KEY_QUIET_SEARCH = "key_quiet_search"
-        const val KEY_DIFFICULTY_LEVEL = "key_difficulty_level"
+    const val KEY_SEARCH_DEPTH = "key_search_depth"
+    const val KEY_THREAD_COUNT = "key_thread_count"
+    const val KEY_CACHE_SIZE = "key_cache_size"
+    const val KEY_QUIET_SEARCH = "key_quiet_search"
+    const val KEY_DIFFICULTY_LEVEL = "key_difficulty_level"
 
-        const val KEY_DEBUG_INFO_BASIC = "key_show_debug_basic"
-        const val KEY_DEBUG_INFO_ADVANCED = "key_show_debug_advanced"
+    const val KEY_ABOUT_AUTHOR = "key_about_author"
+    const val KEY_ABOUT_SOURCE_CODE = "key_about_source_code"
+    const val KEY_ABOUT_LICENSES = "key_about_licenses"
 
-        const val KEY_PERFT_TEST = "key_perft_test"
-        const val KEY_EVALUATION_TEST = "key_evaluation_test"
+    const val KEY_DEBUG_INFO_BASIC = "key_show_debug_basic"
+    const val KEY_DEBUG_INFO_ADVANCED = "key_show_debug_advanced"
+
+    const val KEY_PERFT_TEST = "key_perft_test"
+    const val KEY_EVALUATION_TEST = "key_evaluation_test"
+
+    private lateinit var context: Context
+    private lateinit var manager: SharedPreferences
+
+    /**
+     * This function initialises the Singleton
+     * It should only be called by the Application class
+     */
+    fun init(context: Context) {
+        this.context = context.applicationContext
+        manager = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
     }
-
-    private val manager by lazy { PreferenceManager.getDefaultSharedPreferences(context) }
 
     var firstStart: Boolean
         get() = manager.getBoolean(KEY_FIRST_START, true)
@@ -72,8 +85,8 @@ class AppPreferences(private val context: Context) {
             showCoordinates
         )
 
-    var settings: Settings
-        get() = Settings.create(
+    var engineSettings: EngineSettings
+        get() = EngineSettings.create(
             searchDepth = manager.getInt(KEY_SEARCH_DEPTH, 4),
             threadCount = manager.getInt(
                 KEY_THREAD_COUNT,
