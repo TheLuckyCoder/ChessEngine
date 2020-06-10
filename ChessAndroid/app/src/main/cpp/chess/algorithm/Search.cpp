@@ -53,7 +53,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 
 	_transpTable.incrementAge();
 	if (settings.getTableSizeMb() != 0)
-		_transpTable.setSize(settings.getTableSizeMb());
+		setTableSize(settings.getTableSizeMb());
 
 	// Update ThreadPool size if needed
 	//	if (_threadPool.getThreadCount() != threadCount)
@@ -116,8 +116,7 @@ Move Search::iterativeDeepening(Board &board, const int depth)
 			break;
 
 		_state.nodes = 0;
-		/*if((System.currentTimeMillis() - startTime) * 2 > timeForThisMove)
-			break;*/
+
 		bestScore = aspirationWindow(board, currentDepth, bestScore);
 		if (_state.stopped)
 			break;
