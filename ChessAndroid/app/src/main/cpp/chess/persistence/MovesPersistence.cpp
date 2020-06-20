@@ -1,35 +1,37 @@
 #include "MovesPersistence.h"
 
-#include <charconv>
-
-#include "../data/Board.h"
+#include <algorithm>
+#include <sstream>
 
 MovesPersistence::MovesPersistence(std::string content)
-	: m_Content(std::move(content))
+	: _content(std::move(content))
 {
-	m_Content.erase(std::remove_if(m_Content.begin(), m_Content.end(),
-			[](const char c) { return std::isspace(c); }), m_Content.end());
+	_content.erase(std::remove_if(_content.begin(), _content.end(),
+			[](const char c) { return std::isspace(c); }), _content.end());
 }
 
 bool MovesPersistence::isPlayerWhite() const
 {
-	return m_Content[0] != 'B';
+	return _content[0] != 'B';
 }
 
-std::vector<std::pair<byte, byte>> MovesPersistence::getMoves() const
+std::vector<Move> MovesPersistence::getMoves() const
 {
-	std::vector<std::pair<byte, byte>> moves;
-	moves.reserve(20);
+	std::vector<Move> moves;
+	moves.reserve(MAX_MOVES / 2);
 
-	size_t prefix = 1;
+	size_t prefix = 1u;
 	while (true)
 	{
-		const auto end = m_Content.find(')', prefix);
+		const auto end = _content.find(';', prefix);
 
 		if (end == std::string_view::npos)
 			break;
 
-		parsePosPair(moves, m_Content.substr(prefix + 1, end - prefix));
+		const auto moveStr = _content.substr(prefix, end - prefix);
+
+		const auto moveContents = std::stoul(moveStr);
+		moves.emplace_back(static_cast<unsigned int>(moveContents), 0);
 
 		prefix = end + 1;
 	}
@@ -37,45 +39,13 @@ std::vector<std::pair<byte, byte>> MovesPersistence::getMoves() const
 	return moves;
 }
 
-std::string MovesPersistence::saveToString(const std::vector<RootMove> &movesHistory, const bool isPlayerWhite)
+std::string MovesPersistence::saveToString(const std::vector<Move> &moves, const bool isPlayerWhite)
 {
 	std::ostringstream stream;
 	stream << (isPlayerWhite ? 'W' : 'B');
 
-	for (const RootMove &moves : movesHistory)
-		savePosPair(stream, std::make_pair(moves.startSq, moves.destSq));
+	for (const Move &move : moves)
+		stream << move.getContents() << ';';
 
 	return stream.str();
-}
-
-byte MovesPersistence::getSquare(std::string_view str)
-{
-	int value = -1;
-	std::from_chars(str.data(), str.data() + str.size(), value);
-
-	return static_cast<byte>(value);
-}
-
-void MovesPersistence::parsePosPair(std::vector<std::pair<byte, byte>> &moves, std::string_view str)
-{
-	const auto selectedEnd = str.find(';');
-	auto destEnd = str.find(')', selectedEnd + 1);
-
-	if (destEnd == std::string_view::npos)
-		destEnd = str.size() - 1;
-
-	moves.emplace_back(getSquare(str.substr(0, selectedEnd)),
-					   getSquare(str.substr(selectedEnd + 1, destEnd)));
-}
-
-void MovesPersistence::savePosPair(std::ostringstream &stream, const std::pair<byte, byte> &pair)
-{
-	if (pair.first < 64 && pair.second < 64)
-	{
-		stream << '('
-			   << static_cast<int>(pair.first)
-			   << ';'
-			   << static_cast<int>(pair.second)
-			   << ')';
-	}
 }

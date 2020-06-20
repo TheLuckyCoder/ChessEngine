@@ -2,11 +2,12 @@
 
 #include <random>
 
-#include "../data/Board.h"
+#include "../Board.h"
 
-Hash::HashArray Hash::s_Pieces{};
-std::array<U64, 4> Hash::s_CastlingRights;
-U64 Hash::s_WhiteToMove;
+Hash::HashArray Hash::_pieces{};
+U64 Hash::_side;
+std::array<U64, 6> Hash::_castlingRights;
+std::array<U64, 8> Hash::_enPassant;
 
 void Hash::init()
 {
@@ -18,73 +19,79 @@ void Hash::init()
 	std::mt19937_64 mt(rd());
 	std::uniform_int_distribution<U64> dist(0, UINT64_MAX);
 
-	for (auto &i : s_Pieces)
+	for (auto &i : _pieces)
 		for (auto &color : i)
 			for (auto &piece : color)
 				piece = dist(mt);
 
-	for (auto &rights : s_CastlingRights)
+	for (auto &rights : _castlingRights)
 		rights = dist(mt);
 
-	s_WhiteToMove = dist(mt);
+	for (auto &square : _enPassant)
+		square = dist(mt);
+
+	_side = dist(mt);
 }
 
 U64 Hash::compute(const Board &board)
 {
 	U64 hash{};
 
-	for (byte i = 0; i < SQUARE_NB; ++i)
-		if (const Piece &piece = board.getPiece(i); piece)
-			hash ^= s_Pieces[i][piece.color()][piece.type()];
-
-	if (board.colorToMove)
-		hash ^= s_WhiteToMove;
+	for (byte sq = 0; sq < SQUARE_NB; ++sq)
+		if (const Piece &piece = board.getPiece(sq); piece)
+			hash ^= _pieces[sq][piece.color()][piece.type()];
 
 	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
+	xorEnPassant(hash, board.enPassantSq);
+
+	if (board.colorToMove)
+		flipSide(hash);
 
 	return hash;
 }
 
-void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece, const Piece &destPiece)
+void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece,
+					const Piece &destPiece)
 {
 	// Remove Selected Piece
-	Hash::xorPiece(key, selectedSq, selectedPiece);
+	xorPiece(key, selectedSq, selectedPiece);
 
 	if (destPiece) // Remove Destination Piece if any
-		Hash::xorPiece(key, destSq, destPiece);
+		xorPiece(key, destSq, destPiece);
 
 	// Add Selected Piece to Destination
-	Hash::xorPiece(key, destSq, selectedPiece);
+	xorPiece(key, destSq, selectedPiece);
 }
 
-void Hash::promotePawn(U64 &key, const byte sq, const Color color, const PieceType promotedType)
+void Hash::xorPiece(U64 &key, const byte sq, const Piece piece)
 {
-	// Remove the Pawn
-	key ^= s_Pieces[sq][color][PAWN];
-
-	// Add the Promoted Piece
-	key ^= s_Pieces[sq][color][promotedType];
-}
-
-void Hash::xorPiece(U64 &key, const byte sq, const Piece &piece)
-{
-	key ^= s_Pieces[sq][piece.color()][piece.type()];
+	key ^= _pieces[sq][piece.color()][piece.type()];
 }
 
 void Hash::flipSide(U64 &key)
 {
-	key ^= Hash::s_WhiteToMove;
+	key ^= Hash::_side;
 }
 
 void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
 {
-	if (rights & CASTLE_WHITE_KING)
-		key ^= s_CastlingRights[0];
-	if (rights & CASTLE_WHITE_QUEEN)
-		key ^= s_CastlingRights[1];
+	if (rights & CASTLE_WHITE_BOTH)
+		key ^= _castlingRights[0];
+	else if (rights & CASTLE_WHITE_KING)
+		key ^= _castlingRights[1];
+	else if (rights & CASTLE_WHITE_QUEEN)
+		key ^= _castlingRights[2];
 
-	if (rights & CASTLE_BLACK_KING)
-		key ^= s_CastlingRights[2];
-	if (rights & CASTLE_BLACK_QUEEN)
-		key ^= s_CastlingRights[3];
+	if (rights & CASTLE_BLACK_BOTH)
+		key ^= _castlingRights[3];
+	else if (rights & CASTLE_BLACK_KING)
+		key ^= _castlingRights[4];
+	else if (rights & CASTLE_BLACK_QUEEN)
+		key ^= _castlingRights[5];
+}
+
+void Hash::xorEnPassant(U64 &key, const byte square)
+{
+	if (square <= SQUARE_NB)
+		key ^= _enPassant[col(square)];
 }

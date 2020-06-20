@@ -5,7 +5,7 @@ import android.view.View
 
 abstract class CustomView(context: Context) : View(context) {
 
-    interface ClickListener {
+    interface SimpleClickListener {
         fun onClick(view: CustomView)
     }
 

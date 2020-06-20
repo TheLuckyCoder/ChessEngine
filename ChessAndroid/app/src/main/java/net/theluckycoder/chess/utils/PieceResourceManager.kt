@@ -25,12 +25,17 @@ object PieceResourceManager {
 
     private val piecesBitmaps = SparseArray<Bitmap>(piecesResources.size)
 
-    fun init(context: Context, viewSize: Int) {
+    fun init(context: Context, size: Int) {
         val resources = context.resources
 
         piecesResources.forEach { res ->
             val decodedBitmap = BitmapFactory.decodeResource(resources, res)
-            piecesBitmaps.put(res, Bitmap.createScaledBitmap(decodedBitmap, viewSize, viewSize, true))
+
+            piecesBitmaps.put(
+                res,
+                Bitmap.createScaledBitmap(decodedBitmap, size, size, true)
+            )
+
             decodedBitmap.recycle()
         }
     }

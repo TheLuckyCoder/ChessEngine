@@ -1,47 +1,52 @@
 #pragma once
 
-#include <cstdint>
-#include <mutex>
 #include <shared_mutex>
 
-#include "../data/Defs.h"
+#include "../Move.h"
 
-using U64 = std::uint64_t;
-using byte = unsigned char;
-
-struct SearchCache
+struct SearchEntry
 {
-	U64 key = 0;
-	short boardScore = 0, value = 0;
-	short ply = 0;
-	Flag flag = Flag::EXACT;
-	byte age = 0;
+	enum class Flag : byte
+	{
+		NONE,
+		EXACT,
+		ALPHA,
+		BETA
+	};
+	
+    U64 key{};
+    Move move;
+    short depth{};
+    Flag flag = Flag::EXACT;
+	bool qSearch{};
+    unsigned short age{};
 };
 
 class TranspositionTable
 {
-	constexpr static int MUTEX_COUNT = 1024;
-
-	std::size_t m_Size;
-	byte m_CurrentAge{};
-	SearchCache *m_Values = new SearchCache[m_Size]();
-	mutable std::shared_mutex m_Mutexes[MUTEX_COUNT];
+	static constexpr int MUTEX_COUNT = 2048;
 
 public:
-	explicit TranspositionTable(std::size_t sizeMb) noexcept;
+    explicit TranspositionTable(std::size_t sizeMb);
 
-	TranspositionTable(const TranspositionTable &) = delete;
-	TranspositionTable(TranspositionTable &&) = delete;
+	TranspositionTable(const TranspositionTable&) = delete;
+	TranspositionTable(TranspositionTable&&) = delete;
 	~TranspositionTable() noexcept;
 
-	TranspositionTable &operator=(const TranspositionTable &) = delete;
-	TranspositionTable &operator=(TranspositionTable &&) = delete;
+	TranspositionTable &operator=(const TranspositionTable&) = delete;
+	TranspositionTable &operator=(TranspositionTable&&) = delete;
 
-	SearchCache operator[](U64 key) const noexcept;
+	SearchEntry operator[](U64 key) const noexcept;
 
-	void insert(const SearchCache &value) noexcept;
-	bool setSize(std::size_t sizeMb) noexcept(false);
+    void insert(const SearchEntry &value) noexcept;
+	bool setSize(std::size_t sizeMb);
 	void incrementAge() noexcept;
 	byte currentAge() const noexcept;
 	void clear() noexcept;
+
+private:
+    std::size_t _size{};
+    byte _currentAge{};
+	SearchEntry *_entries = nullptr;
+	mutable std::shared_mutex _mutexes[MUTEX_COUNT];
 };

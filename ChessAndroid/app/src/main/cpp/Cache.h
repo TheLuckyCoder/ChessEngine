@@ -17,9 +17,10 @@ namespace Cache
 
 	void createCaches(JNIEnv *env)
 	{
-		posClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/Pos"));
-		posPairClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/PosPair"));
-		pieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/Piece"));
+		gameManagerClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/GameManager"));
+		posClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Pos"));
+		posPairClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/PosPair"));
+		pieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Piece"));
 	}
 
 	void cleanCaches(JNIEnv *env)

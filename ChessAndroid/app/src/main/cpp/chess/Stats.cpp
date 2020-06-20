@@ -2,80 +2,91 @@
 
 #include <sstream>
 
-std::chrono::time_point<std::chrono::steady_clock> Stats::s_StartTime;
-std::atomic_size_t Stats::s_BoardsEvaluated;
-std::atomic_size_t Stats::s_NodesSearched;
-std::atomic_size_t Stats::s_NodesGenerated;
+std::chrono::time_point<std::chrono::high_resolution_clock> Stats::_startTime;
+std::atomic_size_t Stats::_boardsEvaluated;
+std::atomic_size_t Stats::_nodesSearched;
+std::atomic_size_t Stats::_nullCuts;
+std::atomic_size_t Stats::_futilityCuts;
+std::atomic_size_t Stats::_lmrCount;
 
 void Stats::setEnabled(const bool enabled) noexcept
 {
-	s_StatsEnabled = enabled;
+	_statsEnabled = enabled;
 }
 
 void Stats::resetStats() noexcept
 {
-	s_BoardsEvaluated = 0;
-	s_NodesSearched = 0;
-	s_NodesGenerated = 0;
+	_boardsEvaluated = 0;
+	_nodesSearched = 0;
+	_nullCuts = 0;
+	_futilityCuts = 0;
+	_lmrCount = 0;
 }
 
-size_t Stats::getBoardsEvaluated() noexcept
+void Stats::incBoardsEvaluated() noexcept
 {
-	return s_BoardsEvaluated;
+	if (_statsEnabled)
+		++_boardsEvaluated;
 }
 
-size_t Stats::getNodesSearched() noexcept
+void Stats::incNodesSearched(const std::size_t amount) noexcept
 {
-	return s_NodesSearched;
+	if (_statsEnabled)
+		_nodesSearched += amount;
 }
 
-size_t Stats::getNodesGenerated() noexcept
+void Stats::incNullCuts() noexcept
 {
-	return s_NodesGenerated;
+	if (_statsEnabled)
+		++_nullCuts;
 }
 
-void Stats::incrementBoardsEvaluated() noexcept
+void Stats::incFutilityCuts() noexcept
 {
-	if (s_StatsEnabled)
-		++s_BoardsEvaluated;
+	if (_statsEnabled)
+		++_futilityCuts;
 }
 
-void Stats::incrementNodesSearched(const std::size_t amount) noexcept
+void Stats::incLmrCount() noexcept
 {
-	if (s_StatsEnabled)
-		s_NodesSearched += amount;
+	if (_statsEnabled)
+		++_lmrCount;
 }
 
-void Stats::incrementNodesGenerated(const std::size_t amount) noexcept
+void Stats::restartTimer() noexcept
 {
-	if (s_StatsEnabled)
-		s_NodesGenerated += amount;
+	_startTime = std::chrono::high_resolution_clock::now();
 }
 
-void Stats::startTimer() noexcept
-{
-	s_StartTime = std::chrono::high_resolution_clock::now();
-	s_ElapsedTime = 0;
-}
-
-void Stats::stopTimer() noexcept
+double Stats::getElapsedMs() noexcept
 {
 	const auto currentTime = std::chrono::high_resolution_clock::now();
-	s_ElapsedTime = std::chrono::duration<double, std::milli>(currentTime - s_StartTime).count();
+	return std::chrono::duration<double, std::milli>(currentTime - _startTime).count();
 }
 
-double Stats::getElapsedTime() noexcept
-{
-	return s_ElapsedTime;
-}
-
-std::string Stats::formatStats(const char separator) noexcept(false)
+std::string Stats::formatStats(const char separator)
 {
 	std::stringstream stream;
 
-	stream << "Boards Evaluated: " << static_cast<size_t>(s_BoardsEvaluated) << separator
-		<< "Nodes Searched: " << static_cast<size_t>(s_NodesSearched) << separator
-		<< "Nodes Generated: " << static_cast<size_t>(s_NodesGenerated) << separator;
+	const size_t timeMs = getElapsedMs();
+
+	stream << "Elapsed Time: " << timeMs << "ms" << separator;
+
+	if (_statsEnabled)
+	{
+		const auto boardsEvaluated = static_cast<size_t>(_boardsEvaluated);
+		const auto nodesSearched = static_cast<size_t>(_nodesSearched);
+		const auto nullCuts = static_cast<size_t>(_nullCuts);
+		const auto futilityCuts = static_cast<size_t>(_futilityCuts);
+		const auto lmrCount = static_cast<size_t>(_lmrCount);
+		const size_t nps = timeMs ? (nodesSearched / (timeMs / 1000.0)) : 0;
+
+		stream << "Boards Evaluated: " << boardsEvaluated << separator
+			   << "Nodes Searched: " << nodesSearched << separator
+			   << "Nps: " << nps << separator
+			   << "Null: " << nullCuts << separator
+			   << "Futility/LMR: " << futilityCuts << '/' << lmrCount << separator;
+	}
 
 	return stream.str();
 }

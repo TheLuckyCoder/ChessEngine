@@ -1,19 +1,17 @@
 package net.theluckycoder.chess
 
-import android.content.Context
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import android.app.Activity
+import net.theluckycoder.chess.model.*
+import kotlin.concurrent.thread
 
 class GameManager(
-    private val context: Context,
+    private val activity: Activity,
     private val listener: OnEventListener
 ) {
 
     interface OnEventListener {
         // Called before a move was made by the player or the engine
-        fun onMove(gameState: State)
+        fun onMove(gameState: GameState)
 
         // Called when a specific piece was moved
         fun onPieceMoved(startPos: Pos, destPos: Pos, isPlayerWhite: Boolean)
@@ -28,54 +26,46 @@ class GameManager(
 
     var basicStatsEnabled = false
     var advancedStatsEnabled = false
+        set(value) {
+            if (field != value) {
+                field = value
+                Native.enableStats(value)
+            }
+        }
     val isWorking
         get() = Native.isWorking()
 
-    fun selectPiece(pos: Pos) = Native.getPossibleMoves(pos) ?: emptyArray()
+    fun getPossibleMoves(pos: Pos) = Native.getPossibleMoves(pos.toByte()).map { Move(it) }
 
-    fun initBoard(restartGame: Boolean, playerWhite: Boolean = true) {
-        initBoardNative(restartGame, playerWhite)
-        Native.enableStats(advancedStatsEnabled)
-
+    fun initBoard(playerWhite: Boolean = true) {
         if (initialized) {
-            if (isPlayerWhite != playerWhite) {
-                isPlayerWhite = playerWhite
-                listener.redrawBoard(playerWhite)
-            }
-
-            listener.redrawPieces(getPiecesList(), playerWhite)
+            isPlayerWhite = playerWhite
+            initBoardNative(isPlayerWhite)
         } else {
+            // First time it is called, load the last game
             initialized = true
 
-            listener.redrawBoard(isPlayerWhite)
+            initBoardNative(isPlayerWhite)
 
-            isPlayerWhite = if (SaveManager.loadFromFile(context)) {
-                Native.isPlayerWhite()
-            } else {
-                initBoardNative(true, playerWhite)
-                listener.redrawPieces(getPiecesList(), playerWhite)
-                playerWhite
-            }
+            isPlayerWhite =
+                if (SaveManager.loadFromFile(activity)) Native.isPlayerWhite() else playerWhite
         }
+
+        listener.redrawBoard(isPlayerWhite)
+        listener.redrawPieces(getPiecesList(), isPlayerWhite)
     }
 
-    fun updateSettings(settings: Settings) {
+    fun updateSettings(engineSettings: EngineSettings) {
         Native.setSettings(
-            settings.baseSearchDepth,
-            settings.threadCount,
-            settings.cacheSize,
-            settings.performQuiescenceSearch
+            engineSettings.searchDepth,
+            engineSettings.threadCount,
+            engineSettings.cacheSize,
+            engineSettings.doQuietSearch
         )
     }
 
-    fun makeMove(startPos: Pos, destPos: Pos) {
-        Native.enableStats(advancedStatsEnabled)
-        Native.movePiece(
-            startPos.x.toByte(),
-            startPos.y.toByte(),
-            destPos.x.toByte(),
-            destPos.y.toByte()
-        )
+    fun makeMove(move: Move) {
+        Native.makeMove(move.content)
     }
 
     private fun getPiecesList() = Native.getPieces().filter { it.type.toInt() != 0 }
@@ -83,17 +73,18 @@ class GameManager(
     @Suppress("unused") // Called by native code
     private fun callback(gameState: Int, shouldRedrawPieces: Boolean, moves: Array<PosPair>) {
         val state = when (gameState) {
-            1 -> State.WINNER_WHITE
-            2 -> State.WINNER_BLACK
-            3 -> State.DRAW
-            4 -> State.WHITE_IN_CHESS
-            5 -> State.BLACK_IN_CHESS
-            else -> State.NONE
+            1 -> GameState.WINNER_WHITE
+            2 -> GameState.WINNER_BLACK
+            3 -> GameState.DRAW
+            4 -> GameState.WHITE_IN_CHESS
+            5 -> GameState.BLACK_IN_CHESS
+            else -> GameState.NONE
         }
 
-        GlobalScope.launch(Dispatchers.Default) { SaveManager.saveToFile(context) }
+        SaveManager.saveToFileAsync(activity)
+        var piecesAnimated = false
 
-        GlobalScope.launch(Dispatchers.Main.immediate) {
+        activity.runOnUiThread {
             listener.onMove(state)
 
             moves.forEach {
@@ -104,12 +95,22 @@ class GameManager(
                 )
             }
 
-            if (shouldRedrawPieces) {
-                delay(260L)
-                listener.redrawPieces(getPiecesList(), isPlayerWhite)
+            piecesAnimated = true
+        }
+
+        if (shouldRedrawPieces) {
+            thread {
+                // Wait for any piece animations to occur to make the redraw smother, there probably is a better way of doing this
+                while (!piecesAnimated)
+                    Thread.sleep(1)
+                Thread.sleep(260L)
+
+                activity.runOnUiThread {
+                    listener.redrawPieces(getPiecesList(), isPlayerWhite)
+                }
             }
         }
     }
 
-    private external fun initBoardNative(restartGame: Boolean, isPlayerWhite: Boolean)
+    private external fun initBoardNative(isPlayerWhite: Boolean)
 }

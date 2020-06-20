@@ -1,9 +1,9 @@
-version: 2
+version: 2.1
 jobs:
   build:
     working_directory: ~/ChessEngine/ChessAndroid
     docker:
-    - image: circleci/android:api-28-ndk
+    - image: circleci/android:api-29-ndk
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
@@ -33,5 +33,5 @@ jobs:
         destination: reports
     - store_artifacts:
         name: Store APK
-        path: app/build/outputs/apk/app-release.apk
-        destination: Chess.apk
+        path: app/build/outputs/apk/app-release-unsigned.apk
+        destination: app-release-unsigned.apk

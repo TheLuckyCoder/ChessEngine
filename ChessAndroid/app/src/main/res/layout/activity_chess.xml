@@ -7,7 +7,8 @@
     <FrameLayout
         android:id="@+id/layout_board"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        tools:minHeight="400dp" />
 
     <ProgressBar
         android:id="@+id/pb_loading"
@@ -23,7 +24,7 @@
         android:id="@+id/tv_debug"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/btn_restart_game"
+        android:layout_above="@id/iv_new_game"
         android:layout_below="@id/pb_loading"
         android:gravity="center_horizontal"
         android:scrollbars="vertical"
@@ -39,12 +40,13 @@
         android:layout_alignParentBottom="true"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
+        android:background="?attr/selectableItemBackground"
         android:contentDescription="@string/undo_move"
         android:padding="8dp"
         android:src="@drawable/ic_undo" />
 
-    <Button
-        android:id="@+id/btn_restart_game"
+    <ImageView
+        android:id="@+id/iv_new_game"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -53,7 +55,10 @@
         android:layout_marginBottom="8dp"
         android:layout_toStartOf="@+id/iv_settings"
         android:layout_toEndOf="@+id/iv_undo"
-        android:text="@string/new_game" />
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/new_game"
+        android:padding="8dp"
+        android:src="@drawable/ic_new_circle" />
 
     <ImageView
         android:id="@+id/iv_settings"
@@ -63,6 +68,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        android:background="?attr/selectableItemBackground"
         android:contentDescription="@string/settings"
         android:padding="8dp"
         android:src="@drawable/ic_settings" />

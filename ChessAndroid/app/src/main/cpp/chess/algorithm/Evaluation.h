@@ -1,33 +1,57 @@
 #pragma once
 
-#include "../data/Piece.h"
-#include "../data/Score.h"
-#include "../containers/Containers.h"
+#include <array>
+#include <string>
 
-class Board;
+#include "../Board.h"
+#include "../Score.h"
+#include "../containers/PawnStructureTable.h"
 
 class Evaluation final
 {
-	constexpr static short PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
+	static constexpr short _PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
 
 public:
-	Evaluation() = delete;
-	Evaluation(const Evaluation&) = delete;
-	Evaluation(Evaluation&&) = delete;
+	static constexpr short TEMPO_BONUS = 20;
 
-	static short simpleEvaluation(const Board &board) noexcept;
-	static short evaluate(const Board &board) noexcept;
-	static short getPieceValue(const PieceType type) noexcept
+	struct Trace
 	{
-		return PIECE_VALUE[type];
-	}
+		// Pieces
+		std::array<Score, 2> pawns{};
+		std::array<Score, 2> knights{};
+		std::array<Score, 2> bishops{};
+		std::array<Score, 2> rooks{};
+		std::array<Score, 2> queen{};
+		std::array<Score, 2> king{};
+		std::array<Score, 2> mobility{};
+		std::array<Score, 2> piecesTotal{};
 
-private:
-	static Score evaluatePawn(const Piece &piece, byte square, const Board &board,
-							  const AttacksMap &ourAttacks, const AttacksMap &theirAttacks) noexcept;
-	inline static Score evaluateKnight(const Piece &piece, byte square, const Board &board) noexcept;
-	static Score evaluateBishop(const Piece &piece, byte square, const Board &board) noexcept;
-	static Score evaluateRook(const Piece &piece, byte square, const Board &board) noexcept;
-	static Score evaluateQueen(const Piece &piece, const byte square, const Board &board) noexcept;
-	inline static Score evaluateKing(const Piece &piece, const byte square, const Board &board) noexcept;
+		std::array<Score, 2> kingProtector{};
+		std::array<Score, 2> minorPawnShield{};
+
+		// Threats
+		std::array<Score, 2> threatsByMinor{};
+		std::array<Score, 2> threatsByRook{};
+		std::array<Score, 2> threatsByKing{};
+		std::array<Score, 2> threatBySafePawn{};
+		std::array<Score, 2> piecesHanging{};
+		std::array<Score, 2> weakQueenProtection{};
+		std::array<Score, 2> queenThreatByKnight{};
+		std::array<Score, 2> queenThreatBySlider{};
+		std::array<Score, 2> restrictedMovement{};
+		std::array<Score, 2> attacksTotal{};
+
+		std::array<Score, 2> kingSafety{};
+
+		std::array<Score, 2> total{};
+	};
+
+	static int value(const Board &board) noexcept;
+	static int invertedValue(const Board &board) noexcept;
+	static std::string traceValue(const Board &board);
+
+	static constexpr short getPieceValue(const PieceType type) noexcept
+	{
+		return _PIECE_VALUE[type];
+	}
 };

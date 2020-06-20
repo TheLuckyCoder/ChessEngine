@@ -1,308 +1,540 @@
 #include "Search.h"
 
+#include <cassert>
+#include <iostream>
+
 #include "../Stats.h"
-#include "../data/Board.h"
+#include "../Board.h"
+#include "MoveGen.h"
+#include "MoveOrdering.h"
+#include "Evaluation.h"
+#include "../Psqt.h"
 
-ThreadPool Search::s_ThreadPool(1);
-TranspositionTable Search::s_SearchCache(1);
-bool Search::s_QuiescenceSearchEnabled{};
-short Search::s_BestMoveFound{};
+constexpr int WINDOW_MIN_DEPTH = 5;
+constexpr int WINDOW_SIZE = 15;
 
-RootMove Search::findBestMove(const Board &board, const Settings &settings)
+constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
+constexpr int REVERSE_FUTILITY_MARGIN = 220;
+
+constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
+constexpr int FUTILITY_MARGIN = 160;
+constexpr int FUTILITY_MAX_DEPTH = 6;
+
+std::array<std::array<unsigned int, MAX_DEPTH>, 2> Search::_searchKillers{};
+std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> Search::_searchHistory{};
+std::array<int, MAX_DEPTH> Search::_evalHistory;
+TranspositionTable Search::_transpTable{ 16 };
+Search::State Search::_state{};
+
+void Search::clearAll()
 {
-	const auto validMoves = board.listValidMoves<RootMove>();
-	assert(!validMoves.empty());
-	
-	for (const RootMove &move : validMoves)
-		if (move.board.state == State::WINNER_WHITE || move.board.state == State::WINNER_BLACK)
-			return move;
+	_searchKillers.fill({});
+	_searchHistory.fill({});
+	_evalHistory.fill({});
+	_transpTable.clear();
+}
 
+void Search::stopSearch()
+{
+	_state.stopped = true;
+}
+
+bool Search::setTableSize(const size_t sizeMb)
+{
+	return _transpTable.setSize(sizeMb);
+}
+
+Move Search::findBestMove(Board board, const Settings &settings)
+{
+	Stats::resetStats();
 	// Apply Settings
-	short depth = settings.getBaseSearchDepth() - 1;
-	const auto threadCount = settings.getThreadCount();
-	s_QuiescenceSearchEnabled = settings.performQuiescenceSearch();
+	int depth = settings.getSearchDepth();
+	//	const auto threadCount = settings.getThreadCount();
 
-	// If the Transposition Table wasn't resized, increment its age
-	if (!s_SearchCache.setSize(settings.getCacheTableSizeMb()))
-		s_SearchCache.incrementAge();
+	_transpTable.incrementAge();
+	if (settings.getTableSizeMb() != 0)
+		setTableSize(settings.getTableSizeMb());
 
 	// Update ThreadPool size if needed
-	if (s_ThreadPool.getThreadCount() != threadCount)
-		s_ThreadPool.updateThreadCount(threadCount);
+	//	if (_threadPool.getThreadCount() != threadCount)
+	//		_threadPool.updateThreadCount(threadCount);
 
-	if (board.getPhase() == Phase::ENDING)
-		++depth;
+	board.ply = 0;
 
-	return negaMaxRoot(validMoves, std::min<unsigned>(threadCount, validMoves.size()), depth);
+	_searchKillers.fill({});
+	_searchHistory.fill({});
+	_evalHistory.fill({});
+
+	const auto time = settings.getSearchTime();
+	_state = { false, settings.doQuiescenceSearch(), time != 0ull, time };
+
+	if (board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3)
+		depth = std::min<int>(MAX_DEPTH, depth + 1);
+
+	return iterativeDeepening(board, depth);
 }
 
-short Search::getBestMoveFound()
+Move Search::iterativeDeepening(Board &board, const int depth)
 {
-	return s_BestMoveFound;
-}
+	std::array<Move, MAX_DEPTH> pvArray{};
 
-RootMove Search::negaMaxRoot(const std::vector<RootMove> &validMoves, const unsigned jobCount, const short ply)
-{
-	std::vector<std::future<void>> futures;
-	futures.reserve(jobCount);
-	std::mutex mutex;
-	
-	RootMove bestMove = validMoves.front();
-	auto currentMove = validMoves.begin();
-	const auto lastMove = validMoves.end();
-	short alpha = VALUE_MIN;
+	const auto getPvLine = [&board, &pvArray](const int depth) -> int
+	{
+		assert(depth <= MAX_DEPTH);
 
-	const auto worker = [&] {
-		mutex.lock();
+		int count{};
 
-		while (currentMove != lastMove)
+		while (true)
 		{
-			// Make a copy of the needed variables while locked
-			const RootMove &move = *currentMove;
-			++currentMove;
-			const short beta = -alpha;
-
-			mutex.unlock(); // Process the result asynchronously
-			const short result = -negaMax(move.board, ply, VALUE_MIN, beta, 1, false);
-			mutex.lock();
-
-			if (result > alpha)
+			Move move = _transpTable[board.zKey].move;
+			if (moveExists(board, move))
 			{
-				alpha = result;
-				bestMove = move;
-			}
+				board.makeMove(move);
+				pvArray[count++] = move;
+			} else
+				break;
+
+			if (move.empty() || count >= depth)
+				break;
 		}
 
-		mutex.unlock();
+		while (board.ply > 0)
+			board.undoMove();
+
+		return count;
 	};
 
-	// Initially create only use thread
-	futures.emplace_back(s_ThreadPool.submitTask(worker));
+	Stats::restartTimer();
 
-	if (jobCount > 1)
+	Move bestMove;
+	int bestScore = VALUE_MIN;
+
+	for (int currentDepth = 1; currentDepth <= depth; ++currentDepth)
 	{
-		// Wait until an alpha bound has been found
-		while (alpha == VALUE_MIN)
-			std::this_thread::yield();
+		// Stop if we have found a mate value
+		if (bestScore > VALUE_MATE_MAX_DEPTH && !bestMove.empty())
+			break;
 
-		// After an alpha bound was found start searching using multiple threads
-		for (unsigned i = 1u; i < jobCount; ++i)
-			futures.emplace_back(s_ThreadPool.submitTask(worker));
+		_state.nodes = 0;
+
+		bestScore = aspirationWindow(board, currentDepth, bestScore);
+		if (_state.stopped)
+			break;
+
+		const int pvMoves = getPvLine(currentDepth);
+		bestMove = pvArray[0];
+
+		const int cp = bestScore * 100 / 213;
+		std::cout << "info depth " << currentDepth << " score cp " << cp
+			<< " nodes " << _state.nodes << " time " << static_cast<size_t>(Stats::getElapsedMs());
+
+		std::cout << " pv: ";
+		for (int pvCount = 0; pvCount < pvMoves; ++pvCount)
+			std::cout << pvArray[pvCount].toString() << ' ';
+
+		std::cout << std::endl;
 	}
 
-	for (auto &future : futures)
-		future.get(); // Wait for the search to finish
-
-	s_BestMoveFound = validMoves.front().board.colorToMove ? -alpha : alpha;
+	std::cout << "bestmove " << bestMove.toString() << std::endl;
 
 	return bestMove;
 }
 
-short Search::negaMax(const Board &board, const short ply, short alpha, short beta, const short depth, const bool moveCountPruning)
+int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
 {
-	if (board.state == State::DRAW)
-		return 0;
-	if (ply <= 0)
+	int alpha = VALUE_MIN;
+	int beta = VALUE_MAX;
+	int delta = WINDOW_SIZE;
+
+	if (depth >= WINDOW_MIN_DEPTH)
 	{
-		if (ply == -1 || board.state != State::WHITE_IN_CHECK || board.state != State::BLACK_IN_CHECK)
+		alpha = std::max<int>(VALUE_MIN, bestScore - delta);
+		beta = std::min<int>(VALUE_MAX, bestScore + delta);
+	}
+
+	int adjustedDepth = depth;
+
+	while (true)
+	{
+		const int searchedValue = search(board, alpha, beta, adjustedDepth, true, true, true);
+		if (_state.stopped)
+			return 0;
+
+		if (searchedValue <= alpha)
 		{
-			// Switch to Quiescence Search if enabled
-			return s_QuiescenceSearchEnabled ? quiescence(board, alpha, beta) : sideToMove(board);
+			beta = (alpha + beta) / 2;
+			alpha = std::max<int>(VALUE_MIN, alpha - delta);
+			adjustedDepth = depth;
+		} else if (searchedValue >= beta)
+		{
+			beta = std::min<int>(VALUE_MAX, beta + delta);
+			adjustedDepth -= (abs(searchedValue) <= VALUE_MAX / 2);
+		} else
+		{
+			// If the search returned a result within our window, return the value
+			return searchedValue;
 		}
 
-		// If in check, allow the search to be extended to ply -1
+		// Expand the search Window
+		delta += delta / 2;
+		assert(alpha >= VALUE_MIN && beta <= VALUE_MAX);
+	}
+}
+
+int Search::search(Board &board, int alpha, int beta, const int depth, const bool isPvNode,
+				   const bool doNull, const bool doLmr)
+{
+	const bool rootNode = !board.ply;
+	if (rootNode)
+		assert(isPvNode);
+
+	if (checkTimeAndStop())
+		return 0;
+
+	++_state.nodes;
+
+	if (!rootNode)
+	{
+		if (board.isDrawn())
+			return 0;
+
+		if (board.ply >= MAX_DEPTH)
+			return Evaluation::invertedValue(board);
 	}
 
-	const short originalAlpha = alpha;
-	if (const SearchCache cache = s_SearchCache[board.zKey];
-		cache.age == s_SearchCache.currentAge()
-		&& board.zKey == cache.key
-		&& board.score == cache.boardScore
-		&& cache.ply == ply)
+	if (depth <= 0)
+		return _state.doQuietSearch
+			   ? searchCaptures(board, alpha, beta, depth)
+			   : Evaluation::invertedValue(board);
+
+	const int originalAlpha = alpha;
+	const int startPly = board.ply;
+
+	// Prove the Transposition Table
+	if (const SearchEntry entry = _transpTable[board.zKey];
+		!entry.qSearch
+		&& entry.age == _transpTable.currentAge()
+		&& entry.key == board.zKey
+		&& entry.depth >= depth)
 	{
-		if (cache.flag == Flag::EXACT)
-			return cache.value;
-		if (cache.flag == Flag::ALPHA)
-			alpha = std::max(alpha, cache.value);
-		else if (cache.flag == Flag::BETA)
-			beta = std::min(beta, cache.value);
+		const int entryScore = entry.move.getScore();
+
+		if (entry.flag == SearchEntry::Flag::EXACT)
+			return entryScore;
+		if (entry.flag == SearchEntry::Flag::ALPHA)
+			alpha = std::max(alpha, entryScore);
+		else if (entry.flag == SearchEntry::Flag::BETA)
+			beta = std::min(beta, entryScore);
 
 		if (alpha >= beta)
-			return cache.value;
+			return entryScore;
 	}
 
-	const auto validMoves = board.listValidMoves<Board>();
-	short bestScore = VALUE_MIN;
-	size_t movesCount{};
+	const int eval = Evaluation::invertedValue(board);
+	const bool nodeInCheck = board.isSideInCheck();
+	_evalHistory[board.ply] = eval;
 
-	Stats::incrementNodesGenerated(validMoves.size());
+	// We are improving if our static eval increased in the last move
+	const bool improving = startPly > 1 ? (eval > _evalHistory[startPly - 2]) : false;
+	const int futilityMarginEval = eval + FUTILITY_MARGIN * depth;
 
-	for (const Board &move : validMoves)
+	// Reverse Futility Pruning
+	if (!isPvNode
+		&& !nodeInCheck
+		&& depth <= REVERSE_FUTILITY_MAX_DEPTH
+		&& (eval - REVERSE_FUTILITY_MARGIN * std::max(1, depth - improving)) >= beta)
+		return eval;
+
+	// Null Move Pruning
+	if (!isPvNode
+		&& doNull
+		&& depth >= 4
+		&& eval >= beta
+		&& !nodeInCheck
+		&& board.pieceCount[Piece{ QUEEN, board.colorToMove }]
+		   + board.pieceCount[Piece{ ROOK, board.colorToMove }] > 0)
 	{
-		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
+		board.makeNullMove();
+		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false, false);
+		board.undoNullMove();
+
+		if (nullScore >= beta)
 		{
-			// Mate Pruning
-			const short mateValue = VALUE_WINNER_WHITE - depth;
-			if (mateValue < beta)
-			{
-				beta = mateValue;
-				if (alpha >= mateValue)
-				{
-					bestScore = mateValue;
-					break;
-				}
-			}
+			Stats::incNullCuts();
+			return beta;
+		}
+	}
 
-			if (mateValue > alpha)
-			{
-				alpha = mateValue;
-				if (beta <= mateValue)
-				{
-					bestScore = mateValue;
-					break;
-				}
-			}
+	MoveList moveList(board);
+	MoveOrdering::sortMoves(board, moveList);
 
-			if (bestScore > mateValue)
-				bestScore = mateValue;
+	size_t legalCount{};
+	size_t searchedCount{};
+	int bestScore = Value::VALUE_MIN;
+	Move bestMove;
+
+	while (!moveList.empty())
+	{
+		assert(startPly == board.ply);
+
+		const Move move = MoveOrdering::getNextMove(moveList);
+		const bool pvMove = move.getScore() == MoveOrdering::PV_SCORE;
+
+		if (!board.makeMove(move))
+			continue;
+		++legalCount;
+
+		// Futility Pruning
+		if (depth < FUTILITY_MAX_DEPTH
+			&& !pvMove
+			&& searchedCount > 3
+			&& futilityMarginEval <= alpha
+			&& !isMateValue(static_cast<Value>(alpha))
+			&& !move.isTactical()
+			&& !(move.flags().doublePawnPush())
+			&& !move.isAdvancedPawnPush()
+			&& !nodeInCheck
+			&& !board.isSideInCheck())
+		{
+			Stats::incFutilityCuts();
+			if (futilityMarginEval > bestScore)
+				bestScore = eval;
+			board.undoMove();
 			continue;
 		}
 
-		short moveScore = alpha + 1;
+		int moveScore = alpha;
+		bool doFullSearch = true;
 
 		// Late Move Reductions
-		if (!moveCountPruning &&
-			movesCount > 4 &&
-			depth >= 3 &&
-			ply >= 3 &&
-			move.state != State::WHITE_IN_CHECK &&
-			move.state != State::BLACK_IN_CHECK &&
-			!move.isCapture &&
-			!move.isPromotion)
-			moveScore = -negaMax(move, ply - 2, -moveScore, -alpha, depth + 1, true);
+		if (!pvMove
+			&& doNull
+			&& doLmr
+			&& searchedCount > 3
+			&& depth >= 3
+			&& board.ply > 4
+			&& !move.isTactical()
+			&& !nodeInCheck
+			&& !board.isSideInCheck())
+		{
+			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, true, false);
 
-		if (moveScore > alpha)
-			moveScore = -negaMax(move, ply - 1, -beta, -alpha, depth + 1, false);
+			// Search with a full window if LMR failed high
+			doFullSearch = moveScore > alpha;
+			if (!doFullSearch)
+				Stats::incLmrCount();
+		}
+
+		if (doFullSearch)
+			moveScore = -search(board, -beta, -alpha, depth - 1, pvMove, true, true);
+		++searchedCount;
+		const int searchedPly = board.ply;
+		board.undoMove();
+
+		// Mate Pruning
+		if (moveScore == Value::VALUE_MAX - searchedPly) // Winning
+		{
+			if (moveScore < beta)
+			{
+				beta = moveScore;
+				if (alpha >= moveScore)
+					return moveScore;
+			}
+		} else if (moveScore == Value::VALUE_MIN + searchedPly) // Losing
+		{
+			if (moveScore > alpha)
+			{
+				alpha = moveScore;
+				if (beta <= moveScore)
+					return moveScore;
+			}
+		}
 
 		if (moveScore > bestScore)
+		{
 			bestScore = moveScore;
+			bestMove = move;
+
+			if (bestScore > alpha)
+			{
+				alpha = bestScore;
+				_searchHistory[move.from()][move.to()] += depth;
+			}
+		}
 
 		// Alpha-Beta Pruning
 		if (bestScore >= beta)
+		{
+			if (!move.isTactical())
+			{
+				_searchKillers[1][startPly] = _searchKillers[0][startPly];
+				_searchKillers[0][startPly] = move.getContents();
+			}
+
 			break;
-		if (bestScore > alpha)
-			alpha = bestScore;
-
-		++movesCount;
+		}
 	}
 
-	Stats::incrementNodesSearched(movesCount);
+	if (legalCount == 0)
+		return board.isSideInCheck() ? Value::VALUE_MIN + startPly : 0;
 
-	// Store the result in the transposition table
-	Flag flag = Flag::EXACT;
-	if (bestScore < originalAlpha)
-		flag = Flag::ALPHA;
-	else if (bestScore > beta)
-		flag = Flag::BETA;
+	Stats::incNodesSearched(searchedCount);
 
-	s_SearchCache.insert({ board.zKey, board.score, bestScore, ply, flag });
+	bestMove.setScore(bestScore);
+	storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, false);
 
-	if (bestScore > alpha)
-		alpha = bestScore;
-
+	assert(bestScore != VALUE_MAX || bestScore != VALUE_MIN);
 	return alpha;
 }
 
-short Search::quiescence(const Board &board, short alpha, const short beta)
+int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 {
-	if (board.state == State::DRAW)
+	if (checkTimeAndStop())
 		return 0;
 
-	const short standPat = sideToMove(board);
-
-	if (standPat >= beta)
-		return standPat;
-	if (standPat > alpha)
-		alpha = standPat;
-
-	// Delta Pruning
-	if (board.getPhase() != Phase::ENDING) // Turn it off in the Endgame
-	{
-		constexpr short QUEEN_VALUE = 2538;
-		constexpr short PAWN_VALUE = 128;
-
-		short bigDelta = QUEEN_VALUE;
-		if (board.isPromotion)
-			bigDelta += QUEEN_VALUE - PAWN_VALUE;
-
-		if (standPat < alpha - bigDelta)
-			return alpha;
-	}
-
-	const auto validMoves = board.listQuiescenceMoves();
-	size_t movesCount{};
-
-	Stats::incrementNodesGenerated(validMoves.size());
-
-	for (const Board &move : validMoves)
-	{
-		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
-			return VALUE_WINNER_WHITE;
-
-		const short moveScore = -quiescence(move, -beta, -alpha);
-
-		if (moveScore >= beta)
-			return moveScore;
-		if (moveScore > alpha)
-			alpha = moveScore;
-
-		++movesCount;
-	}
-
-	Stats::incrementNodesSearched(movesCount);
-
-	return alpha;
-}
-
-short Search::negaScout(const Board &board, const short ply, short alpha, const short beta, const bool isWhite, const short depth)
-{
-	if (board.state == State::DRAW)
+	if (board.isDrawn())
 		return 0;
-	if (ply == 0)
+
+	++_state.nodes;
+
+	const short startPly = board.ply;
+
+	if (startPly >= MAX_DEPTH)
+		return Evaluation::invertedValue(board);
+
+	const bool nodeInCheck = board.isSideInCheck();
+
+	const int originalAlpha = alpha;
+	int standPat = Value::VALUE_MIN;
+	int bestScore = Value::VALUE_MIN;
+	Move bestMove;
+
+	if (!nodeInCheck)
 	{
-		if (s_QuiescenceSearchEnabled)
-			return quiescence(board, alpha, beta);
-		return sideToMove(board);
+		if (const SearchEntry entry = _transpTable[board.zKey];
+			entry.age == _transpTable.currentAge()
+			&& entry.key == board.zKey
+			&& entry.depth >= depth)
+		{
+			const int entryScore = entry.move.getScore();
+
+			if (entry.flag == SearchEntry::Flag::EXACT)
+				return entry.move.getScore();
+			if (entry.flag == SearchEntry::Flag::ALPHA)
+				alpha = std::max(alpha, entryScore);
+			else if (entry.flag == SearchEntry::Flag::BETA)
+				beta = std::min(beta, entryScore);
+
+			if (alpha >= beta)
+				return entryScore;
+		}
+
+		standPat = Evaluation::invertedValue(board);
+
+		alpha = std::max(alpha, standPat);
+		if (alpha >= beta)
+			return standPat;
 	}
 
-	const auto validMoves = board.listValidMoves<Board>();
-	short bestScore = VALUE_MIN;
-	short n = beta;
+	MoveList moveList(board);
 
-	for (const auto &move : validMoves)
+	MoveOrdering::sortQMoves(moveList);
+	size_t legalCount{};
+	size_t searchedCount{};
+
+	const bool isEndGame = board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3;
+
+	while (!moveList.empty())
 	{
-		if (move.state == State::WINNER_WHITE || move.state == State::WINNER_BLACK)
-			return VALUE_WINNER_WHITE;
+		assert(startPly == board.ply);
 
-		const short moveScore = -negaScout(move, ply - 1, -n, -alpha, !isWhite, depth + 1);
+		const Move move = MoveOrdering::getNextMove(moveList);
+
+		if (!board.makeMove(move))
+			continue;
+		++legalCount;
+
+		if (!nodeInCheck // Look for all check evasions
+			&& !move.isTactical()
+			&& searchedCount)
+		{
+			board.undoMove();
+			break; // The moves are sorted so we can break if is not a capture
+		}
+
+		const int futilityEval = standPat + PSQT[move.piece()][move.to()].eg
+								 + Evaluation::getPieceValue(move.promotedPiece())
+								 + FUTILITY_QUIESCENCE_MARGIN;
+		// Futility Pruning
+		if (!nodeInCheck
+			&& !isEndGame
+			&& board.ply > 2
+			&& standPat != VALUE_MIN
+			&& searchedCount
+			&& futilityEval <= alpha
+			&& !board.isSideInCheck())
+		{
+			board.undoMove();
+			Stats::incFutilityCuts();
+			continue;
+		}
+
+		const int moveScore = -searchCaptures(board, -beta, -alpha, depth - 1);
+		board.undoMove();
+		++searchedCount;
+
+		if (_state.stopped)
+			return 0;
 
 		if (moveScore > bestScore)
-			bestScore = (n == beta || ply <= 2) ? moveScore : -negaScout(move, ply - 1, -beta, -bestScore, !isWhite, depth + 1);
+		{
+			bestScore = moveScore;
+			bestMove = move;
+		}
 
-		if (bestScore > alpha)
-			alpha = bestScore;
+		if (bestScore >= beta)
+		{
+			Stats::incNodesSearched(searchedCount);
+			break;
+		}
 
-		if (alpha >= beta)
-			break; // return alpha;
-
-		n = alpha + 1;
+		alpha = std::max(alpha, moveScore);
 	}
+
+	if (legalCount == 0)
+		return board.isSideInCheck() ? Value::VALUE_MIN + board.ply : 0;
+
+	if (!nodeInCheck)
+	{
+		bestMove.setScore(bestScore);
+		storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, true);
+	}
+
+	Stats::incNodesSearched(searchedCount);
 
 	return bestScore;
 }
 
-inline short Search::sideToMove(const Board &board)
+inline void Search::storeTtEntry(const Move &bestMove, const U64 key, const int alpha,
+								 const int originalAlpha, const int beta, const int depth,
+								 const bool qSearch)
 {
-	const short value = Evaluation::evaluate(board);
-	return board.colorToMove ? value : -value;
+	// Avoid putting an empty move in the Transposition Table if alpha was not raised
+	assert(!bestMove.empty());
+
+	// Store the result in the transposition table
+	auto flag = SearchEntry::Flag::EXACT;
+	if (alpha <= originalAlpha)
+		flag = SearchEntry::Flag::ALPHA;
+	else if (bestMove.getScore() >= beta)
+		flag = SearchEntry::Flag::BETA;
+
+	_transpTable.insert({ key, bestMove, static_cast<short>(depth), flag, qSearch });
+}
+
+bool Search::checkTimeAndStop()
+{
+	if (_state.useTime && (_state.nodes & 2047u) == 0 && static_cast<size_t>(Stats::getElapsedMs()) >= _state.time)
+		stopSearch();
+	return _state.stopped;
 }

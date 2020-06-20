@@ -6,39 +6,48 @@
 #include <vector>
 
 #include "Settings.h"
-#include "data/Defs.h"
-#include "data/Piece.h"
+#include "Board.h"
 
-class RootMove;
-class Board;
+enum class GameState : byte
+{
+	NONE,
+	WINNER_WHITE,
+	WINNER_BLACK,
+	DRAW,
+	WHITE_IN_CHECK,
+	BLACK_IN_CHECK,
+	INVALID = 10
+};
 
 class BoardManager final
 {
 public:
-	using PieceChangeListener = std::function<void(State state, bool shouldRedraw, const std::vector<std::pair<byte, byte>> &moved)>;
+	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const std::vector<std::pair<byte, byte>> &moved)>;
 
 private:
-	static Settings s_Settings;
-	inline static std::thread s_WorkerThread;
-	inline static std::atomic_bool s_IsWorking{ false };
-	inline static bool s_IsPlayerWhite;
-	static PieceChangeListener s_Listener;
-	static Board s_Board;
-	static std::vector<RootMove> s_MovesHistory;
+	static Settings _settings;
+	inline static std::thread _workerThread;
+	inline static std::atomic_bool _isWorking{ false };
+	inline static bool _isPlayerWhite;
+	static PieceChangeListener _listener;
+	static Board _board;
 	
 public:
 	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
-	static void loadGame(const std::vector<std::pair<byte, byte>> &moves, bool isPlayerWhite);
-	static void undoLastMoves();
+	static bool loadGame(const std::string &fen);
+	static void loadGame(const std::vector<Move> &moves, bool isPlayerWhite);
+	static bool undoLastMoves();
 
-	static Board &getBoard() { return s_Board; }
-	static const auto &getMovesHistory() { return s_MovesHistory; }
-	static bool isWorking() { return s_IsWorking; }
-	static bool isPlayerWhite() { return s_IsPlayerWhite; }
-	static std::vector<Pos> getPossibleMoves(const Pos &selectedPos);
-	static void movePiece(byte startSq, byte destSq, bool movedByPlayer = true);
-	static void setSettings(const Settings &settings) { s_Settings = settings; }
+	static const Board &getBoard() { return _board; }
+	static std::vector<Move> getMovesHistory();
+	static bool isWorking() { return _isWorking; }
+	static bool isPlayerWhite() { return _isPlayerWhite; }
+	static std::vector<Move> getPossibleMoves(byte from);
+	static void makeMove(Move move, bool movedByPlayer = true);
+	static void setSettings(const Settings &settings) { _settings = settings; }
+	static void forceMove();
 
 private:
 	static void moveComputerPlayer(const Settings &settings);
+	static GameState getBoardState();
 };

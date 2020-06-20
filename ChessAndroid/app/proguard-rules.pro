@@ -1,3 +1,3 @@
 -optimizationpasses 5
 
--keep class net.theluckycoder.** { *; }
+-keep class net.theluckycoder.chess.** { *; }

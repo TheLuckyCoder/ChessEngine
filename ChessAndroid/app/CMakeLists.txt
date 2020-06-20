@@ -1,40 +1,32 @@
-# For more information about using CMake with Android Studio, read the
-# documentation: https://d.android.com/studio/projects/add-native-code.html
+cmake_minimum_required(VERSION 3.6)
 
-# Sets the minimum version of CMake required to build the native library.
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -g -O0 -std=c++17 -Wall -Wextra -pedantic")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -O3 -std=c++17 -Wall -Wextra -pedantic -DNDEBUG")
 
-cmake_minimum_required(VERSION 3.4.1)
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -O0 -std=c++17 -Wall -Wextra -pedantic")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -std=c++17 -Wall -Wextra -pedantic -DNDEBUG")
-
-file(GLOB_RECURSE cpp_srcs "src/main/cpp/chess/*.cpp")
-add_library( # Sets the name of the library.
+add_library(
         chess
-
-        # Sets the library as a shared library.
         SHARED
 
-        # Provides a relative path to your source file(s).
         src/main/cpp/Main.cpp
-        ${cpp_srcs})
+        src/main/cpp/chess/BoardManager.cpp
+        src/main/cpp/chess/Stats.cpp
+        src/main/cpp/chess/Uci.cpp
+        src/main/cpp/chess/Board.cpp
+        src/main/cpp/chess/algorithm/Attacks.cpp
+        src/main/cpp/chess/algorithm/Evaluation.cpp
+        src/main/cpp/chess/algorithm/Hash.cpp
+        src/main/cpp/chess/algorithm/MoveGen.cpp
+        src/main/cpp/chess/algorithm/MoveOrdering.cpp
+        src/main/cpp/chess/algorithm/Search.cpp
+        src/main/cpp/chess/containers/PawnStructureTable.cpp
+        src/main/cpp/chess/containers/TranspositionTable.cpp
+        src/main/cpp/chess/persistence/FenParser.cpp
+        src/main/cpp/chess/persistence/MovesPersistence.cpp)
 
-# Searches for a specified prebuilt library and stores the path as a
-# variable. Because CMake includes system libraries in the search path by
-# default, you only need to specify the name of the public NDK library
-# you want to add. CMake verifies that the library exists before
-# completing its build.
-
-find_library( # Sets the name of the path variable.
+find_library(
         log-lib
-
-        # Specifies the name of the NDK library that
-        # you want CMake to locate.
         log)
 
-target_link_libraries( # Specifies the target library.
+target_link_libraries(
         chess
-
-        # Links the target library to the log library
-        # included in the NDK.
         ${log-lib})
