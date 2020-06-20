@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.*
 import com.marcoscg.licenser.Library
 import com.marcoscg.licenser.License
+import com.marcoscg.licenser.Licenser
 import com.marcoscg.licenser.LicenserDialog
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.getColorCompat
@@ -147,6 +148,7 @@ class SettingsActivity : AppCompatActivity() {
                         License.MIT
                     )
                 )
+                .setNeutralButton(android.R.string.ok, null)
                 .show()
         }
 

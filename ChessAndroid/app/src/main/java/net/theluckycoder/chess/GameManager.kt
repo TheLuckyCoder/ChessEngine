@@ -2,6 +2,7 @@ package net.theluckycoder.chess
 
 import android.app.Activity
 import net.theluckycoder.chess.model.*
+import kotlin.concurrent.thread
 
 class GameManager(
     private val activity: Activity,
@@ -81,6 +82,7 @@ class GameManager(
         }
 
         SaveManager.saveToFileAsync(activity)
+        var piecesAnimated = false
 
         activity.runOnUiThread {
             listener.onMove(state)
@@ -92,14 +94,20 @@ class GameManager(
                     isPlayerWhite
                 )
             }
+
+            piecesAnimated = true
         }
 
         if (shouldRedrawPieces) {
-            // Wait for any piece animations to occur to make the redraw smother, there probably is a better way of doing this
-            Thread.sleep(260L)
+            thread {
+                // Wait for any piece animations to occur to make the redraw smother, there probably is a better way of doing this
+                while (!piecesAnimated)
+                    Thread.sleep(1)
+                Thread.sleep(260L)
 
-            activity.runOnUiThread {
-                listener.redrawPieces(getPiecesList(), isPlayerWhite)
+                activity.runOnUiThread {
+                    listener.redrawPieces(getPiecesList(), isPlayerWhite)
+                }
             }
         }
     }

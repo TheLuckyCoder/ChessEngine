@@ -94,12 +94,43 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 	_board.makeMove(move);
 
 	const auto flags = move.flags();
-	const bool shouldRedraw = flags.promotion() | flags.castle() | flags.enPassant();
+	const bool shouldRedraw = flags.promotion() | flags.enPassant();
 	const GameState state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()
 			  << "; Evaluated at: " << Evaluation::value(_board) << std::endl;
-	_listener(state, shouldRedraw, {{ move.from(), move.to() }});
+
+	std::vector<std::pair<byte, byte>> movedVec;
+	movedVec.reserve(2);
+	movedVec.emplace_back(move.from(), move.to());
+
+	// Animate Castling
+	if (flags.kSideCastle())
+	{
+		switch (move.to())
+		{
+			case SQ_G1:
+				movedVec.emplace_back(SQ_H1, SQ_F1);
+				break;
+			case SQ_G8:
+				movedVec.emplace_back(SQ_H8, SQ_F8);
+				break;
+		}
+
+	} else if (flags.qSideCastle())
+	{
+		switch (move.to())
+		{
+			case SQ_C1:
+				movedVec.emplace_back(SQ_A1, SQ_D1);
+				break;
+			case SQ_C8:
+				movedVec.emplace_back(SQ_A8, SQ_D8);
+				break;
+		}
+	}
+
+	_listener(state, shouldRedraw, movedVec);
 
 	if (movedByPlayer &&
 		(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
@@ -129,7 +160,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 
 bool BoardManager::undoLastMoves()
 {
-	if (isWorking() || _board.historyPly < 3) return false;
+	if (isWorking() || _board.historyPly < 2) return false;
 
 	// Undo the last move, which should have been made by the engine
 	const UndoMove engineMove = _board.history[_board.historyPly - 1];
