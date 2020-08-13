@@ -6,10 +6,12 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.*
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SeekBarPreference
+import androidx.preference.SwitchPreferenceCompat
 import com.marcoscg.licenser.Library
 import com.marcoscg.licenser.License
-import com.marcoscg.licenser.Licenser
 import com.marcoscg.licenser.LicenserDialog
 import net.theluckycoder.chess.utils.AppPreferences
 import net.theluckycoder.chess.utils.getColorCompat

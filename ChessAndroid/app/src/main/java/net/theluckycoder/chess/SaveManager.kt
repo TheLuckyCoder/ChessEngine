@@ -15,7 +15,7 @@ object SaveManager {
         executor.execute { saveToFile(appContext) }
     }
 
-    fun saveToFile(context: Context) {
+    private fun saveToFile(context: Context) {
         Native.saveMoves()?.let { moves ->
             context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
                 it.write(moves)

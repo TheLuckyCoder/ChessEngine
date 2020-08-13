@@ -19,11 +19,16 @@
     <!-- Actions -->
     <string name="action_start">Start</string>
     <string name="action_load_fen">Load FEN Position</string>
+    <string name="action_export_fen">Export FEN Position</string>
     <string name="action_force_move">Force Move</string>
     <string name="action_load">Load</string>
 
+    <!-- FEN -->
     <string name="fen_position_loaded">FEN Position Loaded</string>
     <string name="fen_position_error">FEN Position could not be loaded</string>
+    <string name="fen_position_exported">Current\'s game FEN Position</string>
+    <string name="fen_position_copied">FEN Position copied to Clipboard</string>
+    <string name="error_fen_position_invalid">FEN Position might be invalid</string>
 
     <!-- Preferences -->
     <string name="pref_category_appearance">Appearance</string>
@@ -49,4 +54,6 @@
     <string name="about_source_code">Source Code</string>
     <string name="about_licenses">Licenses</string>
     <string name="about_licenses_desc">Display Open Source Licenses</string>
+
+    <string name="error_empty_text_field">This field cannot be left empty</string>
 </resources>

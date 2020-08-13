@@ -8,6 +8,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_export_fen"
+        android:title="@string/action_export_fen"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_force_move"
         android:title="@string/action_force_move"
         app:showAsAction="never" />

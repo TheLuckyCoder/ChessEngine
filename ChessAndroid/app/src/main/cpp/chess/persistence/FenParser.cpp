@@ -3,40 +3,35 @@
 #include "../algorithm/Evaluation.h"
 #include "../algorithm/Hash.h"
 
-FenParser::FenParser(Board &board)
-	: _board(board)
-{
-}
-
-bool FenParser::parseFen(const std::string &fen)
+bool FenParser::parseFen(Board &board, const std::string &fen)
 {
 	std::istringstream stream(fen);
 
 	if (!stream) return false;
 
 	// Clean board
-	_board = {};
+	board = {};
 
-	parsePieces(stream);
+	parsePieces(board, stream);
 
 	// Next to move
 	std::string side;
 	stream >> side;
-	_board.colorToMove = side == "w" ? WHITE : BLACK;
+	board.colorToMove = side == "w" ? WHITE : BLACK;
 
 	// Castling availability
 	std::string castling = "-";
 	stream >> castling;
-	_board.castlingRights = CastlingRights::CASTLE_NONE;
+	board.castlingRights = CastlingRights::CASTLE_NONE;
 	for (char currChar : castling) {
 		switch (currChar) {
-			case 'K': _board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
+			case 'K': board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
-			case 'Q': _board.castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
+			case 'Q': board.castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
 				break;
-			case 'k': _board.castlingRights |= CastlingRights::CASTLE_BLACK_KING;
+			case 'k': board.castlingRights |= CastlingRights::CASTLE_BLACK_KING;
 				break;
-			case 'q': _board.castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
+			case 'q': board.castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
 				break;
 			default:
 				break;
@@ -45,39 +40,96 @@ bool FenParser::parseFen(const std::string &fen)
 
 	std::string ep = "-";
 	stream >> ep;
-	_board.enPassantSq = SQUARE_NB;
+	board.enPassantSq = SQUARE_NB;
 	if (ep != "-")
 	{
 		if (ep.length() != 2)
 			return false;
 		if (!(ep[0] >= 'a' && ep[0] <= 'h'))
 			return false;
-		if (!((side == "w" && ep[1] == '6') || (side == "b" && ep[1] == '3')))
-			return false;
 
-		const byte sq = ::toSquare(static_cast<byte>(ep[0] - 'a'), static_cast<byte>(ep[1] - '1'));
-		_board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
+		const byte sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
+		board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
 	}
 
 	// HalfMove Clock
 	int halfMove{};
 	stream >> halfMove;
-	_board.fiftyMoveRule = static_cast<byte>(halfMove);
+	board.fiftyMoveRule = static_cast<byte>(halfMove);
 
-	_board.updatePieceList();
-	_board.updateNonPieceBitboards();
-	_board.zKey = Hash::compute(_board);
+	board.updatePieceList();
+	board.updateNonPieceBitboards();
+	board.zKey = Hash::compute(board);
 
-	_board.kingAttackers = _board.colorToMove ? _board.allKingAttackers<WHITE>() : _board.allKingAttackers<BLACK>();
+	board.kingAttackers = board.colorToMove ? board.allKingAttackers<WHITE>() : board.allKingAttackers<BLACK>();
 	return true;
 }
 
-std::string FenParser::exportToFen()
+std::string FenParser::exportToFen(const Board &board)
 {
-	return {};
+	std::ostringstream out;
+
+	for (int rank = 7; rank >= 0; --rank)
+	{
+		for (int file = 0; file <= 7; ++file)
+		{
+			int emptyCount = 0;
+			for (; file <= 7 && board.data[toSquare(file, rank)] == EMPTY_PIECE; ++file)
+				++emptyCount;
+
+			if (emptyCount)
+				out << emptyCount;
+
+			if (file <= 7) {
+				const Piece piece = board.data[toSquare(file, rank)];
+				const PieceType type = piece.type();
+				char pChar = 'K';
+
+				if (type == PAWN)
+					pChar = 'P';
+				else if (type == KNIGHT)
+					pChar = 'N';
+				else if (type == BISHOP)
+					pChar = 'B';
+				else if (type == ROOK)
+					pChar = 'R';
+				else if (type == QUEEN)
+					pChar = 'Q';
+
+				if (piece.color() == BLACK)
+					pChar += 32;
+
+				out << pChar;
+			}
+		}
+
+		if (rank > 0)
+			out << '/';
+	}
+
+	out << (board.colorToMove == WHITE ? " w " : " b ");
+
+	if (board.canCastleKs<WHITE>()) out << 'K';
+
+	if (board.canCastleQs<WHITE>()) out << 'Q';
+
+	if (board.canCastleKs<BLACK>()) out << 'k';
+
+	if (board.canCastleQs<BLACK>()) out << 'q';
+
+	if (!board.canCastle(WHITE) && !board.canCastle(BLACK)) out << '-';
+
+	if (board.enPassantSq < SQ_NONE)
+		out << ' ' << char('a' + int(col(board.enPassantSq))) << int(row(board.enPassantSq)) << ' ';
+	else
+		out << " - ";
+
+	out << short(board.fiftyMoveRule / 2);
+
+	return out.str();
 }
 
-void FenParser::parsePieces(std::istringstream &stream)
+void FenParser::parsePieces(Board &board, std::istringstream &stream)
 {
 	std::string token;
 	token.reserve(32);
@@ -89,40 +141,40 @@ void FenParser::parsePieces(std::istringstream &stream)
 		switch (currChar)
 		{
 			case 'p':
-				_board.data[boardPos++] = { PAWN, BLACK };
+				board.data[boardPos++] = { PAWN, BLACK };
 				break;
 			case 'r':
-				_board.data[boardPos++] = { ROOK, BLACK };
+				board.data[boardPos++] = { ROOK, BLACK };
 				break;
 			case 'n':
-				_board.data[boardPos++] = { KNIGHT, BLACK };
+				board.data[boardPos++] = { KNIGHT, BLACK };
 				break;
 			case 'b':
-				_board.data[boardPos++] = { BISHOP, BLACK };
+				board.data[boardPos++] = { BISHOP, BLACK };
 				break;
 			case 'q':
-				_board.data[boardPos++] = { QUEEN, BLACK };
+				board.data[boardPos++] = { QUEEN, BLACK };
 				break;
 			case 'k':
-				_board.data[boardPos++] = { KING, BLACK };
+				board.data[boardPos++] = { KING, BLACK };
 				break;
 			case 'P':
-				_board.data[boardPos++] = { PAWN, WHITE };
+				board.data[boardPos++] = { PAWN, WHITE };
 				break;
 			case 'R':
-				_board.data[boardPos++] = { ROOK, WHITE };
+				board.data[boardPos++] = { ROOK, WHITE };
 				break;
 			case 'N':
-				_board.data[boardPos++] = { KNIGHT, WHITE };
+				board.data[boardPos++] = { KNIGHT, WHITE };
 				break;
 			case 'B':
-				_board.data[boardPos++] = { BISHOP, WHITE };
+				board.data[boardPos++] = { BISHOP, WHITE };
 				break;
 			case 'Q':
-				_board.data[boardPos++] = { QUEEN, WHITE };
+				board.data[boardPos++] = { QUEEN, WHITE };
 				break;
 			case 'K':
-				_board.data[boardPos++] = { KING, WHITE };
+				board.data[boardPos++] = { KING, WHITE };
 				break;
 			case '/': boardPos -= 16u; // Go down one rank
 				break;

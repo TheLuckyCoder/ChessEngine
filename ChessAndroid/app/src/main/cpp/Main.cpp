@@ -213,17 +213,17 @@ Java_net_theluckycoder_chess_Native_setSettings(JNIEnv *, jobject, jint baseSear
 												jint cacheSizeMb,
 												jboolean performQuiescenceSearch)
 {
-	BoardManager::setSettings(Settings(static_cast<unsigned>(baseSearchDepth),
-									   static_cast<unsigned>(threadCount),
-									   static_cast<unsigned>(cacheSizeMb),
-									   static_cast<bool>(performQuiescenceSearch)));
+	BoardManager::setSettings(Settings{ static_cast<unsigned>(baseSearchDepth),
+									    static_cast<unsigned>(threadCount),
+									    static_cast<unsigned>(cacheSizeMb),
+									    static_cast<bool>(performQuiescenceSearch) });
 }
 
 
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jlong move)
 {
-	BoardManager::makeMove(Move(static_cast<unsigned>(move & UINT32_MAX)));
+	BoardManager::makeMove(Move{ static_cast<unsigned>(move & UINT32_MAX) });
 }
 
 external JNIEXPORT void JNICALL
@@ -246,11 +246,11 @@ Java_net_theluckycoder_chess_Native_undoMoves(JNIEnv *, jobject)
 }
 
 external JNIEXPORT jboolean JNICALL
-Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jstring fenPosition)
+Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jboolean playerWhite, jstring fenPosition)
 {
 	const char *nativeString = pEnv->GetStringUTFChars(fenPosition, nullptr);
 
-	const bool loaded = BoardManager::loadGame(nativeString);
+	const bool loaded = BoardManager::loadGame(playerWhite, nativeString);
 
 	pEnv->ReleaseStringUTFChars(fenPosition, nativeString);
 
@@ -266,6 +266,14 @@ Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jobject, jstring mov
 	BoardManager::loadGame(savedMoves.getMoves(), savedMoves.isPlayerWhite());
 
 	pEnv->ReleaseStringUTFChars(moves, nativeString);
+}
+
+external JNIEXPORT jstring JNICALL
+Java_net_theluckycoder_chess_Native_getFen(JNIEnv *pEnv, jobject)
+{
+	const auto fenString = BoardManager::exportFen();
+
+	return pEnv->NewStringUTF(fenString.c_str());
 }
 
 external JNIEXPORT jstring JNICALL

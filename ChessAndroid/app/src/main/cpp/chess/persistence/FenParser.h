@@ -7,13 +7,9 @@ class Board;
 class FenParser
 {
 public:
-	explicit FenParser(Board &board);
-
-	bool parseFen(const std::string &fen);
-	std::string exportToFen();
+	static bool parseFen(Board &board, const std::string &fen);
+	static std::string exportToFen(const Board &board);
 
 private:
-	void parsePieces(std::istringstream &stream);
-
-	Board &_board;
+	static void parsePieces(Board &board, std::istringstream &stream);
 };

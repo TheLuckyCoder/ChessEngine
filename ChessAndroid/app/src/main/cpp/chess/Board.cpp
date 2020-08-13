@@ -11,8 +11,18 @@ void Board::setToStartPos()
 
 bool Board::setToFen(const std::string &fen)
 {
-	FenParser parser(*this);
-	return parser.parseFen(fen);
+	Board copy = *this;
+	const bool result = FenParser::parseFen(*this, fen);
+
+	if (!result)
+		*this = copy;
+
+	return result;
+}
+
+std::string Board::getFen() const
+{
+	return FenParser::exportToFen(*this);
 }
 
 bool Board::canCastle(const Color color) const noexcept

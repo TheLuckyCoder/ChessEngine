@@ -49,6 +49,7 @@ public:
 
 	void setToStartPos();
 	bool setToFen(const std::string &fen);
+	std::string getFen() const;
 
 	bool canCastle(Color color) const noexcept;
 	template <Color C>

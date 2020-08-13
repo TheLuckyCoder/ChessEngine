@@ -1,8 +1,9 @@
 package net.theluckycoder.chess
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Point
 import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
@@ -15,14 +16,13 @@ import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatEditText
+import androidx.core.content.getSystemService
 import net.theluckycoder.chess.databinding.ActivityChessBinding
+import net.theluckycoder.chess.databinding.DialogImportFenBinding
 import net.theluckycoder.chess.databinding.DialogNewGameBinding
 import net.theluckycoder.chess.databinding.DialogPromotionBinding
 import net.theluckycoder.chess.model.*
-import net.theluckycoder.chess.utils.AppPreferences
-import net.theluckycoder.chess.utils.CapturedPieces
-import net.theluckycoder.chess.utils.PieceResourceManager
+import net.theluckycoder.chess.utils.*
 import net.theluckycoder.chess.views.CustomView
 import net.theluckycoder.chess.views.PieceView
 import net.theluckycoder.chess.views.TileView
@@ -52,9 +52,7 @@ class ChessActivity : AppCompatActivity(),
         binding = ActivityChessBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val windowSize = Point()
-        windowManager.defaultDisplay.getSize(windowSize)
-
+        val windowSize = getWindowSize()
         val orientation = resources.configuration.orientation
 
         viewSize = if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -121,33 +119,63 @@ class ChessActivity : AppCompatActivity(),
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
-
-        // Only allow for Force Move Action when debugging is enabled
-        if (!gameManager.basicStatsEnabled)
-            menu.removeItem(R.id.action_force_move)
-
         return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_load_fen -> {
-                val editText = AppCompatEditText(this)
+                val dialogBinding = DialogImportFenBinding.inflate(layoutInflater)
+
+                val dialog = AlertDialog.Builder(this)
+                    .setTitle(R.string.action_load_fen)
+                    .setView(dialogBinding.root)
+                    .create()
+
+                dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
+
+                dialogBinding.btnLoad.setOnClickListener {
+                    val fenPosition = dialogBinding.etFen.text?.toString()
+
+                    if (fenPosition.isNullOrBlank()) {
+                        dialogBinding.etFen.error = getString(R.string.error_empty_text_field)
+                        return@setOnClickListener
+                    }
+
+                    val playerWhite = when (dialogBinding.tgSide.checkedButtonId) {
+                        dialogBinding.btnSideWhite.id -> true
+                        dialogBinding.btnSideBlack.id -> false
+                        else -> Random.nextBoolean()
+                    }
+
+                    if (Native.loadFen(playerWhite, fenPosition)) {
+                        gameManager.initBoard(playerWhite)
+                        Native.loadFen(playerWhite, fenPosition)
+
+                        Toast.makeText(this, R.string.fen_position_loaded, Toast.LENGTH_SHORT)
+                            .show()
+                        dialog.dismiss()
+                    } else {
+                        dialogBinding.etFen.error = getString(R.string.error_fen_position_invalid)
+                        Toast.makeText(this, R.string.fen_position_error, Toast.LENGTH_LONG)
+                            .show()
+                    }
+                }
+
+                dialog.show()
+            }
+            R.id.action_export_fen -> {
+                val fen = Native.getFen()
 
                 AlertDialog.Builder(this)
-                    .setTitle(R.string.action_load_fen)
-                    .setView(editText)
-                    .setPositiveButton(R.string.action_load) { _, _ ->
-                        val fenPosition = editText.text?.toString()
-
-                        if (!fenPosition.isNullOrBlank()) {
-                            Native.loadFen(fenPosition)
-                            Toast.makeText(this, R.string.fen_position_loaded, Toast.LENGTH_SHORT)
-                                .show()
-                        } else {
-                            Toast.makeText(this, R.string.fen_position_error, Toast.LENGTH_LONG)
-                                .show()
-                        }
+                    .setTitle(R.string.fen_position_exported)
+                    .setMessage(fen)
+                    .setNeutralButton(android.R.string.copy) { _, _ ->
+                        val clipboard = getSystemService<ClipboardManager>()
+                        val clip = ClipData.newPlainText("FEN Position", fen)
+                        clipboard!!.setPrimaryClip(clip)
+                        Toast.makeText(this, R.string.fen_position_copied, Toast.LENGTH_SHORT)
+                            .show()
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
@@ -328,7 +356,7 @@ class ChessActivity : AppCompatActivity(),
     }
 
     private fun showNewGameDialog() {
-        val dialogBinding = DialogNewGameBinding.inflate(layoutInflater, null, false)
+        val dialogBinding = DialogNewGameBinding.inflate(layoutInflater)
 
         dialogBinding.spDifficulty.setSelection(preferences.difficultyLevel)
         val randomSideIcon = dialogBinding.btnSideRandom.icon
@@ -347,7 +375,7 @@ class ChessActivity : AppCompatActivity(),
                 val playerWhite = when (dialogBinding.tgSide.checkedButtonId) {
                     dialogBinding.btnSideWhite.id -> true
                     dialogBinding.btnSideBlack.id -> false
-                    else -> Random.nextBoolean()
+                    else -> true
                 }
 
                 val level = dialogBinding.spDifficulty.selectedItemPosition
@@ -359,7 +387,7 @@ class ChessActivity : AppCompatActivity(),
 
                 restartGame(playerWhite)
             }
-            .setNegativeButton(android.R.string.no, null)
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 
@@ -495,18 +523,6 @@ class ChessActivity : AppCompatActivity(),
 
     private fun showLoadingBar(show: Boolean = gameManager.isWorking) {
         binding.pbLoading.visibility = if (show) View.VISIBLE else View.INVISIBLE
-    }
-
-    private fun getActionAndStatusBarHeight(): Int {
-        val styledAttributes = theme.obtainStyledAttributes(intArrayOf(R.attr.actionBarSize))
-
-        val actionBarHeight = styledAttributes.getDimension(0, 0f).toInt()
-        styledAttributes.recycle()
-
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        val statusBarHeight = if (resourceId > 0)
-            resources.getDimensionPixelSize(resourceId) else 0
-        return actionBarHeight + statusBarHeight
     }
 
     companion object {

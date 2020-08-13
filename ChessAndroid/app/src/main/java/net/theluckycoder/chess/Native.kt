@@ -39,9 +39,9 @@ object Native {
 
     external fun undoMoves(): Boolean
 
-    external fun loadFen(position: String): Boolean
-
+    external fun loadFen(playerWhite: Boolean, position: String): Boolean
     external fun loadMoves(moves: String)
+    external fun getFen(): String
 
     external fun saveMoves(): String?
 

@@ -26,12 +26,13 @@ void BoardManager::initBoardManager(const PieceChangeListener &listener, const b
 		_workerThread = std::thread(moveComputerPlayer, _settings);
 }
 
-bool BoardManager::loadGame(const std::string &fen)
+bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 {
 	Board tempBoard = _board;
 
 	if (tempBoard.setToFen(fen))
 	{
+		_isPlayerWhite = isPlayerWhite;
 		_board = tempBoard;
 		_listener(getBoardState(), true, {});
 		return true;
@@ -55,6 +56,11 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 	}
 
 	_listener(getBoardState(), true, {});
+}
+
+std::string BoardManager::exportFen()
+{
+	return _board.getFen();
 }
 
 std::vector<Move> BoardManager::getMovesHistory()
@@ -87,7 +93,6 @@ std::vector<Move> BoardManager::getPossibleMoves(const byte from)
 
 	return moves;
 }
-
 
 void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 {
