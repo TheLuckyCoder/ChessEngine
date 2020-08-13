@@ -2,14 +2,15 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
+    ndkVersion = "21.3.6528147"
 
     defaultConfig {
         applicationId "net.theluckycoder.chess"
         minSdkVersion 21
-        targetSdkVersion 29
-        versionCode 110
-        versionName "1.1.0"
+        targetSdkVersion 30
+        versionCode 111
+        versionName "1.1.1"
     }
 
     buildFeatures {
@@ -41,8 +42,8 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    implementation 'com.google.android.material:material:1.1.0'
-    implementation 'androidx.preference:preference:1.1.1'
+    implementation 'com.google.android.material:material:1.2.0'
+    implementation 'androidx.preference:preference-ktx:1.1.1'
 
     implementation 'com.jaredrummler:colorpicker:1.1.0'
     implementation 'com.github.marcoscgdev:Licenser:2.0.0'
