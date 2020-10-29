@@ -8,7 +8,7 @@
 #include "algorithm/Search.h"
 #include "algorithm/Attacks.h"
 
-Settings BoardManager::_settings(6u, std::thread::hardware_concurrency() - 1u, 64, true);
+Settings BoardManager::_settings(8u, std::thread::hardware_concurrency() - 1u, 64, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
 Board BoardManager::_board;
 

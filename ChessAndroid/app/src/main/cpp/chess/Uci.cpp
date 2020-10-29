@@ -135,6 +135,7 @@ void Uci::parseGo(std::istringstream &is)
 
 	if (moveTime != -1)
 	{
+		timeSet = true;
 		time = moveTime;
 		movesToGo = 1;
 	}
@@ -159,7 +160,7 @@ void Uci::parseGo(std::istringstream &is)
 	std::cout << "time: " << time << " depth: " << depth << " timeSet: " << std::boolalpha << timeSet << std::endl;
 
 	const auto searchTime = timeSet ? static_cast<size_t>(time) : 0ul;
-	const Settings settings{ static_cast<size_t>(depth), 1, 0, true, searchTime };
+	const Settings settings{ static_cast<size_t>(depth), std::thread::hardware_concurrency(), 128, true, searchTime };
 
 	if (searchThread.joinable())
 		searchThread.detach();
@@ -178,7 +179,7 @@ void Uci::parsePosition(std::istringstream &is)
 		std::string fen;
 		fen.reserve(92);
 
-		while (is >> token && token != "moves")
+		while (is >> token && !(token == "moves"))
 		{
 			fen += token;
 			fen += ' ';

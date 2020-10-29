@@ -1,28 +1,43 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 
 #include "../Settings.h"
 #include "../Move.h"
 #include "../containers/TranspositionTable.h"
 
+#include "../Thread.h"
+
 class Board;
 
 class Search final
 {
+private:
 	struct State
 	{
-		bool stopped{};
+		std::atomic_bool stopped{};
+		std::atomic_uint64_t nodes{};
 		bool doQuietSearch = true;
 		bool useTime{};
 		size_t time{};
-		U64 nodes{};
+		int maxDepth{};
+	};
+
+	struct DepthCounter
+	{
+		mutable std::mutex mutex{};
+		// Stats for the last time the depth was updated
+		std::atomic_int depth{};
+		int bestScore{};
+		size_t time{};
+
+		// This should only be read and written by the main thread
+		int lastReportedDepth{};
 	};
 
 	static TranspositionTable _transpTable;
-	static std::array<std::array<unsigned int, MAX_DEPTH>, 2> _searchKillers;
-	static std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> _searchHistory;
-	static std::array<int, MAX_DEPTH> _evalHistory;
+	static DepthCounter _depthCounter;
 	static State _state;
 
 public:
@@ -35,25 +50,22 @@ public:
 
 	static void clearAll();
 	static void stopSearch();
-	static bool setTableSize(size_t sizeMb);
+	static bool setTableSize(std::size_t sizeMb);
 
 	static Move findBestMove(Board board, const Settings &settings);
 
 	static auto &getTranspTable() noexcept { return _transpTable; }
 
-	static auto &getSearchKillers() noexcept { return _searchKillers; }
-
-	static auto &getSearchHistory() noexcept { return _searchHistory; }
-
 private:
-	static Move iterativeDeepening(Board &board, int depth);
+	static void printUci(Board &board);
+	static void iterativeDeepening(Board board, int targetDepth);
 	static int aspirationWindow(Board &board, int depth, int bestScore);
-	static int
-	search(Board &board, int alpha, int beta, int depth, bool isPvNode, bool doNull, bool doLmr);
+	template <bool PvNode>
+	static int search(Board &board, int alpha, int beta, int depth,
+					  bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
-	inline static void
-	storeTtEntry(const Move &bestMove, U64 key, int alpha, int originalAlpha, int beta, int depth,
-				 bool qSearch);
+	inline static void storeTtEntry(const Move &bestMove, U64 key, int alpha, int originalAlpha,
+									int beta, int depth, bool qSearch);
 	static bool checkTimeAndStop();
 };

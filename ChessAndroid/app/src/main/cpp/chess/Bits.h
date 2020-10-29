@@ -438,7 +438,7 @@ namespace Bits
 
 		for (byte x{}; x < SQUARE_NB; ++x)
 			for (byte y{}; y < SQUARE_NB; ++y)
-				array[x][y] = std::max<byte>(abs(row(x) - row(y)), abs(col(x) - col(y)));
+				array[x][y] = byte(std::max<int>(abs(int(row(x)) - int(row(y))), abs(int(col(x)) - int(col(y)))));
 
 		return array;
 	}();

@@ -79,7 +79,7 @@ namespace
 		};
 }
 
-PawnStructureTable _pawnTable{ 8 };
+thread_local PawnStructureTable _pawnTable{ 8 };
 
 using namespace Bits;
 

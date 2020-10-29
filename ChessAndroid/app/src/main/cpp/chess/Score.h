@@ -8,7 +8,7 @@ public:
 	constexpr Score(const short mg, const short eg) noexcept
 		: mg(mg), eg(eg) {}
 
-	constexpr Score &operator=(const int rhs) noexcept
+	constexpr Score &operator=(const short rhs) noexcept
 	{
 		mg = rhs;
 		eg = rhs;

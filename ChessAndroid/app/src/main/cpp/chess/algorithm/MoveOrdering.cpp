@@ -1,9 +1,6 @@
 #include "MoveOrdering.h"
 
-#include <array>
-
 #include "Evaluation.h"
-#include "Search.h"
 #include "../Board.h"
 
 namespace MoveOrdering
@@ -26,11 +23,9 @@ namespace MoveOrdering
 		return array;
 	}();
 
-	void sortMoves(const Board &board, MoveList &moveList) noexcept
+	void sortMoves(const Thread &thread, const Board &board, MoveList &moveList) noexcept
 	{
 		const Move pvMove = Search::getTranspTable()[board.zKey].move;
-		const auto &searchKillers = Search::getSearchKillers();
-		const auto &searchHistory = Search::getSearchHistory();
 
 		for (Move &move : moveList)
 		{
@@ -44,12 +39,12 @@ namespace MoveOrdering
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE);
 			else if (flags.enPassant())
 				move.setScore(EN_PASSANT_SCORE + NORMAL_SCORE);
-			else if (searchKillers[0][board.ply] == move.getContents())
+			else if (thread.killers[0][board.ply] == move.getContents())
 				move.setScore(900000);
-			else if (searchKillers[1][board.ply] == move.getContents())
+			else if (thread.killers[1][board.ply] == move.getContents())
 				move.setScore(800000);
 			else
-				move.setScore(searchHistory[move.from()][move.to()]);
+				move.setScore(thread.history[move.from()][move.to()]);
 		}
 	}
 
