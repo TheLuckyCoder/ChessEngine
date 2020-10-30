@@ -1,6 +1,5 @@
 #include "Search.h"
 
-#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <thread>
@@ -22,13 +21,15 @@ constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
 constexpr int FUTILITY_MARGIN = 160;
 constexpr int FUTILITY_MAX_DEPTH = 6;
 
-thread_local Thread *_thread = nullptr;
-auto &threadInfo() { return *_thread; }
-thread_local int LocalNodesCount{};
+static thread_local Thread *_thread = nullptr;
 
-TranspositionTable Search::_transpTable{ 16 };
-Search::DepthCounter Search::_depthCounter{};
-Search::State Search::_state{};
+auto &threadInfo() { return *_thread; }
+
+static thread_local int LocalNodesCount{};
+
+Settings Search::_searchSettings{ MAX_DEPTH, 1, 16, true };
+TranspositionTable Search::_transpTable{ _searchSettings.tableSizeMb() };
+Search::SharedState Search::_sharedState{};
 
 void Search::clearAll()
 {
@@ -37,7 +38,7 @@ void Search::clearAll()
 
 void Search::stopSearch()
 {
-	_state.stopped = true;
+	_sharedState.stopped = true;
 }
 
 bool Search::setTableSize(const std::size_t sizeMb)
@@ -49,76 +50,49 @@ Move Search::findBestMove(Board board, const Settings &settings)
 {
 	Stats::resetStats();
 	// Apply Settings
-	const std::size_t threadCount = settings.getThreadCount();
-
-	{
-		int targetDepth = settings.getSearchDepth();
-		if (board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3)
-			targetDepth = std::min<int>(MAX_DEPTH, targetDepth + 1);
-		_state.maxDepth = targetDepth;
-	}
+	_searchSettings = settings;
+	const auto threadCount = settings.threadCount();
 
 	_transpTable.incrementAge();
-	if (settings.getTableSizeMb() != 0)
-		setTableSize(settings.getTableSizeMb());
+	if (settings.tableSizeMb() != 0)
+		setTableSize(settings.tableSizeMb());
 
 	board.ply = 0;
 	// Reset Depth Counter
-	_depthCounter.depth = 0;
-	_depthCounter.bestScore = VALUE_MIN;
-	_depthCounter.time = 0;
-	_depthCounter.lastReportedDepth = 0;
+	_sharedState.stopped = false;
+	_sharedState.nodes = 0;
+	_sharedState.depth = 0;
+	_sharedState.bestScore = VALUE_MIN;
+	_sharedState.time = 0;
+	_sharedState.lastReportedDepth = 0;
 
-	// Reset State
-	const auto time = settings.getSearchTime();
-	_state.stopped = false;
-	_state.doQuietSearch = settings.doQuiescenceSearch();
-	_state.useTime = time != 0ull;
-	_state.time = time;
-	_state.nodes = 0;
-
-	Stats::restartTimer();
-
-	std::mutex searchIdMutex;
-	std::size_t searchId = 1;
-	const auto getDepthToSearch = [&] (const int currentDepth) -> int
+	const auto work = [&, board](const i32 threadId)
 	{
-		std::size_t count{};
+		assert(threadId >= 1);
+		assert(threadId <= threadCount);
+		_thread = new Thread(threadId, threadId == 1);
+
+		while (!_sharedState.stopped)
 		{
-			std::lock_guard lock{ searchIdMutex };
-			count = searchId++;
-			if (searchId > threadCount)
-				searchId = 1;
-		}
+			const auto currentDepth = static_cast<i32>(_sharedState.depth);
+			const auto depth = currentDepth + 1 + static_cast<i32>(Bits::bitScanForward(threadId));
 
-		assert(count > 0);
-		assert(count <= threadCount);
-		return currentDepth + 1 + static_cast<int>(Bits::bitScanForward(count));
-	};
-
-	const auto work = [&, board] (const std::size_t threadId)
-	{
-		_thread = new Thread(threadId, threadId == 0);
-		int currentDepth{};
-
-		while (!_state.stopped)
-		{
-			currentDepth = getDepthToSearch(currentDepth);
-
-			iterativeDeepening(board, std::min<int>(currentDepth, _state.maxDepth));
+			iterativeDeepening(board, std::min<i32>(depth, _searchSettings.depth()));
 		}
 
 		// Clean Heuristics after search
 		delete _thread;
 	};
 
-	std::vector<std::jthread> threads;
+	std::vector<std::thread> threads;
 	threads.reserve(threadCount);
 
-	for (std::size_t i{}; i < threadCount; ++i)
-		threads.emplace_back(work, i);
-	
-	for (auto &thread : threads)
+	Stats::restartTimer();
+
+	for (usize i{}; i < threadCount; ++i)
+		threads.emplace_back(work, i32(i) + 1);
+
+	for (auto &&thread : threads)
 		thread.join();
 
 	return _transpTable[board.zKey].move;
@@ -162,33 +136,33 @@ void Search::printUci(Board &board)
 	int lastReportedDepth;
 
 	{
-		std::lock_guard lock{ _depthCounter.mutex };
-		depth = _depthCounter.depth;
-		bestScore = _depthCounter.bestScore;
-		time = _depthCounter.time;
-		lastReportedDepth = _depthCounter.lastReportedDepth;
+		std::lock_guard lock{ _sharedState.mutex };
+		depth = _sharedState.depth;
+		bestScore = _sharedState.bestScore;
+		time = _sharedState.time;
+		lastReportedDepth = _sharedState.lastReportedDepth;
 	}
 
-	if (!_state.stopped && depth > lastReportedDepth)
+	if (!_sharedState.stopped && depth > lastReportedDepth)
 	{
 		const int pvMoves = getPvLine(depth);
 
 		const int cp = bestScore * 100 / 213;
 		std::cout << "info depth " << depth << " score cp " << cp
-				  << " nodes " << _state.nodes << " time " << time;
+				  << " nodes " << _sharedState.nodes << " time " << time;
 
 		std::cout << " pv: ";
 		for (int pvCount = 0; pvCount < pvMoves; ++pvCount)
 			std::cout << pvArray[pvCount].toString() << ' ';
 
 		std::cout << std::endl;
-		_depthCounter.lastReportedDepth = depth;
-		
-		if (depth >= _state.maxDepth)
-			_state.stopped = true;
+		_sharedState.lastReportedDepth = depth;
+
+		if (depth >= _searchSettings.depth())
+			stopSearch();
 	}
 
-	if (_state.stopped)
+	if (_sharedState.stopped)
 		std::cout << "bestmove " << _transpTable[board.zKey].move.toString() << std::endl;
 }
 
@@ -206,23 +180,23 @@ void Search::iterativeDeepening(Board board, const int targetDepth)
 		LocalNodesCount = 0;
 
 		bestScore = aspirationWindow(board, currentDepth, bestScore);
-		_state.nodes += LocalNodesCount;
+		_sharedState.nodes += LocalNodesCount;
 
-		if (bestScore != VALUE_MIN && currentDepth > _depthCounter.depth)
-		{			
-			std::lock_guard lock{ _depthCounter.mutex };
-			if (currentDepth > _depthCounter.depth)
+		if (bestScore != VALUE_MIN && currentDepth > _sharedState.depth)
+		{
+			std::lock_guard lock{ _sharedState.mutex };
+			if (currentDepth > _sharedState.depth)
 			{
-				_depthCounter.depth = currentDepth;
-				_depthCounter.bestScore = bestScore;
-				_depthCounter.time = Stats::getElapsedMs();
+				_sharedState.depth = currentDepth;
+				_sharedState.bestScore = bestScore;
+				_sharedState.time = Stats::getElapsedMs();
 			}
 		}
 
 		if (thread.mainThread)
 			printUci(board);
-		
-		if (_state.stopped)
+
+		if (_sharedState.stopped)
 			break;
 	}
 }
@@ -244,7 +218,7 @@ int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
 	while (true)
 	{
 		const int searchedValue = search<true>(board, alpha, beta, adjustedDepth, true, true);
-		if (_state.stopped)
+		if (_sharedState.stopped)
 			return 0;
 
 		if (searchedValue <= alpha)
@@ -268,7 +242,7 @@ int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
 	}
 }
 
-template <bool PvNode>
+template<bool PvNode>
 int Search::search(Board &board, int alpha, int beta, const int depth,
 				   const bool doNull, const bool doLmr)
 {
@@ -291,7 +265,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	}
 
 	if (depth <= 0)
-		return _state.doQuietSearch
+		return _searchSettings.doQuietSearch()
 			   ? searchCaptures(board, alpha, beta, depth)
 			   : Evaluation::invertedValue(board);
 
@@ -396,7 +370,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 		bool doFullSearch = true;
 
 		// Late Move Reductions
-		if (!PvNode
+		if (!pvMove
 			&& doNull
 			&& doLmr
 			&& searchedCount > 3
@@ -415,7 +389,13 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 		}
 
 		if (doFullSearch)
-			moveScore = -search<PvNode>(board, -beta, -alpha, depth - 1, true, true);
+		{
+			if (pvMove)
+				moveScore = -search<true>(board, -beta, -alpha, depth - 1, true, true);
+			else
+				moveScore = -search<false>(board, -beta, -alpha, depth - 1, true, true);
+		}
+
 		++searchedCount;
 		const int searchedPly = board.ply;
 		board.undoMove();
@@ -573,7 +553,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 		board.undoMove();
 		++searchedCount;
 
-		if (_state.stopped)
+		if (_sharedState.stopped)
 			return 0;
 
 		if (moveScore > bestScore)
@@ -605,7 +585,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	return bestScore;
 }
 
-inline void Search::storeTtEntry(const Move &bestMove, const U64 key, const int alpha,
+inline void Search::storeTtEntry(const Move &bestMove, const u64 key, const int alpha,
 								 const int originalAlpha, const int beta, const int depth,
 								 const bool qSearch)
 {
@@ -625,9 +605,9 @@ inline void Search::storeTtEntry(const Move &bestMove, const U64 key, const int 
 bool Search::checkTimeAndStop()
 {
 	if (threadInfo().mainThread
-		&& _state.useTime
+		&& _searchSettings.isTimeSet()
 		&& (LocalNodesCount & 2047u) == 0
-		&& static_cast<size_t>(Stats::getElapsedMs()) >= _state.time)
+		&& Stats::getElapsedMs() >= _searchSettings.searchTime())
 		stopSearch();
-	return _state.stopped;
+	return _sharedState.stopped;
 }

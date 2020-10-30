@@ -30,27 +30,27 @@ bool Board::canCastle(const Color color) const noexcept
 	return color == BLACK ? canCastle<BLACK>() : canCastle<WHITE>();
 }
 
-Piece &Board::getPiece(const byte squareIndex) noexcept
+Piece &Board::getPiece(const u8 squareIndex) noexcept
 {
 	return data[squareIndex];
 }
 
-Piece Board::getPiece(const byte squareIndex) const noexcept
+Piece Board::getPiece(const u8 squareIndex) const noexcept
 {
 	return data[squareIndex];
 }
 
-U64 &Board::getType(const Piece piece) noexcept
+u64 &Board::getType(const Piece piece) noexcept
 {
 	return pieces[piece.color()][piece.type()];
 }
 
-U64 &Board::getType(const PieceType type, const Color color) noexcept
+u64 &Board::getType(const PieceType type, const Color color) noexcept
 {
 	return pieces[color][type];
 }
 
-U64 Board::getType(const PieceType type, const Color color) const noexcept
+u64 Board::getType(const PieceType type, const Color color) const noexcept
 {
 	return pieces[color][type];
 }
@@ -62,8 +62,8 @@ bool Board::isDrawn() const noexcept
 		return true;
 
 	// Three-fold repetition
-	byte repetitions = 1;
-	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
+	u8 repetitions = 1;
+	for (u8 i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
 	{
 		if (zKey == history[i].zKey)
 		{
@@ -75,11 +75,11 @@ bool Board::isDrawn() const noexcept
 
 	// Insufficient Material
 	// KvK, KvN, KvB, KvNN
-	const U64 pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
-	const U64 knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
-	const U64 bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
-	const U64 rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
-	const U64 queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
+	const u64 pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
+	const u64 knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
+	const u64 bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
+	const u64 rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
+	const u64 queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
 
 	return !(pawns | rooks | queens)
 		   && (!Bits::several(allPieces[WHITE]) || !Bits::several(allPieces[BLACK]))
@@ -98,11 +98,11 @@ Phase Board::getPhase() const noexcept
 bool Board::makeMove(const Move move) noexcept
 {
 	assert(!move.empty());
-	const byte from = move.from();
-	const byte to = move.to();
+	const u8 from = move.from();
+	const u8 to = move.to();
 	const Color side = colorToMove;
 	const auto flags = move.flags();
-	const U64 posKey = zKey;
+	const u64 posKey = zKey;
 	const PieceType movedPiece = move.piece();
 
 	assert(from < SQUARE_NB);
@@ -118,7 +118,7 @@ bool Board::makeMove(const Move move) noexcept
 	// Handle en passant capture and castling
 	if (flags.enPassant())
 	{
-		const byte capturedSq = to + static_cast<byte>(side ? -8 : 8);
+		const u8 capturedSq = to + static_cast<u8>(side ? -8 : 8);
 		removePiece(capturedSq);
 	} else if (flags.kSideCastle())
 	{
@@ -162,7 +162,7 @@ bool Board::makeMove(const Move move) noexcept
 	{
 		if (movedPiece == ROOK)
 		{
-			const U64 rookFile = Bits::getFile(from);
+			const u64 rookFile = Bits::getFile(from);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -181,7 +181,7 @@ bool Board::makeMove(const Move move) noexcept
 		assert(Piece::isValid(capturedType));
 		if (capturedType == ROOK && canCastle(~side))
 		{
-			const U64 rookFile = Bits::getFile(to);
+			const u64 rookFile = Bits::getFile(to);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(~side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -200,10 +200,10 @@ bool Board::makeMove(const Move move) noexcept
 
 		if (move.flags().doublePawnPush())
 		{
-			enPassantSq = from + static_cast<byte>(side ? 8 : -8);
+			enPassantSq = from + static_cast<u8>(side ? 8 : -8);
 
 			Hash::xorEnPassant(zKey, enPassantSq);
-			const U64 enPassantRank = Bits::getRank(enPassantSq);
+			const u64 enPassantRank = Bits::getRank(enPassantSq);
 			assert(enPassantRank == RANK_3 || enPassantRank == RANK_6);
 		}
 	}
@@ -244,8 +244,8 @@ void Board::undoMove() noexcept
 
 	const UndoMove &previousMove = history[historyPly];
 	const Move move = previousMove.getMove();
-	const byte from = move.from();
-	const byte to = move.to();
+	const u8 from = move.from();
+	const u8 to = move.to();
 	const auto flags = move.flags();
 
 	assert(from < SQUARE_NB);
@@ -260,7 +260,7 @@ void Board::undoMove() noexcept
 
 	if (flags.enPassant())
 	{
-		const byte capturesSq = to + static_cast<byte>(colorToMove ? -8 : 8);
+		const u8 capturesSq = to + static_cast<u8>(colorToMove ? -8 : 8);
 		addPiece(capturesSq, { PAWN, ~colorToMove });
 	} else if (flags.kSideCastle())
 	{
@@ -337,7 +337,7 @@ void Board::undoNullMove() noexcept
 	colorToMove = ~colorToMove;
 }
 
-bool Board::isAttackedByAny(const Color attackerColor, const byte targetSquare) const noexcept
+bool Board::isAttackedByAny(const Color attackerColor, const u8 targetSquare) const noexcept
 {
 	return isAttacked<PAWN>(attackerColor, targetSquare)
 		   || isAttacked<KNIGHT>(attackerColor, targetSquare)
@@ -352,7 +352,7 @@ bool Board::isSideInCheck() const noexcept
 	return static_cast<bool>(kingAttackers);
 }
 
-void Board::addPiece(const byte square, const Piece piece) noexcept
+void Board::addPiece(const u8 square, const Piece piece) noexcept
 {
 	assert(piece.isValid());
 
@@ -365,7 +365,7 @@ void Board::addPiece(const byte square, const Piece piece) noexcept
 	pieceList[piece][pieceCount[piece]++] = square;
 }
 
-void Board::movePiece(const byte from, const byte to) noexcept
+void Board::movePiece(const u8 from, const u8 to) noexcept
 {
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
@@ -382,7 +382,7 @@ void Board::movePiece(const byte from, const byte to) noexcept
 	getType(piece) |= Bits::getSquare64(to);
 
 	bool pieceMoved = false;
-	for (byte &sq : pieceList[piece])
+	for (u8 &sq : pieceList[piece])
 	{
 		if (sq == from)
 		{
@@ -394,7 +394,7 @@ void Board::movePiece(const byte from, const byte to) noexcept
 	assert(pieceMoved);
 }
 
-void Board::removePiece(const byte square) noexcept
+void Board::removePiece(const u8 square) noexcept
 {
 	assert(square < SQUARE_NB);
 
@@ -410,8 +410,8 @@ void Board::removePiece(const byte square) noexcept
 
 	auto &piecesSquares = pieceList[piece];
 
-	byte pieceIndex = -1;
-	for (byte i = 0; i < pieceCount[piece]; ++i)
+	u8 pieceIndex = -1;
+	for (u8 i = 0; i < pieceCount[piece]; ++i)
 	{
 		if (piecesSquares[i] == square)
 		{
@@ -430,14 +430,14 @@ void Board::updatePieceList() noexcept
 {
 	pieceCount.fill({});
 
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	for (u8 sq{}; sq < SQUARE_NB; ++sq)
 	{
 		const Piece &piece = data[sq];
 		if (piece)
 		{
 			pieceList[piece][pieceCount[piece]++] = sq;
 
-			const U64 bb = Bits::getSquare64(sq);
+			const u64 bb = Bits::getSquare64(sq);
 
 			getType(piece) |= bb;
 
@@ -472,7 +472,7 @@ std::string Board::printBoard() const noexcept
 
 	constexpr auto Delimiter = "+---+---+---+---+---+---+---+---+";
 
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	for (u8 sq{}; sq < SQUARE_NB; ++sq)
 	{
 		if (sq % 8 == 0)
 			ss << '\n' << Delimiter << '\n' << '|';

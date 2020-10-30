@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Defs.h"
+
 #include <atomic>
 #include <chrono>
 #include <string>
@@ -32,7 +34,7 @@ public:
 	static void incLmrCount() noexcept;
 
 	static void restartTimer() noexcept;
-	static double getElapsedMs() noexcept;
+	static usize getElapsedMs() noexcept;
 
 	static std::string formatStats(char separator);
 };

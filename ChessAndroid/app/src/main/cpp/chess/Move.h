@@ -22,7 +22,7 @@ public:
 		};
 
 	public:
-		constexpr Flags(const byte flags) noexcept : _flags(flags & 0x7F) {}
+		constexpr Flags(const u8 flags) noexcept : _flags(flags & 0x7F) {}
 
 		constexpr bool capture() const noexcept { return _flags & Internal::CAPTURE; }
 
@@ -39,7 +39,7 @@ public:
 		constexpr bool enPassant() const noexcept { return _flags & Internal::EN_PASSANT; }
 
 	private:
-		byte _flags;
+		u8 _flags;
 	};
 
 	Move() = default;
@@ -49,13 +49,13 @@ public:
 	{
 	}
 
-	constexpr Move(const byte from, const byte to, const PieceType piece) noexcept
+	constexpr Move(const u8 from, const u8 to, const PieceType piece) noexcept
 		: _move(((to & 0x3Fu) << 15u) | ((from & 0x3Fu) << 9u) | (piece & 0x7))
 	{
 	}
 
-	constexpr Move(const byte from, const byte to, const PieceType piece,
-				   const byte flags) noexcept
+	constexpr Move(const u8 from, const u8 to, const PieceType piece,
+				   const u8 flags) noexcept
 		: _move(((flags & 0x7Fu) << 22u) | ((to & 0x3Fu) << 15u) | ((from & 0x3Fu) << 9u) | (piece & 0x7u))
 	{
 	}
@@ -107,22 +107,22 @@ public:
 		_move = (_move & ~Mask) | ((type << 6u) & Mask);
 	}
 
-	constexpr byte from() const noexcept
+	constexpr u8 from() const noexcept
 	{
 		return (_move >> 9u) & 0x3F;
 	}
 
-	constexpr byte to() const noexcept
+	constexpr u8 to() const noexcept
 	{
 		return (_move >> 15u) & 0x3F;
 	}
 
 	constexpr Flags flags() const noexcept
 	{
-		return Flags(static_cast<byte>(_move >> 22u));
+		return Flags(static_cast<u8>(_move >> 22u));
 	}
 
-	constexpr void setFlags(const byte flags) noexcept
+	constexpr void setFlags(const u8 flags) noexcept
 	{
 		constexpr unsigned Mask = 0x7Fu << 22u;
 		_move = (_move & ~Mask) | ((flags << 22u) & Mask);
@@ -136,7 +136,7 @@ public:
 
 	constexpr bool isAdvancedPawnPush() const noexcept
 	{
-		const byte y = row(to());
+		const u8 y = row(to());
 		return piece() == PAWN && (y == 7 || y == 2);
 	}
 
@@ -155,8 +155,8 @@ public:
 		std::string str;
 		str.reserve(5);
 
-		const byte fromSq{ from() };
-		const byte toSq{ to() };
+		const u8 fromSq{ from() };
+		const u8 toSq{ to() };
 
 		if (showPiece)
 		{

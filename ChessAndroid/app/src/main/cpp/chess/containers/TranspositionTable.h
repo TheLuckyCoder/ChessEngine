@@ -6,7 +6,7 @@
 
 struct SearchEntry
 {
-	enum class Flag : byte
+	enum class Flag : u8
 	{
 		NONE,
 		EXACT,
@@ -14,7 +14,7 @@ struct SearchEntry
 		BETA
 	};
 	
-    U64 key{};
+    u64 key{};
     Move move;
     short depth{};
     Flag flag = Flag::EXACT;
@@ -36,17 +36,17 @@ public:
 	TranspositionTable &operator=(const TranspositionTable&) = delete;
 	TranspositionTable &operator=(TranspositionTable&&) = delete;
 
-	SearchEntry operator[](U64 key) const noexcept;
+	SearchEntry operator[](u64 key) const noexcept;
 
     void insert(const SearchEntry &value) noexcept;
 	bool setSize(std::size_t sizeMb);
 	void incrementAge() noexcept;
-	byte currentAge() const noexcept;
+	u8 currentAge() const noexcept;
 	void clear() noexcept;
 
 private:
     std::size_t _size{};
-    byte _currentAge{};
+    u8 _currentAge{};
 	SearchEntry *_entries = nullptr;
 	mutable std::shared_mutex _mutexes[MUTEX_COUNT];
 };

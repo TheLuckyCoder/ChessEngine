@@ -12,9 +12,9 @@ namespace MoveOrdering
 	{
 		std::array<std::array<int, 7>, 7> array{};
 
-		for (byte attacker = PAWN; attacker <= KING; ++attacker)
+		for (u8 attacker = PAWN; attacker <= KING; ++attacker)
 		{
-			for (byte victim = PAWN; victim <= KING; ++victim)
+			for (u8 victim = PAWN; victim <= KING; ++victim)
 			{
 				array[victim][attacker] = VICTIM_SCORE[victim] + 6 - VICTIM_SCORE[attacker] / 100;
 			}

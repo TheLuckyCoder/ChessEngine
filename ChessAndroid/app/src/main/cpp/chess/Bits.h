@@ -8,14 +8,16 @@
 #ifdef _MSC_VER
 #  include <intrin.h> // Microsoft header for _BitScanForward64()
 #elif defined(__linux__)
+
 #	include <byteswap.h>
+
 #endif
 
 //#define USE_CUSTOM_POPCNT
 
 namespace Bits
 {
-	static constexpr U64 _eastN(U64 board, const int n) noexcept
+	static constexpr u64 _eastN(u64 board, const int n) noexcept
 	{
 		for (int i = 0; i < n; ++i)
 			board = ((board << 1) & (~FILE_A));
@@ -23,7 +25,7 @@ namespace Bits
 		return board;
 	}
 
-	static constexpr U64 _westN(U64 board, const int n) noexcept
+	static constexpr u64 _westN(u64 board, const int n) noexcept
 	{
 		for (int i = 0; i < n; ++i)
 			board = ((board >> 1) & (~FILE_H));
@@ -36,72 +38,72 @@ namespace Bits
 	 */
 	static constexpr auto _SQUARES = []
 	{
-		std::array<U64, 64> array{};
+		std::array<u64, 64> array{};
 
-		for (byte i = 0u; i < SQUARE_NB; ++i)
+		for (u8 i = 0u; i < SQUARE_NB; ++i)
 			array[i] = 1ull << i;
 
 		return array;
 	}();
 
-	constexpr U64 getSquare64(const byte square) noexcept
+	constexpr u64 getSquare64(const u8 square) noexcept
 	{
 		return _SQUARES[square];
 	}
 
 #if defined(__GNUC__)  // GCC, Clang
 
-	inline byte bitScanForward(const U64 bb) noexcept
+	inline u8 bitScanForward(const u64 bb) noexcept
 	{
 		assert(bb);
-		return static_cast<byte>(__builtin_ctzll(bb));
+		return static_cast<u8>(__builtin_ctzll(bb));
 	}
 
-	inline byte bitScanReverse(U64 bb) noexcept
+	inline u8 bitScanReverse(u64 bb) noexcept
 	{
 		assert(bb);
-		return static_cast<byte>(63 ^ __builtin_clzll(bb));
+		return static_cast<u8>(63 ^ __builtin_clzll(bb));
 	}
 
 #elif defined(_MSC_VER)
 
-	inline byte bitScanForward(const U64 bb) noexcept
+	inline u8 bitScanForward(const u64 bb) noexcept
 	{
 		assert(bb);
 		unsigned long index{};
 
 #	ifdef _WIN64 // 64-bit
 		_BitScanForward64(&index, bb);
-		return static_cast<byte>(index);
+		return static_cast<u8>(index);
 #	else // 32-bit
 		if (bb & 0xffffffff) // If the bit is in the lower 32 bits
 		{
 			_BitScanForward(&index, static_cast<unsigned long>(bb));
-			return static_cast<byte>(index);
+			return static_cast<u8>(index);
 		}
 
 		_BitScanForward(&index, static_cast<unsigned long>(bb >> 32));
-		return static_cast<byte>(index + 32u); // The bit is in the upper 32 bits
+		return static_cast<u8>(index + 32u); // The bit is in the upper 32 bits
 #	endif
 	}
 
-	inline byte bitScanReverse(const U64 bb) noexcept
+	inline u8 bitScanReverse(const u64 bb) noexcept
 	{
 		assert(bb);
 		unsigned long index{};
 
 #	ifdef _WIN64 // 64-bit
 		_BitScanReverse64(&index, bb);
-		return static_cast<byte>(index);
+		return static_cast<u8>(index);
 #	else // 32-bit
 		if (bb >> 32u) // If the bit is in the upper 32 bits
 		{
 			_BitScanReverse(&index, static_cast<unsigned long>(bb >> 32u));
-			return static_cast<byte>(index + 32u);
+			return static_cast<u8>(index + 32u);
 		}
 
 		_BitScanReverse(&index, static_cast<unsigned long>(bb));
-		return static_cast<byte>(index);
+		return static_cast<u8>(index);
 #	endif
 	}
 
@@ -109,8 +111,8 @@ namespace Bits
 #	undef USE_CUSTOM_POPCNT
 #	define USE_CUSTOM_POPCNT
 
-	static constexpr U64 debruijn64{ 0x03f79d71b4cb0a89 };
-	static constexpr byte bitScanIndex64[64] = {
+	static constexpr u64 debruijn64{ 0x03f79d71b4cb0a89 };
+	static constexpr u8 bitScanIndex64[64] = {
 		0, 47,  1, 56, 48, 27,  2, 60,
 		57, 49, 41, 37, 28, 16,  3, 61,
 		54, 58, 35, 52, 50, 42, 21, 44,
@@ -127,7 +129,7 @@ namespace Bits
 	 * @precondition bb != 0
 	 * @return index (0..63) of least significant one bit
 	 */
-	inline byte bitScanForward(const U64 bb) noexcept
+	inline u8 bitScanForward(const u64 bb) noexcept
 	{
 		assert(bb);
 		return bitScanIndex64[((bb ^ (bb - 1)) * debruijn64) >> 58];
@@ -139,7 +141,7 @@ namespace Bits
 	 * @precondition bb != 0
 	 * @return index (0..63) of most significant one bit
 	 */
-	inline byte bitScanReverse(U64 bb) noexcept
+	inline u8 bitScanReverse(u64 bb) noexcept
 	{
 		assert(bb);
 
@@ -161,7 +163,7 @@ namespace Bits
 	 * @param x bitboard to count the bits from
 	 * @return number of 1 bits in the bitboard
 	 */
-	inline int popCount(U64 bb) noexcept
+	inline int popCount(u64 bb) noexcept
 	{
 		int count = 0;
 
@@ -175,14 +177,14 @@ namespace Bits
 	}
 #	elif defined(__GNUC__)  // GCC, Clang
 
-	inline int popCount(const U64 bb) noexcept
+	inline int popCount(const u64 bb) noexcept
 	{
 		return __builtin_popcountll(bb);
 	}
 
 #	elif defined(_MSC_VER)
 
-	inline int popCount(const U64 bb) noexcept
+	inline int popCount(const u64 bb) noexcept
 	{
 #	ifdef _WIN64 // 64-bit
 		return static_cast<int>(__popcnt64(bb));
@@ -195,22 +197,22 @@ namespace Bits
 
 #if defined(_MSC_VER) && defined(_WIN64)
 
-	inline U64 flipVertical(const U64 bb)
+	inline u64 flipVertical(const u64 bb)
 	{
 		return _byteswap_uint64(bb);
 	}
 
 #elif defined(__linux__)
 
-	inline U64 flipVertical(const U64 bb)
+	inline u64 flipVertical(const u64 bb)
 	{
 		return bswap_64(bb);
 	}
 
 #elif (defined(__clang__) && __has_builtin(__builtin_bswap64)) \
-  || (defined(__GNUC__ ) && (__GNUC__ > 4))
+ || (defined(__GNUC__ ) && (__GNUC__ > 4))
 
-	inline U64 flipVertical(const U64 bb)
+	inline u64 flipVertical(const u64 bb)
 	{
 		return __builtin_bswap64(bb);
 	}
@@ -222,10 +224,10 @@ namespace Bits
 	 * @param bb any bitboard
 	 * @return bitboard bb flipped vertically
 	 */
-	inline U64 flipVertical(U64 bb)
+	inline u64 flipVertical(u64 bb)
 	{
-		const U64 k1{ 0x00FF00FF00FF00FF };
-		const U64 k2{ 0x0000FFFF0000FFFF };
+		const u64 k1{ 0x00FF00FF00FF00FF };
+		const u64 k2{ 0x0000FFFF0000FFFF };
 		bb = ((bb >>  8) & k1) | ((bb & k1) <<  8);
 		bb = ((bb >> 16) & k2) | ((bb & k2) << 16);
 		bb = ( bb >> 32)       | ( bb       << 32);
@@ -233,19 +235,19 @@ namespace Bits
 	}
 #endif
 
-	inline byte popLsb(U64 &bb) noexcept
+	inline u8 popLsb(u64 &bb) noexcept
 	{
-		const byte lsbIndex = bitScanForward(bb);
+		const u8 lsbIndex = bitScanForward(bb);
 		bb &= bb - 1;
 		return lsbIndex;
 	}
 
-	inline bool several(const U64 bb) noexcept
+	inline bool several(const u64 bb) noexcept
 	{
 		return bb & (bb - 1);
 	}
 
-	inline bool onlyOne(const U64 bb) noexcept
+	inline bool onlyOne(const u64 bb) noexcept
 	{
 		return bb && !several(bb);
 	}
@@ -256,11 +258,11 @@ namespace Bits
 	*/
 	static constexpr auto _RAYS = []
 	{
-		std::array<std::array<U64, SQUARE_NB>, 8> rays{};
+		std::array<std::array<u64, SQUARE_NB>, 8> rays{};
 
 		using namespace Bits;
 
-		for (byte square{}; square < SQUARE_NB; ++square)
+		for (u8 square{}; square < SQUARE_NB; ++square)
 		{
 			rays[NORTH][square] = 0x0101010101010100ULL << square;
 
@@ -288,9 +290,9 @@ namespace Bits
 
 	static constexpr auto _RANKS = []
 	{
-		std::array<U64, 8> ranks{};
+		std::array<u64, 8> ranks{};
 
-		for (byte r = 0u; r < 8u; ++r)
+		for (u8 r = 0u; r < 8u; ++r)
 			ranks[r] = 0b1111'1111ull << (8u * r);
 
 		return ranks;
@@ -298,16 +300,16 @@ namespace Bits
 
 	static constexpr auto _FILES = []
 	{
-		std::array<U64, 8> files{};
+		std::array<u64, 8> files{};
 
-		for (byte f = 0u; f < 8u; ++f)
+		for (u8 f = 0u; f < 8u; ++f)
 			files[f] = 0x101010101010101ull << f;
 
 		return files;
 	}();
 
-	template <Dir D>
-	static constexpr U64 _shiftT(const U64 bb) noexcept
+	template<Dir D>
+	static constexpr u64 _shiftT(const u64 bb) noexcept
 	{
 		if constexpr (D == NORTH)
 			return bb << 8u;
@@ -330,11 +332,11 @@ namespace Bits
 		return {};
 	}
 
-	template <Dir D, Dir... Dirs>
-	constexpr U64 shift(const U64 bb) noexcept
+	template<Dir D, Dir... Dirs>
+	constexpr u64 shift(const u64 bb) noexcept
 	{
-		U64 result = _shiftT<D>(bb);
-		((result = _shiftT<Dirs>(result)),...);
+		u64 result = _shiftT<D>(bb);
+		((result = _shiftT<Dirs>(result)), ...);
 		return result;
 	}
 
@@ -344,43 +346,43 @@ namespace Bits
 	 * @param direction Direction of ray to return
 	 * @param square Square to get ray starting from (in little endian rank file mapping form)
 	 */
-	constexpr U64 getRay(const Dir direction, const byte square) noexcept
+	constexpr u64 getRay(const Dir direction, const u8 square) noexcept
 	{
 		return _RAYS[direction][square];
 	}
 
-	constexpr U64 getRank(const byte square) noexcept
+	constexpr u64 getRank(const u8 square) noexcept
 	{
 		return _RANKS[row(square)];
 	}
 
-	constexpr U64 getFile(const byte square) noexcept
+	constexpr u64 getFile(const u8 square) noexcept
 	{
 		return _FILES[col(square)];
 	}
 
-	constexpr U64 getAdjacentFiles(const byte square) noexcept
+	constexpr u64 getAdjacentFiles(const u8 square) noexcept
 	{
 		return shift<WEST>(getFile(square)) | shift<EAST>(getFile(square));
 	}
 
-	inline static U64 _generateRayAttacksForwards(const byte sq, const U64 occupied, const Dir direction)
+	inline static u64 _generateRayAttacksForwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const U64 attacks = getRay(direction, sq);
-		const U64 blocker = attacks & occupied;
-		const byte index = bitScanForward(blocker | 0x8000000000000000);
+		const u64 attacks = getRay(direction, sq);
+		const u64 blocker = attacks & occupied;
+		const u8 index = bitScanForward(blocker | 0x8000000000000000);
 		return attacks ^ getRay(direction, index);
 	}
 
-	inline static U64 _generateRayAttacksBackwards(const byte sq, const U64 occupied, const Dir direction)
+	inline static u64 _generateRayAttacksBackwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const U64 attacks = Bits::getRay(direction, sq);
-		const U64 blocker = attacks & occupied;
-		const byte index = bitScanReverse(blocker | 1ULL);
+		const u64 attacks = Bits::getRay(direction, sq);
+		const u64 blocker = attacks & occupied;
+		const u8 index = bitScanReverse(blocker | 1ULL);
 		return attacks ^ getRay(direction, index);
 	}
 
-	inline U64 generateBishopAttacks(const byte square, const U64 blockers) noexcept
+	inline u64 generateBishopAttacks(const u8 square, const u64 blockers) noexcept
 	{
 		return _generateRayAttacksForwards(square, blockers, NORTH_WEST)
 			   | _generateRayAttacksForwards(square, blockers, NORTH_EAST)
@@ -388,7 +390,7 @@ namespace Bits
 			   | _generateRayAttacksBackwards(square, blockers, SOUTH_WEST);
 	}
 
-	inline U64 generateRookAttacks(const byte square, const U64 blockers) noexcept
+	inline u64 generateRookAttacks(const u8 square, const u64 blockers) noexcept
 	{
 		return _generateRayAttacksForwards(square, blockers, NORTH)
 			   | _generateRayAttacksForwards(square, blockers, EAST)
@@ -398,13 +400,13 @@ namespace Bits
 
 	static const auto _RAYS_BETWEEN_SQUARES = []
 	{
-		std::array<std::array<U64, SQUARE_NB>, SQUARE_NB> array{};
+		std::array<std::array<u64, SQUARE_NB>, SQUARE_NB> array{};
 
-		for (byte sq1{}; sq1 < SQUARE_NB; ++sq1)
-			for (byte sq2{}; sq2 < SQUARE_NB; ++sq2)
+		for (u8 sq1{}; sq1 < SQUARE_NB; ++sq1)
+			for (u8 sq2{}; sq2 < SQUARE_NB; ++sq2)
 			{
-				const U64 bb1 = getSquare64(sq1);
-				const U64 bb2 = getSquare64(sq2);
+				const u64 bb1 = getSquare64(sq1);
+				const u64 bb2 = getSquare64(sq2);
 
 				if (generateRookAttacks(sq1, 0ull) & bb2)
 					array[sq1][sq2] = generateRookAttacks(sq1, bb2) & generateRookAttacks(sq2, bb1);
@@ -415,7 +417,7 @@ namespace Bits
 		return array;
 	}();
 
-	inline U64 getRayBetween(const byte sq1, const byte sq2)
+	inline u64 getRayBetween(const u8 sq1, const u8 sq2)
 	{
 		assert(sq1 < SQ_NONE);
 		assert(sq2 < SQ_NONE);
@@ -429,21 +431,21 @@ namespace Bits
 	 */
 	static constexpr auto _DISTANCE_BETWEEM_SQUARES = []
 	{
-		std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> array{};
+		std::array<std::array<u8, SQUARE_NB>, SQUARE_NB> array{};
 
-		constexpr auto abs = [] (const int x)
+		constexpr auto abs = [](const int x)
 		{
 			return x < 0 ? -x : x;
 		};
 
-		for (byte x{}; x < SQUARE_NB; ++x)
-			for (byte y{}; y < SQUARE_NB; ++y)
-				array[x][y] = byte(std::max<int>(abs(int(row(x)) - int(row(y))), abs(int(col(x)) - int(col(y)))));
+		for (u8 x{}; x < SQUARE_NB; ++x)
+			for (u8 y{}; y < SQUARE_NB; ++y)
+				array[x][y] = u8(std::max<int>(abs(int(row(x)) - int(row(y))), abs(int(col(x)) - int(col(y)))));
 
 		return array;
 	}();
 
-	constexpr byte getDistanceBetween(const byte sq1, const byte sq2)
+	constexpr u8 getDistanceBetween(const u8 sq1, const u8 sq2)
 	{
 		return _DISTANCE_BETWEEM_SQUARES[sq1][sq2];
 	}

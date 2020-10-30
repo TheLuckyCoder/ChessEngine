@@ -80,8 +80,8 @@ inline Move parseMove(Board &board, const std::string &str)
 		|| str[0] > 'h' || str[0] < 'a'
 		|| str[2] > 'h' || str[2] < 'a') return {};
 
-    const byte from = toSquare(static_cast<byte>(str[0] - 'a'), static_cast<byte>(str[1] - '1'));
-    const byte to = toSquare(static_cast<byte>(str[2] - 'a'), static_cast<byte>(str[3] - '1'));
+    const u8 from = toSquare(static_cast<u8>(str[0] - 'a'), static_cast<u8>(str[1] - '1'));
+    const u8 to = toSquare(static_cast<u8>(str[2] - 'a'), static_cast<u8>(str[3] - '1'));
 
 	const MoveList moveList(board);
 

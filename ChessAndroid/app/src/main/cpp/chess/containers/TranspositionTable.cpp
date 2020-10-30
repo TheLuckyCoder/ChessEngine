@@ -13,7 +13,7 @@ TranspositionTable::~TranspositionTable() noexcept
 	delete[] _entries;
 }
 
-SearchEntry TranspositionTable::operator[](const U64 key) const noexcept
+SearchEntry TranspositionTable::operator[](const u64 key) const noexcept
 {
 	const auto index = key % _size;
 	std::shared_lock lock{ _mutexes[index % MUTEX_COUNT] };
@@ -67,7 +67,7 @@ void TranspositionTable::incrementAge() noexcept
 	++_currentAge;
 }
 
-byte TranspositionTable::currentAge() const noexcept
+u8 TranspositionTable::currentAge() const noexcept
 {
 	return _currentAge;
 }

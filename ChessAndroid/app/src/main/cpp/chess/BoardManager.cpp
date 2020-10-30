@@ -73,7 +73,7 @@ std::vector<Move> BoardManager::getMovesHistory()
 	return moves;
 }
 
-std::vector<Move> BoardManager::getPossibleMoves(const byte from)
+std::vector<Move> BoardManager::getPossibleMoves(const u8 from)
 {
 	std::vector<Move> moves;
 	moves.reserve(27);
@@ -105,7 +105,7 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 	std::cout << "Made the Move: " << move.toString()
 			  << "; Evaluated at: " << Evaluation::value(_board) << std::endl;
 
-	std::vector<std::pair<byte, byte>> movedVec;
+	std::vector<std::pair<u8, u8>> movedVec;
 	movedVec.reserve(2);
 	movedVec.emplace_back(move.from(), move.to());
 

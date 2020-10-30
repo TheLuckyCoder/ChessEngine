@@ -5,9 +5,9 @@
 #include "../Board.h"
 
 Hash::HashArray Hash::_pieces{};
-U64 Hash::_side;
-std::array<U64, 6> Hash::_castlingRights;
-std::array<U64, 8> Hash::_enPassant;
+u64 Hash::_side;
+std::array<u64, 6> Hash::_castlingRights;
+std::array<u64, 8> Hash::_enPassant;
 
 void Hash::init()
 {
@@ -17,7 +17,7 @@ void Hash::init()
 
 	std::random_device rd;
 	std::mt19937_64 mt(rd());
-	std::uniform_int_distribution<U64> dist(0, UINT64_MAX);
+	std::uniform_int_distribution<u64> dist(0, UINT64_MAX);
 
 	for (auto &i : _pieces)
 		for (auto &color : i)
@@ -33,11 +33,11 @@ void Hash::init()
 	_side = dist(mt);
 }
 
-U64 Hash::compute(const Board &board)
+u64 Hash::compute(const Board &board)
 {
-	U64 hash{};
+	u64 hash{};
 
-	for (byte sq = 0; sq < SQUARE_NB; ++sq)
+	for (u8 sq = 0; sq < SQUARE_NB; ++sq)
 		if (const Piece &piece = board.getPiece(sq); piece)
 			hash ^= _pieces[sq][piece.color()][piece.type()];
 
@@ -50,7 +50,7 @@ U64 Hash::compute(const Board &board)
 	return hash;
 }
 
-void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Piece &selectedPiece,
+void Hash::makeMove(u64 &key, const u8 selectedSq, const u8 destSq, const Piece &selectedPiece,
 					const Piece &destPiece)
 {
 	// Remove Selected Piece
@@ -63,17 +63,17 @@ void Hash::makeMove(U64 &key, const byte selectedSq, const byte destSq, const Pi
 	xorPiece(key, destSq, selectedPiece);
 }
 
-void Hash::xorPiece(U64 &key, const byte sq, const Piece piece)
+void Hash::xorPiece(u64 &key, const u8 sq, const Piece piece)
 {
 	key ^= _pieces[sq][piece.color()][piece.type()];
 }
 
-void Hash::flipSide(U64 &key)
+void Hash::flipSide(u64 &key)
 {
 	key ^= Hash::_side;
 }
 
-void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
+void Hash::xorCastlingRights(u64 &key, const CastlingRights rights)
 {
 	if (rights & CASTLE_WHITE_BOTH)
 		key ^= _castlingRights[0];
@@ -90,7 +90,7 @@ void Hash::xorCastlingRights(U64 &key, const CastlingRights rights)
 		key ^= _castlingRights[5];
 }
 
-void Hash::xorEnPassant(U64 &key, const byte square)
+void Hash::xorEnPassant(u64 &key, const u8 square)
 {
 	if (square <= SQUARE_NB)
 		key ^= _enPassant[col(square)];

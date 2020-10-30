@@ -48,14 +48,14 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 		if (!(ep[0] >= 'a' && ep[0] <= 'h'))
 			return false;
 
-		const byte sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
+		const u8 sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
 		board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
 	}
 
 	// HalfMove Clock
 	int halfMove{};
 	stream >> halfMove;
-	board.fiftyMoveRule = static_cast<byte>(halfMove);
+	board.fiftyMoveRule = static_cast<u8>(halfMove);
 
 	board.updatePieceList();
 	board.updateNonPieceBitboards();
@@ -134,7 +134,7 @@ void FenParser::parsePieces(Board &board, std::istringstream &stream)
 	std::string token;
 	token.reserve(32);
 
-	U64 boardPos = 56ull; // Fen string starts at a8 = index 56
+	u64 boardPos = 56ull; // Fen string starts at a8 = index 56
 	stream >> token;
 	for (auto currChar : token)
 	{
@@ -179,7 +179,7 @@ void FenParser::parsePieces(Board &board, std::istringstream &stream)
 			case '/': boardPos -= 16u; // Go down one rank
 				break;
 			default:
-				boardPos += static_cast<U64>(currChar - '0');
+				boardPos += static_cast<u64>(currChar - '0');
 		}
 	}
 }

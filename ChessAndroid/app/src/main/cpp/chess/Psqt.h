@@ -87,11 +87,11 @@ constexpr auto PSQT = []
 
 	std::array<std::array<Score, 64>, 7> bonuses{};
 
-	for (byte i{}; i < SQUARE_NB; ++i)
+	for (u8 i{}; i < SQUARE_NB; ++i)
 	{
-		const byte x = col(i);
-		const byte y = row(i);
-		const byte queenSideY = std::min<byte>(y, 7u - y);
+		const u8 x = col(i);
+		const u8 y = row(i);
+		const u8 queenSideY = std::min<u8>(y, 7u - y);
 
 		bonuses[PAWN][i] = PAWN_SCORE + PAWN_SQUARE[x][queenSideY];
 		bonuses[KNIGHT][i] = KNIGHT_SCORE + KNIGHT_SQUARE[x][queenSideY];

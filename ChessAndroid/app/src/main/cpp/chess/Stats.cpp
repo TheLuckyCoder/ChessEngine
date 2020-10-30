@@ -58,10 +58,11 @@ void Stats::restartTimer() noexcept
 	_startTime = std::chrono::high_resolution_clock::now();
 }
 
-double Stats::getElapsedMs() noexcept
+usize Stats::getElapsedMs() noexcept
 {
 	const auto currentTime = std::chrono::high_resolution_clock::now();
-	return std::chrono::duration<double, std::milli>(currentTime - _startTime).count();
+	const auto time = std::chrono::duration<double, std::milli>(currentTime - _startTime).count();
+	return static_cast<usize>(time);
 }
 
 std::string Stats::formatStats(const char separator)

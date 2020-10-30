@@ -10,7 +10,7 @@ PawnStructureTable::~PawnStructureTable() noexcept
 	delete[] _entries;
 }
 
-PawnStructureEntry PawnStructureTable::operator[](const U64 key) const noexcept
+PawnStructureEntry PawnStructureTable::operator[](const u64 key) const noexcept
 {
 	return _entries[key % _size];
 }

@@ -7,24 +7,24 @@ using namespace Bits;
 namespace
 {
 	template <Color Us>
-	Move *generatePawnMoves(const Board &board, Move *moveList, const U64 targets)
+	Move *generatePawnMoves(const Board &board, Move *moveList, const u64 targets)
 	{
 		using namespace Bits;
 
 		constexpr Piece Piece{ PAWN, Us };
 		constexpr Color Them = ~Us;
 		constexpr Dir Forward = Us == WHITE ? NORTH : SOUTH;
-		constexpr U64 StartRank = Us == WHITE ? RANK_2 : RANK_7;
-		constexpr U64 LastRank = Us == WHITE ? RANK_7 : RANK_2;
+		constexpr u64 StartRank = Us == WHITE ? RANK_2 : RANK_7;
+		constexpr u64 LastRank = Us == WHITE ? RANK_7 : RANK_2;
 
-		const auto addQuietMove = [&](const byte from, const byte to, const U64 pos)
+		const auto addQuietMove = [&](const u8 from, const u8 to, const u64 pos)
 		{
 			Move move{ from, to, PAWN };
 
 			if (LastRank & pos)
 			{
 				move.setFlags(Move::Flags::PROMOTION);
-				for (byte promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
+				for (u8 promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
 					*moveList++ = move;
@@ -33,7 +33,7 @@ namespace
 				*moveList++ = move;
 		};
 
-		const auto addCaptureMove = [&](const byte from, const byte to, const U64 pos)
+		const auto addCaptureMove = [&](const u8 from, const u8 to, const u64 pos)
 		{
 			Move move{ from, to, PAWN, Move::Flags::CAPTURE };
 			move.setCapturedPiece(board.getPiece(to).type());
@@ -41,7 +41,7 @@ namespace
 			if (LastRank & pos)
 			{
 				move.setFlags(Move::Flags::CAPTURE | Move::Flags::PROMOTION);
-				for (byte promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
+				for (u8 promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
 					*moveList++ = move;
@@ -50,17 +50,17 @@ namespace
 				*moveList++ = move;
 		};
 
-		for (byte pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
+		for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
 		{
-			const byte from = board.pieceList[Piece][pieceNumber];
-			const U64 bb = getSquare64(from);
-			U64 attacks = Attacks::pawnAttacks<Us>(bb);
+			const u8 from = board.pieceList[Piece][pieceNumber];
+			const u64 bb = getSquare64(from);
+			u64 attacks = Attacks::pawnAttacks<Us>(bb);
 
 			if (board.enPassantSq < SQ_NONE)
 			{
 				constexpr Dir EnPassantDirection = Us == WHITE ? SOUTH : NORTH;
-				const U64 enPassantCapture = getSquare64(board.enPassantSq);
-				const U64 capturedPawn = shift<EnPassantDirection>(enPassantCapture);
+				const u64 enPassantCapture = getSquare64(board.enPassantSq);
+				const u64 capturedPawn = shift<EnPassantDirection>(enPassantCapture);
 
 				if (board.getType(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
 				{
@@ -73,11 +73,11 @@ namespace
 
 			while (attacks)
 			{
-				const byte to = popLsb(attacks);
+				const u8 to = popLsb(attacks);
 				addCaptureMove(from, to, bb);
 			}
 
-			const U64 moveBB = shift<Forward>(bb);
+			const u64 moveBB = shift<Forward>(bb);
 
 			if (!(board.occupied & moveBB))
 			{
@@ -85,11 +85,11 @@ namespace
 
 				if (StartRank & bb)
 				{
-					const U64 doublePushBb = shift<Forward>(moveBB);
+					const u64 doublePushBb = shift<Forward>(moveBB);
 
 					if (!(board.occupied & doublePushBb))
 					{
-						const byte targetSq = bitScanForward(doublePushBb);
+						const u8 targetSq = bitScanForward(doublePushBb);
 						*moveList++ = { from, targetSq, PAWN,Move::Flags::DOUBLE_PAWN_PUSH };
 					}
 				}
@@ -100,17 +100,17 @@ namespace
 	}
 
 	template <Color Us, PieceType P>
-	Move *generatePieceMoves(const Board &board, Move *moveList, const U64 targets)
+	Move *generatePieceMoves(const Board &board, Move *moveList, const u64 targets)
 	{
 		static_assert(P != KING && P != PAWN);
 		constexpr Color Them = ~Us;
 		constexpr Piece Piece{ P, Us };
 
-		for (byte pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
+		for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
 		{
-			const byte from = board.pieceList[Piece][pieceNumber];
+			const u8 from = board.pieceList[Piece][pieceNumber];
 
-			U64 attacks{};
+			u64 attacks{};
 
 			if constexpr (P == KNIGHT)
 				attacks = Attacks::knightAttacks(from);
@@ -125,8 +125,8 @@ namespace
 
 			while (attacks)
 			{
-				const byte to = popLsb(attacks);
-				const U64 bb = getSquare64(to);
+				const u8 to = popLsb(attacks);
+				const u64 bb = getSquare64(to);
 
 				Move move{ from, to, P };
 				if (bb & board.allPieces[Them])
@@ -143,23 +143,23 @@ namespace
 	}
 
 	template <Color Us>
-	Move *generateKingMoves(const Board &board, Move *moveList, const U64 targets)
+	Move *generateKingMoves(const Board &board, Move *moveList, const u64 targets)
 	{
 		constexpr Color Them = ~Us;
 		constexpr Piece KingPiece{ KING, Us };
 
-		const byte kingSq = board.pieceList[KingPiece][0];
+		const u8 kingSq = board.pieceList[KingPiece][0];
 		assert(kingSq < SQUARE_NB);
 
-		U64 moves = Attacks::kingAttacks(kingSq) & targets;
+		u64 moves = Attacks::kingAttacks(kingSq) & targets;
 		moves &= ~Attacks::pawnAttacks<Them>(board.getType(PAWN, Them));
 
-		const U64 attackers = board.kingAttackers;
+		const u64 attackers = board.kingAttackers;
 		if (attackers)
 		{
-			U64 bishopAttackers =
+			u64 bishopAttackers =
 				attackers & (board.getType(BISHOP, Them) | board.getType(QUEEN, Them));
-			U64 rookAttackers =
+			u64 rookAttackers =
 				attackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
 
 			while (bishopAttackers)
@@ -171,8 +171,8 @@ namespace
 
 		while (moves)
 		{
-			const byte to = popLsb(moves);
-			const U64 bb = getSquare64(to);
+			const u8 to = popLsb(moves);
+			const u64 bb = getSquare64(to);
 
 			Move move{ kingSq, to, KING };
 			if (bb & board.allPieces[Them])
@@ -186,10 +186,10 @@ namespace
 		if (board.isSideInCheck() || !board.canCastle<Us>())
 			return moveList;
 
-		const auto addCastleMove = [&, kingSq](const byte kingTo, const byte rookSq,
-											   const byte rookTo, const byte castleSide)
+		const auto addCastleMove = [&, kingSq](const u8 kingTo, const u8 rookSq,
+											   const u8 rookTo, const u8 castleSide)
 		{
-			U64 mask = getRayBetween(kingSq, kingTo) | getSquare64(kingTo);
+			u64 mask = getRayBetween(kingSq, kingTo) | getSquare64(kingTo);
 			mask |= getRayBetween(rookSq, rookTo) | getSquare64(rookTo);
 			mask &= ~(getSquare64(kingSq) | getSquare64(rookSq));
 
@@ -233,32 +233,32 @@ namespace
 		using namespace Bits;
 		constexpr Color Them = ~Us;
 
-		const U64 kingTargets = ~board.allPieces[Us];
+		const u64 kingTargets = ~board.allPieces[Us];
 		if (several(board.kingAttackers))
 			return generateKingMoves<Us>(board, moveList, kingTargets);
 
-		U64 targets{};
-		const U64 kingAttackers = board.kingAttackers;
+		u64 targets{};
+		const u64 kingAttackers = board.kingAttackers;
 		// When checked we must either capture the attacker
 		// or block it if is a slider piece
 		if (kingAttackers)
 		{
 			targets |= kingAttackers;
 
-			U64 bishopAttackers =
+			u64 bishopAttackers =
 				kingAttackers & (board.getType(BISHOP, Them) | board.getType(QUEEN, Them));
-			U64 rookAttackers =
+			u64 rookAttackers =
 				kingAttackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
 
 			while (bishopAttackers)
 			{
-				const byte sq = popLsb(bishopAttackers);
+				const u8 sq = popLsb(bishopAttackers);
 				targets |= Attacks::bishopXRayAttacks(sq);
 			}
 
 			while (rookAttackers)
 			{
-				const byte sq = popLsb(rookAttackers);
+				const u8 sq = popLsb(rookAttackers);
 				targets |= Attacks::rookXRayAttacks(sq);
 			}
 		}

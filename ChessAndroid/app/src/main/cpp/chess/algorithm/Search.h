@@ -1,31 +1,19 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
-
 #include "../Settings.h"
 #include "../Move.h"
 #include "../containers/TranspositionTable.h"
-
-#include "../Thread.h"
 
 class Board;
 
 class Search final
 {
 private:
-	struct State
+	struct SharedState
 	{
-		std::atomic_bool stopped{};
+		bool stopped{};
 		std::atomic_uint64_t nodes{};
-		bool doQuietSearch = true;
-		bool useTime{};
-		size_t time{};
-		int maxDepth{};
-	};
 
-	struct DepthCounter
-	{
 		mutable std::mutex mutex{};
 		// Stats for the last time the depth was updated
 		std::atomic_int depth{};
@@ -36,9 +24,9 @@ private:
 		int lastReportedDepth{};
 	};
 
+	static Settings _searchSettings;
 	static TranspositionTable _transpTable;
-	static DepthCounter _depthCounter;
-	static State _state;
+	static SharedState _sharedState;
 
 public:
 	Search() = delete;
@@ -65,7 +53,7 @@ private:
 					  bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
-	inline static void storeTtEntry(const Move &bestMove, U64 key, int alpha, int originalAlpha,
+	inline static void storeTtEntry(const Move &bestMove, u64 key, int alpha, int originalAlpha,
 									int beta, int depth, bool qSearch);
 	static bool checkTimeAndStop();
 };

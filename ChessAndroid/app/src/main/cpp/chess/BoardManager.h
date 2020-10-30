@@ -8,7 +8,7 @@
 #include "Settings.h"
 #include "Board.h"
 
-enum class GameState : byte
+enum class GameState : u8
 {
 	NONE,
 	WINNER_WHITE,
@@ -22,7 +22,7 @@ enum class GameState : byte
 class BoardManager final
 {
 public:
-	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const std::vector<std::pair<byte, byte>> &moved)>;
+	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const std::vector<std::pair<u8, u8>> &moved)>;
 
 private:
 	static Settings _settings;
@@ -43,7 +43,7 @@ public:
 	static std::vector<Move> getMovesHistory();
 	static bool isWorking() { return _isWorking; }
 	static bool isPlayerWhite() { return _isPlayerWhite; }
-	static std::vector<Move> getPossibleMoves(byte from);
+	static std::vector<Move> getPossibleMoves(u8 from);
 	static void makeMove(Move move, bool movedByPlayer = true);
 	static void setSettings(const Settings &settings) { _settings = settings; }
 	static void forceMove();

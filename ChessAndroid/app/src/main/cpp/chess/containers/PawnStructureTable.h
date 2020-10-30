@@ -5,7 +5,7 @@
 
 struct PawnStructureEntry
 {
-    U64 pawns{};
+    u64 pawns{};
     Score score;
 };
 
@@ -21,7 +21,7 @@ public:
 	PawnStructureTable &operator=(const PawnStructureTable&) = delete;
 	PawnStructureTable &operator=(PawnStructureTable&&) = delete;
 
-	PawnStructureEntry operator[](U64 key) const noexcept;
+	PawnStructureEntry operator[](u64 key) const noexcept;
 
     void insert(const PawnStructureEntry &value) const noexcept;
 	bool setSize(std::size_t sizeMb) noexcept(false);

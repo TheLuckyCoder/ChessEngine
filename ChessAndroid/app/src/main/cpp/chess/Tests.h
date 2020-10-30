@@ -14,7 +14,7 @@ namespace Tests
 {
 	static Board mirrorBoard(const Board &board)
 	{
-		constexpr std::array<byte, 64> MirrorSquare{
+		constexpr std::array<u8, 64> MirrorSquare{
 			56, 57, 58, 59, 60, 61, 62, 63,
 			48, 49, 50, 51, 52, 53, 54, 55,
 			40, 41, 42, 43, 44, 45, 46, 47,
@@ -28,7 +28,7 @@ namespace Tests
 		Board result;
 
 		result.colorToMove = ~board.colorToMove;
-		for (byte sq{}; sq < SQUARE_NB; ++sq)
+		for (u8 sq{}; sq < SQUARE_NB; ++sq)
 		{
 			const auto &piece = board.data[sq];
 			if (piece)
@@ -36,7 +36,7 @@ namespace Tests
 		}
 
 		// Castling
-		const byte originalRights = board.castlingRights;
+		const u8 originalRights = board.castlingRights;
 		auto &rights = result.castlingRights;
 		rights |= (originalRights & 0b111u) << 3u; // Black -> White
 		rights |= originalRights >> 3u; // White -> Black
@@ -180,7 +180,7 @@ namespace Tests
 		return output.str();
 	}
 
-	static U64 perft(Board &board, const unsigned depth)
+	static u64 perft(Board &board, const unsigned depth)
 	{
 		if (board.fiftyMoveRule == 100)
 			return 0;
@@ -204,21 +204,21 @@ namespace Tests
 		return legalCount;
 	}
 
-	static void perftTest(const std::string &fen, const std::initializer_list<U64> perftResults)
+	static void perftTest(const std::string &fen, const std::initializer_list<u64> perftResults)
 	{
 		Board board;
 		board.setToFen(fen);
 
 		constexpr auto TAG = "Perft: ";
 
-		std::vector<U64> perftVector(perftResults);
+		std::vector<u64> perftVector(perftResults);
 
 		for (unsigned i = 1; i < perftVector.size(); ++i)
 		{
 			std::cout << TAG << "Starting Depth " << i << " Test\n";
 
 			const auto startTime = std::chrono::high_resolution_clock::now();
-			const U64 nodeCount = perft(board, i);
+			const u64 nodeCount = perft(board, i);
 
 			const auto endTime = std::chrono::high_resolution_clock::now();
 			const auto timeNeeded =

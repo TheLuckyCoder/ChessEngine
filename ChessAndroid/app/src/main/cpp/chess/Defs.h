@@ -3,8 +3,16 @@
 #include <cstdint>
 #include <cstddef>
 
-using byte = std::uint8_t;
-using U64 = std::uint64_t;
+using i8 = std::int8_t;
+using i16 = std::int16_t;
+using i32 = std::int32_t;
+using i64 = std::int64_t;
+
+using u8 = std::uint8_t;
+using u16 = std::uint16_t;
+using u32 = std::uint32_t;
+using u64 = std::uint64_t;
+using usize = std::size_t;
 
 enum Color : bool
 {
@@ -17,7 +25,7 @@ constexpr Color operator~(const Color c) noexcept
 	return Color(c ^ WHITE); // Toggle color
 }
 
-enum Dir : std::int16_t
+enum Dir : i16
 {
 	NORTH,
 	SOUTH,
@@ -29,7 +37,7 @@ enum Dir : std::int16_t
 	SOUTH_WEST
 };
 
-enum CastlingRights : byte
+enum CastlingRights : u8
 {
 	CASTLE_NONE = 0,
 
@@ -44,7 +52,7 @@ enum CastlingRights : byte
 	CASTLED_WHITE = 0b10'0000
 };
 
-enum Phase : byte
+enum Phase : u8
 {
 	END_GAME_PHASE,
 	MIDDLE_GAME_PHASE = 128
@@ -68,7 +76,7 @@ constexpr bool isMateValue(const Value value) noexcept
 	return (absValue + MAX_DEPTH + 1) > VALUE_MAX;
 }
 
-enum PieceType : byte
+enum PieceType : u8
 {
 	NO_PIECE_TYPE = 0,
 	PAWN = 1,
@@ -79,7 +87,7 @@ enum PieceType : byte
 	KING = 6
 };
 
-enum Square : byte
+enum Square : u8
 {
 	SQ_A1, SQ_B1, SQ_C1, SQ_D1, SQ_E1, SQ_F1, SQ_G1, SQ_H1,
 	SQ_A2, SQ_B2, SQ_C2, SQ_D2, SQ_E2, SQ_F2, SQ_G2, SQ_H2,
@@ -94,29 +102,29 @@ enum Square : byte
 	SQUARE_NB = 64
 };
 
-constexpr U64 RANK_1 = 0xffull;
-constexpr U64 RANK_2 = 0xff00ull;
-constexpr U64 RANK_3 = 0xff0000ull;
-constexpr U64 RANK_4 = 0xff000000ull;
-constexpr U64 RANK_5 = 0xff00000000ull;
-constexpr U64 RANK_6 = 0xff0000000000ull;
-constexpr U64 RANK_7 = 0xff000000000000ull;
-constexpr U64 RANK_8 = 0xff00000000000000ull;
+constexpr u64 RANK_1 = 0xffull;
+constexpr u64 RANK_2 = 0xff00ull;
+constexpr u64 RANK_3 = 0xff0000ull;
+constexpr u64 RANK_4 = 0xff000000ull;
+constexpr u64 RANK_5 = 0xff00000000ull;
+constexpr u64 RANK_6 = 0xff0000000000ull;
+constexpr u64 RANK_7 = 0xff000000000000ull;
+constexpr u64 RANK_8 = 0xff00000000000000ull;
 
-constexpr U64 FILE_H = 0x8080808080808080ull;
-constexpr U64 FILE_G = 0x4040404040404040ull;
-constexpr U64 FILE_F = 0x2020202020202020ull;
-constexpr U64 FILE_E = 0x1010101010101010ull;
-constexpr U64 FILE_D = 0x808080808080808ull;
-constexpr U64 FILE_C = 0x404040404040404ull;
-constexpr U64 FILE_B = 0x202020202020202ull;
-constexpr U64 FILE_A = 0x101010101010101ull;
+constexpr u64 FILE_H = 0x8080808080808080ull;
+constexpr u64 FILE_G = 0x4040404040404040ull;
+constexpr u64 FILE_F = 0x2020202020202020ull;
+constexpr u64 FILE_E = 0x1010101010101010ull;
+constexpr u64 FILE_D = 0x808080808080808ull;
+constexpr u64 FILE_C = 0x404040404040404ull;
+constexpr u64 FILE_B = 0x202020202020202ull;
+constexpr u64 FILE_A = 0x101010101010101ull;
 
-constexpr byte row(const byte pos) noexcept { return static_cast<byte>(pos >> 3u); }
+constexpr u8 row(const u8 pos) noexcept { return static_cast<u8>(pos >> 3u); }
 
-constexpr byte col(const byte pos) noexcept { return static_cast<byte>(pos & 7u); }
+constexpr u8 col(const u8 pos) noexcept { return static_cast<u8>(pos & 7u); }
 
-constexpr byte toSquare(const byte x, const byte y) noexcept
+constexpr u8 toSquare(const u8 x, const u8 y) noexcept
 {
-	return static_cast<byte>((y << 3u) + x);
+	return static_cast<u8>((y << 3u) + x);
 }
