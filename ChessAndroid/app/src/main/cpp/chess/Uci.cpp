@@ -6,7 +6,6 @@
 #include "Stats.h"
 #include "Tests.h"
 #include "algorithm/Hash.h"
-#include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
 
 std::thread Uci::searchThread{};
@@ -15,7 +14,6 @@ Board Uci::board{};
 void Uci::init()
 {
 	Hash::init();
-	Attacks::init();
 	board.setToStartPos();
 }
 
@@ -160,7 +158,7 @@ void Uci::parseGo(std::istringstream &is)
 	std::cout << "time: " << time << " depth: " << depth << " timeSet: " << std::boolalpha << timeSet << std::endl;
 
 	const auto searchTime = timeSet ? static_cast<size_t>(time) : 0ul;
-	const Settings settings{ static_cast<size_t>(depth), std::thread::hardware_concurrency(), 128, true, searchTime };
+	const Settings settings{ depth, /*std::thread::hardware_concurrency() - 1*/ 4, 100, true, searchTime };
 
 	if (searchThread.joinable())
 		searchThread.detach();

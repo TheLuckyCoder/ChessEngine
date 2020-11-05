@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <cassert>
 
 using i8 = std::int8_t;
 using i16 = std::int16_t;
@@ -102,29 +103,34 @@ enum Square : u8
 	SQUARE_NB = 64
 };
 
-constexpr u64 RANK_1 = 0xffull;
-constexpr u64 RANK_2 = 0xff00ull;
-constexpr u64 RANK_3 = 0xff0000ull;
-constexpr u64 RANK_4 = 0xff000000ull;
-constexpr u64 RANK_5 = 0xff00000000ull;
-constexpr u64 RANK_6 = 0xff0000000000ull;
-constexpr u64 RANK_7 = 0xff000000000000ull;
-constexpr u64 RANK_8 = 0xff00000000000000ull;
-
-constexpr u64 FILE_H = 0x8080808080808080ull;
-constexpr u64 FILE_G = 0x4040404040404040ull;
-constexpr u64 FILE_F = 0x2020202020202020ull;
-constexpr u64 FILE_E = 0x1010101010101010ull;
-constexpr u64 FILE_D = 0x808080808080808ull;
-constexpr u64 FILE_C = 0x404040404040404ull;
-constexpr u64 FILE_B = 0x202020202020202ull;
-constexpr u64 FILE_A = 0x101010101010101ull;
+constexpr Square toSquare(const u8 sq) noexcept
+{
+	return assert(sq < static_cast<u8>(Square::SQUARE_NB)), static_cast<Square>(sq);
+}
 
 constexpr u8 row(const u8 pos) noexcept { return static_cast<u8>(pos >> 3u); }
 
 constexpr u8 col(const u8 pos) noexcept { return static_cast<u8>(pos & 7u); }
 
-constexpr u8 toSquare(const u8 x, const u8 y) noexcept
+constexpr Square toSquare(const u8 x, const u8 y) noexcept
 {
-	return static_cast<u8>((y << 3u) + x);
+	return static_cast<Square>((y << 3u) + x);
 }
+
+constexpr u64 RANK_1{ 0xffull };
+constexpr u64 RANK_2{ 0xff00ull };
+constexpr u64 RANK_3{ 0xff0000ull };
+constexpr u64 RANK_4{ 0xff000000ull };
+constexpr u64 RANK_5{ 0xff00000000ull };
+constexpr u64 RANK_6{ 0xff0000000000ull };
+constexpr u64 RANK_7{ 0xff000000000000ull };
+constexpr u64 RANK_8{ 0xff00000000000000ull };
+
+constexpr u64 FILE_H{ 0x8080808080808080ull };
+constexpr u64 FILE_G{ 0x4040404040404040ull };
+constexpr u64 FILE_F{ 0x2020202020202020ull };
+constexpr u64 FILE_E{ 0x1010101010101010ull };
+constexpr u64 FILE_D{ 0x808080808080808ull };
+constexpr u64 FILE_C{ 0x404040404040404ull };
+constexpr u64 FILE_B{ 0x202020202020202ull };
+constexpr u64 FILE_A{ 0x101010101010101ull };

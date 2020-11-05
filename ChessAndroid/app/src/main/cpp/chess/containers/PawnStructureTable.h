@@ -1,18 +1,18 @@
 #pragma once
 
-#include "../Defs.h"
+#include "../Bits.h"
 #include "../Score.h"
 
 struct PawnStructureEntry
 {
-    u64 pawns{};
+    Bitboard pawns;
     Score score;
 };
 
 class PawnStructureTable
 {
 public:
-    explicit PawnStructureTable(std::size_t sizeMb) noexcept;
+    explicit PawnStructureTable(usize sizeMb) noexcept;
 
 	PawnStructureTable(const PawnStructureTable&) = delete;
 	PawnStructureTable(PawnStructureTable&&) = delete;
@@ -24,10 +24,10 @@ public:
 	PawnStructureEntry operator[](u64 key) const noexcept;
 
     void insert(const PawnStructureEntry &value) const noexcept;
-	bool setSize(std::size_t sizeMb) noexcept(false);
+	bool setSize(usize sizeMb) noexcept(false);
 	void clear() const noexcept;
 
 private:
-    std::size_t _size;
+	usize _size;
 	PawnStructureEntry *_entries = new PawnStructureEntry[_size]{};
 };

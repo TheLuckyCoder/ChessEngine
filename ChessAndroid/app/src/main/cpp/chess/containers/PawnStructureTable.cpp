@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-PawnStructureTable::PawnStructureTable(const std::size_t sizeMb) noexcept
+PawnStructureTable::PawnStructureTable(const usize sizeMb) noexcept
 	: _size((sizeMb << 20u) / sizeof(PawnStructureEntry)) {}
 
 PawnStructureTable::~PawnStructureTable() noexcept
@@ -17,10 +17,10 @@ PawnStructureEntry PawnStructureTable::operator[](const u64 key) const noexcept
 
 void PawnStructureTable::insert(const PawnStructureEntry &value) const noexcept
 {
-	_entries[value.pawns % _size] = value;
+	_entries[value.pawns.value() % _size] = value;
 }
 
-bool PawnStructureTable::setSize(const std::size_t sizeMb) noexcept(false)
+bool PawnStructureTable::setSize(const usize sizeMb) noexcept(false)
 {
 	const auto newSize = (sizeMb << 20u) / sizeof(PawnStructureEntry);
 

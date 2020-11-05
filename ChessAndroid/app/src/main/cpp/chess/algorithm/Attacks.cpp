@@ -1,113 +1,111 @@
 #include "Attacks.h"
 
 static constexpr std::array<u8, SQUARE_NB> rookIndexBits
-{
-	12, 11, 11, 11, 11, 11, 11, 12,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	12, 11, 11, 11, 11, 11, 11, 12
-};
+	{
+		12, 11, 11, 11, 11, 11, 11, 12,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		12, 11, 11, 11, 11, 11, 11, 12
+	};
 
-static constexpr std::array<u8, SQUARE_NB> bishopIndexBits
-{
-	6, 5, 5, 5, 5, 5, 5, 6,
-	5, 5, 5, 5, 5, 5, 5, 5,
-	5, 5, 7, 7, 7, 7, 5, 5,
-	5, 5, 7, 9, 9, 7, 5, 5,
-	5, 5, 7, 9, 9, 7, 5, 5,
-	5, 5, 7, 7, 7, 7, 5, 5,
-	5, 5, 5, 5, 5, 5, 5, 5,
-	6, 5, 5, 5, 5, 5, 5, 6
-};
+static constexpr std::array<u8, SQUARE_NB> _bishopIndexBits
+	{
+		6, 5, 5, 5, 5, 5, 5, 6,
+		5, 5, 5, 5, 5, 5, 5, 5,
+		5, 5, 7, 7, 7, 7, 5, 5,
+		5, 5, 7, 9, 9, 7, 5, 5,
+		5, 5, 7, 9, 9, 7, 5, 5,
+		5, 5, 7, 7, 7, 7, 5, 5,
+		5, 5, 5, 5, 5, 5, 5, 5,
+		6, 5, 5, 5, 5, 5, 5, 6
+	};
 
 /**
  * Rook and bishop magic values for magic table lookups
  */
-static constexpr std::array<u64, 64> bishopMagics
-{
-	0x89a1121896040240ull, 0x2004844802002010ull, 0x2068080051921000ull, 0x62880a0220200808ull, 0x4042004000000ull,
-	0x100822020200011ull, 0xc00444222012000aull, 0x28808801216001ull, 0x400492088408100ull, 0x201c401040c0084ull,
-	0x840800910a0010ull, 0x82080240060ull, 0x2000840504006000ull, 0x30010c4108405004ull, 0x1008005410080802ull,
-	0x8144042209100900ull, 0x208081020014400ull, 0x4800201208ca00ull, 0xf18140408012008ull, 0x1004002802102001ull,
-	0x841000820080811ull, 0x40200200a42008ull, 0x800054042000ull, 0x88010400410c9000ull, 0x520040470104290ull,
-	0x1004040051500081ull, 0x2002081833080021ull, 0x400c00c010142ull, 0x941408200c002000ull, 0x658810000806011ull,
-	0x188071040440a00ull, 0x4800404002011c00ull, 0x104442040404200ull, 0x511080202091021ull, 0x4022401120400ull,
-	0x80c0040400080120ull, 0x8040010040820802ull, 0x480810700020090ull, 0x102008e00040242ull, 0x809005202050100ull,
-	0x8002024220104080ull, 0x431008804142000ull, 0x19001802081400ull, 0x200014208040080ull, 0x3308082008200100ull,
-	0x41010500040c020ull, 0x4012020c04210308ull, 0x208220a202004080ull, 0x111040120082000ull, 0x6803040141280a00ull,
-	0x2101004202410000ull, 0x8200000041108022ull, 0x21082088000ull, 0x2410204010040ull, 0x40100400809000ull,
-	0x822088220820214ull, 0x40808090012004ull, 0x910224040218c9ull, 0x402814422015008ull, 0x90014004842410ull,
-	0x1000042304105ull, 0x10008830412a00ull, 0x2520081090008908ull, 0x40102000a0a60140ull,
-};
+static constexpr std::array<u64, SQUARE_NB> bishopMagics
+	{
+		0x89a1121896040240ull, 0x2004844802002010ull, 0x2068080051921000ull, 0x62880a0220200808ull, 0x4042004000000ull,
+		0x100822020200011ull, 0xc00444222012000aull, 0x28808801216001ull, 0x400492088408100ull, 0x201c401040c0084ull,
+		0x840800910a0010ull, 0x82080240060ull, 0x2000840504006000ull, 0x30010c4108405004ull, 0x1008005410080802ull,
+		0x8144042209100900ull, 0x208081020014400ull, 0x4800201208ca00ull, 0xf18140408012008ull, 0x1004002802102001ull,
+		0x841000820080811ull, 0x40200200a42008ull, 0x800054042000ull, 0x88010400410c9000ull, 0x520040470104290ull,
+		0x1004040051500081ull, 0x2002081833080021ull, 0x400c00c010142ull, 0x941408200c002000ull, 0x658810000806011ull,
+		0x188071040440a00ull, 0x4800404002011c00ull, 0x104442040404200ull, 0x511080202091021ull, 0x4022401120400ull,
+		0x80c0040400080120ull, 0x8040010040820802ull, 0x480810700020090ull, 0x102008e00040242ull, 0x809005202050100ull,
+		0x8002024220104080ull, 0x431008804142000ull, 0x19001802081400ull, 0x200014208040080ull, 0x3308082008200100ull,
+		0x41010500040c020ull, 0x4012020c04210308ull, 0x208220a202004080ull, 0x111040120082000ull, 0x6803040141280a00ull,
+		0x2101004202410000ull, 0x8200000041108022ull, 0x21082088000ull, 0x2410204010040ull, 0x40100400809000ull,
+		0x822088220820214ull, 0x40808090012004ull, 0x910224040218c9ull, 0x402814422015008ull, 0x90014004842410ull,
+		0x1000042304105ull, 0x10008830412a00ull, 0x2520081090008908ull, 0x40102000a0a60140ull,
+	};
 
-static constexpr std::array<u64, 64> rookMagics
-{
-	0xa8002c000108020ull, 0x6c00049b0002001ull, 0x100200010090040ull, 0x2480041000800801ull, 0x280028004000800ull,
-	0x900410008040022ull, 0x280020001001080ull, 0x2880002041000080ull, 0xa000800080400034ull, 0x4808020004000ull,
-	0x2290802004801000ull, 0x411000d00100020ull, 0x402800800040080ull, 0xb000401004208ull, 0x2409000100040200ull,
-	0x1002100004082ull, 0x22878001e24000ull, 0x1090810021004010ull, 0x801030040200012ull, 0x500808008001000ull,
-	0xa08018014000880ull, 0x8000808004000200ull, 0x201008080010200ull, 0x801020000441091ull, 0x800080204005ull,
-	0x1040200040100048ull, 0x120200402082ull, 0xd14880480100080ull, 0x12040280080080ull, 0x100040080020080ull,
-	0x9020010080800200ull, 0x813241200148449ull, 0x491604001800080ull, 0x100401000402001ull, 0x4820010021001040ull,
-	0x400402202000812ull, 0x209009005000802ull, 0x810800601800400ull, 0x4301083214000150ull, 0x204026458e001401ull,
-	0x40204000808000ull, 0x8001008040010020ull, 0x8410820820420010ull, 0x1003001000090020ull, 0x804040008008080ull,
-	0x12000810020004ull, 0x1000100200040208ull, 0x430000a044020001ull, 0x280009023410300ull, 0xe0100040002240ull,
-	0x200100401700ull, 0x2244100408008080ull, 0x8000400801980ull, 0x2000810040200ull, 0x8010100228810400ull,
-	0x2000009044210200ull, 0x4080008040102101ull, 0x40002080411d01ull, 0x2005524060000901ull, 0x502001008400422ull,
-	0x489a000810200402ull, 0x1004400080a13ull, 0x4000011008020084ull, 0x26002114058042ull
-};
+static constexpr std::array<u64, SQUARE_NB> rookMagics
+	{
+		0xa8002c000108020ull, 0x6c00049b0002001ull, 0x100200010090040ull, 0x2480041000800801ull, 0x280028004000800ull,
+		0x900410008040022ull, 0x280020001001080ull, 0x2880002041000080ull, 0xa000800080400034ull, 0x4808020004000ull,
+		0x2290802004801000ull, 0x411000d00100020ull, 0x402800800040080ull, 0xb000401004208ull, 0x2409000100040200ull,
+		0x1002100004082ull, 0x22878001e24000ull, 0x1090810021004010ull, 0x801030040200012ull, 0x500808008001000ull,
+		0xa08018014000880ull, 0x8000808004000200ull, 0x201008080010200ull, 0x801020000441091ull, 0x800080204005ull,
+		0x1040200040100048ull, 0x120200402082ull, 0xd14880480100080ull, 0x12040280080080ull, 0x100040080020080ull,
+		0x9020010080800200ull, 0x813241200148449ull, 0x491604001800080ull, 0x100401000402001ull, 0x4820010021001040ull,
+		0x400402202000812ull, 0x209009005000802ull, 0x810800601800400ull, 0x4301083214000150ull, 0x204026458e001401ull,
+		0x40204000808000ull, 0x8001008040010020ull, 0x8410820820420010ull, 0x1003001000090020ull, 0x804040008008080ull,
+		0x12000810020004ull, 0x1000100200040208ull, 0x430000a044020001ull, 0x280009023410300ull, 0xe0100040002240ull,
+		0x200100401700ull, 0x2244100408008080ull, 0x8000400801980ull, 0x2000810040200ull, 0x8010100228810400ull,
+		0x2000009044210200ull, 0x4080008040102101ull, 0x40002080411d01ull, 0x2005524060000901ull, 0x502001008400422ull,
+		0x489a000810200402ull, 0x1004400080a13ull, 0x4000011008020084ull, 0x26002114058042ull
+	};
 
 /**
  * Rook and bishop sliding attack masks indexed by [square]
  * These do not include edge squares
  */
-static constexpr auto bishopMasks = []
+static constexpr auto _bishopMasks = []
 {
-	using namespace Bits;
+	constexpr Bitboard edgeSquares{ FILE_A | FILE_H | RANK_1 | RANK_8 };
+	std::array<Bitboard, SQUARE_NB> masks{};
 
-	const u64 edgeSquares = FILE_A | FILE_H | RANK_1 | RANK_8;
-	std::array<u64, SQUARE_NB> masks{};
-
-	for (u8 square = 0u; square < SQUARE_NB; ++square)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (getRay(NORTH_EAST, square)
-						 | getRay(NORTH_WEST, square)
-						 | getRay(SOUTH_WEST, square)
-						 | getRay(SOUTH_EAST, square)) & ~(edgeSquares);
+		const Square sq = toSquare(square);
+		masks[square] = (Bitboard::fromRay(NORTH_EAST, sq)
+						 | Bitboard::fromRay(NORTH_WEST, sq)
+						 | Bitboard::fromRay(SOUTH_WEST, sq)
+						 | Bitboard::fromRay(SOUTH_EAST, sq)) & (~edgeSquares);
 	}
 
 	return masks;
 }();
 
-static constexpr auto rookMasks = []
+static constexpr auto _rookMasks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> masks{};
 
-	std::array<u64, SQUARE_NB> masks{};
-
-	for (u8 square{}; square < 64u; ++square)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (getRay(NORTH, square) & ~RANK_8)
-						| (getRay(SOUTH, square) & ~RANK_1)
-						| (getRay(EAST, square) & ~FILE_H)
-						| (getRay(WEST, square) & ~FILE_A);
+		const Square sq = toSquare(square);
+		masks[square] = (Bitboard::fromRay(NORTH, sq) & ~Bitboard{ RANK_8 })
+						| (Bitboard::fromRay(SOUTH, sq) & ~Bitboard{ RANK_1 })
+						| (Bitboard::fromRay(EAST, sq) & ~Bitboard{ FILE_H })
+						| (Bitboard::fromRay(WEST, sq) & ~Bitboard{ FILE_A });
 	}
 
 	return masks;
 }();
 
-u64 getBlockersFromIndex(const int index, u64 mask)
+constexpr u64 getBlockersFromIndex(const int index, Bitboard mask)
 {
 	u64 blockers{};
-	const int bits = Bits::popCount(mask);
+	const int bits = mask.count();
 
 	for (int i = 0; i < bits; i++)
 	{
-		const u8 bitPos = Bits::popLsb(mask);
+		const u8 bitPos = mask.popLsb();
 		if (index & (1 << i))
 			blockers |= Bits::_SQUARES[bitPos];
 	}
@@ -117,21 +115,19 @@ u64 getBlockersFromIndex(const int index, u64 mask)
 
 static constexpr auto _knightAttacks = []
 {
-	std::array<u64, 64> moves{};
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	using namespace Bits;
-
-	for (u8 sq{}; sq < SQUARE_NB; ++sq)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		const u64 bb = getSquare64(sq);
-		moves[sq] = shift<WEST, WEST, SOUTH>(bb)
-					| shift<WEST, WEST, NORTH>(bb)
-					| shift<WEST, SOUTH, SOUTH>(bb)
-					| shift<WEST, NORTH, NORTH>(bb)
-					| shift<EAST, SOUTH, SOUTH>(bb)
-					| shift<EAST, NORTH, NORTH>(bb)
-					| shift<EAST, EAST, SOUTH>(bb)
-					| shift<EAST, EAST, NORTH>(bb);
+		const auto bb = Bitboard::fromSquare(toSquare(square));
+		moves[square] = bb.shift<WEST, WEST, SOUTH>()
+						| bb.shift<WEST, WEST, NORTH>()
+						| bb.shift<WEST, SOUTH, SOUTH>()
+						| bb.shift<WEST, NORTH, NORTH>()
+						| bb.shift<EAST, SOUTH, SOUTH>()
+						| bb.shift<EAST, NORTH, NORTH>()
+						| bb.shift<EAST, EAST, SOUTH>()
+						| bb.shift<EAST, EAST, NORTH>();
 	}
 
 	return moves;
@@ -139,135 +135,136 @@ static constexpr auto _knightAttacks = []
 
 static constexpr auto _kingAttacks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	std::array<u64, SQUARE_NB> moves{};
-
-	for (u8 sq{}; sq < SQUARE_NB; ++sq)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		const u64 bb = getSquare64(sq);
+		const auto bb = Bitboard::fromSquare(toSquare(square));
 
 		// Vertical and Horizontal
-		u64 attacks = shift<NORTH>(bb) | shift<SOUTH>(bb) | shift<EAST>(bb) | shift<WEST>(bb);
+		auto attacks = bb.shift<NORTH>() | bb.shift<SOUTH>() | bb.shift<EAST>() | bb.shift<WEST>();
 
 		// Diagonals
-		attacks |= shift<NORTH_EAST>(bb) | shift<NORTH_WEST>(bb) | shift<SOUTH_EAST>(bb) |
-				   shift<SOUTH_WEST>(bb);
+		attacks |= bb.shift<NORTH_EAST>() | bb.shift<NORTH_WEST>() | bb.shift<SOUTH_EAST>() |
+				   bb.shift<SOUTH_WEST>();
 
-		moves[sq] = attacks;
+		moves[square] = attacks;
 	}
 
 	return moves;
 }();
 
-std::array<std::array<u64, 1024>, SQUARE_NB> Attacks::_bishopAttacks{};
+static const auto _bishopAttacks = []
+{
+	std::array<std::array<Bitboard, 1024>, SQUARE_NB> moves{};
 
-std::array<std::array<u64, 4096>, SQUARE_NB> Attacks::_rookAttacks{};
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		const int indexBit = _bishopIndexBits[square];
+
+		// For all possible blockers for this square
+		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
+		{
+			const u64 blockers = getBlockersFromIndex(blockerIndex, _bishopMasks[square]);
+			const u64 attacks = Bits::generateBishopAttacks(square, blockers);
+			const u64 index = (blockers * bishopMagics[square]) >> (64 - indexBit);
+
+			moves[square][index] = Bitboard{ attacks };
+		}
+	}
+
+	return moves;
+}();
+
+static const auto _rookAttacks = []
+{
+	std::array<std::array<Bitboard, 4096>, SQUARE_NB> moves{};
+
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		const int indexBit = rookIndexBits[square];
+
+		// For all possible blockers for this square
+		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
+		{
+			const u64 blockers = getBlockersFromIndex(blockerIndex, _rookMasks[square]);
+			const u64 attacks = Bits::generateRookAttacks(square, blockers);
+			const u64 index = (blockers * rookMagics[square]) >> (64 - indexBit);
+
+			moves[square][index] = Bitboard{ attacks };
+		}
+	}
+
+	return moves;
+}();
 
 static constexpr auto _bishopXRayAttacks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	std::array<u64, SQUARE_NB> moves{};
-
-	for (u8 sq{}; sq < SQUARE_NB; ++sq)
-		moves[sq] = getRay(NORTH_WEST, sq)
-				   | getRay(NORTH_EAST, sq)
-				   | getRay(SOUTH_WEST, sq)
-				   | getRay(SOUTH_EAST, sq);
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		const Square sq = toSquare(square);
+		moves[square] = Bitboard::fromRay(NORTH_WEST, sq)
+						| Bitboard::fromRay(NORTH_EAST, sq)
+						| Bitboard::fromRay(SOUTH_WEST, sq)
+						| Bitboard::fromRay(SOUTH_EAST, sq);
+	}
 
 	return moves;
 }();
 
 static constexpr auto _rookXRayAttacks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	std::array<u64, SQUARE_NB> moves{};
-
-	for (u8 sq{}; sq < SQUARE_NB; ++sq)
-		moves[sq] = getRay(NORTH, sq)
-				   | getRay(EAST, sq)
-				   | getRay(SOUTH, sq)
-				   | getRay(WEST, sq);
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		const Square sq = toSquare(square);
+		moves[square] = Bitboard::fromRay(NORTH, sq)
+						| Bitboard::fromRay(EAST, sq)
+						| Bitboard::fromRay(SOUTH, sq)
+						| Bitboard::fromRay(WEST, sq);
+	}
 
 	return moves;
 }();
 
-void Attacks::init() noexcept
-{
-	static bool initialized = false;
-	if (initialized) return;
-	initialized = true;
-
-	// Init Bishop Moves
-	for (u8 bb{}; bb < SQUARE_NB; ++bb)
-	{
-		const int indexBit = bishopIndexBits[bb];
-
-		// For all possible blockers for this square
-		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
-		{
-			const u64 blockers = getBlockersFromIndex(blockerIndex, bishopMasks[bb]);
-			const u64 attacks = Bits::generateBishopAttacks(bb, blockers);
-			const u64 index = (blockers * bishopMagics[bb]) >> (64 - indexBit);
-
-			_bishopAttacks[bb][index] = attacks;
-		}
-	}
-
-	// Init Rook Moves
-	for (u8 bb{}; bb < SQUARE_NB; ++bb)
-	{
-		const int indexBit = rookIndexBits[bb];
-
-		// For all possible blockers for this square
-		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
-		{
-			const u64 blockers = getBlockersFromIndex(blockerIndex, rookMasks[bb]);
-			const u64 attacks = Bits::generateRookAttacks(bb, blockers);
-			const u64 index = (blockers * rookMagics[bb]) >> (64 - indexBit);
-
-			_rookAttacks[bb][index] = attacks;
-		}
-	}
-}
-
-u64 Attacks::knightAttacks(const u8 square) noexcept
+Bitboard Attacks::knightAttacks(const Square square) noexcept
 {
 	return _knightAttacks[square];
 }
 
-u64 Attacks::bishopAttacks(const u8 square, u64 blockers) noexcept
+Bitboard Attacks::bishopAttacks(const Square square, Bitboard blockers) noexcept
 {
-	blockers &= bishopMasks[square];
-	const u64 key = (blockers * bishopMagics[square]) >> (64u - bishopIndexBits[square]);
+	blockers &= _bishopMasks[square];
+	const u64 key = (blockers.value() * bishopMagics[square]) >> (64u - _bishopIndexBits[square]);
 	return _bishopAttacks[square][key];
 }
 
-u64 Attacks::rookAttacks(const u8 square, u64 blockers) noexcept
+Bitboard Attacks::rookAttacks(const Square square, Bitboard blockers) noexcept
 {
-	blockers &= rookMasks[square];
-	const u64 key = (blockers * rookMagics[square]) >> (64u - rookIndexBits[square]);
+	blockers &= _rookMasks[square];
+	const u64 key = (blockers.value() * rookMagics[square]) >> (64u - rookIndexBits[square]);
 	return _rookAttacks[square][key];
 }
 
-u64 Attacks::queenAttacks(const u8 square, const u64 blockers) noexcept
+Bitboard Attacks::queenAttacks(const Square square, const Bitboard blockers) noexcept
 {
 	return bishopAttacks(square, blockers) | rookAttacks(square, blockers);
 }
 
-u64 Attacks::kingAttacks(const u8 square) noexcept
+Bitboard Attacks::kingAttacks(const Square square) noexcept
 {
-	return _kingAttacks[square];
+	return _kingAttacks[u8(square)];
 }
 
-u64 Attacks::bishopXRayAttacks(const u8 square) noexcept
+Bitboard Attacks::bishopXRayAttacks(const Square square) noexcept
 {
-	return _bishopXRayAttacks[square];
+	return _bishopXRayAttacks[u8(square)];
 }
 
-u64 Attacks::rookXRayAttacks(const u8 square) noexcept
+Bitboard Attacks::rookXRayAttacks(const Square square) noexcept
 {
-	return _rookXRayAttacks[square];
+	return _rookXRayAttacks[u8(square)];
 }

@@ -48,7 +48,7 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 		if (!(ep[0] >= 'a' && ep[0] <= 'h'))
 			return false;
 
-		const u8 sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
+		const Square sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
 		board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
 	}
 

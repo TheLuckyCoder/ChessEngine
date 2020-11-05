@@ -1,8 +1,9 @@
 #include "Search.h"
 
-#include <cassert>
 #include <iostream>
-#include <thread>
+
+#include <cassert>
+#include <vector>
 
 #include "../Stats.h"
 #include "../Board.h"
@@ -24,8 +25,6 @@ constexpr int FUTILITY_MAX_DEPTH = 6;
 static thread_local Thread *_thread = nullptr;
 
 auto &threadInfo() { return *_thread; }
-
-static thread_local int LocalNodesCount{};
 
 Settings Search::_searchSettings{ MAX_DEPTH, 1, 16, true };
 TranspositionTable Search::_transpTable{ _searchSettings.tableSizeMb() };
@@ -66,16 +65,18 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	_sharedState.time = 0;
 	_sharedState.lastReportedDepth = 0;
 
+	Stats::restartTimer();
+
 	const auto work = [&, board](const i32 threadId)
 	{
 		assert(threadId >= 1);
-		assert(threadId <= threadCount);
+		assert(threadId <= i32(threadCount));
 		_thread = new Thread(threadId, threadId == 1);
 
 		while (!_sharedState.stopped)
 		{
-			const auto currentDepth = static_cast<i32>(_sharedState.depth);
-			const auto depth = currentDepth + 1 + static_cast<i32>(Bits::bitScanForward(threadId));
+			const auto currentDepth = i32(_sharedState.depth);
+			const auto depth = currentDepth + 1 + i32(Bits::bitScanForward(u64(threadId)));
 
 			iterativeDeepening(board, std::min<i32>(depth, _searchSettings.depth()));
 		}
@@ -86,8 +87,6 @@ Move Search::findBestMove(Board board, const Settings &settings)
 
 	std::vector<std::thread> threads;
 	threads.reserve(threadCount);
-
-	Stats::restartTimer();
 
 	for (usize i{}; i < threadCount; ++i)
 		threads.emplace_back(work, i32(i) + 1);
@@ -133,16 +132,15 @@ void Search::printUci(Board &board)
 	int depth;
 	int bestScore;
 	size_t time;
-	int lastReportedDepth;
 
 	{
 		std::lock_guard lock{ _sharedState.mutex };
 		depth = _sharedState.depth;
 		bestScore = _sharedState.bestScore;
 		time = _sharedState.time;
-		lastReportedDepth = _sharedState.lastReportedDepth;
 	}
 
+	const int lastReportedDepth = _sharedState.lastReportedDepth;
 	if (!_sharedState.stopped && depth > lastReportedDepth)
 	{
 		const int pvMoves = getPvLine(depth);
@@ -156,14 +154,19 @@ void Search::printUci(Board &board)
 			std::cout << pvArray[pvCount].toString() << ' ';
 
 		std::cout << std::endl;
-		_sharedState.lastReportedDepth = depth;
 
-		if (depth >= _searchSettings.depth())
+		_sharedState.lastReportedDepth = depth;
+		_sharedState.lastReportedBestMove = pvArray[0];
+
+		const auto elapsedTime = Stats::getElapsedMs();
+		const auto timeLeft = _searchSettings.searchTime() - elapsedTime;
+
+		if (depth >= _searchSettings.depth() || timeLeft < elapsedTime / 2)
 			stopSearch();
 	}
 
 	if (_sharedState.stopped)
-		std::cout << "bestmove " << _transpTable[board.zKey].move.toString() << std::endl;
+		std::cout << "bestmove " << _sharedState.lastReportedBestMove.toString() << std::endl;
 }
 
 void Search::iterativeDeepening(Board board, const int targetDepth)
@@ -177,10 +180,10 @@ void Search::iterativeDeepening(Board board, const int targetDepth)
 		if (bestScore > VALUE_MATE_MAX_DEPTH /*&& !bestMove.empty()*/)
 			break;
 
-		LocalNodesCount = 0;
+		thread.nodesCount = 0;
 
 		bestScore = aspirationWindow(board, currentDepth, bestScore);
-		_sharedState.nodes += LocalNodesCount;
+		_sharedState.nodes += thread.nodesCount;
 
 		if (bestScore != VALUE_MIN && currentDepth > _sharedState.depth)
 		{
@@ -253,7 +256,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	if (checkTimeAndStop())
 		return 0;
 
-	++LocalNodesCount;
+	++threadInfo().nodesCount;
 
 	if (!rootNode)
 	{
@@ -298,7 +301,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	thread.eval[board.ply] = eval;
 
 	// We are improving if our static eval increased in the last move
-	const bool improving = startPly > 1 ? (eval > thread.eval[startPly - 2]) : false;
+	const bool improving = startPly > 1 && (eval > thread.eval[startPly - 2]);
 	const int futilityMarginEval = eval + FUTILITY_MARGIN * depth;
 
 	// Reverse Futility Pruning
@@ -465,7 +468,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	if (board.isDrawn())
 		return 0;
 
-	++LocalNodesCount;
+	++threadInfo().nodesCount;
 
 	const short startPly = board.ply;
 
@@ -606,7 +609,7 @@ bool Search::checkTimeAndStop()
 {
 	if (threadInfo().mainThread
 		&& _searchSettings.isTimeSet()
-		&& (LocalNodesCount & 2047u) == 0
+		&& (threadInfo().nodesCount & 2047u) == 0
 		&& Stats::getElapsedMs() >= _searchSettings.searchTime())
 		stopSearch();
 	return _sharedState.stopped;

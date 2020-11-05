@@ -14,7 +14,7 @@ namespace Tests
 {
 	static Board mirrorBoard(const Board &board)
 	{
-		constexpr std::array<u8, 64> MirrorSquare{
+		constexpr std::array<u8, SQUARE_NB> MirrorSquare{
 			56, 57, 58, 59, 60, 61, 62, 63,
 			48, 49, 50, 51, 52, 53, 54, 55,
 			40, 41, 42, 43, 44, 45, 46, 47,
@@ -41,8 +41,8 @@ namespace Tests
 		rights |= (originalRights & 0b111u) << 3u; // Black -> White
 		rights |= originalRights >> 3u; // White -> Black
 
-		if (board.enPassantSq < SQ_NONE)
-			result.enPassantSq = MirrorSquare[board.enPassantSq];
+		if (board.enPassantSq != SQ_NONE)
+			result.enPassantSq = toSquare(MirrorSquare.at(u8(board.enPassantSq)));
 
 		result.updatePieceList();
 		result.updateNonPieceBitboards();

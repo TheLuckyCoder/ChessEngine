@@ -107,14 +107,14 @@ public:
 		_move = (_move & ~Mask) | ((type << 6u) & Mask);
 	}
 
-	constexpr u8 from() const noexcept
+	constexpr Square from() const noexcept
 	{
-		return (_move >> 9u) & 0x3F;
+		return toSquare((_move >> 9u) & 0x3F);
 	}
 
-	constexpr u8 to() const noexcept
+	constexpr Square to() const noexcept
 	{
-		return (_move >> 15u) & 0x3F;
+		return toSquare((_move >> 15u) & 0x3F);
 	}
 
 	constexpr Flags flags() const noexcept

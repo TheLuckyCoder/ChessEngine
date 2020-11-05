@@ -15,6 +15,8 @@ public:
 	History history{};
 	Eval eval{};
 
+	usize nodesCount{};
+
 	Thread(const std::size_t threadId, const bool mainThread)
 		: threadId(threadId), mainThread(mainThread) {}
 

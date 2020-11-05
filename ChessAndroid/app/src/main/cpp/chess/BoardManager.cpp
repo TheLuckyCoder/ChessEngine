@@ -15,7 +15,6 @@ Board BoardManager::_board;
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
 	Hash::init();
-	Attacks::init();
 
 	_board.setToStartPos();
 	_listener = listener;
@@ -120,6 +119,9 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 			case SQ_G8:
 				movedVec.emplace_back(SQ_H8, SQ_F8);
 				break;
+			default:
+				assert(false);
+				break;
 		}
 
 	} else if (flags.qSideCastle())
@@ -131,6 +133,9 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 				break;
 			case SQ_C8:
 				movedVec.emplace_back(SQ_A8, SQ_D8);
+				break;
+			default:
+				assert(false);
 				break;
 		}
 	}
@@ -190,8 +195,8 @@ GameState BoardManager::getBoardState()
 	if (_board.isDrawn())
 		return GameState::DRAW;
 
-	const bool whiteInCheck = _board.allKingAttackers<WHITE>();
-	const bool blackInCheck = _board.allKingAttackers<BLACK>();
+	const bool whiteInCheck = bool(_board.allKingAttackers<WHITE>());
+	const bool blackInCheck = bool(_board.allKingAttackers<BLACK>());
 
 	if (whiteInCheck && blackInCheck)
 		return GameState::INVALID;

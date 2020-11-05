@@ -38,7 +38,7 @@ u64 Hash::compute(const Board &board)
 	u64 hash{};
 
 	for (u8 sq = 0; sq < SQUARE_NB; ++sq)
-		if (const Piece &piece = board.getPiece(sq); piece)
+		if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
 			hash ^= _pieces[sq][piece.color()][piece.type()];
 
 	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));

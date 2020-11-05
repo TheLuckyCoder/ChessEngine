@@ -30,27 +30,27 @@ bool Board::canCastle(const Color color) const noexcept
 	return color == BLACK ? canCastle<BLACK>() : canCastle<WHITE>();
 }
 
-Piece &Board::getPiece(const u8 squareIndex) noexcept
+Piece &Board::getPiece(const Square square) noexcept
 {
-	return data[squareIndex];
+	return data[square];
 }
 
-Piece Board::getPiece(const u8 squareIndex) const noexcept
+Piece Board::getPiece(const Square square) const noexcept
 {
-	return data[squareIndex];
+	return data[square];
 }
 
-u64 &Board::getType(const Piece piece) noexcept
+Bitboard &Board::getType(const Piece piece) noexcept
 {
 	return pieces[piece.color()][piece.type()];
 }
 
-u64 &Board::getType(const PieceType type, const Color color) noexcept
+Bitboard &Board::getType(const PieceType type, const Color color) noexcept
 {
 	return pieces[color][type];
 }
 
-u64 Board::getType(const PieceType type, const Color color) const noexcept
+Bitboard Board::getType(const PieceType type, const Color color) const noexcept
 {
 	return pieces[color][type];
 }
@@ -75,15 +75,15 @@ bool Board::isDrawn() const noexcept
 
 	// Insufficient Material
 	// KvK, KvN, KvB, KvNN
-	const u64 pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
-	const u64 knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
-	const u64 bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
-	const u64 rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
-	const u64 queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
+	const auto pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
+	const auto knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
+	const auto bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
+	const auto rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
+	const auto queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
 
-	return !(pawns | rooks | queens)
-		   && (!Bits::several(allPieces[WHITE]) || !Bits::several(allPieces[BLACK]))
-		   && (!Bits::several(knight | bishop) || (!bishop && Bits::popCount(knight) <= 2));
+	return !bool(pawns | rooks | queens)
+		   && (!(allPieces[WHITE].several()) || !(allPieces[BLACK].several()))
+		   && (!((knight | bishop).several()) || (!bishop && knight.count() <= 2));
 }
 
 Phase Board::getPhase() const noexcept
@@ -98,8 +98,8 @@ Phase Board::getPhase() const noexcept
 bool Board::makeMove(const Move move) noexcept
 {
 	assert(!move.empty());
-	const u8 from = move.from();
-	const u8 to = move.to();
+	const Square from = move.from();
+	const Square to = move.to();
 	const Color side = colorToMove;
 	const auto flags = move.flags();
 	const u64 posKey = zKey;
@@ -118,7 +118,7 @@ bool Board::makeMove(const Move move) noexcept
 	// Handle en passant capture and castling
 	if (flags.enPassant())
 	{
-		const u8 capturedSq = to + static_cast<u8>(side ? -8 : 8);
+		const Square capturedSq = toSquare(u8(to) + static_cast<u8>(side ? -8 : 8));
 		removePiece(capturedSq);
 	} else if (flags.kSideCastle())
 	{
@@ -162,7 +162,7 @@ bool Board::makeMove(const Move move) noexcept
 	{
 		if (movedPiece == ROOK)
 		{
-			const u64 rookFile = Bits::getFile(from);
+			const u64 rookFile = Bitboard::fromFile(from).value();
 			if (rookFile == FILE_A)
 				castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -172,7 +172,7 @@ bool Board::makeMove(const Move move) noexcept
 			castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	}
 
-	enPassantSq = SQ_NONE;
+	enPassantSq = Square::SQ_NONE;
 	++fiftyMoveRule;
 
 	if (const PieceType capturedType = move.capturedPiece();
@@ -181,7 +181,7 @@ bool Board::makeMove(const Move move) noexcept
 		assert(Piece::isValid(capturedType));
 		if (capturedType == ROOK && canCastle(~side))
 		{
-			const u64 rookFile = Bits::getFile(to);
+			const u64 rookFile = Bitboard::fromFile(to).value();
 			if (rookFile == FILE_A)
 				castlingRights &= ~(~side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -200,11 +200,11 @@ bool Board::makeMove(const Move move) noexcept
 
 		if (move.flags().doublePawnPush())
 		{
-			enPassantSq = from + static_cast<u8>(side ? 8 : -8);
+			enPassantSq = toSquare(u8(from) + static_cast<u8>(side ? 8 : -8));
 
 			Hash::xorEnPassant(zKey, enPassantSq);
-			const u64 enPassantRank = Bits::getRank(enPassantSq);
-			assert(enPassantRank == RANK_3 || enPassantRank == RANK_6);
+			assert(Bitboard::fromRank(enPassantSq).value() == RANK_3
+				|| Bitboard::fromRank(enPassantSq).value() == RANK_6);
 		}
 	}
 
@@ -244,8 +244,8 @@ void Board::undoMove() noexcept
 
 	const UndoMove &previousMove = history[historyPly];
 	const Move move = previousMove.getMove();
-	const u8 from = move.from();
-	const u8 to = move.to();
+	const Square from = move.from();
+	const Square to = move.to();
 	const auto flags = move.flags();
 
 	assert(from < SQUARE_NB);
@@ -260,7 +260,7 @@ void Board::undoMove() noexcept
 
 	if (flags.enPassant())
 	{
-		const u8 capturesSq = to + static_cast<u8>(colorToMove ? -8 : 8);
+		const Square capturesSq = toSquare(u8(to) + static_cast<u8>(colorToMove ? -8 : 8));
 		addPiece(capturesSq, { PAWN, ~colorToMove });
 	} else if (flags.kSideCastle())
 	{
@@ -337,7 +337,7 @@ void Board::undoNullMove() noexcept
 	colorToMove = ~colorToMove;
 }
 
-bool Board::isAttackedByAny(const Color attackerColor, const u8 targetSquare) const noexcept
+bool Board::isAttackedByAny(const Color attackerColor, const Square targetSquare) const noexcept
 {
 	return isAttacked<PAWN>(attackerColor, targetSquare)
 		   || isAttacked<KNIGHT>(attackerColor, targetSquare)
@@ -349,15 +349,15 @@ bool Board::isAttackedByAny(const Color attackerColor, const u8 targetSquare) co
 
 bool Board::isSideInCheck() const noexcept
 {
-	return static_cast<bool>(kingAttackers);
+	return bool(kingAttackers);
 }
 
-void Board::addPiece(const u8 square, const Piece piece) noexcept
+void Board::addPiece(const Square square, const Piece piece) noexcept
 {
 	assert(piece.isValid());
 
 	Hash::xorPiece(zKey, square, piece);
-	getType(piece) |= Bits::getSquare64(square);
+	getType(piece).addSquare(square);
 	getPiece(square) = piece;
 	if (piece.type() != PAWN)
 		npm += Evaluation::getPieceValue(piece.type());
@@ -365,7 +365,7 @@ void Board::addPiece(const u8 square, const Piece piece) noexcept
 	pieceList[piece][pieceCount[piece]++] = square;
 }
 
-void Board::movePiece(const u8 from, const u8 to) noexcept
+void Board::movePiece(const Square from, const Square to) noexcept
 {
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
@@ -375,11 +375,11 @@ void Board::movePiece(const u8 from, const u8 to) noexcept
 
 	Hash::xorPiece(zKey, from, piece);
 	getPiece(from) = Piece();
-	getType(piece) &= ~Bits::getSquare64(from);
+	getType(piece).removeSquare(from);
 
 	Hash::xorPiece(zKey, to, piece);
 	getPiece(to) = piece;
-	getType(piece) |= Bits::getSquare64(to);
+	getType(piece).addSquare(to);
 
 	bool pieceMoved = false;
 	for (u8 &sq : pieceList[piece])
@@ -394,7 +394,7 @@ void Board::movePiece(const u8 from, const u8 to) noexcept
 	assert(pieceMoved);
 }
 
-void Board::removePiece(const u8 square) noexcept
+void Board::removePiece(const Square square) noexcept
 {
 	assert(square < SQUARE_NB);
 
@@ -402,7 +402,7 @@ void Board::removePiece(const u8 square) noexcept
 	assert(piece.isValid());
 
 	Hash::xorPiece(zKey, square, piece);
-	getType(piece) &= ~Bits::getSquare64(square);
+	getType(piece).removeSquare(square);
 	getPiece(square) = Piece();
 
 	if (piece.type() != PAWN)
@@ -437,9 +437,7 @@ void Board::updatePieceList() noexcept
 		{
 			pieceList[piece][pieceCount[piece]++] = sq;
 
-			const u64 bb = Bits::getSquare64(sq);
-
-			getType(piece) |= bb;
+			getType(piece).addSquare(toSquare(sq));
 
 			if (piece.type() != PAWN)
 				npm += Evaluation::getPieceValue(piece.type());
@@ -481,7 +479,8 @@ std::string Board::printBoard() const noexcept
 		const auto type = piece.type();
 		const bool color = piece.color();
 
-		const char c = [&] {
+		const char c = [&]
+		{
 			switch (type)
 			{
 				case NO_PIECE_TYPE:
@@ -504,7 +503,7 @@ std::string Board::printBoard() const noexcept
 		ss << ' ' << c << " |";
 	}
 
-	ss <<'\n' << Delimiter;
+	ss << '\n' << Delimiter;
 
 	return ss.str();
 }

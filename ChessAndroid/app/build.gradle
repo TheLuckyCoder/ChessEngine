@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 30
-    ndkVersion = "21.3.6528147"
+    ndkPath "D:/android-sdk/ndk/22.0.6917172-beta1"
 
     defaultConfig {
         applicationId "net.theluckycoder.chess"
@@ -42,7 +42,7 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    implementation 'com.google.android.material:material:1.2.0'
+    implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.preference:preference-ktx:1.1.1'
 
     implementation 'com.jaredrummler:colorpicker:1.1.0'
