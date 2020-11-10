@@ -3,10 +3,9 @@
 #include <iostream>
 
 #include "algorithm/Evaluation.h"
-#include "algorithm/Hash.h"
+#include "Zobrist.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
-#include "algorithm/Attacks.h"
 
 Settings BoardManager::_settings(8u, std::thread::hardware_concurrency() - 1u, 64, true);
 BoardManager::PieceChangeListener BoardManager::_listener;
@@ -14,7 +13,7 @@ Board BoardManager::_board;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
-	Hash::init();
+	Zobrist::init();
 
 	_board.setToStartPos();
 	_listener = listener;

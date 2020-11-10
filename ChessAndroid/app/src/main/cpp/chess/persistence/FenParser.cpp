@@ -1,7 +1,7 @@
 #include "FenParser.h"
 
 #include "../algorithm/Evaluation.h"
-#include "../algorithm/Hash.h"
+#include "../Zobrist.h"
 
 bool FenParser::parseFen(Board &board, const std::string &fen)
 {
@@ -59,7 +59,7 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 
 	board.updatePieceList();
 	board.updateNonPieceBitboards();
-	board.zKey = Hash::compute(board);
+	board.zKey = Zobrist::compute(board);
 
 	board.kingAttackers = board.colorToMove ? board.allKingAttackers<WHITE>() : board.allKingAttackers<BLACK>();
 	return true;

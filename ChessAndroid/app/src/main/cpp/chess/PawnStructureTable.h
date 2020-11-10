@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Bits.h"
-#include "../Score.h"
+#include "Bits.h"
+#include "Score.h"
 
 struct PawnStructureEntry
 {

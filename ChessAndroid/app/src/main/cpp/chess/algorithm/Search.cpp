@@ -27,12 +27,12 @@ static thread_local Thread *_thread = nullptr;
 auto &threadInfo() { return *_thread; }
 
 Settings Search::_searchSettings{ MAX_DEPTH, 1, 16, true };
-TranspositionTable Search::_transpTable{ _searchSettings.tableSizeMb() };
+TranspositionTable Search::_transpositionTable{ _searchSettings.tableSizeMb() };
 Search::SharedState Search::_sharedState{};
 
 void Search::clearAll()
 {
-	_transpTable.clear();
+	_transpositionTable.clear();
 }
 
 void Search::stopSearch()
@@ -40,9 +40,9 @@ void Search::stopSearch()
 	_sharedState.stopped = true;
 }
 
-bool Search::setTableSize(const std::size_t sizeMb)
+bool Search::setTableSize(const usize sizeMb)
 {
-	return _transpTable.setSize(sizeMb);
+	return _transpositionTable.setSize(sizeMb);
 }
 
 Move Search::findBestMove(Board board, const Settings &settings)
@@ -52,7 +52,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	_searchSettings = settings;
 	const auto threadCount = settings.threadCount();
 
-	_transpTable.incrementAge();
+	_transpositionTable.incrementAge();
 	if (settings.tableSizeMb() != 0)
 		setTableSize(settings.tableSizeMb());
 
@@ -94,7 +94,9 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	for (auto &&thread : threads)
 		thread.join();
 
-	return _transpTable[board.zKey].move;
+	const Move move = _sharedState.lastReportedBestMove;
+	assert(!move.empty());
+	return move;
 }
 
 void Search::printUci(Board &board)
@@ -111,16 +113,26 @@ void Search::printUci(Board &board)
 
 		while (true)
 		{
-			Move move = _transpTable[board.zKey].move;
-			if (moveExists(board, move))
-			{
-				board.makeMove(move);
-				pvArray[count++] = move;
-			} else
+			const auto probedResult = _transpositionTable.probe(board.zKey);
+			const Move probedMove = probedResult.has_value() ? probedResult->move() : Move{};
+
+			if (probedMove.empty() || count >= depth)
 				break;
 
-			if (move.empty() || count >= depth)
-				break;
+			const MoveList moveList(board);
+
+			for (const Move &fullMove : moveList)
+			{
+				if (fullMove.fromToBits() == probedMove.fromToBits())
+				{
+					if (board.makeMove(fullMove))
+					{
+						pvArray[count++] = fullMove;
+						break;
+					} else
+						continue;
+				}
+			}
 		}
 
 		while (board.ply > 0)
@@ -131,7 +143,7 @@ void Search::printUci(Board &board)
 
 	int depth;
 	int bestScore;
-	size_t time;
+	usize time;
 
 	{
 		std::lock_guard lock{ _sharedState.mutex };
@@ -158,15 +170,22 @@ void Search::printUci(Board &board)
 		_sharedState.lastReportedDepth = depth;
 		_sharedState.lastReportedBestMove = pvArray[0];
 
-		const auto elapsedTime = Stats::getElapsedMs();
-		const auto timeLeft = _searchSettings.searchTime() - elapsedTime;
-
-		if (depth >= _searchSettings.depth() || timeLeft < elapsedTime / 2)
+		if (depth >= _searchSettings.depth())
 			stopSearch();
 	}
 
 	if (_sharedState.stopped)
+	{
+		if (_sharedState.lastReportedBestMove.empty())
+		{
+			MoveList moveList(board);
+			MoveOrdering::sortQMoves(moveList);
+
+			std::cout << "No move found returning " << moveList.front().toString() << '\n';
+			_sharedState.lastReportedBestMove = moveList.front();
+		}
 		std::cout << "bestmove " << _sharedState.lastReportedBestMove.toString() << std::endl;
+	}
 }
 
 void Search::iterativeDeepening(Board board, const int targetDepth)
@@ -253,6 +272,9 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	if (rootNode)
 		assert(PvNode);
 
+	// Try to prefetch the Transposition Table as soon as possible
+	_transpositionTable.prefetch(board.zKey);
+
 	if (checkTimeAndStop())
 		return 0;
 
@@ -276,32 +298,34 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	const int startPly = board.ply;
 	auto &&thread = threadInfo();
 
-	// Prove the Transposition Table
-	if (const SearchEntry entry = _transpTable[board.zKey];
-		!entry.qSearch
-		&& entry.age == _transpTable.currentAge()
-		&& entry.key == board.zKey
-		&& entry.depth >= depth)
+	// Probe the Transposition Table
 	{
-		const int entryScore = entry.move.getScore();
+		const auto probeResult = _transpositionTable.probe(board.zKey);
+		if (probeResult.has_value()
+			&& !probeResult->qSearch()
+			&& probeResult->depth() >= depth)
+		{
+			const auto entryValue = probeResult->move().getScore();
+			const auto entryBound = probeResult->bound();
 
-		if (entry.flag == SearchEntry::Flag::EXACT)
-			return entryScore;
-		if (entry.flag == SearchEntry::Flag::ALPHA)
-			alpha = std::max(alpha, entryScore);
-		else if (entry.flag == SearchEntry::Flag::BETA)
-			beta = std::min(beta, entryScore);
+			if (entryBound == SearchEntry::Bound::EXACT)
+				return entryValue;
+			if (entryBound == SearchEntry::Bound::ALPHA)
+				alpha = std::max(alpha, entryValue);
+			else if (entryBound == SearchEntry::Bound::BETA)
+				beta = std::min(beta, entryValue);
 
-		if (alpha >= beta)
-			return entryScore;
+			if (alpha >= beta)
+				return entryValue;
+		}
 	}
 
 	const int eval = Evaluation::invertedValue(board);
 	const bool nodeInCheck = board.isSideInCheck();
-	thread.eval[board.ply] = eval;
+	thread.evalStack[startPly] = eval;
 
 	// We are improving if our static eval increased in the last move
-	const bool improving = startPly > 1 && (eval > thread.eval[startPly - 2]);
+	const bool improving = startPly > 1 && (eval > thread.evalStack[startPly - 2]);
 	const int futilityMarginEval = eval + FUTILITY_MARGIN * depth;
 
 	// Reverse Futility Pruning
@@ -334,8 +358,8 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	MoveList moveList(board);
 	MoveOrdering::sortMoves(thread, board, moveList);
 
-	size_t legalCount{};
-	size_t searchedCount{};
+	usize legalCount{};
+	usize searchedCount{};
 	int bestScore = Value::VALUE_MIN;
 	Move bestMove;
 
@@ -484,22 +508,22 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 	if (!nodeInCheck)
 	{
-		if (const SearchEntry entry = _transpTable[board.zKey];
-			entry.age == _transpTable.currentAge()
-			&& entry.key == board.zKey
-			&& entry.depth >= depth)
+		const auto probeResult = _transpositionTable.probe(board.zKey);
+		if (probeResult.has_value()
+			&& probeResult->depth() >= depth)
 		{
-			const int entryScore = entry.move.getScore();
+			const i32 entryValue = probeResult->move().getScore();
+			const auto bound = probeResult->bound();
 
-			if (entry.flag == SearchEntry::Flag::EXACT)
-				return entry.move.getScore();
-			if (entry.flag == SearchEntry::Flag::ALPHA)
-				alpha = std::max(alpha, entryScore);
-			else if (entry.flag == SearchEntry::Flag::BETA)
-				beta = std::min(beta, entryScore);
+			if (bound == SearchEntry::Bound::EXACT)
+				return entryValue;
+			if (bound == SearchEntry::Bound::ALPHA)
+				alpha = std::max(alpha, entryValue);
+			else if (bound == SearchEntry::Bound::BETA)
+				beta = std::min(beta, entryValue);
 
 			if (alpha >= beta)
-				return entryScore;
+				return entryValue;
 		}
 
 		standPat = Evaluation::invertedValue(board);
@@ -512,8 +536,8 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	MoveList moveList(board);
 
 	MoveOrdering::sortQMoves(moveList);
-	size_t legalCount{};
-	size_t searchedCount{};
+	usize legalCount{};
+	usize searchedCount{};
 
 	const bool isEndGame = board.getPhase() < Phase::MIDDLE_GAME_PHASE / 3;
 
@@ -596,13 +620,13 @@ inline void Search::storeTtEntry(const Move &bestMove, const u64 key, const int 
 	assert(!bestMove.empty());
 
 	// Store the result in the transposition table
-	auto flag = SearchEntry::Flag::EXACT;
+	auto flag = SearchEntry::Bound::EXACT;
 	if (alpha <= originalAlpha)
-		flag = SearchEntry::Flag::ALPHA;
+		flag = SearchEntry::Bound::ALPHA;
 	else if (bestMove.getScore() >= beta)
-		flag = SearchEntry::Flag::BETA;
+		flag = SearchEntry::Bound::BETA;
 
-	_transpTable.insert({ key, bestMove, static_cast<short>(depth), flag, qSearch });
+	_transpositionTable.insert(key, SearchEntry{ key, i8(depth), bestMove, qSearch, flag });
 }
 
 bool Search::checkTimeAndStop()

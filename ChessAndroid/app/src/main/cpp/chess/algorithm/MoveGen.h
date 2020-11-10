@@ -30,7 +30,7 @@ public:
 
 	constexpr void pop_back() noexcept { --_end; }
 
-	constexpr size_t size() const noexcept { return _end - _moveList; }
+	constexpr usize size() const noexcept { return _end - _moveList; }
 
 	constexpr bool empty() const noexcept { return (_end - _moveList) == 0u; }
 
@@ -80,8 +80,8 @@ inline Move parseMove(Board &board, const std::string &str)
 		|| str[0] > 'h' || str[0] < 'a'
 		|| str[2] > 'h' || str[2] < 'a') return {};
 
-    const u8 from = toSquare(static_cast<u8>(str[0] - 'a'), static_cast<u8>(str[1] - '1'));
-    const u8 to = toSquare(static_cast<u8>(str[2] - 'a'), static_cast<u8>(str[3] - '1'));
+    const Square from = toSquare(u8(str[0] - 'a'), u8(str[1] - '1'));
+    const Square to = toSquare(u8(str[2] - 'a'), u8(str[3] - '1'));
 
 	const MoveList moveList(board);
 

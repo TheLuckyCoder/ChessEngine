@@ -8,8 +8,9 @@
 
 class Uci
 {
-	static std::thread searchThread;
-	static Board board;
+	inline static std::thread _searchThread{};
+	inline static usize _threadCount{ std::thread::hardware_concurrency() - 1 };
+	inline static Board board{};
 
 public:
 	static void init();

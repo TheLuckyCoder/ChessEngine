@@ -1,7 +1,5 @@
 #include "MoveGen.h"
 
-#include "Attacks.h"
-
 namespace
 {
 	template <Color Us>

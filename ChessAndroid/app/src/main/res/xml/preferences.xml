@@ -79,7 +79,6 @@
             android:summary="@string/pref_thread_count_desc"
             android:title="@string/pref_thread_count"
             app:icon="@drawable/ic_pref_thread_count"
-            app:isPreferenceVisible="false"
             app:min="1"
             app:showSeekBarValue="true" />
 

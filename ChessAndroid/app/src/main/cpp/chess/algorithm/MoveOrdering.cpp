@@ -25,13 +25,14 @@ namespace MoveOrdering
 
 	void sortMoves(const Thread &thread, const Board &board, MoveList &moveList) noexcept
 	{
-		const Move pvMove = Search::getTranspTable()[board.zKey].move;
+		const auto probeResult = Search::getTranspTable().probe(board.zKey);
+		const Move pvMove = probeResult.has_value() ? probeResult->move() : Move{};
 
 		for (Move &move : moveList)
 		{
 			const auto flags = move.flags();
 
-			if (move == pvMove)
+			if (move.fromToBits() == pvMove.fromToBits())
 				move.setScore(PV_SCORE);
 			else if (flags.capture())
 				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()] + NORMAL_SCORE);

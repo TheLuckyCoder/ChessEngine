@@ -6,14 +6,14 @@ class Thread
 {
 public:
 	using Killers = std::array<std::array<u32, MAX_DEPTH>, 2>;
-	using History = std::array<std::array<u8, SQUARE_NB>, SQUARE_NB>;
-	using Eval = std::array<int, MAX_DEPTH>;
+	using History = std::array<std::array<u16, SQUARE_NB>, SQUARE_NB>;
+	using EvalStack = std::array<int, MAX_DEPTH>;
 
 	const usize threadId;
 	const bool mainThread;
 	Killers killers{};
 	History history{};
-	Eval eval{};
+	EvalStack evalStack{};
 
 	usize nodesCount{};
 
@@ -24,6 +24,6 @@ public:
 	{
 		killers.fill({});
 		history.fill({});
-		eval.fill({});
+		evalStack.fill({});
 	}
 };

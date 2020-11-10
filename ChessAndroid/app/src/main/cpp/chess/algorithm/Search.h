@@ -2,7 +2,7 @@
 
 #include "../Settings.h"
 #include "../Move.h"
-#include "../containers/TranspositionTable.h"
+#include "../TranspositionTable.h"
 
 class Board;
 
@@ -19,7 +19,7 @@ private:
 		// Stats for the last time the depth was updated
 		std::atomic_int depth{};
 		int bestScore{};
-		size_t time{};
+		usize time{};
 
 		// This should only be read and written by the main thread
 		int lastReportedDepth{};
@@ -27,7 +27,7 @@ private:
 	};
 
 	static Settings _searchSettings;
-	static TranspositionTable _transpTable;
+	static TranspositionTable _transpositionTable;
 	static SharedState _sharedState;
 
 public:
@@ -40,11 +40,11 @@ public:
 
 	static void clearAll();
 	static void stopSearch();
-	static bool setTableSize(std::size_t sizeMb);
+	static bool setTableSize(usize sizeMb);
 
 	static Move findBestMove(Board board, const Settings &settings);
 
-	static auto &getTranspTable() noexcept { return _transpTable; }
+	static auto &getTranspTable() noexcept { return _transpositionTable; }
 
 private:
 	static void printUci(Board &board);

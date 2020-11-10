@@ -5,10 +5,10 @@ class Score final
 public:
 	Score() = default;
 
-	constexpr Score(const short mg, const short eg) noexcept
+	constexpr Score(const i16 mg, const i16 eg) noexcept
 		: mg(mg), eg(eg) {}
 
-	constexpr Score &operator=(const short rhs) noexcept
+	constexpr Score &operator=(const i16 rhs) noexcept
 	{
 		mg = rhs;
 		eg = rhs;
@@ -27,13 +27,13 @@ public:
 		eg -= rhs.eg;
 	}
 
-	constexpr void operator+=(const short rhs) noexcept
+	constexpr void operator+=(const i16 rhs) noexcept
 	{
 		mg += rhs;
 		eg += rhs;
 	}
 
-	constexpr void operator-=(const short rhs) noexcept
+	constexpr void operator-=(const i16 rhs) noexcept
 	{
 		mg -= rhs;
 		eg -= rhs;
@@ -55,12 +55,13 @@ public:
 		return lhs;
 	}
 
-	short mg{}, eg{};
-};
+	constexpr Score operator*(const i16 rhs) const noexcept
+	{
+		Score lhs = *this;
+		lhs.mg *= rhs;
+		lhs.eg *= rhs;
+		return lhs;
+	}
 
-constexpr Score operator*(Score score, const short rhs) noexcept
-{
-	score.mg *= rhs;
-	score.eg *= rhs;
-	return score;
-}
+	i16 mg{}, eg{};
+};

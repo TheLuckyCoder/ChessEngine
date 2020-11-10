@@ -1,19 +1,15 @@
 #include "Uci.h"
 
 #include <iostream>
-#include <thread>
 
 #include "Stats.h"
 #include "Tests.h"
-#include "algorithm/Hash.h"
+#include "Zobrist.h"
 #include "algorithm/Search.h"
-
-std::thread Uci::searchThread{};
-Board Uci::board{};
 
 void Uci::init()
 {
-	Hash::init();
+	Zobrist::init();
 	board.setToStartPos();
 }
 
@@ -50,6 +46,18 @@ void Uci::loop()
 		{
 			board.setToStartPos();
 			Search::clearAll();
+			printEngineInfo();
+		} else if (token == "setoption")
+		{
+			is >> token;
+
+			if (token == "threads")
+			{
+				is >> _threadCount;
+				_threadCount = std::clamp<usize>(_threadCount, 1u, 64u);
+
+				std::cout << "Thread Count has been set to " << _threadCount << std::endl;
+			}
 		} else if (token == "debug")
 		{
 			is >> token;
@@ -57,19 +65,20 @@ void Uci::loop()
 			if (token == "on")
 			{
 				Stats::setEnabled(true);
-				std::cout << "Stats turned on";
-			}
-			else if (token == "off")
+				std::cout << "Debug stats have been turned on";
+			} else if (token == "off")
 			{
 				Stats::setEnabled(false);
-				std::cout << "Stats turned off";
+				std::cout << "Debug stats have been turned off";
+			} else {
+				std::cout << (Stats::isEnabled() ? "Stats are on" : "Stats are off");
 			}
 
 			std::cout << std::endl;
 		} else if (token == "stop")
 		{
 			Search::stopSearch();
-			searchThread.join();
+			_searchThread.join();
 			std::cout << "Joined Thread" << std::endl;
 		} else if (token == "quit")
 			quit = true;
@@ -158,13 +167,13 @@ void Uci::parseGo(std::istringstream &is)
 	std::cout << "time: " << time << " depth: " << depth << " timeSet: " << std::boolalpha << timeSet << std::endl;
 
 	const auto searchTime = timeSet ? static_cast<size_t>(time) : 0ul;
-	const Settings settings{ depth, /*std::thread::hardware_concurrency() - 1*/ 4, 100, true, searchTime };
+	const Settings settings{ depth, _threadCount, 100, true, searchTime };
 
-	if (searchThread.joinable())
-		searchThread.detach();
+	if (_searchThread.joinable())
+		_searchThread.detach();
 	Stats::resetStats();
 
-	searchThread = std::thread(Search::findBestMove, board, settings);
+	_searchThread = std::thread(Search::findBestMove, board, settings);
 }
 
 void Uci::parsePosition(std::istringstream &is)

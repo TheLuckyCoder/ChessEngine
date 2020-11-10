@@ -85,7 +85,7 @@ constexpr auto PSQT = []
 			{{ 59,   11 }, { 89,   59 }, { 45,   73 }, { -1,   78 }}
 		};
 
-	std::array<std::array<Score, 64>, 7> bonuses{};
+	std::array<std::array<Score, SQUARE_NB>, 7> bonuses{};
 
 	for (u8 i{}; i < SQUARE_NB; ++i)
 	{

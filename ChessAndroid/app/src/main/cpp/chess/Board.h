@@ -45,7 +45,7 @@ public:
 
 	short ply{};
 	short historyPly{};
-	UndoMove history[MAX_MOVES]{};
+	std::array<UndoMove, MAX_MOVES> history{};
 
 	void setToStartPos();
 	bool setToFen(const std::string &fen);

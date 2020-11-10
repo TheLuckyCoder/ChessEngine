@@ -5,7 +5,6 @@
 
 #include "../Board.h"
 #include "../Score.h"
-#include "../containers/PawnStructureTable.h"
 
 class Evaluation final
 {

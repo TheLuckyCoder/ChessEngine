@@ -4,8 +4,8 @@
 #include <iomanip>
 
 #include "../Stats.h"
-#include "../Board.h"
 #include "../Psqt.h"
+#include "../PawnStructureTable.h"
 
 namespace
 {
@@ -36,6 +36,11 @@ namespace
 	constexpr Score THREAT_BY_SAFE_PAWN{ 173, 94 };
 	constexpr Score QUEEN_THREAT_BY_KNIGHT{ 16, 11 };
 	constexpr Score QUEEN_THREAT_BY_SLIDER{ 59, 18 };
+	constexpr Score BISHOP_XRAY_PAWNS{ 4, 5 };
+	constexpr Score BISHOP_PAWNS[]
+		{
+			{ 3, 8 }, { 3, 9 }, { 1, 8 }, { 3, 7 }
+		};
 
 	constexpr Score ROOK_ON_QUEEN_FILE{ 7, 6 };
 	constexpr Score TRAPPED_ROOK{ 52, 10 };
@@ -80,8 +85,6 @@ namespace
 }
 
 thread_local PawnStructureTable _pawnTable{ 8 };
-
-using namespace Bits;
 
 constexpr auto MASK_PAWN_SHIELD = []
 {
@@ -148,7 +151,7 @@ private:
 	std::array<Bitboard, 2> _mobilityArea{};
 
 	const std::array<Bitboard, 2> _kingRing{ Bitboard::fromSquare(board.getKingSq<WHITE>()),
-										Bitboard::fromSquare(board.getKingSq<BLACK>()) };
+											 Bitboard::fromSquare(board.getKingSq<BLACK>()) };
 	std::array<i32, 2> _kingAttacksCount{};
 	std::array<i32, 2> _kingAttackersCount{};
 	std::array<i32, 2> _kingAttackersWeight{};
@@ -271,7 +274,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
 
 		const auto kingProtectorScore =
-			KING_PROTECTOR * getDistanceBetween(square, board.getKingSq<Us>());
+			KING_PROTECTOR * Bits::getDistanceBetween(square, board.getKingSq<Us>());
 		score -= kingProtectorScore;
 		if constexpr (Trace)
 			trace->kingProtector[Us] -= kingProtectorScore;
@@ -287,7 +290,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		}
 	};
 
-	const auto updateAttacks = [&] (const PieceType type, const Bitboard attacks)
+	const auto updateAttacks = [&](const PieceType type, const Bitboard attacks)
 	{
 		_pieceAttacks[Us][type] |= attacks;
 		_attacksMultiple[Us] |= _allAttacks[Us] & attacks;
@@ -433,7 +436,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 	const auto nonPawnEnemies = board.allPieces[Them] & ~board.getType(PAWN, Us);
 	const auto stronglyProtected = _pieceAttacks[Them][PAWN]
-								  | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
+								   | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
 	const auto poorlyDefended = board.allPieces[Them] & ~stronglyProtected & _allAttacks[Us];
 	const auto defended = nonPawnEnemies & stronglyProtected;
 	const auto safe = ~_allAttacks[Them] | _allAttacks[Us];
@@ -491,9 +494,9 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 		const auto knightAttacks = _pieceAttacks[Us][KNIGHT] & Attacks::knightAttacks(sq);
 		const auto sliderAttacks = (_pieceAttacks[Us][BISHOP] &
-								   Attacks::bishopAttacks(sq, board.occupied))
-								  | (_pieceAttacks[Us][ROOK] &
-									 Attacks::rookAttacks(sq, board.occupied));
+									Attacks::bishopAttacks(sq, board.occupied))
+								   | (_pieceAttacks[Us][ROOK] &
+									  Attacks::rookAttacks(sq, board.occupied));
 
 		const auto knightAttacksScore =
 			QUEEN_THREAT_BY_KNIGHT * (knightAttacks & safeSpots).count();
@@ -594,7 +597,9 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 	constexpr Color Them = ~Us;
 	constexpr Bitboard CenterFiles{ FILE_D | FILE_E };
 	constexpr Bitboard Center{ CenterFiles.value() & (RANK_4 | RANK_5) };
+	constexpr Dir Down{ Us ? SOUTH : NORTH };
 
+	const auto bb = Bitboard::fromSquare(square);
 	Score value = PSQT[BISHOP][square];
 
 	const i32 mobility = (Attacks::bishopAttacks(square, board.occupied) & _mobilityArea[Us]).count();
@@ -602,6 +607,19 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 
 	if constexpr (Trace)
 		trace->mobility[Us] += mobility;
+
+	// Penalty according to the number of our pawns on the same color square as the
+	// bishop, bigger when the center files are blocked with pawns and smaller
+	// when the bishop is outside the pawn chain.
+	const auto blocked = board.getType(PAWN, Us) & board.occupied.shift<Down>();
+
+	const i32 pawnsOnTheSameColorSquares =
+		(board.getType(PAWN, Us) & (bool(DARK_SQUARES & bb) ? DARK_SQUARES : ~DARK_SQUARES)).count();
+	value -= BISHOP_PAWNS[std::min<u8>(col(square), 7u - col(square))] * pawnsOnTheSameColorSquares
+			 * (!bool(_pieceAttacks[Us][PAWN] & bb) + (blocked & CenterFiles).count());
+
+	// Enemy pawns x-rayed
+	value -= BISHOP_XRAY_PAWNS * (Attacks::bishopXRayAttacks(square) & board.getType(PAWN, Them)).count();
 
 	// Long Diagonal Bishop
 	const auto centerAttacks =
@@ -657,7 +675,7 @@ Score Eval<Trace>::evaluateQueen(const Square square) const noexcept
 		trace->mobility[Us] += mobility;
 
 	constexpr Bitboard InitialPosition{ FILE_D & (Us ? RANK_1 : RANK_8) };
-	if ((InitialPosition & Bitboard::fromSquare(square)).value() == 0)
+	if ((InitialPosition & Bitboard::fromSquare(square)).empty())
 		value.mg -= 14;
 
 	return value;

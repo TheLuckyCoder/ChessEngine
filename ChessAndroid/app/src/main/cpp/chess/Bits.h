@@ -7,13 +7,9 @@
 #include "Defs.h"
 
 #ifdef _MSC_VER
-
-#  include <intrin.h> // Microsoft header for _BitScanForward64()
-
+#  include <intrin.h>
 #elif defined(__linux__)
-
 #	include <byteswap.h>
-
 #endif
 
 namespace Bits
@@ -36,7 +32,7 @@ namespace Bits
 
 #if defined(_MSC_VER) && defined(_WIN64)
 
-	inline u64 flipVertical(const u64 bb)
+	inline u64 flipVertical(const u64 bb) noexcept
 	{
 		return _byteswap_uint64(bb);
 	}
@@ -48,8 +44,7 @@ namespace Bits
 		return bswap_64(bb);
 	}
 
-#elif (defined(__clang__) && __has_builtin(__builtin_bswap64)) \
- || (defined(__GNUC__ ) && (__GNUC__ > 4))
+#elif defined(__has_builtin) && __has_builtin(__builtin_bswap64))
 
 	inline u64 flipVertical(const u64 bb) noexcept
 	{
@@ -72,6 +67,7 @@ namespace Bits
 		bb = ( bb >> 32)       | ( bb       << 32);
 		return bb;
 	}
+
 #endif
 
 	/**
@@ -92,11 +88,6 @@ namespace Bits
 
 		return array;
 	}();
-
-	constexpr u8 getDistanceBetween(const u8 sq1, const u8 sq2)
-	{
-		return _DISTANCE_BETWEEN_SQUARES[sq1][sq2];
-	}
 
 	/**
 	 * Table of precalculated shifted bitboards indexed by the times 1 has been shifted to the left
@@ -250,6 +241,11 @@ namespace Bits
 		return array;
 	}();
 
+	constexpr u8 getDistanceBetween(const Square sq1, const Square sq2)
+	{
+		return _DISTANCE_BETWEEN_SQUARES[u8(sq1)][u8(sq2)];
+	}
+
 // endregion Rays
 }
 
@@ -262,6 +258,8 @@ public:
 		: _value(value) {}
 
 	[[nodiscard]] constexpr auto value() const noexcept { return _value; }
+
+	[[nodiscard]] constexpr bool empty() const noexcept { return _value == 0ull; }
 
 	[[nodiscard]] constexpr Square bitScanForward() const noexcept
 	{
@@ -412,3 +410,5 @@ public:
 private:
 	u64 _value;
 };
+
+constexpr Bitboard DARK_SQUARES{ 0xAA55AA55AA55AA55ULL };

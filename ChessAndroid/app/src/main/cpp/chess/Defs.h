@@ -105,12 +105,13 @@ enum Square : u8
 
 constexpr Square toSquare(const u8 sq) noexcept
 {
-	return assert(sq < static_cast<u8>(Square::SQUARE_NB)), static_cast<Square>(sq);
+	assert(sq < static_cast<u8>(Square::SQUARE_NB));
+	return static_cast<Square>(sq);
 }
 
-constexpr u8 row(const u8 pos) noexcept { return static_cast<u8>(pos >> 3u); }
+constexpr u8 row(const u8 pos) noexcept { return u8(pos >> 3u); }
 
-constexpr u8 col(const u8 pos) noexcept { return static_cast<u8>(pos & 7u); }
+constexpr u8 col(const u8 pos) noexcept { return u8(pos & 7u); }
 
 constexpr Square toSquare(const u8 x, const u8 y) noexcept
 {

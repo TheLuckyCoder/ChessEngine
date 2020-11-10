@@ -1,6 +1,6 @@
 #include "Board.h"
 
-#include "algorithm/Hash.h"
+#include "Zobrist.h"
 #include "algorithm/Evaluation.h"
 #include "persistence/FenParser.h"
 
@@ -108,11 +108,7 @@ bool Board::makeMove(const Move move) noexcept
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
 	assert(Piece::isValid(movedPiece));
-	{
-		const auto p = getPiece(from);
-		assert(p.isValid());
-	}
-
+	assert(getPiece(from).isValid());
 	assert(getPiece(from).type() == movedPiece);
 
 	// Handle en passant capture and castling
@@ -152,8 +148,8 @@ bool Board::makeMove(const Move move) noexcept
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
 	}
 
-	Hash::xorEnPassant(zKey, enPassantSq);
-	Hash::xorCastlingRights(zKey, CastlingRights(castlingRights));
+	Zobrist::xorEnPassant(zKey, enPassantSq);
+	Zobrist::xorCastlingRights(zKey, CastlingRights(castlingRights));
 
 	// Store the position info in history
 	history[historyPly] = { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq, fiftyMoveRule };
@@ -202,7 +198,7 @@ bool Board::makeMove(const Move move) noexcept
 		{
 			enPassantSq = toSquare(u8(from) + static_cast<u8>(side ? 8 : -8));
 
-			Hash::xorEnPassant(zKey, enPassantSq);
+			Zobrist::xorEnPassant(zKey, enPassantSq);
 			assert(Bitboard::fromRank(enPassantSq).value() == RANK_3
 				|| Bitboard::fromRank(enPassantSq).value() == RANK_6);
 		}
@@ -221,7 +217,7 @@ bool Board::makeMove(const Move move) noexcept
 	}
 
 	colorToMove = ~colorToMove;
-	Hash::flipSide(zKey);
+	Zobrist::flipSide(zKey);
 
 	updateNonPieceBitboards();
 
@@ -313,11 +309,11 @@ void Board::makeNullMove() noexcept
 	++ply;
 	history[historyPly++] = { zKey, kingAttackers, {}, castlingRights, enPassantSq, fiftyMoveRule };
 
-	Hash::xorEnPassant(zKey, enPassantSq);
+	Zobrist::xorEnPassant(zKey, enPassantSq);
 	enPassantSq = SQ_NONE;
 
 	colorToMove = ~colorToMove;
-	Hash::flipSide(zKey);
+	Zobrist::flipSide(zKey);
 
 	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
 }
@@ -356,7 +352,7 @@ void Board::addPiece(const Square square, const Piece piece) noexcept
 {
 	assert(piece.isValid());
 
-	Hash::xorPiece(zKey, square, piece);
+	Zobrist::xorPiece(zKey, square, piece);
 	getType(piece).addSquare(square);
 	getPiece(square) = piece;
 	if (piece.type() != PAWN)
@@ -373,11 +369,11 @@ void Board::movePiece(const Square from, const Square to) noexcept
 	const Piece piece = getPiece(from);
 	assert(piece.isValid());
 
-	Hash::xorPiece(zKey, from, piece);
+	Zobrist::xorPiece(zKey, from, piece);
 	getPiece(from) = Piece();
 	getType(piece).removeSquare(from);
 
-	Hash::xorPiece(zKey, to, piece);
+	Zobrist::xorPiece(zKey, to, piece);
 	getPiece(to) = piece;
 	getType(piece).addSquare(to);
 
@@ -401,7 +397,7 @@ void Board::removePiece(const Square square) noexcept
 	const Piece piece = getPiece(square);
 	assert(piece.isValid());
 
-	Hash::xorPiece(zKey, square, piece);
+	Zobrist::xorPiece(zKey, square, piece);
 	getType(piece).removeSquare(square);
 	getPiece(square) = Piece();
 
