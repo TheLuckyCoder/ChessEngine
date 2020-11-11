@@ -120,7 +120,7 @@ std::string FenParser::exportToFen(const Board &board)
 	if (!board.canCastle(WHITE) && !board.canCastle(BLACK)) out << '-';
 
 	if (board.enPassantSq < SQ_NONE)
-		out << ' ' << char('a' + int(col(board.enPassantSq))) << int(row(board.enPassantSq)) << ' ';
+		out << ' ' << char('a' + int(fileOf(board.enPassantSq))) << int(rankOf(board.enPassantSq)) << ' ';
 	else
 		out << " - ";
 

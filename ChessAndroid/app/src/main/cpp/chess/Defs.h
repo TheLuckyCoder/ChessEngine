@@ -109,9 +109,9 @@ constexpr Square toSquare(const u8 sq) noexcept
 	return static_cast<Square>(sq);
 }
 
-constexpr u8 row(const u8 pos) noexcept { return u8(pos >> 3u); }
+constexpr u8 rankOf(const u8 pos) noexcept { return u8(pos >> 3u); }
 
-constexpr u8 col(const u8 pos) noexcept { return u8(pos & 7u); }
+constexpr u8 fileOf(const u8 pos) noexcept { return u8(pos & 7u); }
 
 constexpr Square toSquare(const u8 x, const u8 y) noexcept
 {

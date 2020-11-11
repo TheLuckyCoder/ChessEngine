@@ -71,7 +71,7 @@ void Uci::loop()
 				Stats::setEnabled(false);
 				std::cout << "Debug stats have been turned off";
 			} else {
-				std::cout << (Stats::isEnabled() ? "Stats are on" : "Stats are off");
+				std::cout << (Stats::isEnabled() ? "Debug stats are on" : "Debug stats are off");
 			}
 
 			std::cout << std::endl;

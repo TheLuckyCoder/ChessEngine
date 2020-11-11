@@ -84,7 +84,7 @@ namespace Bits
 
 		for (u8 x{}; x < SQUARE_NB; ++x)
 			for (u8 y{}; y < SQUARE_NB; ++y)
-				array[x][y] = std::max<u8>(abs(row(x) - row(y)), abs(col(x) - col(y)));
+				array[x][y] = std::max<u8>(abs(rankOf(x) - rankOf(y)), abs(fileOf(x) - fileOf(y)));
 
 		return array;
 	}();
@@ -121,16 +121,16 @@ namespace Bits
 			rays[WEST][square] = _SQUARES[square] - _SQUARES[square & 56u];
 
 			rays[NORTH_WEST][square] =
-				_westN(0x102040810204000ULL, 7u - col(square)) << (row(square) * 8u);
+				_westN(0x102040810204000ULL, 7u - fileOf(square)) << (rankOf(square) * 8u);
 
 			rays[NORTH_EAST][square] =
-				_eastN(0x8040201008040200ULL, col(square)) << (row(square) * 8u);
+				_eastN(0x8040201008040200ULL, fileOf(square)) << (rankOf(square) * 8u);
 
 			rays[SOUTH_WEST][square] =
-				_westN(0x40201008040201ULL, 7u - col(square)) >> ((7u - row(square)) * 8u);
+				_westN(0x40201008040201ULL, 7u - fileOf(square)) >> ((7u - rankOf(square)) * 8u);
 
 			rays[SOUTH_EAST][square] =
-				_eastN(0x2040810204080ULL, col(square)) >> ((7u - row(square)) * 8u);
+				_eastN(0x2040810204080ULL, fileOf(square)) >> ((7u - rankOf(square)) * 8u);
 		}
 
 		return rays;
@@ -393,12 +393,12 @@ public:
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_RANKS.at(u8(row(square))) };
+		return Bitboard{ Bits::_RANKS.at(u8(rankOf(square))) };
 	}
 
 	static constexpr Bitboard fromFile(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_FILES.at(u8(col(square))) };
+		return Bitboard{ Bits::_FILES.at(u8(fileOf(square))) };
 	}
 
 	static constexpr Bitboard fromAdjacentFiles(const Square square) noexcept

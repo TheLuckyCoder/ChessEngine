@@ -41,7 +41,7 @@ std::optional<SearchEntry> TranspositionTable::probe(const u64 zKey) const noexc
 	return {};
 }
 
-void TranspositionTable::insert(const u64 zKey, const SearchEntry &entry) noexcept
+void TranspositionTable::insert(const u64 zKey, SearchEntry entry) noexcept
 {
 	const auto key = entry.key();
 	const auto index = zKey & _hashMask;
@@ -67,11 +67,13 @@ void TranspositionTable::insert(const u64 zKey, const SearchEntry &entry) noexce
 
 	// Don't overwrite an entry from the same position, unless we have
 	// an exact bound or depth that is nearly as good as the old one
-	if (key == toReplace->key()
+	if (toReplace->age() == currentAge()
+		&& key == toReplace->key()
 		&& entry.bound() != SearchEntry::Bound::EXACT
 		&& entry.depth() < toReplace->depth() - 2)
 		return;
 
+	entry.setAge(currentAge());
 	*toReplace = entry;
 }
 
@@ -101,8 +103,8 @@ bool TranspositionTable::setSize(usize sizeMb)
 	}
 
 	u64 keySize = 16u;
-	while ((1ull << keySize) * sizeof(Bucket) <= sizeMb * MB / 2) ++keySize;
-	assert((1ull << keySize) * sizeof(Bucket) <= sizeMb * MB);
+	while ((1ull << keySize) * sizeof(Bucket) <= sizeMb * MB / 2)
+		++keySize;
 
 	_hashMask = (1ull << keySize) - 1u;
 

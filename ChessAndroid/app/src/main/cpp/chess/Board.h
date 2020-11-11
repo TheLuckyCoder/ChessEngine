@@ -66,6 +66,7 @@ public:
 	Bitboard &getType(Piece piece) noexcept;
 	Bitboard &getType(PieceType type, Color color) noexcept;
 	Bitboard getType(PieceType type, Color color) const noexcept;
+	Bitboard getType(PieceType type) const noexcept;
 	template<Color C>
 	Square getKingSq() const noexcept;
 

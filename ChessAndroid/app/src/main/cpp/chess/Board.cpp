@@ -55,6 +55,11 @@ Bitboard Board::getType(const PieceType type, const Color color) const noexcept
 	return pieces[color][type];
 }
 
+Bitboard Board::getType(const PieceType type) const noexcept
+{
+	return pieces[BLACK][type] | pieces[WHITE][type];
+}
+
 bool Board::isDrawn() const noexcept
 {
 	// Fifty Move Rules

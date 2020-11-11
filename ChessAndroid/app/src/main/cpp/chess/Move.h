@@ -133,7 +133,7 @@ public:
 
 	constexpr bool isAdvancedPawnPush() const noexcept
 	{
-		const u8 y = row(to());
+		const u8 y = rankOf(to());
 		return piece() == PAWN && (y == 7 || y == 2);
 	}
 
@@ -179,10 +179,10 @@ public:
 			str += pChar;
 		}
 
-		str += 'a' + col(fromSq);
-		str += '1' + row(fromSq);
-		str += 'a' + col(toSq);
-		str += '1' + row(toSq);
+		str += 'a' + i8(fileOf(fromSq));
+		str += '1' + i8(rankOf(fromSq));
+		str += 'a' + i8(fileOf(toSq));
+		str += '1' + i8(rankOf(toSq));
 
 		if (flags().promotion())
 		{

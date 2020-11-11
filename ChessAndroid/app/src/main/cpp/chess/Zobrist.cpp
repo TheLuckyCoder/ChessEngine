@@ -90,5 +90,5 @@ void Zobrist::xorCastlingRights(u64 &key, const CastlingRights rights) noexcept
 void Zobrist::xorEnPassant(u64 &key, const Square square) noexcept
 {
 	if (square <= SQUARE_NB)
-		key ^= _enPassant[col(square)];
+		key ^= _enPassant[fileOf(square)];
 }

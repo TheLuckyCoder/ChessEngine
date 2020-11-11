@@ -12,46 +12,45 @@ namespace
 	/*
 	 * Most of these values were imported from the Stockfish Chess Engine
 	 */
-	constexpr Score PAWN_DOUBLED{ 11, 56 };
-	constexpr Score PAWN_ISOLATED{ 5, 15 };
-	constexpr short PAWN_CONNECTED[]
-		{
-			0, 7, 8, 12, 29, 48, 86
-		};
+	constexpr Score PAWN_DOUBLED{ 10, 55 };
+	constexpr Score PAWN_ISOLATED{ 3, 15 };
+	constexpr short PAWN_CONNECTED[]{ 0, 5, 7, 11, 24, 48, 86 };
 	constexpr Score PASSED_PAWN_RANK[]
 		{
-			{}, { 10, 28 }, { 17, 33 }, { 15, 41 }, { 62, 72 }, { 168, 177 }, { 276, 260 }
+			{}, { 9, 28 }, { 15, 31 }, { 17, 39 }, { 64, 70 }, { 171, 177 }, { 277, 260 }
 		};
 
 	constexpr Score MINOR_PAWN_SHIELD{ 18, 3 };
 	constexpr Score THREATS_BY_MINOR[]
 		{
-			{}, { 6, 32 }, { 59, 41 }, { 79, 56 }, { 90, 119 }, { 79, 161 }, {}
+			{}, { 5, 32 }, { 55, 41 }, { 77, 56 }, { 89, 119 }, { 79, 162 }, {}
 		};
-	constexpr Score KING_PROTECTOR{ 4, 6 };
+	constexpr Score KING_PROTECTOR[]{{ 8, 9 }, { 6, 9 }};
 	constexpr Score HANGING{ 69, 36 };
 	constexpr Score RESTRICTED_PIECE_MOVEMENT{ 7, 7 };
 	constexpr Score WEAK_QUEEN_PROTECTION{ 14, 0 };
 	constexpr Score THREAT_BY_KING{ 24, 89 };
 	constexpr Score THREAT_BY_SAFE_PAWN{ 173, 94 };
 	constexpr Score QUEEN_THREAT_BY_KNIGHT{ 16, 11 };
-	constexpr Score QUEEN_THREAT_BY_SLIDER{ 59, 18 };
+	constexpr Score QUEEN_THREAT_BY_SLIDER{ 60, 18 };
 	constexpr Score BISHOP_XRAY_PAWNS{ 4, 5 };
 	constexpr Score BISHOP_PAWNS[]
 		{
 			{ 3, 8 }, { 3, 9 }, { 1, 8 }, { 3, 7 }
 		};
 
-	constexpr Score ROOK_ON_QUEEN_FILE{ 7, 6 };
-	constexpr Score TRAPPED_ROOK{ 52, 10 };
+	constexpr Score TRAPPED_ROOK{ 55, 13 };
 	constexpr Score ROOK_ON_FILE[] =
 		{
-			{ 21, 4 }, { 47, 25 }
+			{ 19, 7 }, { 48, 27 }
 		};
 	constexpr Score THREAT_BY_ROOK[]
 		{
-			{}, { 3, 44 }, { 38, 71 }, { 38, 61 }, { 0, 38 }, { 51, 38 }, {}
+			{}, { 3, 44 }, { 37, 68 }, { 42, 60 }, { 0, 39 }, { 58, 43 }, {}
 		};
+
+	constexpr Score KING_RING_THREAT_BISHOP{ 24, 0 };
+	constexpr Score KING_RING_THREAT_ROOK{ 16, 0 };
 
 	// King Safety
 	constexpr Score KING_PAWN_SHIELD{ 26, 4 };
@@ -59,28 +58,28 @@ namespace
 	// Mobility
 	constexpr Score KNIGHT_MOBILITY[]
 		{
-			{ -62, -81 }, { -53, -56 }, { -12, -30 }, { -4, -14 }, { 3, 8 }, { 13, 15 },
-			{ 22, 23 }, { 28, 27 }, { 33, 33 }
+			{ -62, -79 }, { -53, -57 }, { -12, -31 }, { -3, -17 }, { 3, 7 },
+			{ 12, 13 }, { 21, 16 }, { 28, 21 }, { 37, 26 }
 		};
 	constexpr Score BISHOP_MOBILITY[]
 		{
-			{ -48, -59 }, { -20, -23 }, { 16, -3 }, { 26, 13 }, { 38, 24 }, { 51, 42 },
-			{ 55, 54 }, { 63, 57 }, { 63, 65 }, { 68, 73 }, { 81, 78 }, { 81, 86 },
-			{ 91, 88 }, { 98, 97 }
+			{ -47, -59 }, { -20, -25 }, { 14, -8 }, { 29, 12 }, { 39, 21 },
+			{ 53, 40 }, { 53, 56 }, { 60, 58 }, { 62, 65 }, { 69, 72 }, { 78, 78 },
+			{ 83, 87 }, { 91, 88 }, { 98, 98 }
 		};
 	constexpr Score ROOK_MOBILITY[]
 		{
-			{ -58, -76 }, { -27, -18 }, { -15, 28 }, { -10, 55 }, { -5, 69 }, { -2, 82 },
-			{ 9, 112 }, { 16, 118 }, { 30, 132 }, { 29, 142 }, { 32, 155 }, { 38, 165 },
-			{ 46, 166 }, { 48, 169 }, { 58, 171 }
+			{ -61, -82 }, { -20, -17 }, { -2, 23 }, { 3, 40 }, { 4, 72 }, { 1, 100 },
+			{ 22, 104 }, { 31, 120 }, { 39, 134 }, { 40, 138 }, { 41, 158 },
+			{ 47, 163 }, { 59, 168 }, { 60, 169 }, { 64, 173 }
 		};
 	constexpr Score QUEEN_MOBILITY[]
 		{
-			{ -39, -36 }, { -21, -15 }, { 3, 8 }, { 3, 18 }, { 14, 34 }, { 22, 54 },
-			{ 28, 61 }, { 41, 73 }, { 43, 79 }, { 48, 92 }, { 56, 94 }, { 60, 104 },
-			{ 60, 113 }, { 66, 120 }, { 67, 123 }, { 70, 126 }, { 71, 133 }, { 73, 136 },
-			{ 79, 140 }, { 88, 143 }, { 88, 148 }, { 99, 166 }, { 102, 170 }, { 102, 175 },
-			{ 106, 184 }, { 109, 191 }, { 113, 206 }, { 116, 212 }
+			{ -29, -49 }, { -16, -29 }, { -8, -8 }, { -8, 17 }, { 18, 39 }, { 25, 54 },
+			{ 23, 59 }, { 37, 73 }, { 41, 76 }, { 54, 95 }, { 65, 95 }, { 68, 101 },
+			{ 69, 124 }, { 70, 128 }, { 70, 132 }, { 70, 133 }, { 71, 136 }, { 72, 140 },
+			{ 74, 147 }, { 76, 149 }, { 90, 153 }, { 104, 169 }, { 105, 171 }, { 106, 171 },
+			{ 112, 178 }, { 114, 185 }, { 114, 187 }, { 119, 221 }
 		};
 }
 
@@ -109,6 +108,14 @@ struct Eval
 	{
 		if constexpr (Trace)
 			trace = new Evaluation::Trace{};
+
+		const auto wKingSq = board.getKingSq<WHITE>();
+		const auto bKingSq = board.getKingSq<BLACK>();
+		const auto wKingRing = (Attacks::kingAttacks(wKingSq) | Bitboard::fromSquare(wKingSq))
+							   & ~Attacks::pawnDoubleAttacks<WHITE>(board.getType(PAWN, WHITE));
+		const auto bKingRing = (Attacks::kingAttacks(bKingSq) | Bitboard::fromSquare(bKingSq))
+							   & ~Attacks::pawnDoubleAttacks<BLACK>(board.getType(PAWN, BLACK));
+		_kingRing = { wKingRing, bKingRing };
 	}
 
 	~Eval() noexcept
@@ -150,8 +157,8 @@ private:
 	std::array<Bitboard, 2> _allAttacks{};
 	std::array<Bitboard, 2> _mobilityArea{};
 
-	const std::array<Bitboard, 2> _kingRing{ Bitboard::fromSquare(board.getKingSq<WHITE>()),
-											 Bitboard::fromSquare(board.getKingSq<BLACK>()) };
+	std::array<Bitboard, 2> _kingRing;
+	// TODO
 	std::array<i32, 2> _kingAttacksCount{};
 	std::array<i32, 2> _kingAttackersCount{};
 	std::array<i32, 2> _kingAttackersWeight{};
@@ -272,9 +279,10 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	const auto knightBishopBonus = [&](const Square square)
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
+		const bool isBishop = board.getPiece(square).type() == BISHOP;
 
 		const auto kingProtectorScore =
-			KING_PROTECTOR * Bits::getDistanceBetween(square, board.getKingSq<Us>());
+			KING_PROTECTOR[isBishop] * Bits::getDistanceBetween(square, board.getKingSq<Us>());
 		score -= kingProtectorScore;
 		if constexpr (Trace)
 			trace->kingProtector[Us] -= kingProtectorScore;
@@ -439,7 +447,6 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 								   | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
 	const auto poorlyDefended = board.allPieces[Them] & ~stronglyProtected & _allAttacks[Us];
 	const auto defended = nonPawnEnemies & stronglyProtected;
-	const auto safe = ~_allAttacks[Them] | _allAttacks[Us];
 
 	if (poorlyDefended | defended)
 	{
@@ -487,21 +494,22 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 	}
 
 	// Bonus for threats on the next moves against enemy queen
-	if (board.pieceCount[Piece{ QUEEN, Them }])
+	if (board.pieceCount[Piece{ QUEEN, Them }] == 1)
 	{
+		const bool imbalance =
+			(board.pieceCount[Piece{ QUEEN, Them }] + board.pieceCount[Piece{ QUEEN, Us }]) == 1;
+
 		const auto sq = toSquare(board.pieceList[Piece{ QUEEN, Them }][0]);
-		const auto safeSpots = _mobilityArea[Us] & ~stronglyProtected;
+		const auto safeSpots = _mobilityArea[Us] & ~stronglyProtected & ~board.getType(PAWN, Them);
 
 		const auto knightAttacks = _pieceAttacks[Us][KNIGHT] & Attacks::knightAttacks(sq);
-		const auto sliderAttacks = (_pieceAttacks[Us][BISHOP] &
-									Attacks::bishopAttacks(sq, board.occupied))
-								   | (_pieceAttacks[Us][ROOK] &
-									  Attacks::rookAttacks(sq, board.occupied));
+		const auto sliderAttacks = (_pieceAttacks[Us][BISHOP] & Attacks::bishopAttacks(sq, board.occupied))
+								   | (_pieceAttacks[Us][ROOK] & Attacks::rookAttacks(sq, board.occupied));
 
 		const auto knightAttacksScore =
 			QUEEN_THREAT_BY_KNIGHT * (knightAttacks & safeSpots).count();
 		const auto sliderAttacksScore =
-			QUEEN_THREAT_BY_SLIDER * (sliderAttacks & safe & _attacksMultiple[Us]).count();
+			QUEEN_THREAT_BY_SLIDER * (sliderAttacks & safeSpots & _attacksMultiple[Us]).count() * (1 + imbalance);
 
 		totalValue += knightAttacksScore + sliderAttacksScore;
 		if constexpr (Trace)
@@ -511,6 +519,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		}
 	}
 
+	const auto safe = ~_allAttacks[Them] | _allAttacks[Us];
 	const auto safePawnsAttacks =
 		Attacks::pawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
 	const auto safePawnThreatScore = THREAT_BY_SAFE_PAWN * safePawnsAttacks.count();
@@ -541,7 +550,7 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 	Score value = PSQT[PAWN][square];
 
 	const auto bb = Bitboard::fromSquare(square);
-	const u8 rank = (Us ? row(square) : 7u - row(square)) - 1u;
+	const u8 rank = (Us ? rankOf(square) : 7u - rankOf(square)) - 1u;
 
 	const auto adjacentFiles = Bitboard::fromAdjacentFiles(square);
 	const auto opposed = board.getType(PAWN, Them) & Bitboard::fromRay(ForwardDir, square);
@@ -615,7 +624,7 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 
 	const i32 pawnsOnTheSameColorSquares =
 		(board.getType(PAWN, Us) & (bool(DARK_SQUARES & bb) ? DARK_SQUARES : ~DARK_SQUARES)).count();
-	value -= BISHOP_PAWNS[std::min<u8>(col(square), 7u - col(square))] * pawnsOnTheSameColorSquares
+	value -= BISHOP_PAWNS[std::min<u8>(fileOf(square), 7u - fileOf(square))] * pawnsOnTheSameColorSquares
 			 * (!bool(_pieceAttacks[Us][PAWN] & bb) + (blocked & CenterFiles).count());
 
 	// Enemy pawns x-rayed
@@ -626,6 +635,10 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 		Attacks::bishopAttacks(square, board.getType(PAWN, Them)) & Center;
 	if (centerAttacks.several())
 		value.mg += 45;
+
+	// King Ring Threat
+	if (Attacks::bishopAttacks(square, board.getType(PAWN)) & _kingRing[Them])
+		value += KING_RING_THREAT_BISHOP;
 
 	return value;
 }
@@ -645,19 +658,20 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 		trace->mobility[Us] += mobility;
 
 	const auto file = Bitboard::fromFile(square);
-	if (!(board.getType(PAWN, Us) & file))
-		value += ROOK_ON_FILE[!bool(board.getType(PAWN, Them) & file)];
-	else if (mobility <= 3)
-	{
-		const u8 kx = col(board.getKingSq<Us>());
 
-		if ((kx < 4) == (col(square) < kx))
+	if (!(board.getType(PAWN, Us) & file).empty())
+	{
+		value += ROOK_ON_FILE[!bool(board.getType(PAWN, Them) & file)];
+	} else if (mobility <= 3)
+	{
+		const u8 kingFile = fileOf(board.getKingSq<Us>());
+
+		if ((kingFile < 4) == (fileOf(square) < kingFile))
 			value -= TRAPPED_ROOK * (1 + !board.canCastle<Us>());
 	}
 
-	const auto queens = board.getType(QUEEN, Us) | board.getType(QUEEN, Them);
-	if (file & queens)
-		value += ROOK_ON_QUEEN_FILE;
+	if (Bitboard::fromFile(square) & _kingRing[Them])
+		value += KING_RING_THREAT_ROOK;
 
 	return value;
 }

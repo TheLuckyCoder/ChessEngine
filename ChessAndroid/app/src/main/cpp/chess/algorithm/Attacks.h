@@ -6,12 +6,12 @@ class Attacks
 {
 public:
 	Attacks() = delete;
-	Attacks(const Attacks&) = delete;
-	Attacks(Attacks&&) = delete;
+	Attacks(const Attacks &) = delete;
+	Attacks(Attacks &&) = delete;
 	~Attacks() = delete;
 
-	Attacks &operator=(const Attacks&) = delete;
-	Attacks &operator=(Attacks&&) = delete;
+	Attacks &operator=(const Attacks &) = delete;
+	Attacks &operator=(Attacks &&) = delete;
 
 	static Bitboard knightAttacks(Square square) noexcept;
 	static Bitboard bishopAttacks(Square square, Bitboard blockers) noexcept;
@@ -22,7 +22,7 @@ public:
 	static Bitboard bishopXRayAttacks(Square square) noexcept;
 	static Bitboard rookXRayAttacks(Square square) noexcept;
 
-	template <Color C>
+	template<Color C>
 	static constexpr Bitboard pawnAttacks(const Bitboard pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
@@ -33,7 +33,7 @@ public:
 			return pawns.shift<SOUTH_WEST>() | pawns.shift<SOUTH_EAST>();
 	}
 
-	template <Color C>
+	template<Color C>
 	static constexpr Bitboard pawnDoubleAttacks(const Bitboard pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);

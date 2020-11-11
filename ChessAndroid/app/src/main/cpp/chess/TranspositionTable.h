@@ -86,7 +86,7 @@ public:
 	void prefetch(u64 zKey) const noexcept;
 	std::optional<SearchEntry> probe(u64 zKey) const noexcept;
 
-	void insert(u64 zKey, const SearchEntry &entry) noexcept;
+	void insert(u64 zKey, SearchEntry entry) noexcept;
 	bool setSize(usize sizeMb);
 	void incrementAge() noexcept;
 	u8 currentAge() const noexcept;
