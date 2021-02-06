@@ -29,7 +29,7 @@ void Stats::incBoardsEvaluated() noexcept
 		++_boardsEvaluated;
 }
 
-void Stats::incNodesSearched(const std::size_t amount) noexcept
+void Stats::incNodesSearched(const usize amount) noexcept
 {
 	if (_statsEnabled)
 		_nodesSearched += amount;
@@ -69,18 +69,18 @@ std::string Stats::formatStats(const char separator)
 {
 	std::stringstream stream;
 
-	const size_t timeMs = getElapsedMs();
+	const usize timeMs = getElapsedMs();
 
 	stream << "Elapsed Time: " << timeMs << "ms" << separator;
 
 	if (_statsEnabled)
 	{
-		const auto boardsEvaluated = static_cast<size_t>(_boardsEvaluated);
-		const auto nodesSearched = static_cast<size_t>(_nodesSearched);
-		const auto nullCuts = static_cast<size_t>(_nullCuts);
-		const auto futilityCuts = static_cast<size_t>(_futilityCuts);
-		const auto lmrCount = static_cast<size_t>(_lmrCount);
-		const size_t nps = timeMs ? (nodesSearched / (timeMs / 1000.0)) : 0;
+		const auto boardsEvaluated = static_cast<usize>(_boardsEvaluated);
+		const auto nodesSearched = static_cast<usize>(_nodesSearched);
+		const auto nullCuts = static_cast<usize>(_nullCuts);
+		const auto futilityCuts = static_cast<usize>(_futilityCuts);
+		const auto lmrCount = static_cast<usize>(_lmrCount);
+		const usize nps = timeMs ? (nodesSearched / (timeMs / 1000.0)) : 0;
 
 		stream << "Boards Evaluated: " << boardsEvaluated << separator
 			   << "Nodes Searched: " << nodesSearched << separator

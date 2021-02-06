@@ -7,7 +7,7 @@
 #include "../Stats.h"
 #include "../Board.h"
 #include "MoveGen.h"
-#include "MoveOrdering.h"
+#include "../MoveOrdering.h"
 #include "Evaluation.h"
 #include "../Psqt.h"
 
@@ -238,7 +238,7 @@ int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
 
 	while (true)
 	{
-		const int searchedValue = search<true>(board, alpha, beta, adjustedDepth, true, true);
+		const int searchedValue = search(board, alpha, beta, adjustedDepth, true, true, true);
 		if (_sharedState.stopped)
 			return 0;
 
@@ -263,13 +263,12 @@ int Search::aspirationWindow(Board &board, const int depth, const int bestScore)
 	}
 }
 
-template<bool PvNode>
-int Search::search(Board &board, int alpha, int beta, const int depth,
+int Search::search(Board &board, int alpha, int beta, const int depth, const bool isPvNode,
 				   const bool doNull, const bool doLmr)
 {
 	const bool rootNode = !board.ply;
 	if (rootNode)
-		assert(PvNode);
+		assert(isPvNode);
 
 	// Try to prefetch the Transposition Table as soon as possible
 	_transpositionTable.prefetch(board.zKey);
@@ -328,14 +327,14 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 	const int futilityMarginEval = eval + FUTILITY_MARGIN * depth;
 
 	// Reverse Futility Pruning
-	if (!PvNode
+	if (!isPvNode
 		&& !nodeInCheck
 		&& depth <= REVERSE_FUTILITY_MAX_DEPTH
 		&& (eval - REVERSE_FUTILITY_MARGIN * std::max(1, depth - improving)) >= beta)
 		return eval;
 
 	// Null Move Pruning
-	if (!PvNode
+	if (!isPvNode
 		&& doNull
 		&& depth >= 4
 		&& eval >= beta
@@ -344,7 +343,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 		   + board.pieceCount[Piece{ ROOK, board.colorToMove }] > 0)
 	{
 		board.makeNullMove();
-		const int nullScore = -search<false>(board, -beta, -beta + 1, depth - 4, false, false);
+		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false, false);
 		board.undoNullMove();
 
 		if (nullScore >= beta)
@@ -406,7 +405,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 			&& !nodeInCheck
 			&& !board.isSideInCheck())
 		{
-			moveScore = -search<false>(board, -alpha - 1, -alpha, depth - 2, true, false);
+			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, true, false);
 
 			// Search with a full window if LMR failed high
 			doFullSearch = moveScore > alpha;
@@ -416,10 +415,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 
 		if (doFullSearch)
 		{
-			if (pvMove)
-				moveScore = -search<true>(board, -beta, -alpha, depth - 1, true, true);
-			else
-				moveScore = -search<false>(board, -beta, -alpha, depth - 1, true, true);
+			moveScore = -search(board, -beta, -alpha, depth - 1, pvMove, true, true);
 		}
 
 		++searchedCount;
@@ -470,6 +466,8 @@ int Search::search(Board &board, int alpha, int beta, const int depth,
 			break;
 		}
 	}
+
+	_transpositionTable.prefetch(board.zKey);
 
 	if (legalCount == 0)
 		return board.isSideInCheck() ? Value::VALUE_MIN + startPly : 0;
@@ -635,5 +633,6 @@ bool Search::checkTimeAndStop()
 		&& (threadInfo().nodesCount & 2047u) == 0
 		&& Stats::getElapsedMs() >= _searchSettings.searchTime())
 		stopSearch();
+
 	return _sharedState.stopped;
 }

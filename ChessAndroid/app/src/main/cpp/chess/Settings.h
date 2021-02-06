@@ -9,52 +9,52 @@ class Settings final
 {
 public:
 	Settings(const int depth,
-	         const std::size_t threadCount,
-	         const std::size_t tableSizeMb,
+	         const usize threadCount,
+	         const usize tableSizeMb,
 	         const bool performQuiescenceSearch,
 	         const u64 searchTime = 0ull) noexcept
-		: _depth(std::clamp<int>(depth, 2, MAX_DEPTH)),
-		  _threadCount(std::clamp<std::size_t>(threadCount, 1u, std::thread::hardware_concurrency())),
+		: _depth(std::clamp<i32>(depth, 2, MAX_DEPTH)),
+		  _threadCount(std::clamp<usize>(threadCount, 1u, std::thread::hardware_concurrency())),
 		  _cacheTableSizeMb(tableSizeMb),
 		  _searchTime(searchTime),
 		  _quiescenceSearch(performQuiescenceSearch)
 	{
 	}
 
-	int depth() const noexcept
+	constexpr auto depth() const noexcept
 	{
 		return _depth;
 	}
 
-	std::size_t threadCount() const noexcept
+	constexpr auto threadCount() const noexcept
 	{
 		return _threadCount;
 	}
 
-	std::size_t tableSizeMb() const noexcept
+	constexpr auto tableSizeMb() const noexcept
 	{
 		return _cacheTableSizeMb;
 	}
 
-	bool isTimeSet() const noexcept
+	constexpr bool isTimeSet() const noexcept
 	{
 		return _searchTime != 0ull;
 	}
 
-	std::size_t searchTime() const noexcept
+	constexpr auto searchTime() const noexcept
 	{
 		return _searchTime;
 	}
 
-	bool doQuietSearch() const noexcept
+	constexpr bool doQuietSearch() const noexcept
 	{
 		return _quiescenceSearch;
 	}
 
 private:
-	int _depth;
-	std::size_t _threadCount;
-	std::size_t _cacheTableSizeMb;
-	std::size_t _searchTime;
+	i32 _depth;
+	usize _threadCount;
+	usize _cacheTableSizeMb;
+	usize _searchTime;
 	bool _quiescenceSearch;
 };

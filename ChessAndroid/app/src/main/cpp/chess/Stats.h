@@ -28,7 +28,7 @@ public:
 	static void resetStats() noexcept;
 
 	static void incBoardsEvaluated() noexcept;
-	static void incNodesSearched(std::size_t amount = 1u) noexcept;
+	static void incNodesSearched(usize amount = 1u) noexcept;
 	static void incNullCuts() noexcept;
 	static void incFutilityCuts() noexcept;
 	static void incLmrCount() noexcept;

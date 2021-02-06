@@ -1,8 +1,8 @@
 #pragma once
 
-#include "MoveGen.h"
-#include "Search.h"
-#include "../Thread.h"
+#include "algorithm/MoveGen.h"
+#include "algorithm/Search.h"
+#include "Thread.h"
 
 class Board;
 

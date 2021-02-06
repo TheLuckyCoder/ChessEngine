@@ -50,8 +50,7 @@ private:
 	static void printUci(Board &board);
 	static void iterativeDeepening(Board board, int targetDepth);
 	static int aspirationWindow(Board &board, int depth, int bestScore);
-	template <bool PvNode>
-	static int search(Board &board, int alpha, int beta, int depth,
+	static int search(Board &board, int alpha, int beta, int depth, bool isPvNode,
 					  bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 

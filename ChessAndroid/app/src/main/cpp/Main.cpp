@@ -40,7 +40,7 @@ const BoardManager::PieceChangeListener listener = [](GameState state, bool shou
 		const u8 destSq = moved[i].second;
 
 		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
-									 col(startSq), row(startSq), col(destSq), row(destSq));
+									 fileOf(startSq), rankOf(startSq), fileOf(destSq), rankOf(destSq));
 
 		env->SetObjectArrayElement(result, i, obj);
 	}

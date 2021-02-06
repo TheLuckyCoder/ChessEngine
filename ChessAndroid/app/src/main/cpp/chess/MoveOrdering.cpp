@@ -1,7 +1,7 @@
 #include "MoveOrdering.h"
 
-#include "Evaluation.h"
-#include "../Board.h"
+#include "algorithm/Evaluation.h"
+#include "Board.h"
 
 namespace MoveOrdering
 {
