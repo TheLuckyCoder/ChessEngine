@@ -12,6 +12,8 @@ public:
 
 	Attacks &operator=(const Attacks &) = delete;
 	Attacks &operator=(Attacks &&) = delete;
+	
+	static void init();
 
 	static Bitboard knightAttacks(Square square) noexcept;
 	static Bitboard bishopAttacks(Square square, Bitboard blockers) noexcept;

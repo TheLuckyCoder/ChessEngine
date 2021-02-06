@@ -9,6 +9,7 @@ namespace Cache
 	jclass posClass;
 	jclass posPairClass;
 	jclass pieceClass;
+	jclass moveClass;
 
 	jclass cacheClass(JNIEnv *env, jclass cls)
 	{
@@ -21,6 +22,7 @@ namespace Cache
 		posClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Pos"));
 		posPairClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/PosPair"));
 		pieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Piece"));
+		moveClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Move"));
 	}
 
 	void cleanCaches(JNIEnv *env)
@@ -29,5 +31,6 @@ namespace Cache
 		env->DeleteGlobalRef(posClass);
 		env->DeleteGlobalRef(posPairClass);
 		env->DeleteGlobalRef(pieceClass);
+		env->DeleteGlobalRef(moveClass);
 	}
 }

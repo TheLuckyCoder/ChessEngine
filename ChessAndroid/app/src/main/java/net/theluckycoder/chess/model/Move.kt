@@ -4,7 +4,15 @@ import net.theluckycoder.chess.utils.toBoolean
 import kotlin.experimental.and
 
 @Suppress("unused", "MemberVisibilityCanBePrivate")
-data class Move(val content: Long) {
+data class Move(
+    val content: Int,
+    val from: Byte,
+    val to: Byte,
+    val pieceType: Byte,
+    val capturedPieceType: Byte,
+    val promotedPieceType: Byte,
+    private val internalFlags: Byte
+) {
     companion object {
         const val CAPTURE: Byte = 1
         const val PROMOTION: Byte = 1 shl 2
@@ -39,26 +47,8 @@ data class Move(val content: Long) {
             get() = (flags and EN_PASSANT).toBoolean()
     }
 
-    val from: Byte
-        get() = ((content ushr 9) and 0x3F).toByte()
-
-    val to: Byte
-        get() = ((content ushr 15) and 0x3F).toByte()
-
-    val pieceType = (content and 7).toByte()
-
     val piece: Piece
         get() = Piece(from.toInt(), pieceType)
 
-    val capturedPieceType: Byte
-        get() = ((content ushr 3) and 7).toByte()
-
-    val capturedPiece: Piece
-        get() = Piece(to.toInt(), capturedPieceType)
-
-    val promotedPieceType: Byte
-        get() = ((content ushr 6) and 7).toByte()
-
-    val flags: Flags
-        get() = Flags((content ushr 22).toInt())
+    val flags = Flags(internalFlags.toInt())
 }

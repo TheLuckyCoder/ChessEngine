@@ -180,22 +180,27 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 	return array;
 }
 
-external JNIEXPORT jlongArray JNICALL
+external JNIEXPORT jobjectArray JNICALL
 Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyte square)
 {
 	pEnv->ExceptionClear();
 
+	const static auto constructorId = pEnv->GetMethodID(Cache::moveClass, "<init>", "(IBBBBBB)V");
+
 	const auto possibleMoves = BoardManager::getPossibleMoves(u8(square));
-	std::vector<jlong> longMoves;
-	longMoves.reserve(possibleMoves.size());
+	LOGD("Possible Moves", "%d", i32(possibleMoves.size()));
 
-	std::transform(possibleMoves.begin(), possibleMoves.end(), std::back_inserter(longMoves),
-				   [](const Move &c)
-				   { return static_cast<jlong>(c.getContents()); });
+	jobjectArray result =
+		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), Cache::moveClass, nullptr);
 
-	auto result = pEnv->NewLongArray(jsize(possibleMoves.size()));
-
-	pEnv->SetLongArrayRegion(result, 0, longMoves.size(), longMoves.data());
+	int i{};
+	std::for_each(possibleMoves.begin(), possibleMoves.end(), [&](const Move &move)
+	{
+		jobject obj = pEnv->NewObject(Cache::moveClass, constructorId,
+									  move.getContents(), move.from(), move.to(), move.piece(),
+									  move.capturedPiece(), move.promotedPiece(), move.flags());
+		pEnv->SetObjectArrayElement(result, i++, obj);
+	});
 
 	return result;
 }
@@ -214,16 +219,16 @@ Java_net_theluckycoder_chess_Native_setSettings(JNIEnv *, jobject, jint searchDe
 												jboolean performQuiescenceSearch)
 {
 	BoardManager::setSettings(Settings{ searchDepth,
-										static_cast<unsigned>(threadCount),
-										static_cast<unsigned>(cacheSizeMb),
+										static_cast<u32>(threadCount),
+										static_cast<u32>(cacheSizeMb),
 										static_cast<bool>(performQuiescenceSearch) });
 }
 
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jlong move)
+Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jint move)
 {
-	BoardManager::makeMove(Move{ static_cast<unsigned>(move & UINT32_MAX) });
+	BoardManager::makeMove(Move{ static_cast<u32>(move) });
 }
 
 external JNIEXPORT void JNICALL
@@ -246,7 +251,8 @@ Java_net_theluckycoder_chess_Native_undoMoves(JNIEnv *, jobject)
 }
 
 external JNIEXPORT jboolean JNICALL
-Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jboolean playerWhite, jstring fenPosition)
+Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jboolean playerWhite,
+											jstring fenPosition)
 {
 	const char *nativeString = pEnv->GetStringUTFChars(fenPosition, nullptr);
 

@@ -10,6 +10,7 @@
 void Uci::init()
 {
 	Zobrist::init();
+	Attacks::init();
 	board.setToStartPos();
 }
 

@@ -1,5 +1,6 @@
 package net.theluckycoder.chess
 
+import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.model.Piece
 
 object Native {
@@ -20,9 +21,9 @@ object Native {
 
     external fun getPieces(): Array<Piece>
 
-    external fun getPossibleMoves(square: Byte): LongArray
+    external fun getPossibleMoves(square: Byte): Array<Move>
 
-    external fun makeMove(move: Long)
+    external fun makeMove(move: Int)
 
     external fun forceMove()
 

@@ -154,49 +154,9 @@ static constexpr auto _kingAttacks = []
 	return moves;
 }();
 
-static const auto _bishopAttacks = []
-{
-	std::array<std::array<Bitboard, 1024>, SQUARE_NB> moves{};
+static std::array<std::array<Bitboard, 1024>, SQUARE_NB> _bishopAttacks;
 
-	for (u8 square{}; square < SQUARE_NB; ++square)
-	{
-		const int indexBit = _bishopIndexBits[square];
-
-		// For all possible blockers for this square
-		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
-		{
-			const u64 blockers = getBlockersFromIndex(blockerIndex, _bishopMasks[square]);
-			const u64 attacks = Bits::generateBishopAttacks(square, blockers);
-			const u64 index = (blockers * bishopMagics[square]) >> (64 - indexBit);
-
-			moves[square][index] = Bitboard{ attacks };
-		}
-	}
-
-	return moves;
-}();
-
-static const auto _rookAttacks = []
-{
-	std::array<std::array<Bitboard, 4096>, SQUARE_NB> moves{};
-
-	for (u8 square{}; square < SQUARE_NB; ++square)
-	{
-		const int indexBit = rookIndexBits[square];
-
-		// For all possible blockers for this square
-		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
-		{
-			const u64 blockers = getBlockersFromIndex(blockerIndex, _rookMasks[square]);
-			const u64 attacks = Bits::generateRookAttacks(square, blockers);
-			const u64 index = (blockers * rookMagics[square]) >> (64 - indexBit);
-
-			moves[square][index] = Bitboard{ attacks };
-		}
-	}
-
-	return moves;
-}();
+static std::array<std::array<Bitboard, 4096>, SQUARE_NB> _rookAttacks;
 
 static constexpr auto _bishopXRayAttacks = []
 {
@@ -229,6 +189,43 @@ static constexpr auto _rookXRayAttacks = []
 
 	return moves;
 }();
+
+void Attacks::init()
+{
+	static bool initialized = false;
+	if (initialized) return;
+	initialized = true;
+
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		const int indexBit = _bishopIndexBits[square];
+
+		// For all possible blockers for this square
+		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
+		{
+			const u64 blockers = getBlockersFromIndex(blockerIndex, _bishopMasks[square]);
+			const u64 attacks = Bits::generateBishopAttacks(square, blockers);
+			const u64 index = (blockers * bishopMagics[square]) >> (64 - indexBit);
+
+			_bishopAttacks[square][index] = Bitboard{ attacks };
+		}
+	}
+
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		const int indexBit = rookIndexBits[square];
+
+		// For all possible blockers for this square
+		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
+		{
+			const u64 blockers = getBlockersFromIndex(blockerIndex, _rookMasks[square]);
+			const u64 attacks = Bits::generateRookAttacks(square, blockers);
+			const u64 index = (blockers * rookMagics[square]) >> (64 - indexBit);
+
+			_rookAttacks[square][index] = Bitboard{ attacks };
+		}
+	}
+}
 
 Bitboard Attacks::knightAttacks(const Square square) noexcept
 {

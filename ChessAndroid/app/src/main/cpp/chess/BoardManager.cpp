@@ -14,6 +14,7 @@ Board BoardManager::_board;
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
 	Zobrist::init();
+	Attacks::init();
 
 	_board.setToStartPos();
 	_listener = listener;

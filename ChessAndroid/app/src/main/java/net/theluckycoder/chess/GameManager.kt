@@ -35,7 +35,7 @@ class GameManager(
     val isWorking
         get() = Native.isWorking()
 
-    fun getPossibleMoves(pos: Pos) = Native.getPossibleMoves(pos.toByte()).map { Move(it) }
+    fun getPossibleMoves(pos: Pos) = Native.getPossibleMoves(pos.toByte())
 
     fun initBoard(playerWhite: Boolean = true) {
         if (initialized) {

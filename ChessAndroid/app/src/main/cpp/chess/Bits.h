@@ -309,7 +309,7 @@ public:
 	constexpr Square popLsb() noexcept
 	{
 		const u8 lsbIndex = bitScanForward();
-		_value &= _value - 1;
+		_value &= _value - 1u;
 		return toSquare(lsbIndex);
 	}
 
@@ -393,12 +393,12 @@ public:
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_RANKS.at(u8(rankOf(square))) };
+		return Bitboard{ Bits::_RANKS.at(rankOf(square)) };
 	}
 
 	static constexpr Bitboard fromFile(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_FILES.at(u8(fileOf(square))) };
+		return Bitboard{ Bits::_FILES.at(fileOf(square)) };
 	}
 
 	static constexpr Bitboard fromAdjacentFiles(const Square square) noexcept
