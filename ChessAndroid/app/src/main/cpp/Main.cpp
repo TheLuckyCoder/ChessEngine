@@ -2,6 +2,7 @@
 
 #include "Log.h"
 #include "Cache.h"
+#include "AndroidBuffer.h"
 
 #include "chess/BoardManager.h"
 #include "chess/Stats.h"
@@ -67,6 +68,8 @@ external JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 
 	jvm = vm;
 
+	std::cout.rdbuf(new AndroidBuffer);
+
 	Cache::createCaches(env);
 
 	return JNI_VERSION_1_6;
@@ -83,6 +86,8 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 	env->DeleteGlobalRef(gameManagerInstance);
 	gameManagerInstance = nullptr;
 	Cache::cleanCaches(env);
+
+	delete std::cout.rdbuf(nullptr);
 
 	jvm = nullptr;
 }
@@ -188,7 +193,6 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 	const static auto constructorId = pEnv->GetMethodID(Cache::moveClass, "<init>", "(IBBBBBB)V");
 
 	const auto possibleMoves = BoardManager::getPossibleMoves(u8(square));
-	LOGD("Possible Moves", "%d", i32(possibleMoves.size()));
 
 	jobjectArray result =
 		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), Cache::moveClass, nullptr);

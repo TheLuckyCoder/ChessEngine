@@ -192,8 +192,8 @@ namespace Bits
 
 	static constexpr u64 _generateRayAttacksForwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const auto attacks = _RAYS[direction][sq];
-		const auto blockers = attacks & occupied;
+		const u64 attacks = _RAYS[direction][sq];
+		const u64 blockers = attacks & occupied;
 		const u8 square = bitScanForward(blockers | 0x8000000000000000);
 		return attacks ^ _RAYS[direction][square];
 	}

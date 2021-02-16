@@ -15,6 +15,7 @@ This project uses the evaluation function values (in the file Evaluation.cpp) fr
   - Null Move Pruning
   - Late Move Reductions
   - Quiescence Search
+  - Lazy SMP
 - Move Ordering:
   - Hash Move
   - MVV/LVA

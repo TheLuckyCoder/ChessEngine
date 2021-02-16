@@ -228,7 +228,7 @@ namespace Tests
 
 			const auto expectedNodeCount = perftVector[i];
 			if (nodeCount != expectedNodeCount)
-				std::cerr << TAG << "Nodes count: " << nodeCount << '/' << expectedNodeCount << '\n';
+				std::cout << TAG << "Nodes count: " << nodeCount << '/' << expectedNodeCount << '\n';
 			else
 				std::cout << TAG << "Nodes count: " << nodeCount << '\n';
 		}

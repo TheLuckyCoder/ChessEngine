@@ -105,7 +105,6 @@ enum Square : u8
 
 constexpr Square toSquare(const u8 sq) noexcept
 {
-	assert(sq < static_cast<u8>(Square::SQUARE_NB));
 	return static_cast<Square>(sq);
 }
 
