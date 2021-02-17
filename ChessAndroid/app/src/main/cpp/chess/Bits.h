@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <cassert>
 #include <bit>
 
 #include "Defs.h"
@@ -14,10 +13,13 @@
 
 namespace Bits
 {
+	static constexpr u64 FILE_A_BB{ 0x101010101010101ull };
+	static constexpr u64 FILE_H_BB{ 0x8080808080808080ull };
+
 	static constexpr u64 _eastN(u64 board, const u8 n) noexcept
 	{
 		for (u8 i{}; i < n; ++i)
-			board = ((board << 1) & (~FILE_A));
+			board = ((board << 1) & (~FILE_A_BB));
 
 		return board;
 	}
@@ -25,7 +27,7 @@ namespace Bits
 	static constexpr u64 _westN(u64 board, const u8 n) noexcept
 	{
 		for (int i{}; i < n; ++i)
-			board = ((board >> 1) & (~FILE_H));
+			board = ((board >> 1) & (~FILE_H_BB));
 
 		return board;
 	}
@@ -151,7 +153,7 @@ namespace Bits
 		std::array<u64, 8> files{};
 
 		for (u8 f{}; f < 8u; ++f)
-			files[f] = 0x101010101010101ull << f;
+			files[f] = FILE_A_BB << f;
 
 		return files;
 	}();
@@ -164,18 +166,18 @@ namespace Bits
 		else if constexpr (D == SOUTH)
 			return bb >> 8u;
 		else if constexpr (D == EAST)
-			return (bb & ~FILE_H) << 1u;
+			return (bb & ~FILE_H_BB) << 1u;
 		else if constexpr (D == WEST)
-			return (bb & ~FILE_A) >> 1u;
+			return (bb & ~FILE_A_BB) >> 1u;
 
 		else if constexpr (D == NORTH_EAST)
-			return (bb & ~FILE_H) << 9u;
+			return (bb & ~FILE_H_BB) << 9u;
 		else if constexpr (D == NORTH_WEST)
-			return (bb & ~FILE_A) << 7u;
+			return (bb & ~FILE_A_BB) << 7u;
 		else if constexpr (D == SOUTH_EAST)
-			return (bb & ~FILE_H) >> 7u;
+			return (bb & ~FILE_H_BB) >> 7u;
 		else if constexpr (D == SOUTH_WEST)
-			return (bb & ~FILE_A) >> 9u;
+			return (bb & ~FILE_A_BB) >> 9u;
 
 		return {};
 	}
@@ -271,7 +273,7 @@ public:
 		return toSquare(Bits::bitScanReverse(_value));
 	}
 
-	[[nodiscard]] constexpr i32 count() const noexcept
+	[[nodiscard]] constexpr i32 popcount() const noexcept
 	{
 		return std::popcount(_value);
 	}
@@ -365,6 +367,16 @@ public:
 		return Bitboard{ ~_value };
 	}
 
+	constexpr Bitboard operator<<(const u64 rhs) const noexcept
+	{
+		return Bitboard{ _value << rhs };
+	}
+
+	constexpr Bitboard operator>>(const u64 rhs) const noexcept
+	{
+		return Bitboard{ _value >> rhs };
+	}
+
 	explicit constexpr operator bool() const noexcept { return bool(_value); }
 
 	// Static
@@ -383,7 +395,7 @@ public:
 	 */
 	static constexpr Bitboard fromRay(const Dir direction, const Square square) noexcept
 	{
-		return Bitboard{ Bits::_RAYS.at(direction).at(u8(square)) };
+		return Bitboard{ Bits::_RAYS[direction].at(u8(square)) };
 	}
 
 	static constexpr Bitboard fromRayBetween(const Square sq1, const Square sq2) noexcept
@@ -411,4 +423,27 @@ private:
 	u64 _value;
 };
 
+constexpr Bitboard RANK_1{ 0xFF };
+constexpr Bitboard RANK_2{ RANK_1 << 8 };
+constexpr Bitboard RANK_3{ RANK_1 << (8 * 2) };
+constexpr Bitboard RANK_4{ RANK_1 << (8 * 3) };
+constexpr Bitboard RANK_5{ RANK_1 << (8 * 4) };
+constexpr Bitboard RANK_6{ RANK_1 << (8 * 5) };
+constexpr Bitboard RANK_7{ RANK_1 << (8 * 6) };
+constexpr Bitboard RANK_8{ RANK_1 << (8 * 7) };
+
+constexpr Bitboard FILE_A{ 0x101010101010101ull };
+constexpr Bitboard FILE_B{ FILE_A << 1 };
+constexpr Bitboard FILE_C{ FILE_A << 2 };
+constexpr Bitboard FILE_D{ FILE_A << 3 };
+constexpr Bitboard FILE_E{ FILE_A << 4 };
+constexpr Bitboard FILE_F{ FILE_A << 5 };
+constexpr Bitboard FILE_G{ FILE_A << 6 };
+constexpr Bitboard FILE_H{ FILE_A << 7 };
+
 constexpr Bitboard DARK_SQUARES{ 0xAA55AA55AA55AA55ULL };
+
+constexpr Bitboard KING_SIDE{ FILE_E | FILE_F | FILE_G | FILE_H };
+constexpr Bitboard QUEEN_SIDE{ FILE_A | FILE_B | FILE_C | FILE_D };
+constexpr Bitboard CENTER_FILES{FILE_C | FILE_D | FILE_E | FILE_F };
+constexpr Bitboard CENTER_SQUARES{ (FILE_D | FILE_E) & (RANK_4 | RANK_5) };

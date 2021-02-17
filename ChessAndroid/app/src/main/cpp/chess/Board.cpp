@@ -88,7 +88,7 @@ bool Board::isDrawn() const noexcept
 
 	return !bool(pawns | rooks | queens)
 		   && (!(allPieces[WHITE].several()) || !(allPieces[BLACK].several()))
-		   && (!((knight | bishop).several()) || (!bishop && knight.count() <= 2));
+		   && (!((knight | bishop).several()) || (!bishop && knight.popcount() <= 2));
 }
 
 Phase Board::getPhase() const noexcept
@@ -163,7 +163,7 @@ bool Board::makeMove(const Move move) noexcept
 	{
 		if (movedPiece == ROOK)
 		{
-			const u64 rookFile = Bitboard::fromFile(from).value();
+			const auto rookFile = Bitboard::fromFile(from);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -182,7 +182,7 @@ bool Board::makeMove(const Move move) noexcept
 		assert(Piece::isValid(capturedType));
 		if (capturedType == ROOK && canCastle(~side))
 		{
-			const u64 rookFile = Bitboard::fromFile(to).value();
+			const auto rookFile = Bitboard::fromFile(to);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(~side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -204,8 +204,8 @@ bool Board::makeMove(const Move move) noexcept
 			enPassantSq = toSquare(u8(from) + static_cast<u8>(side ? 8 : -8));
 
 			Zobrist::xorEnPassant(zKey, enPassantSq);
-			assert(Bitboard::fromRank(enPassantSq).value() == RANK_3
-				|| Bitboard::fromRank(enPassantSq).value() == RANK_6);
+			assert(Bitboard::fromRank(enPassantSq) == RANK_3
+				|| Bitboard::fromRank(enPassantSq) == RANK_6);
 		}
 	}
 

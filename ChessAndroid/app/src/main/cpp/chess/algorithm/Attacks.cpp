@@ -99,7 +99,7 @@ static constexpr auto _rookMasks = []
 constexpr u64 getBlockersFromIndex(const int index, Bitboard mask)
 {
 	u64 blockers{};
-	const int bits = mask.count();
+	const int bits = mask.popcount();
 
 	for (int i = 0; i < bits; i++)
 	{

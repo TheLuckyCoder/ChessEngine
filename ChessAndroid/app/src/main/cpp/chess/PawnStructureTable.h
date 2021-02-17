@@ -12,7 +12,7 @@ struct PawnStructureEntry
 class PawnStructureTable
 {
 public:
-    explicit PawnStructureTable(usize sizeMb) noexcept;
+    explicit PawnStructureTable(usize sizeMb);
 
 	PawnStructureTable(const PawnStructureTable&) = delete;
 	PawnStructureTable(PawnStructureTable&&) = delete;
@@ -24,10 +24,10 @@ public:
 	PawnStructureEntry operator[](u64 key) const noexcept;
 
     void insert(const PawnStructureEntry &value) const noexcept;
-	bool setSize(usize sizeMb) noexcept(false);
+	bool setSize(usize sizeMb);
 	void clear() const noexcept;
 
 private:
-	usize _size;
-	PawnStructureEntry *_entries = new PawnStructureEntry[_size]{};
+	usize _size{};
+	PawnStructureEntry *_entries = nullptr;
 };
