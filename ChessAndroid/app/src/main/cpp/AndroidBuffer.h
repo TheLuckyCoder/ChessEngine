@@ -5,7 +5,7 @@
 class AndroidBuffer : public std::streambuf
 {
 public:
-	static constexpr auto BUFFER_SIZE = 256;
+	static constexpr auto BUFFER_SIZE = 512;
 
 	AndroidBuffer() { setp(buffer, buffer + BUFFER_SIZE - 1); }
 
@@ -28,7 +28,7 @@ private:
 			char writeBuffer[BUFFER_SIZE + 1]{};
 			memcpy(writeBuffer, pbase(), pptr() - pbase());
 
-			rc = __android_log_write(ANDROID_LOG_INFO, "std", writeBuffer) > 0;
+			rc = __android_log_write(ANDROID_LOG_VERBOSE, "std", writeBuffer) > 0;
 			setp(buffer, buffer + BUFFER_SIZE - 1);
 		}
 		return rc;

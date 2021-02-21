@@ -278,9 +278,14 @@ namespace PolyBook
 
 	void clearBook()
 	{
-		bookPath = std::nullopt;
-		vecBook.clear();
-		vecBook.shrink_to_fit();
+		if (bookPath.has_value())
+			bookPath = std::nullopt;
+
+		if (!vecBook.empty())
+		{
+			vecBook.clear();
+			vecBook.shrink_to_fit();
+		}
 	}
 
 	u64 getKeyFromBoard(const Board &board) noexcept

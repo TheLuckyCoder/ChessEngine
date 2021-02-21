@@ -46,6 +46,12 @@ object Native {
 
     external fun saveMoves(): String?
 
+    external fun initBook(bookPath: String)
+
+    // region Tests
+
     external fun perftTest()
     external fun evaluationTest(): String?
+
+    // endregion Tests
 }

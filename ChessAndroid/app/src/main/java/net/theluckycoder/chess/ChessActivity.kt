@@ -375,7 +375,7 @@ class ChessActivity : AppCompatActivity(),
                 val playerWhite = when (dialogBinding.tgSide.checkedButtonId) {
                     dialogBinding.btnSideWhite.id -> true
                     dialogBinding.btnSideBlack.id -> false
-                    else -> true
+                    else -> Random.nextBoolean()
                 }
 
                 val level = dialogBinding.spDifficulty.selectedItemPosition

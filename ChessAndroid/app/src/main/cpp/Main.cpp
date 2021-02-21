@@ -11,6 +11,7 @@
 #include "chess/algorithm/Evaluation.h"
 #include "chess/algorithm/MoveGen.h"
 #include "chess/algorithm/Search.h"
+#include "chess/polyglot/PolyBook.h"
 
 #define external extern "C"
 
@@ -295,6 +296,16 @@ Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jobject)
 
 	const auto string = MovesPersistence::saveToString(moves, BoardManager::isPlayerWhite());
 	return pEnv->NewStringUTF(string.c_str());
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_initBook(JNIEnv *pEnv, jobject, jstring bookPath)
+{
+	const char *nativeString = pEnv->GetStringUTFChars(bookPath, nullptr);
+	PolyBook::initBook(nativeString);
+	LOGV("Book", "Initialized");
+
+	pEnv->ReleaseStringUTFChars(bookPath, nativeString);
 }
 
 external JNIEXPORT void JNICALL
