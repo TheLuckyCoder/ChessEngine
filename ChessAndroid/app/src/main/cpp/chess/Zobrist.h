@@ -17,8 +17,6 @@ public:
 	Zobrist &operator=(const Zobrist &) = delete;
 	Zobrist &operator=(Zobrist &&) = delete;
 
-	static void init();
-
 	static u64 compute(const Board &board) noexcept;
 
 	static void xorPiece(u64 &key, Square square, Piece piece) noexcept;

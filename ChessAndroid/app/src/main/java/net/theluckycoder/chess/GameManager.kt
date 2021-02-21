@@ -82,7 +82,6 @@ class GameManager(
         }
 
         SaveManager.saveToFileAsync(activity)
-        Thread.sleep(50)
         var piecesAnimated = false
 
         activity.runOnUiThread {

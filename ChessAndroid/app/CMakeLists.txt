@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 set(LIB_NAME "chess")
-project(LIB_NAME LANGUAGES CXX)
 
 add_library(
         ${LIB_NAME}
@@ -24,7 +23,8 @@ add_library(
         src/main/cpp/chess/polyglot/PolyBook.cpp
 )
 
-target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
+# CMake 3.12 is required for std_20
+#target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
 
 target_compile_options(${LIB_NAME} PUBLIC
         -std=c++20 -stdlib=libc++ -fno-exceptions -fno-rtti

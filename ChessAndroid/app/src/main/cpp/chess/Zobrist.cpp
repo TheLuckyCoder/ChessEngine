@@ -1,47 +1,53 @@
 #include "Zobrist.h"
 
+#include <array>
+
 #include "Board.h"
 
-using HashArray = std::array<std::array<std::array<u64, 7>, 2>, SQUARE_NB>;
-
-static HashArray _pieces{};
-static u64 _side;
-static std::array<u64, 6> _castlingRights;
-static std::array<u64, 8> _enPassant;
-
-/*
- * Generate random numbers based on this paper: http://vigna.di.unimi.it/ftp/papers/xorshift.pdf
- */
-u64 random64() noexcept
+class RandomGenerator
 {
-	static u64 seed = 1070372ull;
+public:
+	/*
+	 * Generate random numbers based on this paper: http://vigna.di.unimi.it/ftp/papers/xorshift.pdf
+	 */
+	constexpr u64 random64() noexcept
+	{
+		seed ^= seed >> 12u;
+		seed ^= seed << 25u;
+		seed ^= seed >> 27u;
 
-	seed ^= seed >> 12u;
-	seed ^= seed << 25u;
-	seed ^= seed >> 27u;
+		return seed * 2685821657736338717ull;
+	}
 
-	return seed * 2685821657736338717ull;
-}
+	template <usize N>
+	constexpr auto randomArray() noexcept
+	{
+		std::array<u64, N> array{};
 
-void Zobrist::init()
-{
-	static bool initialized = false;
-	if (initialized) return;
-	initialized = true;
+		for (auto &item : array)
+			item = random64();
 
-	for (auto &i : _pieces)
-		for (auto &color : i)
-			for (auto &piece : color)
-				piece = random64();
+		return array;
+	}
 
-	for (auto &rights : _castlingRights)
-		rights = random64();
+private:
+	u64 seed = 1070372ull;
+};
 
-	for (auto &square : _enPassant)
-		square = random64();
+constinit RandomGenerator _rand;
 
-	_side = random64();
-}
+static auto _pieces = [] {
+	std::array<std::array<std::array<u64, 2>, 7>, SQUARE_NB> array{};
+
+	for (auto &sq : array)
+		for (auto &piece : sq)
+			piece = _rand.randomArray<2>();
+
+	return array;
+}();
+static const u64 _side{ _rand.random64() };
+static const auto _castlingRights{ _rand.randomArray<4>() };
+static const auto _enPassant{ _rand.randomArray<8>() };
 
 u64 Zobrist::compute(const Board &board) noexcept
 {
@@ -49,7 +55,7 @@ u64 Zobrist::compute(const Board &board) noexcept
 
 	for (u8 sq = 0; sq < SQUARE_NB; ++sq)
 		if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
-			hash ^= _pieces[sq][piece.color()][piece.type()];
+			hash ^= _pieces[sq][piece.type()][piece.color()];
 
 	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
 	xorEnPassant(hash, board.enPassantSq);
@@ -62,7 +68,7 @@ u64 Zobrist::compute(const Board &board) noexcept
 
 void Zobrist::xorPiece(u64 &key, const Square square, const Piece piece) noexcept
 {
-	key ^= _pieces[square][piece.color()][piece.type()];
+	key ^= _pieces[square][piece.type()][piece.color()];
 }
 
 void Zobrist::flipSide(u64 &key) noexcept
@@ -72,18 +78,14 @@ void Zobrist::flipSide(u64 &key) noexcept
 
 void Zobrist::xorCastlingRights(u64 &key, const CastlingRights rights) noexcept
 {
-	if (rights & CASTLE_WHITE_BOTH)
-		key ^= _castlingRights[0];
-	else if (rights & CASTLE_WHITE_KING)
+	if (rights & CASTLE_WHITE_KING)
 		key ^= _castlingRights[1];
-	else if (rights & CASTLE_WHITE_QUEEN)
+	if (rights & CASTLE_WHITE_QUEEN)
 		key ^= _castlingRights[2];
 
-	if (rights & CASTLE_BLACK_BOTH)
-		key ^= _castlingRights[3];
-	else if (rights & CASTLE_BLACK_KING)
+	if (rights & CASTLE_BLACK_KING)
 		key ^= _castlingRights[4];
-	else if (rights & CASTLE_BLACK_QUEEN)
+	if (rights & CASTLE_BLACK_QUEEN)
 		key ^= _castlingRights[5];
 }
 

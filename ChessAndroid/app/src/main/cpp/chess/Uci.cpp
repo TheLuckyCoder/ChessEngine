@@ -4,13 +4,11 @@
 
 #include "Stats.h"
 #include "Tests.h"
-#include "Zobrist.h"
 #include "algorithm/Search.h"
 #include "polyglot/PolyBook.h"
 
 void Uci::init()
 {
-	Zobrist::init();
 	Attacks::init();
 	_board.setToStartPos();
 }
@@ -19,7 +17,7 @@ void Uci::loop()
 {
 	std::string line;
 	std::string token;
-	line.reserve(2048);
+	line.reserve(1024);
 	token.reserve(64);
 
 	printEngineInfo();

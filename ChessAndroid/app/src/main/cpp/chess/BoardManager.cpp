@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "algorithm/Evaluation.h"
-#include "Zobrist.h"
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
 
@@ -13,7 +12,6 @@ Board BoardManager::_board;
 
 void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
 {
-	Zobrist::init();
 	Attacks::init();
 
 	_board.setToStartPos();
