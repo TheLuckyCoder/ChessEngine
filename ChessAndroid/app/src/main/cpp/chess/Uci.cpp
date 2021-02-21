@@ -6,12 +6,13 @@
 #include "Tests.h"
 #include "Zobrist.h"
 #include "algorithm/Search.h"
+#include "polyglot/PolyBook.h"
 
 void Uci::init()
 {
 	Zobrist::init();
 	Attacks::init();
-	board.setToStartPos();
+	_board.setToStartPos();
 }
 
 void Uci::loop()
@@ -23,7 +24,7 @@ void Uci::loop()
 
 	printEngineInfo();
 
-	board.setToStartPos();
+	_board.setToStartPos();
 
 	while (std::getline(std::cin, line))
 	{
@@ -43,22 +44,34 @@ void Uci::loop()
 			parseGo(is);
 		else if (token == "uci")
 			printEngineInfo();
-		else if (token == "ucinewgame")
+		else if (token == "polykey")
+			std::cout << std::hex << "PolyKey: " << PolyBook::getKeyFromBoard(_board) << '\n'
+					  << std::dec;
+		if (token == "ucinewgame")
 		{
-			board.setToStartPos();
+			_board.setToStartPos();
 			Search::clearAll();
 			printEngineInfo();
 		} else if (token == "setoption")
+			setOption(is);
+		else if (token == "board")
+			std::cout << _board.toString() << std::endl;
+		else if (token == "usermove")
 		{
 			is >> token;
-
-			if (token == "threads")
+			if (token.empty())
+				std::cout << "No move specified";
+			else if (const Move move = parseMove(_board, token); move.empty())
+				std::cout << "Move could not pe parsed";
+			else if (!MoveList(_board).contains(move))
+				std::cout << "Invalid move";
+			else
 			{
-				is >> _threadCount;
-				_threadCount = std::clamp<usize>(_threadCount, 1u, 64u);
-
-				std::cout << "Thread Count has been set to " << _threadCount << std::endl;
+				_board.makeMove(move);
+				std::cout << "Move " << move.toString(true) << '\n';
 			}
+
+			std::cout << _board.toString() << std::endl;
 		} else if (token == "debug")
 		{
 			is >> token;
@@ -71,7 +84,8 @@ void Uci::loop()
 			{
 				Stats::setEnabled(false);
 				std::cout << "Debug stats have been turned off";
-			} else {
+			} else
+			{
 				std::cout << (Stats::isEnabled() ? "Debug stats are on" : "Debug stats are off");
 			}
 
@@ -103,6 +117,35 @@ void Uci::loop()
 	}
 }
 
+void Uci::setOption(std::istringstream &is)
+{
+	std::string token;
+	is >> token;
+
+	if (token == "threads")
+	{
+		usize threadCount{};
+		is >> threadCount;
+		_threadCount = std::clamp<usize>(threadCount, 1u, 64u);
+
+		std::cout << "Thread Count has been set to " << _threadCount << std::endl;
+	} else if (token == "hash")
+	{
+		usize hashSize{};
+		is >> hashSize;
+		_hashSizeMb = std::clamp<usize>(hashSize, 4u, 1024u);
+
+		std::cout << "Hash Size has been set to " << _threadCount << "MB" << std::endl;
+	} else if (token == "bookpath")
+	{
+		is >> token;
+		if (token == "null")
+			PolyBook::clearBook();
+		else
+			PolyBook::initBook(token);
+	}
+}
+
 void Uci::parseGo(std::istringstream &is)
 {
 	int depth = MAX_DEPTH;
@@ -117,7 +160,7 @@ void Uci::parseGo(std::istringstream &is)
 
 	while (is >> token)
 	{
-		if (board.colorToMove == WHITE)
+		if (_board.colorToMove == WHITE)
 		{
 			if (token == "wtime")
 				is >> time;
@@ -165,16 +208,17 @@ void Uci::parseGo(std::istringstream &is)
 		timeSet = false;
 	}
 
-	std::cout << "time: " << time << " depth: " << depth << " timeSet: " << std::boolalpha << timeSet << std::endl;
+	std::cout << "time: " << time << " depth: " << depth << " timeSet: " << std::boolalpha
+			  << timeSet << std::endl;
 
 	const auto searchTime = timeSet ? static_cast<size_t>(time) : 0ul;
-	const Settings settings{ depth, _threadCount, 100, true, searchTime };
+	const Settings settings{ depth, _threadCount, _hashSizeMb, true, searchTime };
 
 	if (_searchThread.joinable())
 		_searchThread.detach();
 	Stats::resetStats();
 
-	_searchThread = std::thread(Search::findBestMove, board, settings);
+	_searchThread = std::thread(Search::findBestMove, _board, settings);
 }
 
 void Uci::parsePosition(std::istringstream &is)
@@ -192,11 +236,11 @@ void Uci::parsePosition(std::istringstream &is)
 			fen += token;
 			fen += ' ';
 		}
-		board.setToFen(fen);
+		_board.setToFen(fen);
 	} else
 	{
 		// Load the default position anyhow
-		board.setToStartPos();
+		_board.setToStartPos();
 	}
 
 	if (is >> token && token == "moves")
@@ -205,9 +249,9 @@ void Uci::parsePosition(std::istringstream &is)
 		{
 			if (!(is >> token))
 				break;
-			const Move move = parseMove(board, token);
+			const Move move = parseMove(_board, token);
 			if (!move.empty())
-				board.makeMove(move);
+				_board.makeMove(move);
 		}
 	}
 

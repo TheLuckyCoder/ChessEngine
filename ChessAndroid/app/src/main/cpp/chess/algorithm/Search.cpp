@@ -10,28 +10,30 @@
 #include "../MoveOrdering.h"
 #include "Evaluation.h"
 #include "../Psqt.h"
+#include "../polyglot/PolyBook.h"
 
-constexpr int WINDOW_MIN_DEPTH = 5;
-constexpr int WINDOW_SIZE = 15;
+static constexpr int WINDOW_MIN_DEPTH = 5;
+static constexpr int WINDOW_SIZE = 15;
 
-constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
-constexpr int REVERSE_FUTILITY_MARGIN = 220;
+static constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
+static constexpr int REVERSE_FUTILITY_MARGIN = 220;
 
-constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
-constexpr int FUTILITY_MARGIN = 160;
-constexpr int FUTILITY_MAX_DEPTH = 6;
+static constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
+static constexpr int FUTILITY_MARGIN = 160;
+static constexpr int FUTILITY_MAX_DEPTH = 6;
 
 static thread_local Thread *_thread = nullptr;
 
 auto &threadInfo() { return *_thread; }
 
-Settings Search::_searchSettings{ MAX_DEPTH, 1, 16, true };
+Settings Search::_searchSettings;
 TranspositionTable Search::_transpositionTable{ _searchSettings.tableSizeMb() };
 Search::SharedState Search::_sharedState{};
 
 void Search::clearAll()
 {
 	_transpositionTable.clear();
+	_sharedState.reset();
 }
 
 void Search::stopSearch()
@@ -57,14 +59,23 @@ Move Search::findBestMove(Board board, const Settings &settings)
 
 	board.ply = 0;
 	// Reset Depth Counter
-	_sharedState.stopped = false;
-	_sharedState.nodes = 0;
-	_sharedState.depth = 0;
-	_sharedState.bestScore = VALUE_MIN;
-	_sharedState.time = 0;
-	_sharedState.lastReportedDepth = 0;
+	_sharedState.reset();
 
 	Stats::restartTimer();
+
+	if (PolyBook::initialized() && _sharedState.useBook)
+	{
+		const Move move = PolyBook::getBookMove(board);
+		if (!move.empty())
+		{
+			std::cout << "bestmove " << move.toString() << std::endl;
+			return move;
+		} else
+		{
+			// No move has been found so no other moves will be found from here on out
+			_sharedState.useBook = false; // This is reset in clearAll
+		}
+	}
 
 	const auto work = [&, board](const i32 threadId)
 	{
@@ -180,7 +191,7 @@ void Search::printUci(Board &board)
 			MoveList moveList(board);
 			MoveOrdering::sortQMoves(moveList);
 
-			std::cout << "No move found returning " << moveList.front().toString() << '\n';
+			std::cout << "No move found, returning: " << moveList.front().toString() << '\n';
 			_sharedState.lastReportedBestMove = moveList.front();
 		}
 		std::cout << "bestmove " << _sharedState.lastReportedBestMove.toString() << std::endl;
@@ -214,8 +225,7 @@ void Search::iterativeDeepening(Board board, const int targetDepth)
 			}
 		}
 
-		if (thread.mainThread)
-			printUci(board);
+		printUci(board);
 
 		if (_sharedState.stopped)
 			break;

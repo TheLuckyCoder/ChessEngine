@@ -465,7 +465,7 @@ void Board::updateNonPieceBitboards() noexcept
 	occupied = allPieces[BLACK] | allPieces[WHITE];
 }
 
-std::string Board::printBoard() const noexcept
+std::string Board::toString() const noexcept
 {
 	std::ostringstream ss;
 

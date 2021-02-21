@@ -9,9 +9,8 @@ class Board;
 class Search final
 {
 private:
-	class SharedState
+	struct SharedState
 	{
-	public:
 		bool stopped{};
 		std::atomic_uint64_t nodes{};
 
@@ -24,6 +23,18 @@ private:
 		// This should only be read and written by the main thread
 		int lastReportedDepth{};
 		Move lastReportedBestMove{};
+		bool useBook{};
+
+		void reset() noexcept
+		{
+			stopped = false;
+			nodes = 0;
+			depth = 0;
+			bestScore = VALUE_MIN;
+			time = 0;
+			lastReportedDepth = 0;
+			useBook = true;
+		}
 	};
 
 	static Settings _searchSettings;

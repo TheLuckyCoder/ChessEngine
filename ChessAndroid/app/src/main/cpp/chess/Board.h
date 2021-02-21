@@ -94,7 +94,7 @@ public:
 	void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
 
-	std::string printBoard() const noexcept;
+	std::string toString() const noexcept;
 };
 
 template<Color C>

@@ -10,7 +10,8 @@ class Uci
 {
 	inline static std::thread _searchThread{};
 	inline static usize _threadCount{ std::thread::hardware_concurrency() - 1 };
-	inline static Board board{};
+	inline static usize _hashSizeMb{ 64 };
+	inline static Board _board{};
 
 public:
 	static void init();
@@ -18,6 +19,7 @@ public:
 
 private:
 	static void printEngineInfo();
+	static void setOption(std::istringstream &is);
 	static void parsePosition(std::istringstream &is);
 	static void parseGo(std::istringstream &is);
 };

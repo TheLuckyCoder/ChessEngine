@@ -14,7 +14,7 @@ namespace Tests
 {
 	static Board mirrorBoard(const Board &board)
 	{
-		constexpr std::array<u8, SQUARE_NB> MirrorSquare{
+		static constexpr std::array<u8, SQUARE_NB> MirrorSquare = {
 			56, 57, 58, 59, 60, 61, 62, 63,
 			48, 49, 50, 51, 52, 53, 54, 55,
 			40, 41, 42, 43, 44, 45, 46, 47,
@@ -47,14 +47,15 @@ namespace Tests
 		result.updatePieceList();
 		result.updateNonPieceBitboards();
 		result.fiftyMoveRule = board.fiftyMoveRule;
-		result.kingAttackers = result.colorToMove ? result.allKingAttackers<WHITE>() : result.allKingAttackers<BLACK>();
+		result.kingAttackers = result.colorToMove ? result.allKingAttackers<WHITE>()
+												  : result.allKingAttackers<BLACK>();
 
 		return result;
 	}
 
 	inline std::string runEvaluationTests()
 	{
-		constexpr std::array Positions{
+		static constexpr std::array Positions = {
 			"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq",
 			"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq",
 			"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq",
@@ -168,8 +169,8 @@ namespace Tests
 			if (boardEval != mirroredBoardEval)
 			{
 				output << "Evaluation Asymmetrical for: " << pos << '\n'
-					   << board.printBoard()
-					   << mirroredBoard.printBoard() << '\n'
+					   << board.toString()
+					   << mirroredBoard.toString() << '\n'
 					   << Evaluation::traceValue(board)
 					   << Evaluation::traceValue(mirroredBoard)
 					   << '\n';
@@ -228,7 +229,8 @@ namespace Tests
 
 			const auto expectedNodeCount = perftVector[i];
 			if (nodeCount != expectedNodeCount)
-				std::cout << TAG << "Nodes count: " << nodeCount << '/' << expectedNodeCount << '\n';
+				std::cout << TAG << "Nodes count: " << nodeCount << '/' << expectedNodeCount
+						  << '\n';
 			else
 				std::cout << TAG << "Nodes count: " << nodeCount << '\n';
 		}

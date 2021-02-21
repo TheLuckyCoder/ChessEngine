@@ -32,7 +32,16 @@ public:
 
 	constexpr usize size() const noexcept { return _end - _moveList; }
 
-	constexpr bool empty() const noexcept { return (_end - _moveList) == 0u; }
+	constexpr bool empty() const noexcept { return size() == 0u; }
+
+	constexpr bool contains(const Move &move) const noexcept
+	{
+		for (auto &&m : *this)
+			if (m == move)
+				return true;
+
+		return false;
+	}
 
 	void keepLegalMoves() noexcept
 	{

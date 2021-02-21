@@ -16,9 +16,9 @@ u64 random64() noexcept
 {
 	static u64 seed = 1070372ull;
 
-	seed ^= seed >> 12;
-	seed ^= seed << 25;
-	seed ^= seed >> 27;
+	seed ^= seed >> 12u;
+	seed ^= seed << 25u;
+	seed ^= seed >> 27u;
 
 	return seed * 2685821657736338717ull;
 }

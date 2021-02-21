@@ -7,7 +7,7 @@
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
 
-Settings BoardManager::_settings(8u, std::thread::hardware_concurrency() - 1u, 64, true);
+Settings BoardManager::_settings;
 BoardManager::PieceChangeListener BoardManager::_listener;
 Board BoardManager::_board;
 

@@ -5,8 +5,6 @@ namespace
 	template <Color Us>
 	Move *generatePawnMoves(const Board &board, Move *moveList, const Bitboard targets)
 	{
-		using namespace Bits;
-
 		constexpr Piece Piece{ PAWN, Us };
 		constexpr Color Them = ~Us;
 		constexpr Dir Forward = Us == WHITE ? NORTH : SOUTH;
@@ -223,7 +221,6 @@ namespace
 	template <Color Us>
 	Move *generateAllMoves(const Board &board, Move *moveList)
 	{
-		using namespace Bits;
 		constexpr Color Them = ~Us;
 
 		const auto kingTargets = ~board.allPieces[Us];

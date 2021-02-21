@@ -62,8 +62,8 @@ namespace Bits
 	 */
 	inline u64 flipVertical(u64 bb) noexcept
 	{
-		const u64 k1{ 0x00FF00FF00FF00FF };
-		const u64 k2{ 0x0000FFFF0000FFFF };
+		constexpr u64 k1{ 0x00FF00FF00FF00FF };
+		constexpr u64 k2{ 0x0000FFFF0000FFFF };
 		bb = ((bb >>  8) & k1) | ((bb & k1) <<  8);
 		bb = ((bb >> 16) & k2) | ((bb & k2) << 16);
 		bb = ( bb >> 32)       | ( bb       << 32);
