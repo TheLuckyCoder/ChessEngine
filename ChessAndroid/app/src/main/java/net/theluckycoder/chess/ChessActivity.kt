@@ -530,7 +530,7 @@ class ChessActivity : AppCompatActivity(),
 
         private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
 
-        private fun getDifficulty(level: Int, currentSettings: EngineSettings): EngineSettings {
+        fun getDifficulty(level: Int, currentSettings: EngineSettings): EngineSettings {
             require(level >= 0)
 
             return currentSettings.copy(

@@ -68,7 +68,8 @@ class GameManager(
         Native.makeMove(move.content)
     }
 
-    private fun getPiecesList() = Native.getPieces().filter { it.type.toInt() != 0 }
+    private fun getPiecesList() =
+        Native.getPieces().filter { it.type.toInt() != 0 }.sortedBy { it.type.toInt() }
 
     @Suppress("unused") // Called by native code
     private fun callback(gameState: Int, shouldRedrawPieces: Boolean, moves: Array<PosPair>) {

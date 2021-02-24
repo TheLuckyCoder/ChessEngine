@@ -23,7 +23,6 @@ import kotlin.random.Random
 
 class ComposeActivity : AppCompatActivity() {
 
-    private val preferences = AppPreferences
     private val chessViewModel by viewModels<ChessViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
