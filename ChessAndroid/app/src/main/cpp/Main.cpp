@@ -16,7 +16,7 @@
 #define external extern "C"
 
 static JavaVM *jvm = nullptr;
-static jobject gameManagerInstance = nullptr;
+static jobject viewModelInstance = nullptr;
 
 const BoardManager::PieceChangeListener listener = [](GameState state, bool shouldRedraw,
 													  const std::vector<std::pair<u8, u8>> &moved)
@@ -47,9 +47,9 @@ const BoardManager::PieceChangeListener listener = [](GameState state, bool shou
 		env->SetObjectArrayElement(result, i, obj);
 	}
 
-	const static auto callbackId = env->GetMethodID(Cache::gameManagerClass, "callback",
+	const static auto callbackId = env->GetMethodID(Cache::viewModel, "callback",
 													"(IZ[Lnet/theluckycoder/chess/model/PosPair;)V");
-	env->CallVoidMethod(gameManagerInstance, callbackId,
+	env->CallVoidMethod(viewModelInstance, callbackId,
 						static_cast<jint>(state), static_cast<jboolean>(shouldRedraw), result);
 
 	if (getEnvStat == JNI_EDETACHED)
@@ -84,8 +84,8 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 	vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
 	// Clean the caches
-	env->DeleteGlobalRef(gameManagerInstance);
-	gameManagerInstance = nullptr;
+	env->DeleteGlobalRef(viewModelInstance);
+	viewModelInstance = nullptr;
 	Cache::cleanCaches(env);
 
 	delete std::cout.rdbuf(nullptr);
@@ -97,18 +97,37 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject instance,
 														 jboolean isPlayerWhite)
 {
+	// TODO REMOVE
 	pEnv->ExceptionClear();
 
-	if (!pEnv->IsSameObject(gameManagerInstance, instance))
+	if (!pEnv->IsSameObject(viewModelInstance, instance))
 	{
-		LOGD("ChessCpp", "initBoardNative");
-		pEnv->DeleteGlobalRef(gameManagerInstance);
-		gameManagerInstance = pEnv->NewGlobalRef(instance);
+		LOGD("ChessCpp", "initBoardNative-GameManager");
+		pEnv->DeleteGlobalRef(viewModelInstance);
+		viewModelInstance = pEnv->NewGlobalRef(instance);
 
 		BoardManager::initBoardManager(listener);
 	}
 
 	BoardManager::initBoardManager(listener, isPlayerWhite);
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_ChessViewModel_initBoardNative(JNIEnv *pEnv, jobject instance,
+		jboolean playerPlayingWhite)
+{
+	pEnv->ExceptionClear();
+
+	if (!pEnv->IsSameObject(viewModelInstance, instance))
+	{
+        LOGD("ChessCpp", "initBoardNative");
+        pEnv->DeleteGlobalRef(viewModelInstance);
+		viewModelInstance = pEnv->NewGlobalRef(instance);
+
+        BoardManager::initBoardManager(listener);
+	}
+
+	BoardManager::initBoardManager(listener, playerPlayingWhite);
 }
 
 // Native Class

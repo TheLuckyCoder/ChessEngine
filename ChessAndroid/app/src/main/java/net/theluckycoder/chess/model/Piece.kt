@@ -2,10 +2,12 @@ package net.theluckycoder.chess.model
 
 data class Piece(
     @JvmField
-    val pos: Int,
+    val index: Int,
     @JvmField
     val type: Byte
 ) {
+
+    val isWhite = type in 1..6
 
     fun getScore() = when (type) {
         PAWN -> 1 // Pawn

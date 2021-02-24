@@ -15,7 +15,7 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
 
-        <activity android:name="net.theluckycoder.resourcepackconverter.ui.ComposeActivity">
+        <activity android:name=".ui.ComposeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

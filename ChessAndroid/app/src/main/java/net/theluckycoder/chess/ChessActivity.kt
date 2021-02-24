@@ -455,7 +455,7 @@ class ChessActivity : AppCompatActivity(),
             val resource = PieceResourceManager.piecesResources[it.type.toInt() - 1]
             val clickable = isWhite == isPlayerWhite
 
-            val pos = Pos(it.pos.toByte())
+            val pos = Pos(it.index.toByte())
 
             val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
