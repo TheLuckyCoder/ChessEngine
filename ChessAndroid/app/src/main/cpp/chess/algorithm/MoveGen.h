@@ -28,7 +28,7 @@ public:
 	constexpr Move &back() noexcept { return *(end() - 1); }
 	constexpr const Move &back() const noexcept { return *(end() - 1); }
 
-	constexpr void pop_back() noexcept { --_end; }
+	constexpr void popBack() noexcept { --_end; }
 
 	constexpr usize size() const noexcept { return _end - _moveList; }
 

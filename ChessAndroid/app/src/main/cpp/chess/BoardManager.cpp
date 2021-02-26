@@ -7,17 +7,18 @@
 #include "algorithm/Search.h"
 
 Settings BoardManager::_settings;
-BoardManager::PieceChangeListener BoardManager::_listener;
+BoardManager::BoardChangedListener BoardManager::_listener;
 Board BoardManager::_board;
+std::vector<BoardManager::IndexedPiece> BoardManager::_indexedPieces;
 
-void BoardManager::initBoardManager(const PieceChangeListener &listener, const bool isPlayerWhite)
+void BoardManager::initBoardManager(const BoardChangedListener &listener, const bool isPlayerWhite)
 {
 	Attacks::init();
 
-	_board.setToStartPos();
-	_listener = listener;
-
 	_isPlayerWhite = isPlayerWhite;
+	_board.setToStartPos();
+	generatedIndexedPieces();
+	_listener = listener;
 
 	if (!isPlayerWhite)
 		_workerThread = std::thread(moveComputerPlayer, _settings);
@@ -31,7 +32,9 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 	{
 		_isPlayerWhite = isPlayerWhite;
 		_board = tempBoard;
-		_listener(getBoardState(), true, {});
+		generatedIndexedPieces();
+
+		_listener(getBoardState());
 		return true;
 	}
 
@@ -40,24 +43,20 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 
 void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerWhite)
 {
-	_isPlayerWhite = isPlayerWhite;
-
-	_board.setToStartPos();
-
 	assert(moves.size() < MAX_MOVES);
+
+	_isPlayerWhite = isPlayerWhite;
+	_board.setToStartPos();
+	generatedIndexedPieces();
 
 	for (const Move &move : moves)
 	{
 		if (move.empty() || !moveExists(_board, move) || !_board.makeMove(move))
 			break;
+		updateIndexedPieces(move);
 	}
 
-	_listener(getBoardState(), true, {});
-}
-
-std::string BoardManager::exportFen()
-{
-	return _board.getFen();
+	_listener(getBoardState());
 }
 
 std::vector<Move> BoardManager::getMovesHistory()
@@ -70,7 +69,7 @@ std::vector<Move> BoardManager::getMovesHistory()
 	return moves;
 }
 
-std::vector<Move> BoardManager::getPossibleMoves(const u8 from)
+std::vector<Move> BoardManager::getPossibleMoves(const Square from)
 {
 	std::vector<Move> moves;
 	moves.reserve(27);
@@ -94,51 +93,14 @@ std::vector<Move> BoardManager::getPossibleMoves(const u8 from)
 void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 {
 	_board.makeMove(move);
+	updateIndexedPieces(move);
 
-	const auto flags = move.flags();
-	const bool shouldRedraw = flags.promotion() | flags.enPassant();
 	const GameState state = getBoardState();
 
 	std::cout << "Made the Move: " << move.toString()
 			  << "; Evaluated at: " << Evaluation::value(_board) << std::endl;
 
-	std::vector<std::pair<u8, u8>> movedVec;
-	movedVec.reserve(2);
-	movedVec.emplace_back(move.from(), move.to());
-
-	// Animate Castling
-	if (flags.kSideCastle())
-	{
-		switch (move.to())
-		{
-			case SQ_G1:
-				movedVec.emplace_back(SQ_H1, SQ_F1);
-				break;
-			case SQ_G8:
-				movedVec.emplace_back(SQ_H8, SQ_F8);
-				break;
-			default:
-				assert(false);
-				break;
-		}
-
-	} else if (flags.qSideCastle())
-	{
-		switch (move.to())
-		{
-			case SQ_C1:
-				movedVec.emplace_back(SQ_A1, SQ_D1);
-				break;
-			case SQ_C8:
-				movedVec.emplace_back(SQ_A8, SQ_D8);
-				break;
-			default:
-				assert(false);
-				break;
-		}
-	}
-
-	_listener(state, shouldRedraw, movedVec);
+	_listener(state);
 
 	if (movedByPlayer &&
 		(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
@@ -168,6 +130,7 @@ void BoardManager::moveComputerPlayer(const Settings &settings)
 
 bool BoardManager::undoLastMoves()
 {
+	return false;
 	if (isWorking() || _board.historyPly < 2) return false;
 
 	// Undo the last move, which should have been made by the engine
@@ -181,9 +144,7 @@ bool BoardManager::undoLastMoves()
 	else
 		_board.undoMove();
 
-	_listener(getBoardState(), true,
-			  {{ engineMove.getMove().to(), engineMove.getMove().from() },
-			   { playerMove.getMove().to(), playerMove.getMove().from() }});
+	_listener(getBoardState());
 
 	return true;
 }
@@ -218,4 +179,84 @@ GameState BoardManager::getBoardState()
 	}
 
 	return state;
+}
+
+void BoardManager::generatedIndexedPieces()
+{
+	std::vector<IndexedPiece> indexedPieces;
+	indexedPieces.reserve(32);
+
+	for (u8 square{}; square < SQUARE_NB; ++square)
+	{
+		auto &&piece = _board.data[square];
+		if (piece.isValid())
+			indexedPieces.emplace_back(i32(square), toSquare(square), piece.color(), piece.type());
+	}
+
+	_indexedPieces = std::move(indexedPieces);
+}
+
+void BoardManager::updateIndexedPieces(const Move move)
+{
+	const auto findPiece = [&](const Square square)
+	{
+		const auto it = std::find_if(_indexedPieces.begin(), _indexedPieces.end(), [&square](const IndexedPiece &piece)
+		{
+			return piece.square == square;
+		});
+		assert(it != _indexedPieces.end());
+		return it;
+	};
+
+	const auto movePiece = [&](const Square from, const Square to) { findPiece(from)->square = to; };
+	const auto promotePawn = [&](const Square square, const PieceType to) { findPiece(square)->pieceType = to; };
+	const auto removePiece = [&](const Square square) { _indexedPieces.erase(findPiece(square)); };
+
+	const Square from = move.from();
+	const Square to = move.to();
+	const Color side = _board.colorToMove;
+	const auto flags = move.flags();
+
+	// Handle en passant capture and castling
+	if (flags.enPassant())
+	{
+		const Square capturedSq = toSquare(u8(to) + static_cast<u8>(side ? -8 : 8));
+
+		removePiece(capturedSq);
+	} else if (flags.kSideCastle())
+	{
+		switch (to)
+		{
+			case SQ_G1:
+				movePiece(SQ_H1, SQ_F1);
+				break;
+			case SQ_G8:
+				movePiece(SQ_H8, SQ_F8);
+				break;
+			default:
+				break;
+		}
+	} else if (flags.qSideCastle())
+	{
+		switch (to)
+		{
+			case SQ_C1:
+				movePiece(SQ_A1, SQ_D1);
+				break;
+			case SQ_C8:
+				movePiece(SQ_A8, SQ_D8);
+				break;
+			default:
+				break;
+		}
+	}
+
+	if (const PieceType capturedType = move.capturedPiece();
+		capturedType != PieceType::NO_PIECE_TYPE)
+		removePiece(to);
+
+	movePiece(from, to);
+
+	if (move.flags().promotion())
+		promotePawn(to, move.promotedPiece());
 }

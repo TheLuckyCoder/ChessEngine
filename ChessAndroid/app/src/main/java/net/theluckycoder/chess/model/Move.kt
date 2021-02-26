@@ -47,8 +47,5 @@ data class Move(
             get() = (flags and EN_PASSANT).toBoolean()
     }
 
-    val piece: Piece
-        get() = Piece(from.toInt(), pieceType)
-
     val flags = Flags(internalFlags.toInt())
 }

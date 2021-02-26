@@ -76,7 +76,7 @@ class ChessActivity : AppCompatActivity(),
         binding.ivSettings.setOnLongClickListener {
             val isPlayerWhite = Native.isPlayerWhite()
             redrawBoard(isPlayerWhite)
-            redrawPieces(Native.getPieces().toList(), isPlayerWhite)
+//            redrawPieces(Native.getPieces().toList(), isPlayerWhite)
 
             true
         }
@@ -455,7 +455,7 @@ class ChessActivity : AppCompatActivity(),
             val resource = PieceResourceManager.piecesResources[it.type.toInt() - 1]
             val clickable = isWhite == isPlayerWhite
 
-            val pos = Pos(it.index.toByte())
+            val pos = Pos(it.square.toByte())
 
             val xSize = invertIf(!isPlayerWhite, pos.x) * viewSize
             val ySize = invertIf(isPlayerWhite, pos.y) * viewSize
@@ -497,7 +497,7 @@ class ChessActivity : AppCompatActivity(),
 
             pieces[destPos]?.let { destView ->
                 // Remove the Destination Piece
-                binding.layoutBoard.removeView(destView)
+                /*binding.layoutBoard.removeView(destView)
 
                 val type = PieceResourceManager.piecesResources.indexOf(destView.pieceImage) + 1
                 val pos = Pos(
@@ -509,7 +509,7 @@ class ChessActivity : AppCompatActivity(),
                 if (isPlayerWhite)
                     capturedPieces.addBlackPiece(piece)
                 else
-                    capturedPieces.addWhitePiece(piece)
+                    capturedPieces.addWhitePiece(piece)*/
             }
 
             pieceView?.let {

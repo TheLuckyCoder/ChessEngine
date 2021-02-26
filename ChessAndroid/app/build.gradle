@@ -84,6 +84,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:$compose")
     implementation("androidx.compose.material:material:$compose")
     implementation("androidx.compose.runtime:runtime-livedata:$compose")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha01")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha02")
     debugImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
 }

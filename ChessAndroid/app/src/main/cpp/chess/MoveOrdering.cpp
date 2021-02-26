@@ -77,7 +77,7 @@ namespace MoveOrdering
 		const Move bestMove = *foundMove;
 
 		*foundMove = moveList.back();
-		moveList.pop_back();
+		moveList.popBack();
 
 		return bestMove;
 	}

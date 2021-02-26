@@ -52,7 +52,7 @@ class GameManager(
         }
 
         listener.redrawBoard(isPlayerWhite)
-        listener.redrawPieces(getPiecesList(), isPlayerWhite)
+//        listener.redrawPieces(getPiecesList(), isPlayerWhite)
     }
 
     fun updateSettings(engineSettings: EngineSettings) {
@@ -69,7 +69,7 @@ class GameManager(
     }
 
     private fun getPiecesList() =
-        Native.getPieces().filter { it.type.toInt() != 0 }.sortedBy { it.type.toInt() }
+        Native.getPieces().map { it.toPiece() }.filter { it.type.toInt() != 0 }.sortedBy { it.type.toInt() }
 
     @Suppress("unused") // Called by native code
     private fun callback(gameState: Int, shouldRedrawPieces: Boolean, moves: Array<PosPair>) {

@@ -1,24 +1,21 @@
 package net.theluckycoder.chess
 
 import android.app.Application
+import android.util.SparseArray
 import androidx.annotation.Keep
+import androidx.collection.SparseArrayCompat
+import androidx.collection.set
+import androidx.core.util.set
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.flow.MutableStateFlow
-import net.theluckycoder.chess.model.EngineSettings
-import net.theluckycoder.chess.model.GameState
-import net.theluckycoder.chess.model.Move
-import net.theluckycoder.chess.model.Piece
-import net.theluckycoder.chess.model.Pos
-import net.theluckycoder.chess.model.PosPair
-import net.theluckycoder.chess.model.Tile
+import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.AppPreferences
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
-    private var initialized = AtomicBoolean(false)
+    private val initialized = AtomicBoolean(false)
 
     private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val isEngineThinkingFlow = MutableStateFlow(false)
@@ -70,7 +67,18 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun updatePiecesList() {
-        piecesFlow.value = Native.getPieces().filter { it.type.toInt() != 0 }
+        val pieces = Native.getPieces()
+        val piecesMap = mutableMapOf<Int, Piece>()
+        // TODO Temporary solution to fix animations
+        for (i in 0 until 64) {
+            piecesMap[i] = Piece(i, 0, false)
+        }
+
+        pieces.forEach {
+            piecesMap[it.id] = it.toPiece()
+        }
+
+        piecesFlow.value = piecesMap.map { it.value }
     }
 
     fun updateSettings(engineSettings: EngineSettings) {
@@ -89,7 +97,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             .map { tile ->
                 when {
                     // Mark the moved from and to squares
-                    tile.index == move.from.toInt() || tile.index == move.to.toInt() ->
+                    tile.square == move.from.toInt() || tile.square == move.to.toInt() ->
                         tile.copy(state = Tile.State.Moved)
                     // Clear everything else
                     tile.state != Tile.State.None -> tile.copy(state = Tile.State.None)
@@ -97,20 +105,24 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-        isEngineThinkingFlow.value = Native.isWorking()
+        isEngineThinkingFlow.value = true
     }
 
-    fun getPossibleMoves(pos: Pos) {
-        val moves = Native.getPossibleMoves(pos.toByte())
+    fun getPossibleMoves(square: Int) {
+        val moves = Native.getPossibleMoves(square.toByte())
 
         tilesFlow.value = tilesFlow.value
             .map { tile ->
-                val move = moves.find { it.to.toInt() == tile.index }
+                val move = moves.find { it.to.toInt() == tile.square }
                 when {
-                    // Mark all Possible Moves
-                    move != null -> tile.copy(state = Tile.State.PossibleMove(move))
-                    // Clear any invalid Possible Moves
-                    tile.state is Tile.State.PossibleMove -> tile.copy(state = Tile.State.None)
+                    tile.square == square && moves.isNotEmpty() -> // Mark the selected piece's square
+                        tile.copy(state = Tile.State.Selected)
+                    move != null -> // Mark all Possible Moves
+                        tile.copy(state = Tile.State.PossibleMove(move))
+                    tile.state is Tile.State.PossibleMove || tile.state is Tile.State.Selected -> {
+                        // Clear any invalid Possible Moves
+                        tile.copy(state = Tile.State.None)
+                    }
                     else -> tile
                 }
             }
@@ -122,7 +134,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     @Suppress("unused")
     @Keep // Called by native code
-    private fun callback(gameState: Int, shouldRedrawPieces: Boolean, moves: Array<PosPair>) {
+    private fun callback(gameState: Int) {
         val app = getApplication<Application>()
 
         val state = when (gameState) {
@@ -134,12 +146,13 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             else -> GameState.NONE
         }
 
-        SaveManager.saveToFileAsync(app)
         playerPlayingWhiteFlow.value = Native.isPlayerWhite()
         isEngineThinkingFlow.value = Native.isWorking()
-        gameStateFlow.value = state
         clearTiles()
         updatePiecesList()
+        gameStateFlow.value = state
+
+        SaveManager.saveToFileAsync(app)
     }
 
     private external fun initBoardNative(playerPlayingWhite: Boolean)

@@ -5,10 +5,8 @@
 // JVM Cached Classes
 namespace Cache
 {
-	jclass viewModel;
-	jclass posClass;
-	jclass posPairClass;
-	jclass pieceClass;
+	jclass viewModelClass;
+	jclass indexedPieceClass;
 	jclass moveClass;
 
 	jclass cacheClass(JNIEnv *env, jclass cls)
@@ -18,19 +16,15 @@ namespace Cache
 
 	void createCaches(JNIEnv *env)
 	{
-		viewModel = cacheClass(env, env->FindClass("net/theluckycoder/chess/ChessViewModel"));
-		posClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Pos"));
-		posPairClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/PosPair"));
-		pieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Piece"));
+		viewModelClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/ChessViewModel"));
+		indexedPieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/IndexedPiece"));
 		moveClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Move"));
 	}
 
 	void cleanCaches(JNIEnv *env)
 	{
-		env->DeleteGlobalRef(viewModel);
-		env->DeleteGlobalRef(posClass);
-		env->DeleteGlobalRef(posPairClass);
-		env->DeleteGlobalRef(pieceClass);
+		env->DeleteGlobalRef(viewModelClass);
+		env->DeleteGlobalRef(indexedPieceClass);
 		env->DeleteGlobalRef(moveClass);
 	}
 }

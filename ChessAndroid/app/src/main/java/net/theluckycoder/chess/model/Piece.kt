@@ -1,13 +1,19 @@
 package net.theluckycoder.chess.model
 
-data class Piece(
-    @JvmField
-    val index: Int,
-    @JvmField
-    val type: Byte
+class IndexedPiece(
+    val id: Int,
+    private val square: Int,
+    private val type: Byte,
+    private val isWhite: Boolean
 ) {
+    fun toPiece() = Piece(square, type, isWhite)
+}
 
-    val isWhite = type in 1..6
+data class Piece(
+    val square: Int,
+    val type: Byte,
+    val isWhite: Boolean
+) {
 
     fun getScore() = when (type) {
         PAWN -> 1 // Pawn

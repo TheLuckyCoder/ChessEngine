@@ -1,7 +1,7 @@
 package net.theluckycoder.chess.model
 
 data class Tile(
-    val index: Int,
+    val square: Int,
     val state: State
 ) {
 

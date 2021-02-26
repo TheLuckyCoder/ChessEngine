@@ -1,5 +1,6 @@
 package net.theluckycoder.chess
 
+import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.model.Piece
 
@@ -19,7 +20,7 @@ object Native {
 
     // endregion Stats
 
-    external fun getPieces(): Array<Piece>
+    external fun getPieces(): Array<IndexedPiece>
 
     external fun getPossibleMoves(square: Byte): Array<Move>
 

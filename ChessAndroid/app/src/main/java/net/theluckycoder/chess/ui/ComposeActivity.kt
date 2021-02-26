@@ -6,19 +6,16 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.Surface
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.getSystemService
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.databinding.DialogImportFenBinding
-import net.theluckycoder.chess.utils.AppPreferences
 import kotlin.random.Random
 
 class ComposeActivity : AppCompatActivity() {
@@ -29,8 +26,10 @@ class ComposeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val view = ComposeView(this).apply {
             setContent {
-                Surface(color = Color.Gray) {
-                    MainScreen()
+                ChessMaterialTheme {
+                    Surface {
+                        MainScreen()
+                    }
                 }
             }
         }

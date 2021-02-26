@@ -18,8 +18,7 @@
 static JavaVM *jvm = nullptr;
 static jobject viewModelInstance = nullptr;
 
-const BoardManager::PieceChangeListener listener = [](GameState state, bool shouldRedraw,
-													  const std::vector<std::pair<u8, u8>> &moved)
+const BoardManager::BoardChangedListener listener = [](GameState state)
 {
 	JNIEnv *env;
 	int getEnvStat = jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
@@ -31,26 +30,8 @@ const BoardManager::PieceChangeListener listener = [](GameState state, bool shou
 
 	env->ExceptionClear();
 
-	jobjectArray result = env->NewObjectArray(static_cast<jsize>(moved.size()), Cache::posPairClass,
-											  nullptr);
-
-	const static auto constructorId = env->GetMethodID(Cache::posPairClass, "<init>", "(IIII)V");
-
-	for (unsigned i = 0; i < moved.size(); ++i)
-	{
-		const u8 startSq = moved[i].first;
-		const u8 destSq = moved[i].second;
-
-		jobject obj = env->NewObject(Cache::posPairClass, constructorId,
-									 fileOf(startSq), rankOf(startSq), fileOf(destSq), rankOf(destSq));
-
-		env->SetObjectArrayElement(result, i, obj);
-	}
-
-	const static auto callbackId = env->GetMethodID(Cache::viewModel, "callback",
-													"(IZ[Lnet/theluckycoder/chess/model/PosPair;)V");
-	env->CallVoidMethod(viewModelInstance, callbackId,
-						static_cast<jint>(state), static_cast<jboolean>(shouldRedraw), result);
+	const static auto callbackId = env->GetMethodID(Cache::viewModelClass, "callback","(I)V");
+	env->CallVoidMethod(viewModelInstance, callbackId, static_cast<jint>(state));
 
 	if (getEnvStat == JNI_EDETACHED)
 	{
@@ -171,34 +152,17 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 {
 	pEnv->ExceptionClear();
 
-	const static auto constructorId = pEnv->GetMethodID(Cache::pieceClass, "<init>", "(IB)V");
+	const static auto constructorId = pEnv->GetMethodID(Cache::indexedPieceClass, "<init>", "(IIBZ)V");
 
-	std::vector<std::pair<u8, u8>> pieceList;
-	pieceList.reserve(32);
-
-	const auto &board = BoardManager::getBoard();
-	for (u8 color = BLACK; color <= WHITE; ++color)
-	{
-		for (u8 pieceType = PAWN; pieceType <= KING; ++pieceType)
-		{
-			const Piece piece{ PieceType(pieceType), Color(color) };
-			for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
-			{
-				const u8 sq = board.pieceList[piece][pieceNumber];
-
-				pieceList.emplace_back(sq, color == BLACK ? u8(pieceType + 6u) : pieceType);
-			}
-		}
-	}
+	auto &&pieceList = BoardManager::getIndexedPieces();
 
 	jobjectArray array =
-		pEnv->NewObjectArray(static_cast<jsize>(pieceList.size()), Cache::pieceClass, nullptr);
+		pEnv->NewObjectArray(static_cast<jsize>(pieceList.size()), Cache::indexedPieceClass, nullptr);
 
 	for (size_t i{}; i < pieceList.size(); ++i)
 	{
 		const auto &it = pieceList[i];
-		jobject obj =
-			pEnv->NewObject(Cache::pieceClass, constructorId, it.first, it.second);
+		jobject obj = pEnv->NewObject(Cache::indexedPieceClass, constructorId, it.id, it.square, it.pieceType, it.pieceColor);
 		pEnv->SetObjectArrayElement(array, i, obj);
 	}
 
@@ -212,7 +176,7 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 
 	const static auto constructorId = pEnv->GetMethodID(Cache::moveClass, "<init>", "(IBBBBBB)V");
 
-	const auto possibleMoves = BoardManager::getPossibleMoves(u8(square));
+	const auto possibleMoves = BoardManager::getPossibleMoves(toSquare(square));
 
 	jobjectArray result =
 		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), Cache::moveClass, nullptr);
@@ -301,7 +265,7 @@ Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jobject, jstring mov
 external JNIEXPORT jstring JNICALL
 Java_net_theluckycoder_chess_Native_getFen(JNIEnv *pEnv, jobject)
 {
-	const auto fenString = BoardManager::exportFen();
+	const auto fenString = BoardManager::getBoard().getFen();
 
 	return pEnv->NewStringUTF(fenString.c_str());
 }
