@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.IconButton
 import androidx.compose.runtime.Composable
@@ -29,18 +30,10 @@ import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Tile
 
 val PIECES_RESOURCES = intArrayOf(
-    R.drawable.w_pawn,
-    R.drawable.w_knight,
-    R.drawable.w_bishop,
-    R.drawable.w_rook,
-    R.drawable.w_queen,
-    R.drawable.w_king,
-    R.drawable.b_pawn,
-    R.drawable.b_knight,
-    R.drawable.b_bishop,
-    R.drawable.b_rook,
-    R.drawable.b_queen,
-    R.drawable.b_king
+    R.drawable.w_pawn, R.drawable.w_knight, R.drawable.w_bishop,
+    R.drawable.w_rook, R.drawable.w_queen, R.drawable.w_king,
+    R.drawable.b_pawn, R.drawable.b_knight, R.drawable.b_bishop,
+    R.drawable.b_rook, R.drawable.b_queen, R.drawable.b_king
 )
 
 @Composable
@@ -54,7 +47,7 @@ fun BoardTiles(
     tileSize: Dp,
     chessViewModel: ChessViewModel = viewModel(),
 ) {
-    val Density = LocalDensity.current
+    val currentDensity = LocalDensity.current
     val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
     val cells by chessViewModel.tiles.observeAsState(emptyList())
 
@@ -62,14 +55,13 @@ fun BoardTiles(
     val blackTileColor = colorResource(id = R.color.tile_black)
     val possibleTileColor = colorResource(id = R.color.tile_possible)
     val movedTileColor = colorResource(id = R.color.tile_last_moved)
-//    val kingInCheckColor = colorResource(id = R.color.tile_black)
 
-    val possibleTileCircleSize = with(Density) { 8.dp.toPx() }
-    val selectedPieceStrokeSize = with(Density) { 4.dp.toPx() }
+    val possibleTileCircleSize = with(currentDensity) { 8.dp.toPx() }
+    val selectedPieceStrokeSize = with(currentDensity) { 4.dp.toPx() }
 
-    val possibleCapturePath = remember(Density) {
-           Path().apply {
-            val size = with(Density) { tileSize.toPx() }
+    val possibleCapturePath = remember(currentDensity) {
+        val size = with(currentDensity) { tileSize.toPx() }
+        Path().apply {
             drawTriangle(0f, 0f, size / 3f, 0f, 0f, size / 3f)
             drawTriangle(size, 0f, size - size / 3f, 0f, size, size / 3f)
             drawTriangle(0f, size, 0f, size - size / 3, size / 3, size)
@@ -127,8 +119,10 @@ fun BoardPieces(
     val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
     val pieces by chessViewModel.pieces.observeAsState(emptyList())
 
+//    val kingInCheckColor = colorResource(id = R.color.king_in_check)
+
     for (piece in pieces) {
-        if (piece.type.toInt() == 0) continue
+        if (piece.square >= 64 || piece.type.toInt() == 0) continue
         val x = piece.square % 8
         val y = piece.square / 8
 
@@ -138,12 +132,12 @@ fun BoardPieces(
             Offset(tileSize.toPx() * invertedX, tileSize.toPx() * invertedY)
         }
 
-        val animatedOffset = animateOffsetAsState(targetValue = offset).value
+        val animatedOffset by animateOffsetAsState(targetValue = offset)
         val (animatedX, animatedY) = with(LocalDensity.current) { animatedOffset.x.toDp() to animatedOffset.y.toDp() }
 
         IconButton(
             modifier = Modifier
-                .size(tileSize)
+                .requiredSize(tileSize)
                 .offset(animatedX, animatedY),
             enabled = isPlayerWhite == piece.isWhite,
             onClick = { chessViewModel.getPossibleMoves(piece.square) }
@@ -165,4 +159,3 @@ private fun Path.drawTriangle(
     lineTo(x3, y3)
     lineTo(x1, y1)
 }
-

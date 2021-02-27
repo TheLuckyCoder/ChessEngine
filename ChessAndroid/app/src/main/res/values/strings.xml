@@ -7,7 +7,7 @@
     <string name="side_white">White Side</string>
     <string name="side_black">Black Side</string>
     <string name="side_random">Random Side</string>
-    <string name="difficulty">Difficulty Level:</string>
+    <string name="difficulty_level">Difficulty Level: %d</string>
     <string name="settings">Settings</string>
     <string name="undo_move">Undo Move</string>
     <string name="promotion_choose_piece">Choose a Piece</string>

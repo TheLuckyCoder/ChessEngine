@@ -5,6 +5,7 @@ import android.util.SparseArray
 import androidx.annotation.Keep
 import androidx.collection.SparseArrayCompat
 import androidx.collection.set
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.util.set
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.asLiveData
@@ -17,14 +18,13 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     private val initialized = AtomicBoolean(false)
 
+    /*
+     * Chess Game Data
+     */
     private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val isEngineThinkingFlow = MutableStateFlow(false)
 
-    @OptIn(ExperimentalStdlibApi::class)
-    private val tilesFlow = MutableStateFlow(buildList {
-        for (i in 0 until 64)
-            add(Tile(i, Tile.State.None))
-    })
+    private val tilesFlow = MutableStateFlow(emptyList<Tile>())
     private val piecesFlow = MutableStateFlow(emptyList<Piece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
 
@@ -34,6 +34,14 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     val pieces = piecesFlow.asLiveData()
     val gameState = gameStateFlow.asLiveData()
 
+    /*
+     * UI
+     */
+    val showNewGameDialog = mutableStateOf(false)
+
+    /*
+     * Preferences
+     */
     val preferences = AppPreferences
 
     var basicStatsEnabled = false
@@ -63,6 +71,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
                 if (SaveManager.loadFromFile(getApplication())) Native.isPlayerWhite() else playerWhite
         }
 
+        clearTiles()
         updatePiecesList()
     }
 
@@ -91,6 +100,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun makeMove(move: Move) {
+        isEngineThinkingFlow.value = true
         Native.makeMove(move.content)
 
         tilesFlow.value = tilesFlow.value
@@ -104,8 +114,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
                     else -> tile
                 }
             }
-
-        isEngineThinkingFlow.value = true
     }
 
     fun getPossibleMoves(square: Int) {
@@ -129,7 +137,10 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun clearTiles() {
-        tilesFlow.value = tilesFlow.value.map { it.copy(state = Tile.State.None) }
+        val tiles = ArrayList<Tile>(64)
+        for (i in 0 until 64)
+            tiles.add(Tile(i, Tile.State.None))
+        tilesFlow.value = tiles
     }
 
     @Suppress("unused")

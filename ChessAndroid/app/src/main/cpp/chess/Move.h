@@ -12,13 +12,12 @@ public:
 	public:
 		enum Internal
 		{
-			CAPTURE = 1 << 1, // The move is a capture
-			PROMOTION = 1 << 2, // The move is a promotion
-			KSIDE_CASTLE = 1 << 3, // The move is a king side castle
-			QSIDE_CASTLE = 1 << 4, // The move is a queen side castle
-			CASTLE = KSIDE_CASTLE | QSIDE_CASTLE,
-			DOUBLE_PAWN_PUSH = 1 << 5, // The move is a double pawn push
-			EN_PASSANT = 1 << 6 // The move is an en passant capture (Do not set the CAPTURE flag too)
+			CAPTURE = 1, // The move is a capture
+			PROMOTION = 1 << 1, // The move is a promotion
+			KSIDE_CASTLE = 1 << 2, // The move is a king side castle
+			QSIDE_CASTLE = 1 << 3, // The move is a queen side castle
+			DOUBLE_PAWN_PUSH = 1 << 4, // The move is a double pawn push
+			EN_PASSANT = 1 << 5 // The move is an en passant capture (Do not set the CAPTURE flag too)
 		};
 
 	public:
@@ -31,8 +30,6 @@ public:
 		constexpr bool kSideCastle() const noexcept { return _flags & Internal::KSIDE_CASTLE; }
 
 		constexpr bool qSideCastle() const noexcept { return _flags & Internal::QSIDE_CASTLE; }
-
-		constexpr bool castle() const noexcept { return _flags & Internal::CASTLE; }
 
 		constexpr bool doublePawnPush() const noexcept { return _flags & Internal::DOUBLE_PAWN_PUSH; }
 
@@ -49,7 +46,7 @@ public:
 	{
 	}
 
-	constexpr Move(const u8 from, const u8 to, const PieceType piece, const u8 flags = 0u) noexcept
+	constexpr Move(const u8 from, const u8 to, const PieceType piece, const u8 flags = {}) noexcept
 		: _move(((from & FROM_MASK) << FROM_SHIFT)
 				| ((to & TO_MASK) << TO_SHIFT)
 				| ((piece & MOVED_MASK) << MOVED_SHIFT)
@@ -205,13 +202,12 @@ public:
 
 private:
 	/*
-	 * TODO
 	 * Bits 0 to 5 (6 bits) store the 'from' square
-	 * Bits 6 to 12 (6 bits) store the 'to' square
-	 * Bits 13 to 16 (3 bits) store the 'moved' piece type
-	 * Bits 17 to 20 (3 bits) store the 'captured' piece type
-	 * Bits 21 to 23 (3 bits) store the 'promoted' piece type
-	 * Bits 24 to 31 (7 bits) store the 'flags'
+	 * Bits 6 to 11 (6 bits) store the 'to' square
+	 * Bits 12 to 14 (3 bits) store the 'moved' piece type
+	 * Bits 15 to 17 (3 bits) store the 'captured' piece type
+	 * Bits 18 to 20 (3 bits) store the 'promoted' piece type
+	 * Bits 21 to 26 (6 bits) store the 'flags'
 	 */
 	u32 _move{};
 	i32 _score{};

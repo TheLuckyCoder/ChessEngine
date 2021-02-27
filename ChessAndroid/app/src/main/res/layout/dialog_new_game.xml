@@ -58,7 +58,7 @@
             android:layout_weight="1"
             android:contentDescription="@string/side_random"
             app:backgroundTint="@color/background_side_random"
-            app:icon="@drawable/ic_side_random"
+            app:icon="@drawable/side_random"
             app:iconGravity="textStart"
             app:iconSize="54dp"
             app:iconTint="@null"
@@ -70,7 +70,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/difficulty"
+        android:text="@string/difficulty_level"
         android:textColor="?colorSecondary" />
 
     <Spinner

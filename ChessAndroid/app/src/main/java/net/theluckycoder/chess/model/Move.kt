@@ -15,11 +15,11 @@ data class Move(
 ) {
     companion object {
         const val CAPTURE: Byte = 1
-        const val PROMOTION: Byte = 1 shl 2
-        const val KSIDE_CASTLE: Byte = 1 shl 3
-        const val QSIDE_CASTLE: Byte = 1 shl 4
-        const val DOUBLE_PAWN_PUSH: Byte = 1 shl 5
-        const val EN_PASSANT: Byte = 1 shl 6
+        const val PROMOTION: Byte = 1 shl 1
+        const val KSIDE_CASTLE: Byte = 1 shl 2
+        const val QSIDE_CASTLE: Byte = 1 shl 3
+        const val DOUBLE_PAWN_PUSH: Byte = 1 shl 4
+        const val EN_PASSANT: Byte = 1 shl 5
     }
 
     class Flags(flags: Int) {
