@@ -22,6 +22,7 @@
     <string name="action_export_fen">Export FEN Position</string>
     <string name="action_force_move">Force Move</string>
     <string name="action_load">Load</string>
+    <string name="action_more_options">More Options</string>
 
     <!-- FEN -->
     <string name="fen_position_loaded">FEN Position Loaded</string>

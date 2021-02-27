@@ -32,16 +32,20 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 
 @Composable
-fun MainScreen() = BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-    val boardSize =
-        with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
-    val tileSize = boardSize / 8
-    BoardTiles(tileSize)
-    BoardPieces(tileSize)
+fun MainScreen() = Column(modifier = Modifier.fillMaxSize()) {
+    AppBar()
 
-    when (LocalConfiguration.current.orientation) {
-        Configuration.ORIENTATION_LANDSCAPE -> LandscapeScreen()
-        else -> PortraitScreen()
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val boardSize =
+            with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
+        val tileSize = boardSize / 8
+        BoardTiles(tileSize)
+        BoardPieces(tileSize)
+
+        when (LocalConfiguration.current.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> LandscapeScreen()
+            else -> PortraitScreen()
+        }
     }
 
     val chessViewModel = viewModel<ChessViewModel>()
@@ -58,6 +62,49 @@ fun MainScreen() = BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     }
 }
 
+@Preview
+@Composable
+private fun AppBar() {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(id = R.string.app_name),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        },
+        actions = {
+            AppBarActions()
+        }
+    )
+}
+
+@Composable
+private fun AppBarActions() {
+    var showActionsMenu by remember { mutableStateOf(false) }
+
+    IconButton(onClick = { showActionsMenu = true }) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_more_options_vertical),
+            contentDescription = stringResource(id = R.string.action_more_options)
+        )
+
+        if (showActionsMenu) {
+            DropdownMenu(
+                expanded = showActionsMenu,
+                onDismissRequest = { showActionsMenu = false }
+            ) {
+                DropdownMenuItem(onClick = {
+                    showActionsMenu = false
+                    Native.forceMove()
+                }) {
+                    Text(text = stringResource(id = R.string.action_force_move))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun GameFinishedDialog(gameState: GameState) {
     val messageRes = when (gameState) {
@@ -67,7 +114,7 @@ private fun GameFinishedDialog(gameState: GameState) {
         else -> return
     }
 
-    var showDialog by mutableStateOf(true)
+    var showDialog by remember { mutableStateOf(true) }
 
     if (!showDialog) return
 
@@ -92,8 +139,8 @@ private fun GameFinishedDialog(gameState: GameState) {
 @Composable
 private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
     val initialDifficulty = remember { chessViewModel.preferences.difficultyLevel }
-    var sideToggleIndex by mutableStateOf(0)
-    var difficultyLevel by mutableStateOf(initialDifficulty.toFloat())
+    var sideToggleIndex by remember { mutableStateOf(0) }
+    var difficultyLevel by remember { mutableStateOf(initialDifficulty.toFloat()) }
 
     class Side(val painter: Painter, val backgroundColor: Color)
 
@@ -131,7 +178,8 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
                         IconToggleButton(
                             modifier = Modifier
                                 .background(backgroundColor)
-                                .weight(1f),
+                                .weight(1f)
+                                .padding(4.dp),
                             checked = sideToggleIndex == index,
                             onCheckedChange = { sideToggleIndex = index }
                         ) {

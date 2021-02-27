@@ -18,14 +18,3 @@ data class Pos(
 
     fun toByte() = toInt().toByte()
 }
-
-data class PosPair(
-    @JvmField
-    val startX: Int,
-    @JvmField
-    val startY: Int,
-    @JvmField
-    val destX: Int,
-    @JvmField
-    val destY: Int
-)

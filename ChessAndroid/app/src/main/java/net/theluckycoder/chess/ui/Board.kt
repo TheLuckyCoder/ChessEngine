@@ -3,10 +3,9 @@ package net.theluckycoder.chess.ui
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,7 +45,7 @@ private fun getPieceDrawable(piece: Piece): Painter {
 fun BoardTiles(
     tileSize: Dp,
     chessViewModel: ChessViewModel = viewModel(),
-) {
+) = Box(modifier = Modifier.fillMaxSize().background(colorResource(R.color.tile_black))) {
     val currentDensity = LocalDensity.current
     val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
     val cells by chessViewModel.tiles.observeAsState(emptyList())

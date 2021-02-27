@@ -2,7 +2,7 @@
 
 buildscript {
     ext.kotlin_version = '1.4.30'
-    ext.compose = "1.0.0-beta01"
+    ext.compose_version = "1.0.0-beta01"
 
     repositories {
         google()
@@ -19,6 +19,16 @@ allprojects {
         google()
         jcenter()
         maven { url "https://jitpack.io" }
+    }
+}
+
+subprojects {
+    configurations.configureEach {
+        // We forcefully exclude AppCompat + MDC from any transitive dependencies.
+        // This is a Compose app, so there's no need for these.
+//        exclude group: 'androidx.appcompat'
+        exclude group: 'com.google.android.material', module: 'material'
+        exclude group: 'com.google.android.material', module: 'material'
     }
 }
 

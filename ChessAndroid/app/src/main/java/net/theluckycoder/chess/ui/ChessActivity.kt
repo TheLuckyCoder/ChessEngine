@@ -1,24 +1,15 @@
 package net.theluckycoder.chess.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Surface
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.core.content.getSystemService
 import net.theluckycoder.chess.ChessViewModel
-import net.theluckycoder.chess.Native
-import net.theluckycoder.chess.R
-import net.theluckycoder.chess.databinding.DialogImportFenBinding
-import kotlin.random.Random
 
-class ComposeActivity : AppCompatActivity() {
+class ChessActivity : ComponentActivity() {
 
     private val chessViewModel by viewModels<ChessViewModel>()
 
@@ -27,7 +18,7 @@ class ComposeActivity : AppCompatActivity() {
         val view = ComposeView(this).apply {
             setContent {
                 ChessMaterialTheme {
-                    Surface {
+                    Surface(modifier = Modifier.fillMaxSize()) {
                         MainScreen()
                     }
                 }
@@ -36,12 +27,7 @@ class ComposeActivity : AppCompatActivity() {
 
         setContentView(view)
     }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
+/*
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_load_fen -> {
@@ -107,7 +93,7 @@ class ComposeActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-
+*/
     override fun onStart() {
         super.onStart()
 
