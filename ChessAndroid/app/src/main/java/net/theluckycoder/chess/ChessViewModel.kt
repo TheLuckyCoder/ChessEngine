@@ -1,18 +1,23 @@
 package net.theluckycoder.chess
 
 import android.app.Application
-import android.util.SparseArray
 import androidx.annotation.Keep
-import androidx.collection.SparseArrayCompat
-import androidx.collection.set
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.util.set
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.AppPreferences
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.ArrayList
+import kotlin.collections.List
+import kotlin.collections.emptyList
+import kotlin.collections.filter
+import kotlin.collections.forEach
+import kotlin.collections.isNotEmpty
+import kotlin.collections.map
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
 
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -28,11 +33,11 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     private val piecesFlow = MutableStateFlow(emptyList<Piece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
 
-    val playerPlayingWhite = playerPlayingWhiteFlow.asLiveData()
-    val isEngineThinking = isEngineThinkingFlow.asLiveData()
-    val tiles = tilesFlow.asLiveData()
-    val pieces = piecesFlow.asLiveData()
-    val gameState = gameStateFlow.asLiveData()
+    val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
+    val isEngineThinking: StateFlow<Boolean> = isEngineThinkingFlow
+    val tiles: StateFlow<List<Tile>> = tilesFlow
+    val pieces: StateFlow<List<Piece>> = piecesFlow
+    val gameState: StateFlow<GameState> = gameStateFlow
 
     /*
      * UI

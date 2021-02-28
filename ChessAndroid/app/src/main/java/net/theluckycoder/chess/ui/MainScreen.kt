@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +59,7 @@ fun MainScreen() = Scaffold(
     if (chessViewModel.showImportExportDialog.value)
         ImportExportDialog(chessViewModel)
 
-    val gameState by chessViewModel.gameState.observeAsState(GameState.NONE)
+    val gameState by chessViewModel.gameState.collectAsState()
     when (gameState) {
         GameState.DRAW, GameState.WINNER_WHITE, GameState.WINNER_BLACK -> {
             GameFinishedDialog(gameState)

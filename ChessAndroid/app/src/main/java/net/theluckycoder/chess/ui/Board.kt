@@ -9,7 +9,6 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -51,8 +50,8 @@ fun BoardTiles(
     val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
 
     val currentDensity = LocalDensity.current
-    val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
-    val cells by chessViewModel.tiles.observeAsState(emptyList())
+    val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
+    val cells by chessViewModel.tiles.collectAsState()
 
     val whiteTileColor = colorResource(id = R.color.tile_white)
     val blackTileColor = colorResource(id = R.color.tile_black)
@@ -127,9 +126,9 @@ fun BoardPieces(
     tileSize: Dp,
     chessViewModel: ChessViewModel = viewModel()
 ) {
-    val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
-    val pieces by chessViewModel.pieces.observeAsState(emptyList())
-//    val gameState by chessViewModel.gameState.observeAsState(GameState.NONE)
+    val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
+    val pieces by chessViewModel.pieces.collectAsState()
+//    val gameState by chessViewModel.gameState.collectAsState()
 
 //    val kingInCheckColor = colorResource(id = R.color.king_in_check)
 
