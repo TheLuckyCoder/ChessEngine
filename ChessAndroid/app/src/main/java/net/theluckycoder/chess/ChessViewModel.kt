@@ -38,6 +38,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
      * UI
      */
     val showNewGameDialog = mutableStateOf(false)
+    val showImportExportDialog = mutableStateOf(false)
 
     /*
      * Preferences
@@ -121,12 +122,12 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
         tilesFlow.value = tilesFlow.value
             .map { tile ->
-                val move = moves.find { it.to.toInt() == tile.square }
+                val possibleMoves = moves.filter { it.to.toInt() == tile.square }
                 when {
                     tile.square == square && moves.isNotEmpty() -> // Mark the selected piece's square
                         tile.copy(state = Tile.State.Selected)
-                    move != null -> // Mark all Possible Moves
-                        tile.copy(state = Tile.State.PossibleMove(move))
+                    possibleMoves.isNotEmpty() -> // Mark each possible square
+                        tile.copy(state = Tile.State.PossibleMove(possibleMoves))
                     tile.state is Tile.State.PossibleMove || tile.state is Tile.State.Selected -> {
                         // Clear any invalid Possible Moves
                         tile.copy(state = Tile.State.None)

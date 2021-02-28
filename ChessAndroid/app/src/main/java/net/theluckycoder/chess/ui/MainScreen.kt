@@ -1,22 +1,26 @@
 package net.theluckycoder.chess.ui
 
 import android.content.Intent
-import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,26 +36,29 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 
 @Composable
-fun MainScreen() = Column(modifier = Modifier.fillMaxSize()) {
-    AppBar()
-
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+fun MainScreen() = Scaffold(
+    modifier = Modifier.fillMaxSize(),
+    topBar = { AppBar() },
+    bottomBar = { BottomBar() }
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(it)
+    ) {
         val boardSize =
             with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
-        val tileSize = boardSize / 8
+        val tileSize = boardSize / 8f
         BoardTiles(tileSize)
         BoardPieces(tileSize)
-
-        when (LocalConfiguration.current.orientation) {
-            Configuration.ORIENTATION_LANDSCAPE -> LandscapeScreen()
-            else -> PortraitScreen()
-        }
     }
 
     val chessViewModel = viewModel<ChessViewModel>()
-    if (chessViewModel.showNewGameDialog.value) {
+    if (chessViewModel.showNewGameDialog.value)
         NewGameDialog(chessViewModel)
-    }
+
+    if (chessViewModel.showImportExportDialog.value)
+        ImportExportDialog(chessViewModel)
 
     val gameState by chessViewModel.gameState.observeAsState(GameState.NONE)
     when (gameState) {
@@ -66,6 +73,8 @@ fun MainScreen() = Column(modifier = Modifier.fillMaxSize()) {
 @Composable
 private fun AppBar() {
     TopAppBar(
+        modifier = Modifier.height(dimensionResource(id = R.dimen.toolbar_height)),
+        backgroundColor = MaterialTheme.colors.primary,
         title = {
             Text(
                 text = stringResource(id = R.string.app_name),
@@ -120,16 +129,120 @@ private fun GameFinishedDialog(gameState: GameState) {
 
     AlertDialog(
         onDismissRequest = { showDialog = false },
-        title = {
-            Text(
-                text = stringResource(id = messageRes),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        },
+        title = { AlertDialogTitle(text = stringResource(id = messageRes)) },
         confirmButton = {
             TextButton(onClick = { showDialog = false }) {
                 Text(text = stringResource(id = android.R.string.ok))
+            }
+        }
+    )
+}
+
+@Composable
+fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
+    val currentFen = remember { Native.getCurrentFen() }
+
+    var newFen by remember { mutableStateOf("") }
+    val sidesToggleIndex = remember { mutableStateOf(0) }
+    var failedToLoad by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { chessViewModel.showImportExportDialog.value = false },
+        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_position)) },
+        text = {
+            Column(Modifier.fillMaxWidth()) {
+                Text(
+                    text = stringResource(id = R.string.fen_position_current),
+                    color = MaterialTheme.colors.secondary
+                )
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = currentFen,
+                    fontSize = 15.sp
+                )
+
+                val context = LocalContext.current
+                val clipboardManager = LocalClipboardManager.current
+                TextButton(
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 4.dp, bottom = 16.dp),
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(currentFen))
+                        Toast.makeText(context, R.string.fen_position_copied, Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.action_copy))
+                }
+
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .requiredHeight(1.dp)
+                        .background(LocalContentColor.current)
+                        .clip(RoundedCornerShape(1.dp))
+                )
+
+                Text(
+                    modifier = Modifier.padding(top = 16.dp),
+                    text = stringResource(id = R.string.fen_position_load),
+                    color = MaterialTheme.colors.secondary
+                )
+
+                TextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    value = newFen,
+                    onValueChange = { newFen = it },
+                    placeholder = { Text(text = "FEN") },
+                    isError = failedToLoad
+                )
+
+                ChooseSidesToggle(sidesToggleIndex = sidesToggleIndex)
+            }
+        },
+        buttons = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = { chessViewModel.showImportExportDialog.value = false }
+                ) {
+                    Text(text = stringResource(id = R.string.action_close))
+                }
+
+                val context = LocalContext.current
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        val playerWhite = when (sidesToggleIndex.value) {
+                            0 -> true
+                            1 -> false
+                            else -> Random.nextBoolean()
+                        }
+
+                        if (Native.loadFen(playerWhite, newFen)) {
+                            failedToLoad = false
+                            chessViewModel.showImportExportDialog.value = false
+                            Toast.makeText(
+                                context,
+                                R.string.fen_position_loaded,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(context, R.string.fen_position_error, Toast.LENGTH_LONG)
+                                .show()
+                            failedToLoad = true
+                        }
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.action_load))
+                }
             }
         }
     )
@@ -139,26 +252,12 @@ private fun GameFinishedDialog(gameState: GameState) {
 @Composable
 private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
     val initialDifficulty = remember { chessViewModel.preferences.difficultyLevel }
-    var sideToggleIndex by remember { mutableStateOf(0) }
+    val sidesToggleIndex = remember { mutableStateOf(0) }
     var difficultyLevel by remember { mutableStateOf(initialDifficulty.toFloat()) }
-
-    class Side(val painter: Painter, val backgroundColor: Color)
-
-    val sides = listOf(
-        Side(painterResource(R.drawable.w_king), colorResource(R.color.side_white)),
-        Side(painterResource(R.drawable.b_king), colorResource(R.color.side_black)),
-        Side(painterResource(R.drawable.side_random), colorResource(R.color.side_random))
-    )
 
     AlertDialog(
         onDismissRequest = { chessViewModel.showNewGameDialog.value = false },
-        title = {
-            Text(
-                text = stringResource(id = R.string.new_game),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        },
+        title = { AlertDialogTitle(text = stringResource(id = R.string.new_game)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -166,32 +265,7 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
                     color = MaterialTheme.colors.secondary
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    sides.forEachIndexed { index, side ->
-                        val backgroundColor =
-                            if (sideToggleIndex == index) MaterialTheme.colors.primary.copy(alpha = 0.5f) else side.backgroundColor
-
-                        IconToggleButton(
-                            modifier = Modifier
-                                .background(backgroundColor)
-                                .weight(1f)
-                                .padding(4.dp),
-                            checked = sideToggleIndex == index,
-                            onCheckedChange = { sideToggleIndex = index }
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(54.dp),
-                                painter = side.painter,
-                                tint = Color.Unspecified,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                }
+                ChooseSidesToggle(sidesToggleIndex = sidesToggleIndex)
 
                 Text(
                     modifier = Modifier.padding(top = 16.dp),
@@ -212,7 +286,7 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
             TextButton(onClick = {
                 val preferences = chessViewModel.preferences
 
-                val playerWhite = when (sideToggleIndex) {
+                val playerWhite = when (sidesToggleIndex.value) {
                     0 -> true
                     1 -> false
                     else -> Random.nextBoolean()
@@ -251,24 +325,23 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
 }
 
 @Composable
-private fun BoxScope.PortraitScreen(chessViewModel: ChessViewModel = viewModel()) = Column(
-    modifier = Modifier.align(Alignment.BottomCenter),
+private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
     verticalArrangement = Arrangement.Bottom,
 ) {
-    val isThinking by chessViewModel.isEngineThinking.observeAsState(false)
+    /*val isThinking by chessViewModel.isEngineThinking.observeAsState(false)
     if (isThinking) {
         LinearProgressIndicator(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .padding(horizontal = 8.dp)
         )
-    }
+    }*/
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(18.dp),
-        horizontalArrangement = Arrangement.Center
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(
             onClick = { Native.undoMoves() },
@@ -276,11 +349,37 @@ private fun BoxScope.PortraitScreen(chessViewModel: ChessViewModel = viewModel()
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_undo),
+                contentDescription = stringResource(id = R.string.action_undo)
+            )
+        }
+
+        IconButton(
+            onClick = { Native.undoMoves() },
+            enabled = false
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_redo),
                 contentDescription = null
             )
         }
 
-        NewGameButton(modifier = Modifier.weight(1f))
+        IconButton(
+            onClick = { chessViewModel.showNewGameDialog.value = true }
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_new_circle),
+                contentDescription = null
+            )
+        }
+
+        IconButton(
+            onClick = { chessViewModel.showImportExportDialog.value = true }
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_import_export),
+                contentDescription = null
+            )
+        }
 
         val context = LocalContext.current
         IconButton(
@@ -295,48 +394,46 @@ private fun BoxScope.PortraitScreen(chessViewModel: ChessViewModel = viewModel()
 }
 
 @Composable
-private fun BoxScope.LandscapeScreen() = Column(
-    modifier = Modifier
-        .fillMaxHeight()
-        .align(Alignment.CenterEnd),
-    verticalArrangement = Arrangement.Center
-) {
-    IconButton(
-        onClick = { Native.undoMoves() }
-    ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_undo),
-            contentDescription = null
-        )
-    }
-
-    NewGameButton(modifier = Modifier.weight(1f))
-
-    val context = LocalContext.current
-    IconButton(
-        onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) }
-    ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_settings),
-            contentDescription = null
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun NewGameButton(
+private fun ChooseSidesToggle(
     modifier: Modifier = Modifier,
-    chessViewModel: ChessViewModel = viewModel(),
+    sidesToggleIndex: MutableState<Int>,
 ) {
-    IconButton(
-        modifier = modifier,
-        onClick = { chessViewModel.showNewGameDialog.value = true }
+    class Side(val painter: Painter, val backgroundColor: Color)
+
+    val sides = listOf(
+        Side(painterResource(R.drawable.w_king), colorResource(R.color.side_white)),
+        Side(painterResource(R.drawable.b_king), colorResource(R.color.side_black)),
+        Side(painterResource(R.drawable.side_random), colorResource(R.color.side_random))
+    )
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clip(RoundedCornerShape(8.dp))
     ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_new_circle),
-            contentDescription = null
-        )
+        sides.forEachIndexed { index, side ->
+            val backgroundColor = if (sidesToggleIndex.value == index)
+                MaterialTheme.colors.primary.copy(alpha = 0.5f)
+            else
+                side.backgroundColor
+
+            IconToggleButton(
+                modifier = Modifier
+                    .background(backgroundColor)
+                    .weight(1f)
+                    .padding(4.dp),
+                checked = sidesToggleIndex.value == index,
+                onCheckedChange = { sidesToggleIndex.value = index }
+            ) {
+                Icon(
+                    modifier = Modifier.size(54.dp),
+                    painter = side.painter,
+                    tint = Color.Unspecified,
+                    contentDescription = null
+                )
+            }
+        }
     }
 }
 

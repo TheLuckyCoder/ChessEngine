@@ -26,7 +26,7 @@ void BoardManager::initBoardManager(const BoardChangedListener &listener, const 
 
 bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 {
-	Board tempBoard = _board;
+	Board tempBoard;
 
 	if (tempBoard.setToFen(fen))
 	{

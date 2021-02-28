@@ -16,7 +16,7 @@ private object AppColors {
         primary = PRIMARY,
         primaryVariant = PRIMARY_VARIANT,
         secondary = SECONDARY,
-        onPrimary = Color.Black,
+        onPrimary = Color.White,
         onSecondary = Color.Black
     )
 

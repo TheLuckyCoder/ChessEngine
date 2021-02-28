@@ -43,7 +43,7 @@ object Native {
 
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
     external fun loadMoves(moves: String)
-    external fun getFen(): String
+    external fun getCurrentFen(): String
 
     external fun saveMoves(): String?
 

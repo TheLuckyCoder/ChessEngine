@@ -263,7 +263,7 @@ Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jobject, jstring mov
 }
 
 external JNIEXPORT jstring JNICALL
-Java_net_theluckycoder_chess_Native_getFen(JNIEnv *pEnv, jobject)
+Java_net_theluckycoder_chess_Native_getCurrentFen(JNIEnv *pEnv, jobject)
 {
 	const auto fenString = BoardManager::getBoard().getFen();
 

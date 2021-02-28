@@ -18,9 +18,7 @@ class ChessActivity : ComponentActivity() {
         val view = ComposeView(this).apply {
             setContent {
                 ChessMaterialTheme {
-                    Surface(modifier = Modifier.fillMaxSize()) {
-                        MainScreen()
-                    }
+                    MainScreen()
                 }
             }
         }

@@ -3,16 +3,16 @@ package net.theluckycoder.chess.ui
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -20,11 +20,13 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.R
+import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Tile
 
@@ -45,7 +47,9 @@ private fun getPieceDrawable(piece: Piece): Painter {
 fun BoardTiles(
     tileSize: Dp,
     chessViewModel: ChessViewModel = viewModel(),
-) = Box(modifier = Modifier.fillMaxSize().background(colorResource(R.color.tile_black))) {
+) {
+    val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
+
     val currentDensity = LocalDensity.current
     val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
     val cells by chessViewModel.tiles.observeAsState(emptyList())
@@ -80,7 +84,11 @@ fun BoardTiles(
 
         val clickableModifier = if (cell.state is Tile.State.PossibleMove) {
             Modifier.clickable {
-                chessViewModel.makeMove(cell.state.move)
+                val moves = cell.state.moves
+                when {
+                    moves.size > 1 -> showPromotionDialog.value = moves
+                    else -> chessViewModel.makeMove(moves.first())
+                }
             }
         } else Modifier
 
@@ -94,7 +102,8 @@ fun BoardTiles(
 
             when (cell.state) {
                 is Tile.State.PossibleMove -> {
-                    if (cell.state.move.flags.capture)
+                    val moves = cell.state.moves
+                    if (moves.first().flags.capture)
                         drawPath(possibleCapturePath, color = possibleTileColor)
                     else
                         drawCircle(possibleTileColor, radius = possibleTileCircleSize)
@@ -108,6 +117,9 @@ fun BoardTiles(
             }
         }
     }
+
+    if (showPromotionDialog.value.isNotEmpty())
+        PromotionDialog(showPromotionDialog)
 }
 
 @Composable
@@ -117,6 +129,7 @@ fun BoardPieces(
 ) {
     val isPlayerWhite by chessViewModel.playerPlayingWhite.observeAsState(true)
     val pieces by chessViewModel.pieces.observeAsState(emptyList())
+//    val gameState by chessViewModel.gameState.observeAsState(GameState.NONE)
 
 //    val kingInCheckColor = colorResource(id = R.color.king_in_check)
 
@@ -157,4 +170,41 @@ private fun Path.drawTriangle(
     lineTo(x2, y2)
     lineTo(x3, y3)
     lineTo(x1, y1)
+}
+
+@Composable
+private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
+    val viewModel = viewModel<ChessViewModel>()
+    val piecesDrawables =
+        listOf(R.drawable.w_knight, R.drawable.w_bishop, R.drawable.w_rook, R.drawable.w_queen)
+    val piecesPainters = piecesDrawables.map { painterResource(id = it) }
+
+    AlertDialog(onDismissRequest = { showPromotionDialog.value = emptyList() },
+        title = {
+            AlertDialogTitle(text = stringResource(id = R.string.promotion_choose_piece))
+        },
+        text = {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                piecesPainters.forEachIndexed { index, painter ->
+                    IconButton(onClick = {
+                        viewModel.makeMove(showPromotionDialog.value[index])
+                    }) {
+                        Icon(
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Unspecified,
+                            painter = painter, contentDescription = null
+                        )
+                    }
+                }
+            }
+        },
+        buttons = {
+            IconButton(onClick = { showPromotionDialog.value = emptyList() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = android.R.string.cancel)
+                )
+            }
+        }
+    )
 }
