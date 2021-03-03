@@ -84,11 +84,12 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.Main.immediate) {
-        val settings = withContext(Dispatchers.IO) {
-            dataStore.setDifficultyLevel(level)
-            dataStore.getEngineSettings()
-        }
-        updateSettings(settings)
+        withContext(Dispatchers.IO) { dataStore.setDifficultyLevel(level) }
+        updateSettings(dataStore.getEngineSettings())
+    }
+
+    suspend fun fetchSettings() = withContext(Dispatchers.IO) {
+        dataStore.getEngineSettings()
     }
 
     fun updateSettings(engineSettings: EngineSettings) {
@@ -166,5 +167,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
         SaveManager.saveToFileAsync(app)
     }
+
     private external fun initBoardNative(playerPlayingWhite: Boolean)
 }

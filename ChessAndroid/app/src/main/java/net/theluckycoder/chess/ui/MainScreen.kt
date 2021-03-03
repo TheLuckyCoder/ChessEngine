@@ -141,7 +141,7 @@ private fun GameFinishedDialog(gameState: GameState) {
 }
 
 @Composable
-fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
+private fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
     val currentFen = remember { Native.getCurrentFen() }
 
     var newFen by remember { mutableStateOf("") }
@@ -253,7 +253,6 @@ fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
 @Preview
 @Composable
 private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
-//    val initialDifficulty by chessViewModel.dataStore.difficultyLevel().collectAsState(1)
     val sidesToggleIndex = remember { mutableStateOf(0) }
     var difficultyLevel by remember { mutableStateOf(1f) }
 

@@ -32,7 +32,7 @@ class PreferencesActivity : ComponentActivity() {
         val view = ComposeView(this).apply {
             setContent {
                 ChessMaterialTheme {
-                    Preferences()
+                    PreferencesActivityContent()
                 }
             }
         }
@@ -43,7 +43,7 @@ class PreferencesActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun Preferences() = Scaffold(
+private fun PreferencesActivityContent() = Scaffold(
     topBar = { AppBar() }
 ) { padding ->
     val context = LocalContext.current

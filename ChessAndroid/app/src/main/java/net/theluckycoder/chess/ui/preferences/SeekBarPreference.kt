@@ -2,6 +2,7 @@ package net.theluckycoder.chess.ui.preferences
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -67,7 +68,10 @@ private fun <T : Number> PreferenceSummary(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(modifier = Modifier.width(32.dp)) {
-                Text(text = item.valueRepresentation(sliderValue))
+                Text(
+                    text = item.valueRepresentation(sliderValue),
+                    color = MaterialTheme.colors.onBackground,
+                )
             }
             Slider(
                 value = sliderValue.toFloat(),
