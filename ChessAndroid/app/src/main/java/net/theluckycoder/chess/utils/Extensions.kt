@@ -1,8 +1,11 @@
 package net.theluckycoder.chess.utils
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.Point
+import android.net.Uri
 import android.os.Build
 import net.theluckycoder.chess.R
 
@@ -23,17 +26,19 @@ fun Context.getColorCompat(color: Int): Int {
     } else resources.getColor(color)
 }
 
-fun Context.getActionAndStatusBarHeight(): Int {
-    val styledAttributes = theme.obtainStyledAttributes(intArrayOf(R.attr.actionBarSize))
-
-    val actionBarHeight = styledAttributes.getDimension(0, 0f).toInt()
-    styledAttributes.recycle()
-
-    val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-    val statusBarHeight = if (resourceId > 0)
-        resources.getDimensionPixelSize(resourceId) else 0
-    return actionBarHeight + statusBarHeight
-}
-
 fun Byte.toBoolean() = this != 0.toByte()
 
+fun Context.browseUrl(url: String): Boolean {
+    return try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse(url)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        startActivity(intent)
+        true
+    } catch (e: ActivityNotFoundException) {
+        e.printStackTrace()
+        false
+    }
+}

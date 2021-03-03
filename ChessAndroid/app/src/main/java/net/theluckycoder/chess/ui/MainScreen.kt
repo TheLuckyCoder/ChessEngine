@@ -293,9 +293,7 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
                 }
 
                 val level = difficultyLevel.roundToInt()
-                chessViewModel.viewModelScope.launch(Dispatchers.IO) {
-                    chessViewModel.dataStore.setDifficultyLevel(level)
-                }
+                chessViewModel.updateDifficulty(level)
 
                 if (Native.isWorking()) {
                     Native.stopSearch()
@@ -433,13 +431,4 @@ private fun ChooseSidesToggle(
             }
         }
     }
-}
-
-private fun getDifficulty(level: Int, currentSettings: EngineSettings): EngineSettings {
-    require(level >= 0)
-
-    return currentSettings.copy(
-        searchDepth = if (level == 0 || level == 1) level + 2 else level + 3,
-        quietSearch = level != 0
-    )
 }

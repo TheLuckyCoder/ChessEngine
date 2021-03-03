@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -14,8 +15,8 @@ import androidx.compose.ui.unit.sp
 @ExperimentalMaterialApi
 @Composable
 fun Preference(
-    item: PreferenceItem<*>,
-    summary: String? = null,
+    item: PreferenceItem,
+    summary: String? = null, // TODO
     onClick: () -> Unit = { },
     trailing: @Composable (() -> Unit)? = null
 ) {
@@ -25,15 +26,7 @@ fun Preference(
                 Text(text = item.title, maxLines = if (item.singleLineTitle) 1 else Int.MAX_VALUE)
             },
             secondaryText = { Text(text = summary ?: item.summary) },
-            icon = {
-                Icon(
-                    painter = item.icon,
-                    null,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .size(24.dp)
-                )
-            },
+            icon = { PreferenceIcon(painter = item.icon) },
             modifier = Modifier.clickable(onClick = { if (item.enabled) onClick() }),
             trailing = trailing,
         )
@@ -43,7 +36,7 @@ fun Preference(
 @ExperimentalMaterialApi
 @Composable
 fun Preference(
-    item: PreferenceItem<*>,
+    item: KeyPreferenceItem<*>,
     summary: @Composable () -> Unit,
     onClick: () -> Unit = { },
     trailing: @Composable (() -> Unit)? = null
@@ -57,18 +50,27 @@ fun Preference(
                 )
             },
             secondaryText = summary,
-            icon = {
-                Icon(
-                    painter = item.icon,
-                    null,
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .size(24.dp)
-                )
-            },
+            icon = { PreferenceIcon(painter = item.icon) },
             modifier = Modifier.clickable(onClick = { if (item.enabled) onClick() }),
             trailing = trailing,
         )
+    }
+}
+
+@Composable
+private fun PreferenceIcon(painter: Painter?) {
+    val iconModifier = Modifier
+        .padding(8.dp)
+        .size(24.dp)
+
+    if (painter != null) {
+        Icon(
+            painter = painter,
+            contentDescription = null,
+            modifier = iconModifier
+        )
+    } else {
+        Spacer(modifier = iconModifier)
     }
 }
 

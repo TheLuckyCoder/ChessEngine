@@ -46,6 +46,21 @@ private fun MatchPreferenceItem(
     item: BasePreferenceItem
 ) {
     when (item) {
+        is PreferenceGroupItem -> {
+            Text(
+                text = item.title,
+                fontSize = 14.sp,
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(start = 72.dp, top = 24.dp, bottom = 8.dp)
+            )
+            item.items.forEach { child ->
+                MatchPreferenceItem(scope, dataStore, prefs, child)
+            }
+        }
+        is EmptyPreferenceItem -> {
+            Preference(item = item, onClick = item.onClick)
+        }
         is SwitchPreferenceItem -> {
             SwitchPreference(
                 item = item,
@@ -78,18 +93,6 @@ private fun MatchPreferenceItem(
                     }
                 },
             )
-        }
-        is PreferenceGroupItem -> {
-            Text(
-                text = item.title,
-                fontSize = 14.sp,
-                color = MaterialTheme.colors.secondary,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 72.dp, top = 24.dp, bottom = 8.dp)
-            )
-            item.items.forEach { child ->
-                MatchPreferenceItem(scope, dataStore, prefs, child)
-            }
         }
     }
 }

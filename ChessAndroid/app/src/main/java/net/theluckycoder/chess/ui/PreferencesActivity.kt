@@ -1,6 +1,7 @@
 package net.theluckycoder.chess.ui
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -18,9 +18,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.ui.preferences.*
 import net.theluckycoder.chess.utils.SettingsDataStore
+import net.theluckycoder.chess.utils.browseUrl
 import net.theluckycoder.chess.utils.settingsDataStore
 
 class PreferencesActivity : ComponentActivity() {
@@ -49,13 +51,15 @@ private fun Preferences() = Scaffold(
     Box(modifier = Modifier.padding(padding)) {
         PreferenceScreen(
             dataStore = context.settingsDataStore,
-            items = getPreferenceItems(),
+            items = getPreferenceItems(context),
         )
     }
 }
 
 @Composable
-private fun getPreferenceItems() = listOf(
+private fun getPreferenceItems(
+    context: Context
+) = listOf(
     PreferenceGroupItem(
         title = stringResource(id = R.string.pref_category_difficulty),
         items = listOf(
@@ -103,19 +107,17 @@ private fun getPreferenceItems() = listOf(
     PreferenceGroupItem(
         title = stringResource(id = R.string.pref_category_about),
         items = listOf(
-            SwitchPreferenceItem(
-                title = stringResource(id = R.string.pref_debug_basic),
-                summary = stringResource(id = R.string.pref_debug_basic_desc),
-                prefKey = SettingsDataStore.SHOW_DEBUG_BASIC,
-                icon = painterResource(id = R.drawable.ic_pref_debug_info),
-                defaultValue = false,
+            EmptyPreferenceItem(
+                title = stringResource(id = R.string.about_author),
+                summary = "TheLuckyCoder - Filea Răzvan Gheorghe",
+                icon = painterResource(id = R.drawable.ic_pref_author),
+                onClick = { context.browseUrl("https://theluckycoder.net") },
             ),
-            SwitchPreferenceItem(
-                title = stringResource(id = R.string.pref_debug_advanced),
-                summary = stringResource(id = R.string.pref_debug_advanced_desc),
-                prefKey = SettingsDataStore.SHOW_DEBUG_ADVANCED,
-                icon = painterResource(id = R.drawable.ic_pref_stats),
-                defaultValue = false,
+            EmptyPreferenceItem(
+                title = stringResource(id = R.string.about_source_code),
+                summary = "Licensed under the GNU General Public License",
+                icon = painterResource(id = R.drawable.ic_pref_source_code),
+                onClick = { context.browseUrl("https://github.com/TheLuckyCoder/ChessEngine") }
             ),
         ),
     ),
@@ -137,6 +139,16 @@ private fun getPreferenceItems() = listOf(
                 icon = painterResource(id = R.drawable.ic_pref_stats),
                 defaultValue = false,
             ),
+            EmptyPreferenceItem(
+                title = "Run Perft Test",
+                summary = "This is only meant for debugging",
+                onClick = { Native.perftTest() }
+            ),
+            EmptyPreferenceItem(
+                title = "Run Evaluation Test",
+                summary = "This is only meant for debugging",
+                onClick = { Native.evaluationTest() }
+            ),
         ),
     ),
 )
@@ -155,8 +167,8 @@ private fun AppBar() {
             )
         },
         navigationIcon = {
-            val context = LocalContext.current as Activity
-            IconButton(onClick = { context.finish() }) {
+            val activity = LocalContext.current as Activity
+            IconButton(onClick = { activity.finish() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_back),
                     contentDescription = null

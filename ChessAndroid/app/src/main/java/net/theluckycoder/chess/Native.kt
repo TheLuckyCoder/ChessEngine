@@ -2,7 +2,6 @@ package net.theluckycoder.chess
 
 import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
-import net.theluckycoder.chess.model.Piece
 
 object Native {
 
@@ -33,10 +32,10 @@ object Native {
     external fun enableStats(enabled: Boolean)
 
     external fun setSettings(
-        baseSearchDepth: Int,
+        searchDepth: Int,
+        quietSearch: Boolean,
         threadCount: Int,
-        cacheSizeInMb: Int,
-        performQuiescenceSearch: Boolean
+        hashSizeMb: Int
     )
 
     external fun undoMoves(): Boolean

@@ -4,8 +4,12 @@ import android.app.Application
 import androidx.annotation.Keep
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
@@ -41,16 +45,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
      * Preferences
      */
     val dataStore = SettingsDataStore(application)
-    val difficulty = dataStore.difficultyLevel()
-
-    var basicStatsEnabled = false
-    var advancedStatsEnabled = false
-        set(value) {
-            if (field != value) {
-                field = value
-                Native.enableStats(value)
-            }
-        }
 
     init {
         initBoard()
@@ -89,12 +83,20 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         piecesFlow.value = piecesMap.map { it.value }
     }
 
+    fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.Main.immediate) {
+        val settings = withContext(Dispatchers.IO) {
+            dataStore.setDifficultyLevel(level)
+            dataStore.getEngineSettings()
+        }
+        updateSettings(settings)
+    }
+
     fun updateSettings(engineSettings: EngineSettings) {
         Native.setSettings(
             engineSettings.searchDepth,
+            engineSettings.quietSearch,
             engineSettings.threadCount,
-            engineSettings.hashSize,
-            engineSettings.quietSearch
+            engineSettings.hashSize
         )
     }
 
@@ -164,6 +166,5 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
         SaveManager.saveToFileAsync(app)
     }
-
     private external fun initBoardNative(playerPlayingWhite: Boolean)
 }
