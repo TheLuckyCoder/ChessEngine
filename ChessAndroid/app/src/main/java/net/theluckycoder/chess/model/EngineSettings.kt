@@ -3,8 +3,8 @@ package net.theluckycoder.chess.model
 data class EngineSettings(
     val searchDepth: Int,
     val threadCount: Int,
-    val cacheSize: Int,
-    val doQuietSearch: Boolean
+    val hashSize: Int,
+    val quietSearch: Boolean
 ) {
 
     companion object {

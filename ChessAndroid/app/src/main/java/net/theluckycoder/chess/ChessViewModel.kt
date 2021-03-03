@@ -7,16 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import net.theluckycoder.chess.model.*
-import net.theluckycoder.chess.utils.AppPreferences
+import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.ArrayList
-import kotlin.collections.List
-import kotlin.collections.emptyList
-import kotlin.collections.filter
-import kotlin.collections.forEach
-import kotlin.collections.isNotEmpty
-import kotlin.collections.map
-import kotlin.collections.mutableMapOf
 import kotlin.collections.set
 
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
@@ -48,7 +40,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     /*
      * Preferences
      */
-    val preferences = AppPreferences
+    val dataStore = SettingsDataStore(application)
+    val difficulty = dataStore.difficultyLevel()
 
     var basicStatsEnabled = false
     var advancedStatsEnabled = false
@@ -100,8 +93,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         Native.setSettings(
             engineSettings.searchDepth,
             engineSettings.threadCount,
-            engineSettings.cacheSize,
-            engineSettings.doQuietSearch
+            engineSettings.hashSize,
+            engineSettings.quietSearch
         )
     }
 

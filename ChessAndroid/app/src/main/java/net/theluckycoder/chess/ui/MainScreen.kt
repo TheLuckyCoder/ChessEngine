@@ -24,7 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import net.theluckycoder.chess.*
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.EngineSettings
@@ -250,9 +253,9 @@ fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
 @Preview
 @Composable
 private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
-    val initialDifficulty = remember { chessViewModel.preferences.difficultyLevel }
+//    val initialDifficulty by chessViewModel.dataStore.difficultyLevel().collectAsState(1)
     val sidesToggleIndex = remember { mutableStateOf(0) }
-    var difficultyLevel by remember { mutableStateOf(initialDifficulty.toFloat()) }
+    var difficultyLevel by remember { mutableStateOf(1f) }
 
     AlertDialog(
         onDismissRequest = { chessViewModel.showNewGameDialog.value = false },
@@ -283,8 +286,6 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
         },
         confirmButton = {
             TextButton(onClick = {
-                val preferences = chessViewModel.preferences
-
                 val playerWhite = when (sidesToggleIndex.value) {
                     0 -> true
                     1 -> false
@@ -292,13 +293,11 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
                 }
 
                 val level = difficultyLevel.roundToInt()
-                preferences.difficultyLevel = level
+                chessViewModel.viewModelScope.launch(Dispatchers.IO) {
+                    chessViewModel.dataStore.setDifficultyLevel(level)
+                }
 
-                val newSettings = getDifficulty(level, preferences.engineSettings)
-                chessViewModel.updateSettings(newSettings)
-                preferences.engineSettings = newSettings
-
-                if (chessViewModel.isEngineThinking.value == true) {
+                if (Native.isWorking()) {
                     Native.stopSearch()
                     thread {
                         while (Native.isWorking())
@@ -382,7 +381,7 @@ private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
 
         val context = LocalContext.current
         IconButton(
-            onClick = { context.startActivity(Intent(context, SettingsActivity::class.java)) }
+            onClick = { context.startActivity(Intent(context, PreferencesActivity::class.java)) }
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
@@ -441,6 +440,6 @@ private fun getDifficulty(level: Int, currentSettings: EngineSettings): EngineSe
 
     return currentSettings.copy(
         searchDepth = if (level == 0 || level == 1) level + 2 else level + 3,
-        doQuietSearch = level != 0
+        quietSearch = level != 0
     )
 }
