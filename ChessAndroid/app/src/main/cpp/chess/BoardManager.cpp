@@ -21,7 +21,7 @@ void BoardManager::initBoardManager(const BoardChangedListener &listener, const 
 	_listener = listener;
 
 	if (!isPlayerWhite)
-		_workerThread = std::thread(moveComputerPlayer, _settings);
+		moveComputerPlayer();
 }
 
 bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
@@ -35,6 +35,10 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 		generatedIndexedPieces();
 
 		_listener(getBoardState());
+
+		if (isPlayerWhite != _board.colorToMove)
+			moveComputerPlayer();
+
 		return true;
 	}
 
@@ -57,6 +61,9 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 	}
 
 	_listener(getBoardState());
+
+	if (isPlayerWhite != _board.colorToMove)
+		moveComputerPlayer();
 }
 
 std::vector<Move> BoardManager::getMovesHistory()
@@ -104,28 +111,23 @@ void BoardManager::makeMove(const Move move, const bool movedByPlayer)
 
 	if (movedByPlayer &&
 		(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
-		_workerThread = std::thread(moveComputerPlayer, _settings);
+		moveComputerPlayer();
 }
 
-void BoardManager::forceMove()
+void BoardManager::moveComputerPlayer()
 {
-	if (!_isWorking)
-	{
-		_isWorking = true;
-		_workerThread = std::thread(moveComputerPlayer, _settings);
-	}
-}
-
-// This function should only be called through the Worker Thread
-void BoardManager::moveComputerPlayer(const Settings &settings)
-{
+	if(_isWorking) return;
 	_isWorking = true;
-	const Move bestMove = Search::findBestMove(_board, settings);
-	_isWorking = false;
 
-	makeMove(bestMove, false);
+	const auto tempBoard = _board;
+	const auto settings = _settings;
 
-	_workerThread.detach();
+	std::thread([tempBoard, settings] {
+		const Move bestMove = Search::findBestMove(tempBoard, settings);
+		_isWorking = false;
+
+		makeMove(bestMove, false);
+	}).detach();
 }
 
 bool BoardManager::undoLastMoves()

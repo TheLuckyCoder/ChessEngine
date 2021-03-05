@@ -11,6 +11,7 @@ import androidx.compose.material.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
@@ -44,14 +45,15 @@ private fun getPieceDrawable(piece: Piece): Painter {
 
 @Composable
 fun BoardTiles(
-    tileSize: Dp,
+    boardDp: Dp,
+    tileDp: Dp,
     chessViewModel: ChessViewModel = viewModel(),
 ) {
     val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
 
     val currentDensity = LocalDensity.current
     val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
-    val cells by chessViewModel.tiles.collectAsState()
+    val tiles by chessViewModel.tiles.collectAsState()
 
     val whiteTileColor = colorResource(id = R.color.tile_white)
     val blackTileColor = colorResource(id = R.color.tile_black)
@@ -60,62 +62,71 @@ fun BoardTiles(
 
     val possibleTileCircleSize = with(currentDensity) { 8.dp.toPx() }
     val selectedPieceStrokeSize = with(currentDensity) { 4.dp.toPx() }
+    val tilePx = with(currentDensity) { tileDp.toPx() }
+    val tileSize = Size(tilePx, tilePx)
 
-    val possibleCapturePath = remember(currentDensity) {
-        val size = with(currentDensity) { tileSize.toPx() }
+    val possibleCapturePath = remember(tilePx) {
         Path().apply {
-            drawTriangle(0f, 0f, size / 3f, 0f, 0f, size / 3f)
-            drawTriangle(size, 0f, size - size / 3f, 0f, size, size / 3f)
-            drawTriangle(0f, size, 0f, size - size / 3, size / 3, size)
-            drawTriangle(size, size, size, size - size / 3, size - size / 3, size)
+            drawTriangle(0f, 0f, tilePx / 3f, 0f, 0f, tilePx / 3f)
+            drawTriangle(tilePx, 0f, tilePx - tilePx / 3f, 0f, tilePx, tilePx / 3f)
+            drawTriangle(0f, tilePx, 0f, tilePx - tilePx / 3, tilePx / 3, tilePx)
+            drawTriangle(tilePx, tilePx, tilePx, tilePx - tilePx / 3, tilePx - tilePx / 3, tilePx)
         }
     }
 
-    cells.forEach { cell ->
-        val x = cell.square % 8
-        val y = cell.square / 8
-        val isWhite = (x + y) % 2 == 1
+    Canvas(modifier = Modifier.size(boardDp)) {
+        tiles.forEach { tile ->
+            val isWhite = (tile.square % 8 + tile.square / 8) % 2 == 1
+            val tileColor = if (isWhite) whiteTileColor else blackTileColor
+            val offset = getBoardOffset(isPlayerWhite, tile.square, tilePx)
 
-        val invertedX = invertIf(!isPlayerWhite, x)
-        val invertedY = invertIf(isPlayerWhite, y)
+            drawRect(tileColor, topLeft = offset, size = tileSize)
 
-        val tileColor = if (isWhite) whiteTileColor else blackTileColor
-
-        val clickableModifier = if (cell.state is Tile.State.PossibleMove) {
-            Modifier.clickable {
-                val moves = cell.state.moves
-                when {
-                    moves.size > 1 -> showPromotionDialog.value = moves
-                    else -> chessViewModel.makeMove(moves.first())
-                }
-            }
-        } else Modifier
-
-        Canvas(
-            modifier = Modifier
-                .size(tileSize)
-                .offset(tileSize * invertedX, tileSize * invertedY)
-                .then(clickableModifier),
-        ) {
-            drawRect(tileColor)
-
-            when (cell.state) {
+            when (tile.state) {
                 is Tile.State.PossibleMove -> {
-                    val moves = cell.state.moves
-                    if (moves.first().flags.capture)
-                        drawPath(possibleCapturePath, color = possibleTileColor)
-                    else
-                        drawCircle(possibleTileColor, radius = possibleTileCircleSize)
+                    val moves = tile.state.moves
+                    if (moves.first().flags.capture) {
+                        possibleCapturePath.translate(offset)
+                        drawPath(path = possibleCapturePath, color = possibleTileColor)
+                    } else {
+                        val center = offset + Offset(tilePx / 2f, tilePx / 2f)
+                        drawCircle(
+                            color = possibleTileColor,
+                            radius = possibleTileCircleSize,
+                            center = center
+                        )
+                    }
                 }
-                Tile.State.Moved -> drawRect(movedTileColor)
+                Tile.State.Moved -> drawRect(movedTileColor, topLeft = offset, size = tileSize)
                 Tile.State.Selected -> {
                     val style = Stroke(selectedPieceStrokeSize, join = StrokeJoin.Round)
-                    drawRect(movedTileColor, style = style)
+                    drawRect(movedTileColor, topLeft = offset, size = tileSize, style = style)
                 }
                 Tile.State.None -> Unit
             }
         }
     }
+
+    tiles
+        .filter { it.state is Tile.State.PossibleMove }
+        .forEach { tile ->
+            val offset = getBoardOffset(isPlayerWhite, tile.square, tilePx)
+            val (x, y) = with(currentDensity) { offset.x.toDp() to offset.y.toDp() }
+            val state = tile.state as Tile.State.PossibleMove
+
+            Box(
+                modifier = Modifier
+                    .size(tileDp)
+                    .offset(x, y)
+                    .clickable {
+                        val moves = state.moves
+                        when {
+                            moves.size > 1 -> showPromotionDialog.value = moves
+                            else -> chessViewModel.makeMove(moves.first())
+                        }
+                    }
+            )
+        }
 
     if (showPromotionDialog.value.isNotEmpty())
         PromotionDialog(showPromotionDialog)
@@ -123,7 +134,7 @@ fun BoardTiles(
 
 @Composable
 fun BoardPieces(
-    tileSize: Dp,
+    tileDp: Dp,
     chessViewModel: ChessViewModel = viewModel()
 ) {
     val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
@@ -132,23 +143,18 @@ fun BoardPieces(
 
 //    val kingInCheckColor = colorResource(id = R.color.king_in_check)
 
+    val tilePx = with(LocalDensity.current) { tileDp.toPx() }
+
     for (piece in pieces) {
         if (piece.square >= 64 || piece.type.toInt() == 0) continue
-        val x = piece.square % 8
-        val y = piece.square / 8
 
-        val invertedX = invertIf(!isPlayerWhite, x)
-        val invertedY = invertIf(isPlayerWhite, y)
-        val offset = with(LocalDensity.current) {
-            Offset(tileSize.toPx() * invertedX, tileSize.toPx() * invertedY)
-        }
-
+        val offset = getBoardOffset(isPlayerWhite, piece.square, tilePx)
         val animatedOffset by animateOffsetAsState(targetValue = offset)
         val (animatedX, animatedY) = with(LocalDensity.current) { animatedOffset.x.toDp() to animatedOffset.y.toDp() }
 
         IconButton(
             modifier = Modifier
-                .requiredSize(tileSize)
+                .requiredSize(tileDp)
                 .offset(animatedX, animatedY),
             enabled = isPlayerWhite == piece.isWhite,
             onClick = { chessViewModel.getPossibleMoves(piece.square) }
@@ -156,19 +162,6 @@ fun BoardPieces(
             Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
         }
     }
-}
-
-private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
-
-private fun Path.drawTriangle(
-    x1: Float, y1: Float,
-    x2: Float, y2: Float,
-    x3: Float, y3: Float
-) {
-    moveTo(x1, y1)
-    lineTo(x2, y2)
-    lineTo(x3, y3)
-    lineTo(x1, y1)
 }
 
 @Composable
@@ -185,12 +178,15 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
         text = {
             Row(modifier = Modifier.fillMaxWidth()) {
                 piecesPainters.forEachIndexed { index, painter ->
-                    IconButton(onClick = {
-                        viewModel.makeMove(showPromotionDialog.value[index])
-                    }) {
+                    IconButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            viewModel.makeMove(showPromotionDialog.value[index])
+                        }
+                    ) {
                         Icon(
                             modifier = Modifier.size(64.dp),
-                            tint = Color.Unspecified,
+                            tint = Color.Transparent,
                             painter = painter, contentDescription = null
                         )
                     }
@@ -206,4 +202,27 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
             }
         }
     )
+}
+
+private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i
+
+private fun getBoardOffset(isPlayerWhite: Boolean, index: Int, tilePx: Float): Offset {
+    val x = index % 8
+    val y = index / 8
+
+    val invertedX = invertIf(!isPlayerWhite, x)
+    val invertedY = invertIf(isPlayerWhite, y)
+
+    return Offset(tilePx * invertedX, tilePx * invertedY)
+}
+
+private fun Path.drawTriangle(
+    x1: Float, y1: Float,
+    x2: Float, y2: Float,
+    x3: Float, y3: Float
+) {
+    moveTo(x1, y1)
+    lineTo(x2, y2)
+    lineTo(x3, y3)
+    lineTo(x1, y1)
 }

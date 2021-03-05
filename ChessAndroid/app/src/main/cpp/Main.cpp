@@ -222,7 +222,7 @@ Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jint move)
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_forceMove(JNIEnv *, jobject)
 {
-	BoardManager::forceMove();
+	BoardManager::moveComputerPlayer();
 }
 
 external JNIEXPORT void JNICALL

@@ -51,7 +51,7 @@ fun MainScreen() = Scaffold(
         val boardSize =
             with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
         val tileSize = boardSize / 8f
-        BoardTiles(tileSize)
+        BoardTiles(boardSize, tileSize)
         BoardPieces(tileSize)
     }
 
@@ -82,7 +82,18 @@ private fun AppBar() {
                 text = stringResource(id = R.string.app_name),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(end = 16.dp)
             )
+
+            val chessViewModel = viewModel<ChessViewModel>()
+            val isThinking by chessViewModel.isEngineThinking.collectAsState(false)
+            if (isThinking) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_engine_working),
+                    modifier = Modifier.size(18.dp),
+                    contentDescription = null,
+                )
+            }
         },
         actions = {
             AppBarActions()
@@ -323,15 +334,6 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
 private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
     verticalArrangement = Arrangement.Bottom,
 ) {
-    /*val isThinking by chessViewModel.isEngineThinking.observeAsState(false)
-    if (isThinking) {
-        LinearProgressIndicator(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        )
-    }*/
-
     Row(
         modifier = Modifier
             .fillMaxWidth()

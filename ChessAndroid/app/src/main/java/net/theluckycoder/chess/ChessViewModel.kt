@@ -44,7 +44,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     /*
      * Preferences
      */
-    val dataStore = SettingsDataStore(application)
+    private val dataStore = SettingsDataStore(application)
 
     init {
         initBoard()
@@ -102,8 +102,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun makeMove(move: Move) {
-        isEngineThinkingFlow.value = true
         Native.makeMove(move.content)
+        isEngineThinkingFlow.value = Native.isWorking()
 
         tilesFlow.value = tilesFlow.value
             .map { tile ->

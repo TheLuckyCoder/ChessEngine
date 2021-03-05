@@ -25,9 +25,9 @@ private object AppColors {
 }
 
 @Composable
-fun ChessMaterialTheme(content: @Composable () -> Unit) =
+fun ChessMaterialTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        AppColors.appMaterialColors(),
-    ) {
-        Surface(content = content)
-    }
+        colors = AppColors.appMaterialColors(),
+        content = content
+    )
+}

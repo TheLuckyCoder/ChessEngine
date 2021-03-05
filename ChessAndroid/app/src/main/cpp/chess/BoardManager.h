@@ -49,7 +49,6 @@ public:
 
 private:
 	static Settings _settings;
-	inline static std::thread _workerThread;
 	inline static std::atomic_bool _isWorking{ false };
 	inline static bool _isPlayerWhite{ true };
 	static BoardChangedListener _listener;
@@ -69,11 +68,10 @@ public:
 	static bool isPlayerWhite() { return _isPlayerWhite; }
 	static std::vector<Move> getPossibleMoves(Square from);
 	static void makeMove(Move move, bool movedByPlayer = true);
+	static void moveComputerPlayer();
 	static void setSettings(const Settings &settings) { _settings = settings; }
-	static void forceMove();
 
 private:
-	static void moveComputerPlayer(const Settings &settings);
 	static GameState getBoardState();
 	static void generatedIndexedPieces();
 	static void updateIndexedPieces(Move move);
