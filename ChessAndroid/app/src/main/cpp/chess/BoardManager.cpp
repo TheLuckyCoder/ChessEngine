@@ -6,25 +6,25 @@
 #include "algorithm/MoveGen.h"
 #include "algorithm/Search.h"
 
-Settings BoardManager::_settings;
-BoardManager::BoardChangedListener BoardManager::_listener;
+SearchOptions BoardManager::_searchOptions;
+BoardManager::BoardChangedCallback BoardManager::_callback;
 Board BoardManager::_board;
 std::vector<BoardManager::IndexedPiece> BoardManager::_indexedPieces;
 
-void BoardManager::initBoardManager(const BoardChangedListener &listener, const bool isPlayerWhite)
+void BoardManager::initBoardManager(const BoardChangedCallback &callback, const bool isPlayerWhite)
 {
 	Attacks::init();
 
 	_isPlayerWhite = isPlayerWhite;
 	_board.setToStartPos();
 	generatedIndexedPieces();
-	_listener = listener;
+	_callback = callback;
 
 	if (!isPlayerWhite)
-		moveComputerPlayer();
+		makeEngineMove();
 }
 
-bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
+bool BoardManager::loadGame(const std::string &fen, bool isPlayerWhite)
 {
 	Board tempBoard;
 
@@ -34,10 +34,10 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 		_board = tempBoard;
 		generatedIndexedPieces();
 
-		_listener(getBoardState());
+		_callback(getBoardState());
 
 		if (isPlayerWhite != _board.colorToMove)
-			moveComputerPlayer();
+			makeEngineMove();
 
 		return true;
 	}
@@ -60,10 +60,64 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 		updateIndexedPieces(move);
 	}
 
-	_listener(getBoardState());
+	_callback(getBoardState());
 
 	if (isPlayerWhite != _board.colorToMove)
-		moveComputerPlayer();
+		makeEngineMove();
+}
+
+void BoardManager::makeMove(const Move move)
+{
+	_board.makeMove(move);
+	updateIndexedPieces(move);
+	_callback(getBoardState());
+}
+
+void BoardManager::makeEngineMove()
+{
+	if (const auto state = getBoardState();
+		!(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
+		return;
+
+	if (_isWorking) return;
+	_isWorking = true;
+
+	const auto tempBoard = _board;
+	const auto settings = _searchOptions;
+
+	std::thread([tempBoard, settings]
+				{
+					const Move bestMove = Search::findBestMove(tempBoard, settings);
+					_isWorking = false;
+
+					makeMove(bestMove);
+				}).detach();
+}
+
+bool BoardManager::undoLastMoves()
+{
+	return false;
+	if (isWorking() || _board.historyPly < 2) return false;
+
+	// Undo the last move, which should have been made by the engine
+	const UndoMove engineMove = _board.history[_board.historyPly - 1];
+	_board.undoMove();
+
+	// Undo the move before the last move so that it is the player's turn again
+	const UndoMove playerMove = _board.history[_board.historyPly - 1];
+	if (playerMove.getMove().empty())
+		_board.undoNullMove();
+	else
+		_board.undoMove();
+
+	_callback(getBoardState());
+
+	return true;
+}
+
+bool BoardManager::redoLastMoves()
+{
+	return false;
 }
 
 std::vector<Move> BoardManager::getMovesHistory()
@@ -95,60 +149,6 @@ std::vector<Move> BoardManager::getPossibleMoves(const Square from)
 	}
 
 	return moves;
-}
-
-void BoardManager::makeMove(const Move move, const bool movedByPlayer)
-{
-	_board.makeMove(move);
-	updateIndexedPieces(move);
-
-	const GameState state = getBoardState();
-
-	std::cout << "Made the Move: " << move.toString()
-			  << "; Evaluated at: " << Evaluation::value(_board) << std::endl;
-
-	_listener(state);
-
-	if (movedByPlayer &&
-		(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
-		moveComputerPlayer();
-}
-
-void BoardManager::moveComputerPlayer()
-{
-	if(_isWorking) return;
-	_isWorking = true;
-
-	const auto tempBoard = _board;
-	const auto settings = _settings;
-
-	std::thread([tempBoard, settings] {
-		const Move bestMove = Search::findBestMove(tempBoard, settings);
-		_isWorking = false;
-
-		makeMove(bestMove, false);
-	}).detach();
-}
-
-bool BoardManager::undoLastMoves()
-{
-	return false;
-	if (isWorking() || _board.historyPly < 2) return false;
-
-	// Undo the last move, which should have been made by the engine
-	const UndoMove engineMove = _board.history[_board.historyPly - 1];
-	_board.undoMove();
-
-	// Undo the move before the last move so that it is the player's turn again
-	const UndoMove playerMove = _board.history[_board.historyPly - 1];
-	if (playerMove.getMove().empty())
-		_board.undoNullMove();
-	else
-		_board.undoMove();
-
-	_listener(getBoardState());
-
-	return true;
 }
 
 GameState BoardManager::getBoardState()

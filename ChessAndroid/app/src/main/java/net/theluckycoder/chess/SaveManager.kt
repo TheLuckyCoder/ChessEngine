@@ -19,8 +19,10 @@ object SaveManager {
     private fun saveToFile(context: Context) {
         Native.saveMoves()?.let { moves ->
             val file = File(context.filesDir, SAVE_FILE_NAME)
+
             if (!file.exists())
                 file.createNewFile()
+
             context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
                 it.write(moves)
             }

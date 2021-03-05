@@ -18,7 +18,7 @@
 static JavaVM *jvm = nullptr;
 static jobject viewModelInstance = nullptr;
 
-const BoardManager::BoardChangedListener listener = [](GameState state)
+const BoardManager::BoardChangedCallback boardChangedCallback = [](GameState state)
 {
 	JNIEnv *env;
 	int getEnvStat = jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
@@ -30,7 +30,7 @@ const BoardManager::BoardChangedListener listener = [](GameState state)
 
 	env->ExceptionClear();
 
-	const static auto callbackId = env->GetMethodID(Cache::viewModelClass, "callback","(I)V");
+	const static auto callbackId = env->GetMethodID(JniCache::viewModelClass, "boardChangedCallback", "(I)V");
 	env->CallVoidMethod(viewModelInstance, callbackId, static_cast<jint>(state));
 
 	if (getEnvStat == JNI_EDETACHED)
@@ -52,7 +52,7 @@ external JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 
 	std::cout.rdbuf(new AndroidBuffer);
 
-	Cache::createCaches(env);
+	JniCache::createCaches(env);
 
 	return JNI_VERSION_1_6;
 }
@@ -67,30 +67,11 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 	// Clean the caches
 	env->DeleteGlobalRef(viewModelInstance);
 	viewModelInstance = nullptr;
-	Cache::cleanCaches(env);
+	JniCache::cleanCaches(env);
 
 	delete std::cout.rdbuf(nullptr);
 
 	jvm = nullptr;
-}
-
-external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_GameManager_initBoardNative(JNIEnv *pEnv, jobject instance,
-														 jboolean isPlayerWhite)
-{
-	// TODO REMOVE
-	pEnv->ExceptionClear();
-
-	if (!pEnv->IsSameObject(viewModelInstance, instance))
-	{
-		LOGD("ChessCpp", "initBoardNative-GameManager");
-		pEnv->DeleteGlobalRef(viewModelInstance);
-		viewModelInstance = pEnv->NewGlobalRef(instance);
-
-		BoardManager::initBoardManager(listener);
-	}
-
-	BoardManager::initBoardManager(listener, isPlayerWhite);
 }
 
 external JNIEXPORT void JNICALL
@@ -105,10 +86,10 @@ Java_net_theluckycoder_chess_ChessViewModel_initBoardNative(JNIEnv *pEnv, jobjec
         pEnv->DeleteGlobalRef(viewModelInstance);
 		viewModelInstance = pEnv->NewGlobalRef(instance);
 
-        BoardManager::initBoardManager(listener);
+        BoardManager::initBoardManager(boardChangedCallback);
 	}
 
-	BoardManager::initBoardManager(listener, playerPlayingWhite);
+	BoardManager::initBoardManager(boardChangedCallback, playerPlayingWhite);
 }
 
 // Native Class
@@ -152,17 +133,17 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 {
 	pEnv->ExceptionClear();
 
-	const static auto constructorId = pEnv->GetMethodID(Cache::indexedPieceClass, "<init>", "(IIBZ)V");
+	const static auto constructorId = pEnv->GetMethodID(JniCache::indexedPieceClass, "<init>", "(IIBZ)V");
 
 	auto &&pieceList = BoardManager::getIndexedPieces();
 
 	jobjectArray array =
-		pEnv->NewObjectArray(static_cast<jsize>(pieceList.size()), Cache::indexedPieceClass, nullptr);
+		pEnv->NewObjectArray(static_cast<jsize>(pieceList.size()), JniCache::indexedPieceClass, nullptr);
 
 	for (size_t i{}; i < pieceList.size(); ++i)
 	{
 		const auto &it = pieceList[i];
-		jobject obj = pEnv->NewObject(Cache::indexedPieceClass, constructorId, it.id, it.square, it.pieceType, it.pieceColor);
+		jobject obj = pEnv->NewObject(JniCache::indexedPieceClass, constructorId, it.id, it.square, it.pieceType, it.pieceColor);
 		pEnv->SetObjectArrayElement(array, i, obj);
 	}
 
@@ -174,17 +155,17 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 {
 	pEnv->ExceptionClear();
 
-	const static auto constructorId = pEnv->GetMethodID(Cache::moveClass, "<init>", "(IBBBBBB)V");
+	const static auto constructorId = pEnv->GetMethodID(JniCache::moveClass, "<init>", "(IBBBBBB)V");
 
 	const auto possibleMoves = BoardManager::getPossibleMoves(toSquare(square));
 
 	jobjectArray result =
-		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), Cache::moveClass, nullptr);
+		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), JniCache::moveClass, nullptr);
 
 	int i{};
 	std::for_each(possibleMoves.begin(), possibleMoves.end(), [&](const Move &move)
 	{
-		jobject obj = pEnv->NewObject(Cache::moveClass, constructorId,
+		jobject obj = pEnv->NewObject(JniCache::moveClass, constructorId,
 									  move.getContents(), move.from(), move.to(), move.piece(),
 									  move.capturedPiece(), move.promotedPiece(), move.flags());
 		pEnv->SetObjectArrayElement(result, i++, obj);
@@ -200,16 +181,29 @@ Java_net_theluckycoder_chess_Native_enableStats(JNIEnv *, jobject, jboolean enab
 	Stats::setEnabled(enabled);
 }
 
-external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_setSettings(JNIEnv *, jobject, jint searchDepth,
-												jboolean quietSearch,
-												jint threadCount,
-												jint hashSizeMb)
+
+external JNIEXPORT jobject JNICALL
+Java_net_theluckycoder_chess_Native_getSearchOptions(JNIEnv *pEnv, jobject)
 {
-	BoardManager::setSettings(Settings{ searchDepth,
-										static_cast<u32>(threadCount),
-										static_cast<u32>(hashSizeMb),
-										static_cast<bool>(quietSearch) });
+	const static auto constructorId = pEnv->GetMethodID(JniCache::engineSettingsClass, "<init>", "(IIIZ)V");
+
+	const auto searchOptions = BoardManager::getSearchOptions();
+
+	return pEnv->NewObject(JniCache::engineSettingsClass, constructorId,
+						   searchOptions.depth(), searchOptions.threadCount(),
+						   searchOptions.tableSizeMb(), searchOptions.quietSearch());
+}
+
+external JNIEXPORT void JNICALL
+Java_net_theluckycoder_chess_Native_setSearchOptions(JNIEnv *, jobject, jint searchDepth,
+													 jboolean quietSearch,
+													 jint threadCount,
+													 jint hashSizeMb)
+{
+	BoardManager::setSearchOptions(SearchOptions{ searchDepth,
+												  static_cast<u32>(threadCount),
+												  static_cast<u32>(hashSizeMb),
+												  static_cast<bool>(quietSearch) });
 }
 
 
@@ -217,12 +211,13 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jint move)
 {
 	BoardManager::makeMove(Move{ static_cast<u32>(move) });
+	BoardManager::makeEngineMove();
 }
 
 external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_forceMove(JNIEnv *, jobject)
 {
-	BoardManager::moveComputerPlayer();
+	BoardManager::makeEngineMove();
 }
 
 external JNIEXPORT void JNICALL
@@ -239,12 +234,18 @@ Java_net_theluckycoder_chess_Native_undoMoves(JNIEnv *, jobject)
 }
 
 external JNIEXPORT jboolean JNICALL
+Java_net_theluckycoder_chess_Native_redoMoves(JNIEnv *, jobject)
+{
+	return static_cast<jboolean>(BoardManager::redoLastMoves());
+}
+
+external JNIEXPORT jboolean JNICALL
 Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jboolean playerWhite,
 											jstring fenPosition)
 {
 	const char *nativeString = pEnv->GetStringUTFChars(fenPosition, nullptr);
 
-	const bool loaded = BoardManager::loadGame(playerWhite, nativeString);
+	const bool loaded = BoardManager::loadGame(nativeString, playerWhite);
 
 	pEnv->ReleaseStringUTFChars(fenPosition, nativeString);
 

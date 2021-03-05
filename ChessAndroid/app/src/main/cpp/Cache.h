@@ -3,13 +3,14 @@
 #include <jni.h>
 
 // JVM Cached Classes
-namespace Cache
+namespace JniCache
 {
 	jclass viewModelClass;
 	jclass indexedPieceClass;
 	jclass moveClass;
+	jclass engineSettingsClass;
 
-	jclass cacheClass(JNIEnv *env, jclass cls)
+	static jclass cacheClass(JNIEnv *env, jclass cls)
 	{
 		return static_cast<jclass>(env->NewGlobalRef(cls));
 	}
@@ -19,6 +20,7 @@ namespace Cache
 		viewModelClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/ChessViewModel"));
 		indexedPieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/IndexedPiece"));
 		moveClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Move"));
+		engineSettingsClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/EngineSettings"));
 	}
 
 	void cleanCaches(JNIEnv *env)
@@ -26,5 +28,6 @@ namespace Cache
 		env->DeleteGlobalRef(viewModelClass);
 		env->DeleteGlobalRef(indexedPieceClass);
 		env->DeleteGlobalRef(moveClass);
+		env->DeleteGlobalRef(engineSettingsClass);
 	}
 }

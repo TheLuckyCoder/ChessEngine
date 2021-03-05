@@ -1,5 +1,8 @@
 package net.theluckycoder.chess.model
 
+import androidx.annotation.Keep
+
+@Keep
 enum class GameState {
     NONE,
     WINNER_WHITE,

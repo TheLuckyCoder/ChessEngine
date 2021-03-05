@@ -88,6 +88,7 @@ fun BoardTiles(
                     if (moves.first().flags.capture) {
                         possibleCapturePath.translate(offset)
                         drawPath(path = possibleCapturePath, color = possibleTileColor)
+                        possibleCapturePath.translate(-offset)
                     } else {
                         val center = offset + Offset(tilePx / 2f, tilePx / 2f)
                         drawCircle(

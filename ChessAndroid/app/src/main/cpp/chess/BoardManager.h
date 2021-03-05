@@ -5,7 +5,7 @@
 #include <thread>
 #include <vector>
 
-#include "Settings.h"
+#include "SearchOptions.h"
 #include "Board.h"
 #include "algorithm/MoveGen.h"
 
@@ -45,31 +45,37 @@ public:
 		PieceType pieceType;
 	};
 
-	using BoardChangedListener = std::function<void(GameState state)>;
+	using BoardChangedCallback = std::function<void(GameState state)>;
 
 private:
-	static Settings _settings;
+	static BoardChangedCallback _callback;
+
 	inline static std::atomic_bool _isWorking{ false };
 	inline static bool _isPlayerWhite{ true };
-	static BoardChangedListener _listener;
+	static SearchOptions _searchOptions;
 	static Board _board;
 	static std::vector<IndexedPiece> _indexedPieces;
 	
 public:
-	static void initBoardManager(const BoardChangedListener &listener, bool isPlayerWhite = true);
-	static bool loadGame(bool isPlayerWhite, const std::string &fen);
+	static void initBoardManager(const BoardChangedCallback &callback, bool isPlayerWhite = true);
+	static bool loadGame(const std::string &fen, bool isPlayerWhite);
 	static void loadGame(const std::vector<Move> &moves, bool isPlayerWhite);
-	static bool undoLastMoves();
 
-	static const Board &getBoard() { return _board; }
-	static const std::vector<IndexedPiece> &getIndexedPieces() { return _indexedPieces; }
-	static std::vector<Move> getMovesHistory();
+	/// Actions
+	static void makeMove(Move move);
+	static void makeEngineMove();
+	static bool undoLastMoves();
+	static bool redoLastMoves();
+
+	/// Getters and Setters
 	static bool isWorking() { return _isWorking; }
 	static bool isPlayerWhite() { return _isPlayerWhite; }
+	static void setSearchOptions(const SearchOptions &searchOptions) { _searchOptions = searchOptions; }
+	static SearchOptions getSearchOptions() { return _searchOptions; }
+	static const auto &getBoard() { return _board; }
+	static const auto &getIndexedPieces() { return _indexedPieces; }
+	static std::vector<Move> getMovesHistory();
 	static std::vector<Move> getPossibleMoves(Square from);
-	static void makeMove(Move move, bool movedByPlayer = true);
-	static void moveComputerPlayer();
-	static void setSettings(const Settings &settings) { _settings = settings; }
 
 private:
 	static GameState getBoardState();

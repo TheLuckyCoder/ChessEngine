@@ -15,11 +15,14 @@ class SettingsDataStore(private val context: Context) {
 
     private fun dataStore() = context.settingsDataStore
 
-    fun difficultyLevel(): Flow<Int> =
-        dataStore().data.map { it[DIFFICULTY_LEVEL] ?: 1 }
+    fun firstStart(): Flow<Boolean> =
+        dataStore().data.map { it[FIRST_START] ?: true }
+
+    suspend fun setFirstStart(value: Boolean) = dataStore().edit { preferences ->
+        preferences[FIRST_START] = value
+    }
 
     suspend fun setDifficultyLevel(value: Int) = dataStore().edit { preferences ->
-        preferences[DIFFICULTY_LEVEL] = value
         preferences[SEARCH_DEPTH] = if (value == 0 || value == 1) value + 2 else value + 3
         preferences[QUIET_SEARCH] = value != 0
     }
@@ -43,19 +46,28 @@ class SettingsDataStore(private val context: Context) {
         hashSize = hashSize().first(),
     )
 
-    companion object {
-        val DIFFICULTY_LEVEL = intPreferencesKey("key_difficulty_level")
-        val SEARCH_DEPTH = intPreferencesKey("key_search_depth")
-        val QUIET_SEARCH = booleanPreferencesKey("key_quiet_search")
-        val THREADS = intPreferencesKey("key_threads")
-        val HASH_SIZE = intPreferencesKey("key_hash_size")
+    suspend fun setEngineSettings(engineSettings: EngineSettings) =
+        dataStore().edit { preferences ->
+            preferences[SEARCH_DEPTH] = engineSettings.searchDepth
+            preferences[QUIET_SEARCH] = engineSettings.quietSearch
+            preferences[THREADS] = engineSettings.threadCount
+            preferences[HASH_SIZE] = engineSettings.hashSize
+        }
 
-        val SHOW_DEBUG_BASIC = booleanPreferencesKey("key_show_debug_basic")
-        val SHOW_DEBUG_ADVANCED = booleanPreferencesKey("key_show_debug_advanced")
+    companion object {
+        val FIRST_START = booleanPreferencesKey("first_start")
+
+        val SEARCH_DEPTH = intPreferencesKey("search_depth")
+        val QUIET_SEARCH = booleanPreferencesKey("quiet_search")
+        val THREADS = intPreferencesKey("threads")
+        val HASH_SIZE = intPreferencesKey("hash_size")
+
+        val SHOW_DEBUG_BASIC = booleanPreferencesKey("show_debug_basic")
+        val SHOW_DEBUG_ADVANCED = booleanPreferencesKey("show_debug_advanced")
 
         const val DEFAULT_SEARCH_DEPTH = 6
         const val DEFAULT_QUIET_SEARCH = true
-        val DEFAULT_THREADS = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+        const val DEFAULT_THREADS = 1
         const val DEFAULT_HASH_SIZE = 64
     }
 }

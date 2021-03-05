@@ -1,6 +1,11 @@
 package net.theluckycoder.chess
 
 import android.app.Application
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import net.theluckycoder.chess.utils.SettingsDataStore
 import java.io.File
 import kotlin.concurrent.thread
 
@@ -10,6 +15,15 @@ class ChessApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        GlobalScope.launch(Dispatchers.IO) {
+            val dataStore = SettingsDataStore(this@ChessApp)
+            if (dataStore.firstStart().first()) {
+                // Set the default Engine Settings from native code
+                val engineSettings = Native.getSearchOptions()
+                dataStore.setEngineSettings(engineSettings)
+                dataStore.setFirstStart(false)
+            }
+        }
         copyBook()
     }
 

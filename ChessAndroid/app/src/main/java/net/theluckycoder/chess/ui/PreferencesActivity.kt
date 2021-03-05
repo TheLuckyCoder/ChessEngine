@@ -89,7 +89,7 @@ private fun getPreferenceItems(
                 title = stringResource(id = R.string.pref_thread_count),
                 summary = stringResource(id = R.string.pref_thread_count_desc),
                 prefKey = SettingsDataStore.THREADS,
-                icon = painterResource(id = R.drawable.ic_pref_quiet_search),
+                icon = painterResource(id = R.drawable.ic_pref_thread_count),
                 valueRange = 1..Runtime.getRuntime().availableProcessors(),
                 defaultValue = SettingsDataStore.DEFAULT_THREADS
             ),

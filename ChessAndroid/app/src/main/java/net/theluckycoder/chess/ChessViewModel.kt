@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.theluckycoder.chess.model.*
@@ -18,6 +19,7 @@ import kotlin.collections.set
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     private val initialized = AtomicBoolean(false)
+    private val dataStore = SettingsDataStore(application)
 
     /*
      * Chess Game Data
@@ -40,11 +42,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
      */
     val showNewGameDialog = mutableStateOf(false)
     val showImportExportDialog = mutableStateOf(false)
-
-    /*
-     * Preferences
-     */
-    private val dataStore = SettingsDataStore(application)
 
     init {
         initBoard()
@@ -85,20 +82,25 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.Main.immediate) {
         withContext(Dispatchers.IO) { dataStore.setDifficultyLevel(level) }
-        updateSettings(dataStore.getEngineSettings())
+        updateEngineSettings()
     }
 
-    suspend fun fetchSettings() = withContext(Dispatchers.IO) {
-        dataStore.getEngineSettings()
-    }
+    fun updateEngineSettings() = viewModelScope.launch(Dispatchers.Main.immediate) {
+        val engineSettings = withContext(Dispatchers.IO) {
+            if (dataStore.firstStart().first())
+                null
+            else
+                dataStore.getEngineSettings()
+        }
 
-    fun updateSettings(engineSettings: EngineSettings) {
-        Native.setSettings(
-            engineSettings.searchDepth,
-            engineSettings.quietSearch,
-            engineSettings.threadCount,
-            engineSettings.hashSize
-        )
+        engineSettings?.let {
+            Native.setSearchOptions(
+                engineSettings.searchDepth,
+                engineSettings.quietSearch,
+                engineSettings.threadCount,
+                engineSettings.hashSize
+            )
+        }
     }
 
     fun makeMove(move: Move) {
@@ -147,7 +149,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     @Suppress("unused")
     @Keep // Called by native code
-    private fun callback(gameState: Int) {
+    private fun boardChangedCallback(gameState: Int) {
         val app = getApplication<Application>()
 
         val state = when (gameState) {

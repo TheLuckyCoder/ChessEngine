@@ -9,7 +9,5 @@
     static void checkParameterIsNotNull(java.lang.Object, java.lang.String);
 }
 
--keep class net.theluckycoder.chess.model.** { *; }
-
 -keepattributes SourceFile,LineNumberTable
 -keepattributes *Annotation*

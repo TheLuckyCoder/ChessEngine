@@ -2,6 +2,8 @@ package net.theluckycoder.chess.ui
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -24,13 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import net.theluckycoder.chess.*
+import net.theluckycoder.chess.ChessViewModel
+import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.model.EngineSettings
 import net.theluckycoder.chess.model.GameState
 import kotlin.concurrent.thread
 import kotlin.math.min
@@ -71,6 +69,7 @@ fun MainScreen() = Scaffold(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
 private fun AppBar() {
@@ -87,7 +86,7 @@ private fun AppBar() {
 
             val chessViewModel = viewModel<ChessViewModel>()
             val isThinking by chessViewModel.isEngineThinking.collectAsState(false)
-            if (isThinking) {
+            AnimatedVisibility(visible = isThinking) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_engine_working),
                     modifier = Modifier.size(18.dp),
@@ -346,17 +345,17 @@ private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_undo),
-                contentDescription = stringResource(id = R.string.action_undo)
+                contentDescription = stringResource(id = R.string.action_undo_move)
             )
         }
 
         IconButton(
-            onClick = { Native.undoMoves() },
+            onClick = { Native.redoMoves() },
             enabled = false
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_redo),
-                contentDescription = null
+                contentDescription = stringResource(id = R.string.action_redo_move)
             )
         }
 
@@ -395,12 +394,12 @@ private fun ChooseSidesToggle(
     modifier: Modifier = Modifier,
     sidesToggleIndex: MutableState<Int>,
 ) {
-    class Side(val painter: Painter, val backgroundColor: Color)
+    class Side(val painterRes: Int, val backgroundColorRes: Int, val contentDescriptionRes: Int)
 
     val sides = listOf(
-        Side(painterResource(R.drawable.w_king), colorResource(R.color.side_white)),
-        Side(painterResource(R.drawable.b_king), colorResource(R.color.side_black)),
-        Side(painterResource(R.drawable.side_random), colorResource(R.color.side_random))
+        Side(R.drawable.w_king, R.color.side_white, R.string.side_white),
+        Side(R.drawable.b_king, R.color.side_black, R.string.side_black),
+        Side(R.drawable.side_random, R.color.side_random, R.string.side_random),
     )
 
     Row(
@@ -413,7 +412,7 @@ private fun ChooseSidesToggle(
             val backgroundColor = if (sidesToggleIndex.value == index)
                 MaterialTheme.colors.primary.copy(alpha = 0.5f)
             else
-                side.backgroundColor
+                colorResource(id = side.backgroundColorRes)
 
             IconToggleButton(
                 modifier = Modifier
@@ -425,9 +424,9 @@ private fun ChooseSidesToggle(
             ) {
                 Icon(
                     modifier = Modifier.size(54.dp),
-                    painter = side.painter,
+                    painter = painterResource(id = side.painterRes),
                     tint = Color.Unspecified,
-                    contentDescription = null
+                    contentDescription = stringResource(id = side.contentDescriptionRes),
                 )
             }
         }

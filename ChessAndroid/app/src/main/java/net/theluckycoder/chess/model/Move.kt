@@ -1,9 +1,10 @@
 package net.theluckycoder.chess.model
 
+import androidx.annotation.Keep
 import net.theluckycoder.chess.utils.toBoolean
 import kotlin.experimental.and
 
-@Suppress("unused", "MemberVisibilityCanBePrivate")
+@Keep
 data class Move(
     val content: Int,
     val from: Byte,
@@ -22,6 +23,7 @@ data class Move(
         const val EN_PASSANT: Byte = 1 shl 5
     }
 
+    @Suppress("unused")
     class Flags(flags: Int) {
         private val flags = (flags and 0x7F).toByte()
 
@@ -36,9 +38,6 @@ data class Move(
 
         val qSideCastle: Boolean
             get() = (flags and QSIDE_CASTLE).toBoolean()
-
-        val castle: Boolean
-            get() = kSideCastle || qSideCastle
 
         val doublePawnPush: Boolean
             get() = (flags and DOUBLE_PAWN_PUSH).toBoolean()

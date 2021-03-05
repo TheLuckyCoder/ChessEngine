@@ -1,16 +1,15 @@
 package net.theluckycoder.chess.ui.preferences
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @ExperimentalMaterialApi
 @Composable
@@ -71,29 +70,6 @@ private fun PreferenceIcon(painter: Painter?) {
         )
     } else {
         Spacer(modifier = iconModifier)
-    }
-}
-
-@Composable
-fun PreferenceGroup(title: String, enabled: Boolean = true, content: @Composable () -> Unit) {
-    Column {
-        Box(
-            contentAlignment = Alignment.CenterStart,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp, bottom = 8.dp)
-        ) {
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                color = MaterialTheme.colors.secondary,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-        }
-        StatusWrapper(enabled) {
-            content()
-        }
     }
 }
 

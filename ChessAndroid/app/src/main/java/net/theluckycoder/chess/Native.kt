@@ -1,5 +1,6 @@
 package net.theluckycoder.chess
 
+import net.theluckycoder.chess.model.EngineSettings
 import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
 
@@ -31,7 +32,9 @@ object Native {
 
     external fun enableStats(enabled: Boolean)
 
-    external fun setSettings(
+    external fun getSearchOptions(): EngineSettings
+
+    external fun setSearchOptions(
         searchDepth: Int,
         quietSearch: Boolean,
         threadCount: Int,
@@ -39,6 +42,7 @@ object Native {
     )
 
     external fun undoMoves(): Boolean
+    external fun redoMoves(): Boolean
 
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
     external fun loadMoves(moves: String)
