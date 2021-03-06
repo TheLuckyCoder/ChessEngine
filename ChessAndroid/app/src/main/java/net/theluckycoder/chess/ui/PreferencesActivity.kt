@@ -61,6 +61,19 @@ private fun getPreferenceItems(
     context: Context
 ) = listOf(
     PreferenceGroupItem(
+        title = stringResource(id = R.string.pref_category_appearance),
+        items = listOf(
+            SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_coordinates),
+                summary = stringResource(id = R.string.pref_coordinates_desc),
+                prefKey = SettingsDataStore.SHOW_COORDINATES,
+                icon = painterResource(id = R.drawable.ic_pref_coords),
+                defaultValue = SettingsDataStore.DEFAULT_SHOW_COORDINATES,
+            ),
+        ),
+    ),
+
+    PreferenceGroupItem(
         title = stringResource(id = R.string.pref_category_difficulty),
         items = listOf(
             SeekbarIntPreferenceItem(

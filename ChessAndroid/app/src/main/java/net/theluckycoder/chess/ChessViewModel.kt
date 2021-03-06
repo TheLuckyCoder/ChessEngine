@@ -24,7 +24,7 @@ import kotlin.collections.set
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     private val initialized = AtomicBoolean(false)
-    private val dataStore = SettingsDataStore(application)
+    val dataStore = SettingsDataStore(application)
 
     /*
      * Chess Game Data

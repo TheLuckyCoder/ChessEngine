@@ -27,6 +27,9 @@ class SettingsDataStore(private val context: Context) {
         preferences[FIRST_START] = value
     }
 
+    fun showCoordinates(): Flow<Boolean> =
+        dataStore().data.map { it[SHOW_COORDINATES] ?: DEFAULT_SHOW_COORDINATES }
+
     suspend fun setDifficultyLevel(value: Int) = dataStore().edit { preferences ->
         preferences[SEARCH_DEPTH] = if (value == 0 || value == 1) value + 2 else value + 3
         preferences[QUIET_SEARCH] = value != 0
@@ -68,6 +71,8 @@ class SettingsDataStore(private val context: Context) {
     companion object {
         val FIRST_START = booleanPreferencesKey("first_start")
 
+        val SHOW_COORDINATES = booleanPreferencesKey("show_coordinates")
+
         val SEARCH_DEPTH = intPreferencesKey("search_depth")
         val QUIET_SEARCH = booleanPreferencesKey("quiet_search")
         val THREADS = intPreferencesKey("threads")
@@ -76,6 +81,7 @@ class SettingsDataStore(private val context: Context) {
         val SHOW_DEBUG_BASIC = booleanPreferencesKey("show_debug_basic")
         val SHOW_DEBUG_ADVANCED = booleanPreferencesKey("show_debug_advanced")
 
+        const val DEFAULT_SHOW_COORDINATES = true
         const val DEFAULT_SEARCH_DEPTH = 6
         const val DEFAULT_QUIET_SEARCH = true
         const val DEFAULT_THREADS = 1

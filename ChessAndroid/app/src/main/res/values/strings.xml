@@ -41,6 +41,8 @@
     <string name="pref_category_other">Other Algorithm Settings</string>
     <string name="pref_category_about">About</string>
     <string name="pref_category_debug">Debugging</string>
+    <string name="pref_coordinates">Coordinates</string>
+    <string name="pref_coordinates_desc">Display Coordinates alongside the board</string>
     <string name="pref_search_depth">Search Depth</string>
     <string name="pref_search_depth_desc">Base Search Depth of the Algorithm. The value may be tweaked slightly by the engine</string>
     <string name="pref_quiet_search">Quiet Search (Recommended)</string>

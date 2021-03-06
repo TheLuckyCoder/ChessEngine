@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -23,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.R
@@ -54,6 +56,7 @@ fun BoardTiles(
     val currentDensity = LocalDensity.current
     val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
     val tiles by chessViewModel.tiles.collectAsState()
+    val showCoordinates by chessViewModel.dataStore.showCoordinates().collectAsState(false)
 
     val whiteTileColor = colorResource(id = R.color.tile_white)
     val blackTileColor = colorResource(id = R.color.tile_black)
@@ -128,6 +131,28 @@ fun BoardTiles(
                     }
             )
         }
+
+    if (showCoordinates) {
+        val textSize = 14.sp
+        for (i in 1..8) {
+            Text(
+                text = i.toString(),
+                fontSize = textSize,
+                modifier = Modifier.offset(0.dp, tileDp * (i - 1)),
+                color = Color.DarkGray,
+            )
+        }
+
+        val textSizeDp = with(LocalDensity.current) { 16.sp.toDp() }
+        for (i in 0..7) {
+            Text(
+                text = ('A' + i).toString(),
+                fontSize = textSize,
+                modifier = Modifier.offset(tileDp * (i + 1) - textSizeDp, tileDp * 8 - textSizeDp),
+                color = Color.DarkGray,
+            )
+        }
+    }
 
     if (showPromotionDialog.value.isNotEmpty())
         PromotionDialog(showPromotionDialog)
