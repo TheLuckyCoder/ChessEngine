@@ -2,9 +2,14 @@ package net.theluckycoder.chess.utils
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import net.theluckycoder.chess.model.EngineSettings
 
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -53,6 +58,12 @@ class SettingsDataStore(private val context: Context) {
             preferences[THREADS] = engineSettings.threadCount
             preferences[HASH_SIZE] = engineSettings.hashSize
         }
+
+    fun showBasicDebug(): Flow<Boolean> =
+        dataStore().data.map { it[SHOW_DEBUG_BASIC] ?: false }
+
+    fun showAdvancedDebug(): Flow<Boolean> =
+        dataStore().data.map { it[SHOW_DEBUG_ADVANCED] ?: false }
 
     companion object {
         val FIRST_START = booleanPreferencesKey("first_start")

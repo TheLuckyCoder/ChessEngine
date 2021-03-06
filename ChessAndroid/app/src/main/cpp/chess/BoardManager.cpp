@@ -20,6 +20,8 @@ void BoardManager::initBoardManager(const BoardChangedCallback &callback, const 
 	generatedIndexedPieces();
 	_callback = callback;
 
+	_callback(GameState::NONE);
+
 	if (!isPlayerWhite)
 		makeEngineMove();
 }

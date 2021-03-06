@@ -6,12 +6,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.theluckycoder.chess.model.*
+import net.theluckycoder.chess.model.GameState
+import net.theluckycoder.chess.model.Move
+import net.theluckycoder.chess.model.Piece
+import net.theluckycoder.chess.model.Tile
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.set
@@ -45,24 +50,27 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         initBoard()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.showAdvancedDebug().collectLatest {
+                ensureActive()
+                withContext(Dispatchers.Main) { Native.enableStats(it) }
+            }
+        }
     }
 
     fun initBoard(playerWhite: Boolean = true) {
         if (initialized.get()) {
             initBoardNative(playerWhite)
-            playerPlayingWhiteFlow.value = playerWhite
         } else {
             // First time it is called, load the last game
             initialized.set(true)
 
             initBoardNative(playerWhite)
-
-            playerPlayingWhiteFlow.value =
-                if (SaveManager.loadFromFile(getApplication())) Native.isPlayerWhite() else playerWhite
+            SaveManager.loadFromFile(getApplication())
         }
 
         clearTiles()
-        updatePiecesList()
     }
 
     private fun updatePiecesList() {
@@ -85,7 +93,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         updateEngineSettings()
     }
 
-    fun updateEngineSettings() = viewModelScope.launch(Dispatchers.Main.immediate) {
+    suspend fun updateEngineSettings() {
         val engineSettings = withContext(Dispatchers.IO) {
             if (dataStore.firstStart().first())
                 null

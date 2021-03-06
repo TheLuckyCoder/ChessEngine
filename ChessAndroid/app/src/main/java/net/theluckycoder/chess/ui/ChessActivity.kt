@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import net.theluckycoder.chess.ChessViewModel
 
 class ChessActivity : ComponentActivity() {
@@ -26,6 +29,9 @@ class ChessActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
 
-        chessViewModel.updateEngineSettings()
+        lifecycleScope.launch {
+            ensureActive()
+            chessViewModel.updateEngineSettings()
+        }
     }
 }
