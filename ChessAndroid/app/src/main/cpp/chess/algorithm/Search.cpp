@@ -53,7 +53,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 	_searchSettings = settings;
 	const auto threadCount = settings.threadCount();
 
-	_transpositionTable.incrementAge();
+	_transpositionTable.update();
 	if (settings.tableSizeMb() != 0)
 		setTableSize(settings.tableSizeMb());
 
@@ -309,21 +309,18 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	// Probe the Transposition Table
 	{
 		const auto probeResult = _transpositionTable.probe(board.zKey);
+		// Only cut with a with a greater depth and if this is not a PvNode
 		if (probeResult.has_value()
 			&& !probeResult->qSearch()
-			&& probeResult->depth() >= depth)
+			&& probeResult->depth() >= depth
+			&& (depth == 0 || !isPvNode))
 		{
 			const auto entryValue = probeResult->move().getScore();
 			const auto entryBound = probeResult->bound();
 
-			if (entryBound == SearchEntry::Bound::EXACT)
-				return entryValue;
-			if (entryBound == SearchEntry::Bound::ALPHA)
-				alpha = std::max(alpha, entryValue);
-			else if (entryBound == SearchEntry::Bound::BETA)
-				beta = std::min(beta, entryValue);
-
-			if (alpha >= beta)
+			if (entryBound == SearchEntry::Bound::EXACT
+				|| (entryBound == SearchEntry::Bound::BETA && entryValue >= beta)
+				|| (entryBound == SearchEntry::Bound::ALPHA && entryValue <= alpha))
 				return entryValue;
 		}
 	}
@@ -484,8 +481,9 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	Stats::incNodesSearched(searchedCount);
 
+	// Store the results of search
 	bestMove.setScore(bestScore);
-	storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, false);
+	storeTTEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, false);
 
 	assert(abs(bestScore) != VALUE_MIN);
 	return alpha;
@@ -611,7 +609,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	if (!nodeInCheck)
 	{
 		bestMove.setScore(bestScore);
-		storeTtEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, true);
+		storeTTEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, true);
 	}
 
 	Stats::incNodesSearched(searchedCount);
@@ -619,7 +617,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	return bestScore;
 }
 
-inline void Search::storeTtEntry(const Move &bestMove, const u64 key, const int alpha,
+inline void Search::storeTTEntry(const Move &bestMove, const u64 key, const int alpha,
 								 const int originalAlpha, const int beta, const int depth,
 								 const bool qSearch)
 {
@@ -627,13 +625,13 @@ inline void Search::storeTtEntry(const Move &bestMove, const u64 key, const int 
 	assert(!bestMove.empty());
 
 	// Store the result in the transposition table
-	auto flag = SearchEntry::Bound::EXACT;
+	auto bound = SearchEntry::Bound::EXACT;
 	if (alpha <= originalAlpha)
-		flag = SearchEntry::Bound::ALPHA;
+		bound = SearchEntry::Bound::ALPHA;
 	else if (bestMove.getScore() >= beta)
-		flag = SearchEntry::Bound::BETA;
+		bound = SearchEntry::Bound::BETA;
 
-	_transpositionTable.insert(key, SearchEntry{ key, i8(depth), bestMove, qSearch, flag });
+	_transpositionTable.insert(key, SearchEntry{ key, i8(depth), bestMove, qSearch, bound });
 }
 
 bool Search::checkTimeAndStop()

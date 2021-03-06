@@ -22,14 +22,14 @@ public:
 	SearchEntry() = default;
 
 	constexpr SearchEntry(const u64 key, const int depth, const Move move, const bool qSearch, const Bound bound)
-		: key16(key >> 48u), moveFromTo(move.fromToBits()), value(move.getScore()), depth8(depth),
+		: _key16(key >> 48u), _moveFromTo(move.fromToBits()), _value(move.getScore()), _depth8(depth),
 		  generation((qSearch << 7u) | (u8(bound) << 5u)) {}
 
-	constexpr u16 key() const noexcept { return key16; }
+	constexpr u16 key() const noexcept { return _key16; }
 
-	constexpr Move move() const noexcept { return Move{ moveFromTo, i32(value) }; }
+	constexpr Move move() const noexcept { return Move{ _moveFromTo, i32(_value) }; }
 
-	constexpr i32 depth() const noexcept { return i32(depth8); }
+	constexpr i32 depth() const noexcept { return i32(_depth8); }
 
 	constexpr bool qSearch() const noexcept { return generation & QSEARCH_BITS; }
 
@@ -46,19 +46,21 @@ public:
 	}
 
 private:
-	u16 key16{};
-	u16 moveFromTo{};
-	i16 value{};
-	i8 depth8{};
+	u16 _key16{};
+	u16 _moveFromTo{};
+	i16 _value{};
+	i8 _depth8{};
 
-	// 0b1000'0000 - qSearch
-	// 0b0110'0000 - Bound
-	// 0b0001'1111 - age
+	/**
+	 * 0b0001'1111 - age
+	 * 0b0110'0000 - Bound
+	 * 0b1000'0000 - qSearch
+	 */
 	u8 generation{};
 
-	static constexpr u8 QSEARCH_BITS = 0b1000'0000;
-	static constexpr u8 BOUND_BITS = 0b0110'0000;
 	static constexpr u8 AGE_BITS = 0b0001'1111;
+	static constexpr u8 BOUND_BITS = 0b0110'0000;
+	static constexpr u8 QSEARCH_BITS = 0b1000'0000;
 };
 
 class TranspositionTable
@@ -66,12 +68,12 @@ class TranspositionTable
 	static constexpr usize MUTEX_COUNT = 512;
 	static constexpr usize CLUSTER_SIZE = 4;
 
-	struct Bucket
+	struct Cluster
 	{
 		std::array<SearchEntry, CLUSTER_SIZE> entries;
 	};
 
-	static_assert(sizeof(Bucket) == 32, "Wrong Bucket Size");
+	static_assert(sizeof(Cluster) == 32, "Wrong Cluster Size");
 
 public:
 	explicit TranspositionTable(usize sizeMb);
@@ -88,7 +90,7 @@ public:
 
 	void insert(u64 zKey, SearchEntry entry) noexcept;
 	bool setSize(usize sizeMb);
-	void incrementAge() noexcept;
+	void update() noexcept;
 	u8 currentAge() const noexcept;
 	void clear() noexcept;
 
@@ -96,6 +98,6 @@ private:
 	usize _size{};
 	u64 _hashMask{};
 	u8 _currentAge{};
-	Bucket *_entries = nullptr;
+	Cluster *_clusters = nullptr;
 	mutable std::array<std::shared_mutex, MUTEX_COUNT> _mutexes{};
 };

@@ -65,7 +65,7 @@ private:
 					  bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
-	inline static void storeTtEntry(const Move &bestMove, u64 key, int alpha, int originalAlpha,
+	inline static void storeTTEntry(const Move &bestMove, u64 key, int alpha, int originalAlpha,
 									int beta, int depth, bool qSearch);
 	static bool checkTimeAndStop();
 };
