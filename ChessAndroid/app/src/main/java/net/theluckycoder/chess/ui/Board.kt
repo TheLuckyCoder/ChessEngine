@@ -143,7 +143,7 @@ fun BoardTiles(
             )
         }
 
-        val textSizeDp = with(LocalDensity.current) { 16.sp.toDp() }
+        val textSizeDp = with(LocalDensity.current) { 15.5.sp.toDp() }
         for (i in 0..7) {
             Text(
                 text = ('A' + i).toString(),

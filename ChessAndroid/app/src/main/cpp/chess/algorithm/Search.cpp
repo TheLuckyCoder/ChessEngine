@@ -54,8 +54,8 @@ Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 	const auto threadCount = _searchOptions.threadCount();
 
 	_transpositionTable.update();
-	if (settings.tableSizeMb() != 0)
-		setTableSize(settings.tableSizeMb());
+	if (_searchOptions.tableSizeMb() != 0)
+		setTableSize(_searchOptions.tableSizeMb());
 
 	board.ply = 0;
 	// Reset Depth Counter

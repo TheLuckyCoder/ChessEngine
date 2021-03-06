@@ -35,6 +35,7 @@ target_compile_options(${LIB_NAME} PUBLIC
 set(FLAGS_DEBUG "-O2")
 set(FLAGS_RELEASE "-DNDEBUG" "-flto=thin" "-O3")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")
+target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE}>")
 
 find_library(
