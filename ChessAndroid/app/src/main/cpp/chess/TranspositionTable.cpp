@@ -12,13 +12,13 @@ TranspositionTable::TranspositionTable(const usize sizeMb)
 
 TranspositionTable::~TranspositionTable()
 {
-	delete[] _entries;
+	delete[] _clusters;
 }
 
 void TranspositionTable::prefetch(const u64 zKey) const noexcept
 {
 #if defined(__has_builtin) && __has_builtin(__builtin_prefetch)
-	__builtin_prefetch(&_entries[zKey & _hashMask]);
+	__builtin_prefetch(&_clusters[zKey & _hashMask]);
 #endif
 }
 
@@ -28,7 +28,7 @@ std::optional<SearchEntry> TranspositionTable::probe(const u64 zKey) const noexc
 	const auto index = zKey & _hashMask;
 
 	assert(index < _size);
-	auto &clusterEntries = _entries[index].entries;
+	auto &clusterEntries = _clusters[index].entries;
 
 	std::shared_lock lock{ _mutexes[index % MUTEX_COUNT] };
 	for (usize i = 0; i < CLUSTER_SIZE; ++i)
@@ -45,9 +45,10 @@ void TranspositionTable::insert(const u64 zKey, SearchEntry entry) noexcept
 {
 	const auto key = entry.key();
 	const auto index = zKey & _hashMask;
+	const auto tableAge = currentAge();
 
 	assert(index < _size);
-	auto &clusterEntries = _entries[index].entries;
+	auto &clusterEntries = _clusters[index].entries;
 	auto *toReplace = &clusterEntries.front();
 
 	std::lock_guard lock{ _mutexes[index % MUTEX_COUNT] };
@@ -55,55 +56,51 @@ void TranspositionTable::insert(const u64 zKey, SearchEntry entry) noexcept
 	usize i{};
 	for (; i < CLUSTER_SIZE && key != clusterEntries[i].key(); ++i)
 	{
-		if (!clusterEntries[i].key() || clusterEntries[i].age() != currentAge())
-		{
-			toReplace = &clusterEntries[i];
-			break;
-		}
-
-		if (toReplace->depth() > clusterEntries[i].depth())
+		if (toReplace->depth() - (tableAge - toReplace->age())
+			>= clusterEntries[i].depth() - (tableAge - clusterEntries[i].generation))
 			toReplace = &clusterEntries[i];
 	}
 
+	toReplace = (i != CLUSTER_SIZE) ? &clusterEntries[i] : toReplace;
+
 	// Don't overwrite an entry from the same position, unless we have
 	// an exact bound or depth that is nearly as good as the old one
-	if (toReplace->age() == currentAge()
-		&& key == toReplace->key()
+	if (key == toReplace->key()
 		&& entry.bound() != SearchEntry::Bound::EXACT
-		&& entry.depth() < toReplace->depth() - 2)
+		&& entry.depth() < toReplace->depth() - 3)
 		return;
 
-	entry.setAge(currentAge());
+	entry.setAge(tableAge);
 	*toReplace = entry;
 }
 
 bool TranspositionTable::setSize(usize sizeMb)
 {
-	const auto newSize = (sizeMb << 20u) / sizeof(Bucket);
+	const auto newSize = (sizeMb << 20u) / sizeof(Cluster);
 
 	if (newSize == 0 || _size == newSize) return false;
 
 	_size = newSize;
-	delete[] _entries;
-	_entries = nullptr;
+	delete[] _clusters;
+	_clusters = nullptr;
 
-	while (!_entries && sizeMb)
+	while (!_clusters && sizeMb)
 	{
-		const auto bytesSize = sizeof(Bucket) * _size;
-		_entries = static_cast<Bucket *>(operator new[](bytesSize, std::nothrow));
+		const auto bytesSize = sizeof(Cluster) * _size;
+		_clusters = static_cast<Cluster *>(operator new[](bytesSize, std::nothrow));
 
-		if (_entries)
+		if (_clusters)
 			clear();
 		else
 		{
 			std::cerr << "Failed to allocate " << sizeMb << "MB for the Transposition Table\n";
 			sizeMb /= 2;
-			_size = (sizeMb << 20u) / sizeof(Bucket);
+			_size = (sizeMb << 20u) / sizeof(Cluster);
 		}
 	}
 
 	u64 keySize = 16u;
-	while ((1ull << keySize) * sizeof(Bucket) <= sizeMb * MB / 2)
+	while ((1ull << keySize) * sizeof(Cluster) <= sizeMb * MB / 2)
 		++keySize;
 
 	_hashMask = (1ull << keySize) - 1u;
@@ -111,9 +108,15 @@ bool TranspositionTable::setSize(usize sizeMb)
 	return true;
 }
 
-void TranspositionTable::incrementAge() noexcept
+void TranspositionTable::update() noexcept
 {
-	(++_currentAge) &= SearchEntry::AGE_BITS;
+	if (_currentAge == SearchEntry::AGE_BITS)
+	{
+		clear();
+	} else
+	{
+		(++_currentAge) &= SearchEntry::AGE_BITS;
+	}
 }
 
 u8 TranspositionTable::currentAge() const noexcept
@@ -123,6 +126,6 @@ u8 TranspositionTable::currentAge() const noexcept
 
 void TranspositionTable::clear() noexcept
 {
-	std::memset(_entries, 0, sizeof(Bucket) * _size);
+	std::memset(_clusters, 0, sizeof(Cluster) * _size);
 	_currentAge = {};
 }
