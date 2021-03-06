@@ -3,34 +3,31 @@
 #include <jni.h>
 
 // JVM Cached Classes
-namespace Cache
+namespace JniCache
 {
-	jclass gameManagerClass;
-	jclass posClass;
-	jclass posPairClass;
-	jclass pieceClass;
+	jclass viewModelClass;
+	jclass indexedPieceClass;
 	jclass moveClass;
+	jclass engineSettingsClass;
 
-	jclass cacheClass(JNIEnv *env, jclass cls)
+	static jclass cacheClass(JNIEnv *env, jclass cls)
 	{
 		return static_cast<jclass>(env->NewGlobalRef(cls));
 	}
 
 	void createCaches(JNIEnv *env)
 	{
-		gameManagerClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/GameManager"));
-		posClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Pos"));
-		posPairClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/PosPair"));
-		pieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Piece"));
+		viewModelClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/ChessViewModel"));
+		indexedPieceClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/IndexedPiece"));
 		moveClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/Move"));
+		engineSettingsClass = cacheClass(env, env->FindClass("net/theluckycoder/chess/model/EngineSettings"));
 	}
 
 	void cleanCaches(JNIEnv *env)
 	{
-		env->DeleteGlobalRef(gameManagerClass);
-		env->DeleteGlobalRef(posClass);
-		env->DeleteGlobalRef(posPairClass);
-		env->DeleteGlobalRef(pieceClass);
+		env->DeleteGlobalRef(viewModelClass);
+		env->DeleteGlobalRef(indexedPieceClass);
 		env->DeleteGlobalRef(moveClass);
+		env->DeleteGlobalRef(engineSettingsClass);
 	}
 }

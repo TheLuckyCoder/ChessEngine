@@ -25,9 +25,9 @@ public:
 		return _piece == other._piece;
 	}
 
-	constexpr bool operator==(const u8 type) const noexcept
+	constexpr bool operator==(const PieceType pieceType) const noexcept
 	{
-		return _piece == type;
+		return type() == pieceType;
 	}
 
 	constexpr Color color() const noexcept

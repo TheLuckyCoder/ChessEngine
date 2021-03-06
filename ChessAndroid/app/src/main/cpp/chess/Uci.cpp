@@ -210,13 +210,13 @@ void Uci::parseGo(std::istringstream &is)
 			  << timeSet << std::endl;
 
 	const auto searchTime = timeSet ? static_cast<size_t>(time) : 0ul;
-	const Settings settings{ depth, _threadCount, _hashSizeMb, true, searchTime };
+	const SearchOptions options{ depth, _threadCount, _hashSizeMb, true, searchTime };
 
 	if (_searchThread.joinable())
 		_searchThread.detach();
 	Stats::resetStats();
 
-	_searchThread = std::thread(Search::findBestMove, _board, settings);
+	_searchThread = std::thread(Search::findBestMove, _board, options);
 }
 
 void Uci::parsePosition(std::istringstream &is)

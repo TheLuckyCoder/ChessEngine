@@ -1,7 +1,8 @@
 package net.theluckycoder.chess
 
+import net.theluckycoder.chess.model.EngineSettings
+import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
-import net.theluckycoder.chess.model.Piece
 
 object Native {
 
@@ -19,7 +20,7 @@ object Native {
 
     // endregion Stats
 
-    external fun getPieces(): Array<Piece>
+    external fun getPieces(): Array<IndexedPiece>
 
     external fun getPossibleMoves(square: Byte): Array<Move>
 
@@ -31,18 +32,21 @@ object Native {
 
     external fun enableStats(enabled: Boolean)
 
-    external fun setSettings(
-        baseSearchDepth: Int,
+    external fun getSearchOptions(): EngineSettings
+
+    external fun setSearchOptions(
+        searchDepth: Int,
+        quietSearch: Boolean,
         threadCount: Int,
-        cacheSizeInMb: Int,
-        performQuiescenceSearch: Boolean
+        hashSizeMb: Int
     )
 
     external fun undoMoves(): Boolean
+    external fun redoMoves(): Boolean
 
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
     external fun loadMoves(moves: String)
-    external fun getFen(): String
+    external fun getCurrentFen(): String
 
     external fun saveMoves(): String?
 

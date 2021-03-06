@@ -6,6 +6,10 @@
 
 #include "Board.h"
 
+/**
+ * This is a wrapper for the actual Chess Engine in order to provide CLI support
+ * It is also deisgned to be compatible with the UCI Protocol
+ */
 class Uci
 {
 	inline static std::thread _searchThread{};

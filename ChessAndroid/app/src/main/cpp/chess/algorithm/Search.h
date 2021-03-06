@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Settings.h"
+#include "../SearchOptions.h"
 #include "../Move.h"
 #include "../TranspositionTable.h"
 
@@ -37,7 +37,7 @@ private:
 		}
 	};
 
-	static Settings _searchSettings;
+	static SearchOptions _searchOptions;
 	static TranspositionTable _transpositionTable;
 	static SharedState _sharedState;
 
@@ -53,7 +53,7 @@ public:
 	static void stopSearch();
 	static bool setTableSize(usize sizeMb);
 
-	static Move findBestMove(Board board, const Settings &settings);
+	static Move findBestMove(Board board, const SearchOptions &searchOptions);
 
 	static auto &getTranspTable() noexcept { return _transpositionTable; }
 

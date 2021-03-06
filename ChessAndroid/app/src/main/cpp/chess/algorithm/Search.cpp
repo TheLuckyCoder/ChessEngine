@@ -26,8 +26,8 @@ static thread_local Thread *_thread = nullptr;
 
 auto &threadInfo() { return *_thread; }
 
-Settings Search::_searchSettings;
-TranspositionTable Search::_transpositionTable{ _searchSettings.tableSizeMb() };
+SearchOptions Search::_searchOptions;
+TranspositionTable Search::_transpositionTable{ _searchOptions.tableSizeMb() };
 Search::SharedState Search::_sharedState{};
 
 void Search::clearAll()
@@ -46,12 +46,12 @@ bool Search::setTableSize(const usize sizeMb)
 	return _transpositionTable.setSize(sizeMb);
 }
 
-Move Search::findBestMove(Board board, const Settings &settings)
+Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 {
 	Stats::resetStats();
-	// Apply Settings
-	_searchSettings = settings;
-	const auto threadCount = settings.threadCount();
+	// Apply SearchOptions
+	_searchOptions = searchOptions;
+	const auto threadCount = _searchOptions.threadCount();
 
 	_transpositionTable.update();
 	if (settings.tableSizeMb() != 0)
@@ -88,7 +88,7 @@ Move Search::findBestMove(Board board, const Settings &settings)
 			const auto currentDepth = i32(_sharedState.depth);
 			const auto depth = currentDepth + 1 + i32(Bits::bitScanForward(u64(threadId)));
 
-			iterativeDeepening(board, std::min<i32>(depth, _searchSettings.depth()));
+			iterativeDeepening(board, std::min<i32>(depth, _searchOptions.depth()));
 		}
 
 		// Clean Heuristics after search
@@ -180,7 +180,7 @@ void Search::printUci(Board &board)
 		_sharedState.lastReportedDepth = depth;
 		_sharedState.lastReportedBestMove = pvArray[0];
 
-		if (depth >= _searchSettings.depth())
+		if (depth >= _searchOptions.depth())
 			stopSearch();
 	}
 
@@ -298,7 +298,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	}
 
 	if (depth <= 0)
-		return _searchSettings.doQuietSearch()
+		return _searchOptions.quietSearch()
 			   ? searchCaptures(board, alpha, beta, depth)
 			   : Evaluation::invertedValue(board);
 
@@ -637,9 +637,9 @@ inline void Search::storeTTEntry(const Move &bestMove, const u64 key, const int 
 bool Search::checkTimeAndStop()
 {
 	if (threadInfo().mainThread
-		&& _searchSettings.isTimeSet()
+		&& _searchOptions.isTimeSet()
 		&& (threadInfo().nodesCount & 2047u) == 0
-		&& Stats::getElapsedMs() >= _searchSettings.searchTime())
+		&& Stats::getElapsedMs() >= _searchOptions.searchTime())
 		stopSearch();
 
 	return _sharedState.stopped;

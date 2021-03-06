@@ -2,48 +2,33 @@ package net.theluckycoder.chess.utils
 
 import net.theluckycoder.chess.model.Piece
 
-class CapturedPieces {
+class CapturedPieces(
+    pieces: List<Piece>,
+) {
 
-    private val whitePieces = ArrayList<Int>()
-    private val blackPieces = ArrayList<Int>()
-    var whiteScore = 0
-        private set
-    var blackScore = 0
-        private set
+    private val piecesPartition = pieces.partition { it.isWhite }
+    private val whitePieces = piecesPartition.first
+    private val blackPieces = piecesPartition.second
 
-    fun addWhitePiece(piece: Piece) {
-        whitePieces.add(piece.type.toInt())
-        whiteScore += piece.getScore()
-    }
+    private val absoluteWhiteScore = whitePieces.sumBy { it.score }
+    private val absoluteBlackScore = blackPieces.sumBy { it.score }
 
-    fun addBlackPiece(piece: Piece) {
-        blackPieces.add(piece.type.toInt() - 6)
-        blackScore += piece.getScore()
-    }
+    fun getDifference(): Pair<List<Piece>, List<Piece>> {
+        val white = whitePieces.toMutableList()
+        val black = blackPieces.toMutableList()
 
-    fun reset() {
-        whitePieces.clear()
-        blackPieces.clear()
-        whiteScore = 0
-        blackScore = 0
-    }
-
-    private fun getDifference(): Pair<IntArray, IntArray> {
-        val first = whitePieces.toMutableList()
-        val second = blackPieces.toMutableList()
-
-        for (element in first) {
-            val index = second.indexOf(element)
+        for (element in whitePieces) {
+            val index = black.indexOf(element)
 
             if (index != -1) {
-                first.remove(element)
-                second.removeAt(index)
+                white.remove(element)
+                black.removeAt(index)
             }
         }
 
-        first.sortDescending()
-        second.sortDescending()
+        white.sortByDescending { it.type }
+        black.sortByDescending { it.type }
 
-        return Pair(first.toIntArray(), second.toIntArray())
+        return white to black
     }
 }
