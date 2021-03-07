@@ -10,16 +10,6 @@ object Native {
 
     external fun isPlayerWhite(): Boolean
 
-    // region Stats
-
-    external fun getSearchTime(): Double
-
-    external fun getCurrentBoardValue(): Int
-
-    external fun getAdvancedStats(): String
-
-    // endregion Stats
-
     external fun getPieces(): Array<IndexedPiece>
 
     external fun getPossibleMoves(square: Byte): Array<Move>
@@ -38,7 +28,8 @@ object Native {
         searchDepth: Int,
         quietSearch: Boolean,
         threadCount: Int,
-        hashSizeMb: Int
+        hashSizeMb: Int,
+        searchTime: Long,
     )
 
     external fun undoMoves(): Boolean

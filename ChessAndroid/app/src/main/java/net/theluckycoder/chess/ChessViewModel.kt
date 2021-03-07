@@ -13,13 +13,11 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.theluckycoder.chess.model.GameState
-import net.theluckycoder.chess.model.Move
-import net.theluckycoder.chess.model.Piece
-import net.theluckycoder.chess.model.Tile
+import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.set
+import kotlin.time.ExperimentalTime
 
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -31,16 +29,17 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
      */
     private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val isEngineThinkingFlow = MutableStateFlow(false)
-
     private val tilesFlow = MutableStateFlow(emptyList<Tile>())
     private val piecesFlow = MutableStateFlow(emptyList<Piece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
+    private val debugStatsFlow = MutableStateFlow(DebugStats())
 
     val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
     val isEngineThinking: StateFlow<Boolean> = isEngineThinkingFlow
     val tiles: StateFlow<List<Tile>> = tilesFlow
     val pieces: StateFlow<List<Piece>> = piecesFlow
     val gameState: StateFlow<GameState> = gameStateFlow
+    val debugStats: StateFlow<DebugStats> = debugStatsFlow
 
     /*
      * UI
@@ -93,6 +92,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         updateEngineSettings()
     }
 
+    @OptIn(ExperimentalTime::class)
     suspend fun updateEngineSettings() {
         val engineSettings = withContext(Dispatchers.IO) {
             if (dataStore.firstStart().first())
@@ -103,10 +103,11 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
         engineSettings?.let {
             Native.setSearchOptions(
-                engineSettings.searchDepth,
-                engineSettings.quietSearch,
-                engineSettings.threadCount,
-                engineSettings.hashSize
+                it.searchDepth,
+                it.quietSearch,
+                it.threadCount,
+                it.hashSize,
+                it.searchTime.toLongMilliseconds(),
             )
         }
     }
@@ -174,6 +175,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         clearTiles()
         updatePiecesList()
         gameStateFlow.value = state
+        debugStatsFlow.value = DebugStats.get()
 
         SaveManager.saveToFileAsync(app)
     }

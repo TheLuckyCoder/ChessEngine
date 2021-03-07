@@ -18,7 +18,7 @@ namespace
 			if (LastRank & pos)
 			{
 				move.setFlags(Move::Flags::PROMOTION);
-				for (u8 promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
+				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
 					*moveList++ = move;
@@ -35,7 +35,7 @@ namespace
 			if (LastRank & pos)
 			{
 				move.setFlags(Move::Flags::CAPTURE | Move::Flags::PROMOTION);
-				for (u8 promotionType = KNIGHT; promotionType <= QUEEN; ++promotionType)
+				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
 					*moveList++ = move;
@@ -65,7 +65,7 @@ namespace
 
 			attacks &= targets & board.occupied;
 
-			while (attacks)
+			while (!attacks.empty())
 				addCaptureMove(from, attacks.popLsb(), bb);
 
 			const Bitboard moveBB = bb.shift<Forward>();
@@ -101,7 +101,7 @@ namespace
 		{
 			const Square from = toSquare(board.pieceList[Piece][pieceNumber]);
 
-			Bitboard attacks;
+			Bitboard attacks{};
 
 			if constexpr (P == KNIGHT)
 				attacks = Attacks::knightAttacks(from);
@@ -137,7 +137,6 @@ namespace
 	Move *generateKingMoves(const Board &board, Move *moveList, const Bitboard targets)
 	{
 		constexpr Color Them = ~Us;
-		constexpr Piece KingPiece{ KING, Us };
 
 		const Square kingSq = board.getKingSq<Us>();
 		assert(kingSq < SQUARE_NB);
@@ -227,7 +226,7 @@ namespace
 		if (board.kingAttackers.several())
 			return generateKingMoves<Us>(board, moveList, kingTargets);
 
-		Bitboard targets;
+		Bitboard targets{};
 		const auto kingAttackers = board.kingAttackers;
 		// When checked we must either capture the attacker
 		// or block it if is a slider piece

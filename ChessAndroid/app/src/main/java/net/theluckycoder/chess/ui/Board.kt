@@ -5,15 +5,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -31,8 +27,9 @@ import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Tile
+import kotlin.math.min
 
-val PIECES_RESOURCES = intArrayOf(
+private val PIECES_RESOURCES = intArrayOf(
     R.drawable.w_pawn, R.drawable.w_knight, R.drawable.w_bishop,
     R.drawable.w_rook, R.drawable.w_queen, R.drawable.w_king,
     R.drawable.b_pawn, R.drawable.b_knight, R.drawable.b_bishop,
@@ -46,17 +43,40 @@ private fun getPieceDrawable(piece: Piece): Painter {
 }
 
 @Composable
+fun ChessBoard(
+    modifier: Modifier = Modifier,
+    chessViewModel: ChessViewModel = viewModel()
+) = BoxWithConstraints(
+    modifier = modifier
+) {
+    val boardSize =
+        with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
+    val tileSize = boardSize / 8f
+
+    val showCoordinates by chessViewModel.dataStore.showCoordinates().collectAsState(false)
+    val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
+    val tiles by chessViewModel.tiles.collectAsState()
+    val pieces by chessViewModel.pieces.collectAsState()
+
+    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, chessViewModel)
+
+    BoardPieces(tileSize, isPlayerWhite, pieces, chessViewModel)
+
+    if (showCoordinates)
+        BoardCoordinates(tileSize)
+}
+
+@Composable
 fun BoardTiles(
     boardDp: Dp,
     tileDp: Dp,
-    chessViewModel: ChessViewModel = viewModel(),
+    isPlayerWhite: Boolean,
+    tiles: List<Tile>,
+    chessViewModel: ChessViewModel = viewModel()
 ) {
     val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
 
     val currentDensity = LocalDensity.current
-    val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
-    val tiles by chessViewModel.tiles.collectAsState()
-    val showCoordinates by chessViewModel.dataStore.showCoordinates().collectAsState(false)
 
     val whiteTileColor = colorResource(id = R.color.tile_white)
     val blackTileColor = colorResource(id = R.color.tile_black)
@@ -64,7 +84,6 @@ fun BoardTiles(
     val movedTileColor = colorResource(id = R.color.tile_last_moved)
 
     val possibleTileCircleSize = with(currentDensity) { 8.dp.toPx() }
-    val selectedPieceStrokeSize = with(currentDensity) { 4.dp.toPx() }
     val tilePx = with(currentDensity) { tileDp.toPx() }
     val tileSize = Size(tilePx, tilePx)
 
@@ -101,11 +120,8 @@ fun BoardTiles(
                         )
                     }
                 }
-                Tile.State.Moved -> drawRect(movedTileColor, topLeft = offset, size = tileSize)
-                Tile.State.Selected -> {
-                    val style = Stroke(selectedPieceStrokeSize, join = StrokeJoin.Round)
-                    drawRect(movedTileColor, topLeft = offset, size = tileSize, style = style)
-                }
+                Tile.State.Moved, Tile.State.Selected ->
+                    drawRect(movedTileColor, topLeft = offset, size = tileSize)
                 Tile.State.None -> Unit
             }
         }
@@ -132,39 +148,45 @@ fun BoardTiles(
             )
         }
 
-    if (showCoordinates) {
-        val textSize = 14.sp
-        for (i in 1..8) {
-            Text(
-                text = i.toString(),
-                fontSize = textSize,
-                modifier = Modifier.offset(0.dp, tileDp * (i - 1)),
-                color = Color.DarkGray,
-            )
-        }
-
-        val textSizeDp = with(LocalDensity.current) { 15.5.sp.toDp() }
-        for (i in 0..7) {
-            Text(
-                text = ('A' + i).toString(),
-                fontSize = textSize,
-                modifier = Modifier.offset(tileDp * (i + 1) - textSizeDp, tileDp * 8 - textSizeDp),
-                color = Color.DarkGray,
-            )
-        }
-    }
-
     if (showPromotionDialog.value.isNotEmpty())
         PromotionDialog(showPromotionDialog)
 }
 
 @Composable
+fun BoardCoordinates(tileDp: Dp) {
+    val whiteTileColor = colorResource(id = R.color.tile_white)
+    val blackTileColor = colorResource(id = R.color.tile_black)
+
+    val textSize = 14.sp
+    for (i in 1..8) {
+        val textColor = if (i % 2 == 0) whiteTileColor else blackTileColor
+        Text(
+            text = i.toString(),
+            fontSize = textSize,
+            modifier = Modifier.offset(0.dp, tileDp * (i - 1)),
+            color = textColor,
+        )
+    }
+
+    val textSizeDp = with(LocalDensity.current) { 15.5.sp.toDp() }
+    for (i in 0..7) {
+        val textColor = if (i % 2 == 0) whiteTileColor else blackTileColor
+        Text(
+            text = ('A' + i).toString(),
+            fontSize = textSize,
+            modifier = Modifier.offset(tileDp * (i + 1) - textSizeDp, tileDp * 8 - textSizeDp),
+            color = textColor,
+        )
+    }
+}
+
+@Composable
 fun BoardPieces(
     tileDp: Dp,
+    isPlayerWhite: Boolean,
+    pieces: List<Piece>,
     chessViewModel: ChessViewModel = viewModel()
 ) {
-    val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
-    val pieces by chessViewModel.pieces.collectAsState()
 //    val gameState by chessViewModel.gameState.collectAsState()
 
 //    val kingInCheckColor = colorResource(id = R.color.king_in_check)
@@ -193,9 +215,12 @@ fun BoardPieces(
 @Composable
 private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
     val viewModel = viewModel<ChessViewModel>()
-    val piecesDrawables =
-        listOf(R.drawable.w_knight, R.drawable.w_bishop, R.drawable.w_rook, R.drawable.w_queen)
-    val piecesPainters = piecesDrawables.map { painterResource(id = it) }
+
+    val promotionResources = intArrayOf(
+        R.drawable.w_queen, R.drawable.w_rook,
+        R.drawable.w_knight, R.drawable.w_bishop
+    )
+    val piecesPainters = promotionResources.map { painterResource(id = it) }
 
     AlertDialog(onDismissRequest = { showPromotionDialog.value = emptyList() },
         title = {
@@ -208,11 +233,11 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
                         modifier = Modifier.weight(1f),
                         onClick = {
                             viewModel.makeMove(showPromotionDialog.value[index])
+                            showPromotionDialog.value = emptyList()
                         }
                     ) {
-                        Icon(
-                            modifier = Modifier.size(64.dp),
-                            tint = Color.Transparent,
+                        Image(
+                            modifier = Modifier,
                             painter = painter, contentDescription = null
                         )
                     }
@@ -220,8 +245,12 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
             }
         },
         buttons = {
-            IconButton(onClick = { showPromotionDialog.value = emptyList() }) {
+            IconButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showPromotionDialog.value = emptyList() }
+            ) {
                 Icon(
+                    modifier = Modifier.fillMaxWidth(),
                     painter = painterResource(id = R.drawable.ic_close),
                     contentDescription = stringResource(id = android.R.string.cancel)
                 )

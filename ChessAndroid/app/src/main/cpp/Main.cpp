@@ -106,28 +106,6 @@ Java_net_theluckycoder_chess_Native_isPlayerWhite(JNIEnv *, jobject)
 	return static_cast<jboolean>(BoardManager::isPlayerWhite());
 }
 
-// region Stats
-
-external JNIEXPORT jdouble JNICALL
-Java_net_theluckycoder_chess_Native_getSearchTime(JNIEnv *, jobject)
-{
-	return static_cast<jdouble>(Stats::getElapsedMs());
-}
-
-external JNIEXPORT jint JNICALL
-Java_net_theluckycoder_chess_Native_getCurrentBoardValue(JNIEnv *, jobject)
-{
-	return static_cast<jint>(Evaluation::value(BoardManager::getBoard()));
-}
-
-external JNIEXPORT jstring JNICALL
-Java_net_theluckycoder_chess_Native_getAdvancedStats(JNIEnv *pEnv, jobject)
-{
-	return pEnv->NewStringUTF(Stats::formatStats('\n').c_str());
-}
-
-// endregion Stats
-
 external JNIEXPORT jobjectArray JNICALL
 Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 {
@@ -198,12 +176,14 @@ external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_setSearchOptions(JNIEnv *, jobject, jint searchDepth,
 													 jboolean quietSearch,
 													 jint threadCount,
-													 jint hashSizeMb)
+													 jint hashSizeMb,
+													 jlong searchTime)
 {
 	BoardManager::setSearchOptions(SearchOptions{ searchDepth,
 												  static_cast<u32>(threadCount),
 												  static_cast<u32>(hashSizeMb),
-												  static_cast<bool>(quietSearch) });
+												  static_cast<bool>(quietSearch),
+												  static_cast<u64>(searchTime) });
 }
 
 
@@ -307,3 +287,26 @@ Java_net_theluckycoder_chess_Native_evaluationTest(JNIEnv *pEnv, jobject)
 
 	return pEnv->NewStringUTF(testResults.c_str());
 }
+
+// region DebugStats
+
+external JNIEXPORT jdouble JNICALL
+Java_net_theluckycoder_chess_model_DebugStats_getNativeSearchTime(JNIEnv *, jclass)
+{
+	return static_cast<jdouble>(Stats::getElapsedMs());
+}
+
+external JNIEXPORT jint JNICALL
+Java_net_theluckycoder_chess_model_DebugStats_getNativeBoardEvaluation(JNIEnv *, jclass)
+{
+	return static_cast<jint>(Evaluation::value(BoardManager::getBoard()));
+}
+
+external JNIEXPORT jstring JNICALL
+Java_net_theluckycoder_chess_model_DebugStats_getNativeAdvancedStats(JNIEnv *pEnv, jclass)
+{
+	const auto stats = Stats::formatStats('\n');
+	return pEnv->NewStringUTF(stats.c_str());
+}
+
+// endregion DebugStats

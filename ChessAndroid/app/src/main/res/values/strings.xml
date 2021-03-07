@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chess</string>
-    <string name="basic_stats">Time Needed: %.2fs\nCurrent Board is evaluated at: %d\n%s</string>
+    <string name="debug_stats">Time Needed: %s\nCurrent Board Evaluation: %d\n%s</string>
     <string name="new_game">New Game</string>
     <string name="side">Side:</string>
     <string name="side_white">White Side</string>
     <string name="side_black">Black Side</string>
     <string name="side_random">Random Side</string>
     <string name="difficulty_level">Difficulty Level: %d</string>
-    <string name="promotion_choose_piece">Choose a Piece</string>
+    <string name="promotion_choose_piece">Choose a Piece to promote</string>
     <string name="title_settings">Settings</string>
     <string name="victory_white">White has won!</string>
     <string name="victory_black">Black has won!</string>

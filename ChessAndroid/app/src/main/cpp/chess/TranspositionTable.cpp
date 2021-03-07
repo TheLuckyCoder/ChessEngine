@@ -18,7 +18,7 @@ TranspositionTable::~TranspositionTable()
 void TranspositionTable::prefetch(const u64 zKey) const noexcept
 {
 #if defined(__has_builtin) && __has_builtin(__builtin_prefetch)
-	__builtin_prefetch(&_clusters[zKey & _hashMask]);
+	__builtin_prefetch(&_clusters[(zKey >> 48u) & _hashMask]);
 #endif
 }
 

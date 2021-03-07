@@ -1,6 +1,7 @@
 package net.theluckycoder.chess.ui
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -14,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -31,29 +32,45 @@ import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.GameState
 import kotlin.concurrent.thread
-import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.random.Random
+import kotlin.time.ExperimentalTime
 
 @Composable
-fun MainScreen() = Scaffold(
-    modifier = Modifier.fillMaxSize(),
-    topBar = { AppBar() },
-    bottomBar = { BottomBar() }
-) {
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(it)
-    ) {
-        val boardSize =
-            with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
-        val tileSize = boardSize / 8f
-        BoardTiles(boardSize, tileSize)
-        BoardPieces(tileSize)
-    }
+fun MainScreen() = when (LocalConfiguration.current.orientation) {
+    Configuration.ORIENTATION_LANDSCAPE -> {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = { Toolbar() },
+        ) { padding ->
+            Row(
+                Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) {
+                BottomBar(modifier = Modifier.fillMaxHeight().weight(1f))
+                ChessBoard()
 
-    val chessViewModel = viewModel<ChessViewModel>()
+                Dialogs()
+            }
+        }
+    }
+    else -> {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = { Toolbar() },
+            bottomBar = { BottomBar() }
+        ) { padding ->
+            ChessBoard(Modifier.padding(padding))
+
+            Dialogs()
+        }
+    }
+}
+
+@Composable
+private fun Dialogs(chessViewModel: ChessViewModel = viewModel()) {
+
     if (chessViewModel.showNewGameDialog.value)
         NewGameDialog(chessViewModel)
 
@@ -72,7 +89,7 @@ fun MainScreen() = Scaffold(
 @OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
-private fun AppBar() {
+private fun Toolbar() {
     TopAppBar(
         modifier = Modifier.height(dimensionResource(id = R.dimen.toolbar_height)),
         backgroundColor = MaterialTheme.colors.primary,
@@ -329,10 +346,32 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
     )
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
-private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
+private fun BottomBar(
+    modifier: Modifier = Modifier,
+    chessViewModel: ChessViewModel = viewModel()
+) = Column(
+    modifier = modifier,
     verticalArrangement = Arrangement.Bottom,
+    horizontalAlignment = Alignment.CenterHorizontally,
 ) {
+    val basicDebug by chessViewModel.dataStore.showBasicDebug().collectAsState(false)
+
+    if (basicDebug) {
+        val debugStats by chessViewModel.debugStats.collectAsState()
+
+        Text(
+            text = stringResource(
+                id = R.string.debug_stats,
+                debugStats.searchTimeNeeded.toString(),
+                debugStats.boardEvaluation,
+                debugStats.advancedStats
+            ),
+            fontSize = 13.sp,
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,7 +403,7 @@ private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_new_circle),
-                contentDescription = null
+                contentDescription = stringResource(id = R.string.new_game)
             )
         }
 
@@ -383,7 +422,7 @@ private fun BottomBar(chessViewModel: ChessViewModel = viewModel()) = Column(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = null
+                contentDescription = stringResource(id = R.string.title_settings)
             )
         }
     }

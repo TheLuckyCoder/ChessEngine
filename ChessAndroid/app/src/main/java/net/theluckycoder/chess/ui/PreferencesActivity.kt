@@ -44,7 +44,7 @@ class PreferencesActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun PreferencesActivityContent() = Scaffold(
-    topBar = { AppBar() }
+    topBar = { Toolbar() }
 ) { padding ->
     val context = LocalContext.current
 
@@ -81,7 +81,6 @@ private fun getPreferenceItems(
                 summary = stringResource(id = R.string.pref_search_depth_desc),
                 prefKey = SettingsDataStore.SEARCH_DEPTH,
                 icon = painterResource(id = R.drawable.ic_pref_search),
-                steps = 10,
                 defaultValue = SettingsDataStore.DEFAULT_SEARCH_DEPTH,
                 valueRange = 2..13,
             ),
@@ -168,7 +167,7 @@ private fun getPreferenceItems(
 
 @Preview
 @Composable
-private fun AppBar() {
+private fun Toolbar() {
     TopAppBar(
         modifier = Modifier.height(dimensionResource(id = R.dimen.toolbar_height)),
         backgroundColor = MaterialTheme.colors.primary,
