@@ -44,9 +44,11 @@
     <string name="pref_coordinates">Coordinates</string>
     <string name="pref_coordinates_desc">Display Coordinates alongside the board</string>
     <string name="pref_search_depth">Search Depth</string>
-    <string name="pref_search_depth_desc">Base Search Depth of the Algorithm. The value may be tweaked slightly by the engine</string>
+    <string name="pref_search_depth_desc">The maximum amount of moves that the engine may look ahead</string>
     <string name="pref_quiet_search">Quiet Search (Recommended)</string>
     <string name="pref_quiet_search_desc">Perform a Quiescence Search at the end of each normal search</string>
+    <string name="pref_search_time">Search Time</string>
+    <string name="pref_search_time_desc">The maximum time the engine is allowed to think</string>
     <string name="pref_thread_count">Thread Count</string>
     <string name="pref_thread_count_desc">Number of Search Threads to be used</string>
     <string name="pref_cache_size">Cache Size</string>

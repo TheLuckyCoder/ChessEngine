@@ -91,6 +91,14 @@ private fun getPreferenceItems(
                 icon = painterResource(id = R.drawable.ic_pref_quiet_search),
                 defaultValue = SettingsDataStore.DEFAULT_QUIET_SEARCH,
             ),
+            SeekbarIntPreferenceItem(
+                title = stringResource(id = R.string.pref_search_time),
+                summary = stringResource(id = R.string.pref_search_time_desc),
+                prefKey = SettingsDataStore.SEARCH_TIME,
+                icon = painterResource(id = R.drawable.ic_pref_search_time),
+                defaultValue = SettingsDataStore.DEFAULT_SEARCH_TIME,
+                valueRange = 1..120,
+            ),
         ),
     ),
 

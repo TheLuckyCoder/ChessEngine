@@ -11,11 +11,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.theluckycoder.chess.model.EngineSettings
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "settings",
 )
 
+@OptIn(ExperimentalTime::class)
 class SettingsDataStore(private val context: Context) {
 
     private fun dataStore() = context.settingsDataStore
@@ -41,6 +46,9 @@ class SettingsDataStore(private val context: Context) {
     fun quietSearch(): Flow<Boolean> =
         dataStore().data.map { it[QUIET_SEARCH] ?: DEFAULT_QUIET_SEARCH }
 
+    fun searchTime(): Flow<Duration> =
+        dataStore().data.map { it[SEARCH_TIME]?.seconds ?: DEFAULT_SEARCH_TIME.seconds }
+
     fun threads(): Flow<Int> =
         dataStore().data.map { it[THREADS] ?: DEFAULT_THREADS }
 
@@ -50,6 +58,7 @@ class SettingsDataStore(private val context: Context) {
     suspend fun getEngineSettings() = EngineSettings(
         searchDepth = searchDepth().first(),
         quietSearch = quietSearch().first(),
+        searchTime = searchTime().first(),
         threadCount = threads().first(),
         hashSize = hashSize().first(),
     )
@@ -58,6 +67,7 @@ class SettingsDataStore(private val context: Context) {
         dataStore().edit { preferences ->
             preferences[SEARCH_DEPTH] = engineSettings.searchDepth
             preferences[QUIET_SEARCH] = engineSettings.quietSearch
+            preferences[SEARCH_TIME] = engineSettings.searchTime.toInt(TimeUnit.SECONDS)
             preferences[THREADS] = engineSettings.threadCount
             preferences[HASH_SIZE] = engineSettings.hashSize
         }
@@ -75,6 +85,7 @@ class SettingsDataStore(private val context: Context) {
 
         val SEARCH_DEPTH = intPreferencesKey("search_depth")
         val QUIET_SEARCH = booleanPreferencesKey("quiet_search")
+        val SEARCH_TIME = intPreferencesKey("search_time")
         val THREADS = intPreferencesKey("threads")
         val HASH_SIZE = intPreferencesKey("hash_size")
 
@@ -84,6 +95,7 @@ class SettingsDataStore(private val context: Context) {
         const val DEFAULT_SHOW_COORDINATES = true
         const val DEFAULT_SEARCH_DEPTH = 6
         const val DEFAULT_QUIET_SEARCH = true
+        const val DEFAULT_SEARCH_TIME = 30
         const val DEFAULT_THREADS = 1
         const val DEFAULT_HASH_SIZE = 64
     }
