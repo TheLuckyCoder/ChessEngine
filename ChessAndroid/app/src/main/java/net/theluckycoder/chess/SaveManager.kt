@@ -12,20 +12,19 @@ object SaveManager {
     private val executor = Executors.newSingleThreadExecutor()
 
     fun saveToFileAsync(context: Context) {
+        val content = Native.saveMoves() ?: return
         val appContext = context.applicationContext
-        executor.execute { saveToFile(appContext) }
+        executor.execute { saveToFile(content, appContext) }
     }
 
-    private fun saveToFile(context: Context) {
-        Native.saveMoves()?.let { moves ->
-            val file = File(context.filesDir, SAVE_FILE_NAME)
+    private fun saveToFile(content: String, context: Context) {
+        val file = File(context.filesDir, SAVE_FILE_NAME)
 
-            if (!file.exists())
-                file.createNewFile()
+        if (!file.exists())
+            file.createNewFile()
 
-            context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
-                it.write(moves)
-            }
+        context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE).writer().use {
+            it.write(content)
         }
     }
 

@@ -9,7 +9,7 @@ class SearchOptions final
 {
 public:
 
-	SearchOptions() : SearchOptions(6, std::max<usize>(1u, std::thread::hardware_concurrency() / 2), 64, true)
+	SearchOptions() : SearchOptions(6, std::max<usize>(1u, std::thread::hardware_concurrency() / 2), 64, true, 30000)
 	{
 	}
 
@@ -60,6 +60,6 @@ private:
 	i32 _depth;
 	usize _threadCount;
 	usize _cacheTableSizeMb;
-	usize _searchTime;
+	u64 _searchTime;
 	bool _quiescenceSearch;
 };

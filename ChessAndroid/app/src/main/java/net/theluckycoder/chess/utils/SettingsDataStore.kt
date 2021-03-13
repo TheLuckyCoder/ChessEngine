@@ -8,11 +8,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import net.theluckycoder.chess.model.EngineSettings
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
@@ -40,28 +38,16 @@ class SettingsDataStore(private val context: Context) {
         preferences[QUIET_SEARCH] = value != 0
     }
 
-    fun searchDepth(): Flow<Int> =
-        dataStore().data.map { it[SEARCH_DEPTH] ?: DEFAULT_SEARCH_DEPTH }
-
-    fun quietSearch(): Flow<Boolean> =
-        dataStore().data.map { it[QUIET_SEARCH] ?: DEFAULT_QUIET_SEARCH }
-
-    fun searchTime(): Flow<Duration> =
-        dataStore().data.map { it[SEARCH_TIME]?.seconds ?: DEFAULT_SEARCH_TIME.seconds }
-
-    fun threads(): Flow<Int> =
-        dataStore().data.map { it[THREADS] ?: DEFAULT_THREADS }
-
-    fun hashSize(): Flow<Int> =
-        dataStore().data.map { it[HASH_SIZE] ?: DEFAULT_HASH_SIZE }
-
-    suspend fun getEngineSettings() = EngineSettings(
-        searchDepth = searchDepth().first(),
-        quietSearch = quietSearch().first(),
-        searchTime = searchTime().first(),
-        threadCount = threads().first(),
-        hashSize = hashSize().first(),
-    )
+    fun getEngineSettings(): Flow<EngineSettings> =
+        dataStore().data.map {
+            EngineSettings(
+                searchDepth = it[SEARCH_DEPTH] ?: DEFAULT_SEARCH_DEPTH,
+                quietSearch = it[QUIET_SEARCH] ?: DEFAULT_QUIET_SEARCH,
+                searchTime = it[SEARCH_TIME]?.seconds ?: DEFAULT_SEARCH_TIME.seconds,
+                threadCount = it[THREADS] ?: DEFAULT_THREADS,
+                hashSize = it[HASH_SIZE] ?: DEFAULT_HASH_SIZE,
+            )
+        }
 
     suspend fun setEngineSettings(engineSettings: EngineSettings) =
         dataStore().edit { preferences ->

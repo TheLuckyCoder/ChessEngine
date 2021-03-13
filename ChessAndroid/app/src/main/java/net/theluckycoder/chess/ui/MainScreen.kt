@@ -378,20 +378,14 @@ private fun BottomBar(
             .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(
-            onClick = { Native.undoMoves() },
-            enabled = false
-        ) {
+        IconButton(onClick = { Native.undoMoves() }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_undo),
                 contentDescription = stringResource(id = R.string.action_undo_move)
             )
         }
 
-        IconButton(
-            onClick = { Native.redoMoves() },
-            enabled = false
-        ) {
+        IconButton(onClick = { Native.redoMoves() }) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_redo),
                 contentDescription = stringResource(id = R.string.action_redo_move)

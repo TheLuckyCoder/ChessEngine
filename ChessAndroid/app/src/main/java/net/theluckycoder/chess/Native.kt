@@ -32,8 +32,8 @@ object Native {
         searchTime: Long,
     )
 
-    external fun undoMoves(): Boolean
-    external fun redoMoves(): Boolean
+    external fun undoMoves()
+    external fun redoMoves()
 
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
     external fun loadMoves(moves: String)
@@ -45,8 +45,8 @@ object Native {
 
     // region Tests
 
-    external fun perftTest()
-    external fun evaluationTest(): String?
+    external fun perftTests()
+    external fun evaluationTests(): String?
 
     // endregion Tests
 }

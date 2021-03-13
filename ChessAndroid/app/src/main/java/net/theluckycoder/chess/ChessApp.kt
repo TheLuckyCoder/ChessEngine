@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.io.File
-import kotlin.concurrent.thread
 
 @Suppress("unused")
 class ChessApp : Application() {
@@ -17,28 +16,35 @@ class ChessApp : Application() {
 
         GlobalScope.launch(Dispatchers.IO) {
             val dataStore = SettingsDataStore(this@ChessApp)
-            if (dataStore.firstStart().first()) {
-                // Set the default Engine Settings from native code
-                val engineSettings = Native.getSearchOptions()
-                dataStore.setEngineSettings(engineSettings)
-                dataStore.setFirstStart(false)
+
+            try {
+                copyBook()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            launch {
+                if (dataStore.firstStart().first()) {
+                    // Set the default Engine Settings from native code
+                    val engineSettings = Native.getSearchOptions()
+                    dataStore.setEngineSettings(engineSettings)
+                    dataStore.setFirstStart(false)
+                }
             }
         }
-        copyBook()
     }
 
     private fun copyBook() {
-        thread {
-            val dest = File(filesDir, "Book.bin")
+        val bookName = "Book.bin"
+        val dest = File(filesDir, bookName)
 
-            assets.open("Book.bin").use { input ->
-                dest.outputStream().use { output ->
-                    input.copyTo(output)
-                }
+        assets.open(bookName).use { input ->
+            dest.outputStream().use { output ->
+                input.copyTo(output)
             }
-
-            Native.initBook(dest.absolutePath)
         }
+
+        Native.initBook(dest.absolutePath)
     }
 
     companion object {

@@ -162,12 +162,12 @@ private fun getPreferenceItems(
             EmptyPreferenceItem(
                 title = "Run Perft Test",
                 summary = "This is only meant for debugging",
-                onClick = { Native.perftTest() }
+                onClick = { Native.perftTests() }
             ),
             EmptyPreferenceItem(
                 title = "Run Evaluation Test",
                 summary = "This is only meant for debugging",
-                onClick = { Native.evaluationTest() }
+                onClick = { Native.evaluationTests() }
             ),
         ),
     ),

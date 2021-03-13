@@ -15,6 +15,7 @@
 
 #define external extern "C"
 
+static constexpr auto TAG = "ChessCpp";
 static JavaVM *jvm = nullptr;
 static jobject viewModelInstance = nullptr;
 
@@ -25,24 +26,30 @@ const BoardManager::BoardChangedCallback boardChangedCallback = [](GameState sta
 	if (getEnvStat == JNI_EDETACHED)
 	{
 		jvm->AttachCurrentThread(&env, nullptr);
-		LOGD("ChessCpp", "Attached to Thread");
+		LOGD(TAG, "Attached to Thread");
 	}
 
 	env->ExceptionClear();
 
 	const static auto callbackId = env->GetMethodID(JniCache::viewModelClass, "boardChangedCallback", "(I)V");
+	if (viewModelInstance == nullptr)
+	{
+		LOGE(TAG, "No ViewModel Instance found");
+		return;
+	}
+
 	env->CallVoidMethod(viewModelInstance, callbackId, static_cast<jint>(state));
 
 	if (getEnvStat == JNI_EDETACHED)
 	{
 		jvm->DetachCurrentThread();
-		LOGD("ChessCpp", "Detached from Thread");
+		LOGD(TAG, "Detached from Thread");
 	}
 };
 
 external JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 {
-	LOGI("ChessCpp", "JNI_OnLoad");
+	LOGI(TAG, "JNI_OnLoad");
 
 	JNIEnv *env;
 	if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK)
@@ -59,7 +66,7 @@ external JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *)
 
 external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 {
-	LOGI("ChessCpp", "JNI_OnUnload");
+	LOGI(TAG, "JNI_OnUnload");
 
 	JNIEnv *env;
 	vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
@@ -82,8 +89,9 @@ Java_net_theluckycoder_chess_ChessViewModel_initBoardNative(JNIEnv *pEnv, jobjec
 
 	if (!pEnv->IsSameObject(viewModelInstance, instance))
 	{
-        LOGD("ChessCpp", "initBoardNative");
-        pEnv->DeleteGlobalRef(viewModelInstance);
+        LOGD(TAG, "initBoardNative");
+        if (viewModelInstance)
+        	pEnv->DeleteGlobalRef(viewModelInstance);
 		viewModelInstance = pEnv->NewGlobalRef(instance);
 
         BoardManager::initBoardManager(boardChangedCallback);
@@ -163,13 +171,14 @@ Java_net_theluckycoder_chess_Native_enableStats(JNIEnv *, jobject, jboolean enab
 external JNIEXPORT jobject JNICALL
 Java_net_theluckycoder_chess_Native_getSearchOptions(JNIEnv *pEnv, jobject)
 {
-	const static auto constructorId = pEnv->GetMethodID(JniCache::engineSettingsClass, "<init>", "(IIIZ)V");
+	const static auto constructorId = pEnv->GetMethodID(JniCache::engineSettingsClass, "<init>", "(IIJIZ)V");
 
-	const auto searchOptions = BoardManager::getSearchOptions();
+	const auto options = BoardManager::getSearchOptions();
 
 	return pEnv->NewObject(JniCache::engineSettingsClass, constructorId,
-						   searchOptions.depth(), searchOptions.threadCount(),
-						   searchOptions.tableSizeMb(), searchOptions.quietSearch());
+						   options.depth(), options.threadCount(),
+						   static_cast<jlong>(options.searchTime()), options.tableSizeMb(),
+						   options.quietSearch());
 }
 
 external JNIEXPORT void JNICALL
@@ -207,16 +216,16 @@ Java_net_theluckycoder_chess_Native_stopSearch(JNIEnv *, jobject)
 }
 
 
-external JNIEXPORT jboolean JNICALL
+external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_undoMoves(JNIEnv *, jobject)
 {
-	return static_cast<jboolean>(BoardManager::undoLastMoves());
+	BoardManager::undoLastMoves();
 }
 
-external JNIEXPORT jboolean JNICALL
+external JNIEXPORT void JNICALL
 Java_net_theluckycoder_chess_Native_redoMoves(JNIEnv *, jobject)
 {
-	return static_cast<jboolean>(BoardManager::redoLastMoves());
+	BoardManager::redoLastMoves();
 }
 
 external JNIEXPORT jboolean JNICALL
@@ -273,13 +282,13 @@ Java_net_theluckycoder_chess_Native_initBook(JNIEnv *pEnv, jobject, jstring book
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_perftTest(JNIEnv *, jobject)
+Java_net_theluckycoder_chess_Native_perftTests(JNIEnv *, jobject)
 {
 	Tests::runPerftTests();
 }
 
 external JNIEXPORT jstring JNICALL
-Java_net_theluckycoder_chess_Native_evaluationTest(JNIEnv *pEnv, jobject)
+Java_net_theluckycoder_chess_Native_evaluationTests(JNIEnv *pEnv, jobject)
 {
 	const auto testResults = Tests::runEvaluationTests();
 	if (testResults.empty())

@@ -2,12 +2,14 @@
 
 #include <atomic>
 #include <functional>
+#include <mutex>
 #include <thread>
 #include <vector>
 
 #include "SearchOptions.h"
 #include "Board.h"
 #include "algorithm/MoveGen.h"
+#include "persistence/UndoRedoMoves.h"
 
 enum class GameState : u8
 {
@@ -26,35 +28,17 @@ enum class GameState : u8
 class BoardManager final
 {
 public:
-	struct IndexedPiece
-	{
-		IndexedPiece(const i32 id, const Square square, const Color pieceColor, const PieceType pieceType)
-			: id(id), square(square), pieceColor(pieceColor), pieceType(pieceType)
-		{
-		}
-
-		/**
-		 * An unique ID assigned to this piece
-		 */
-		i32 id;
-		/**
-		 * The square on which the Piece is located
-		 */
-		Square square;
-		Color pieceColor;
-		PieceType pieceType;
-	};
-
 	using BoardChangedCallback = std::function<void(GameState state)>;
 
 private:
 	static BoardChangedCallback _callback;
 
+//	inline static std::mutex lock;
 	inline static std::atomic_bool _isWorking{ false };
 	inline static bool _isPlayerWhite{ true };
 	static SearchOptions _searchOptions;
-	static Board _board;
-	static std::vector<IndexedPiece> _indexedPieces;
+	static Board _currentBoard;
+	static UndoRedoHistory _undoRedoHistory;
 	
 public:
 	static void initBoardManager(const BoardChangedCallback &callback, bool isPlayerWhite = true);
@@ -64,21 +48,19 @@ public:
 	/// Actions
 	static void makeMove(Move move);
 	static void makeEngineMove();
-	static bool undoLastMoves();
-	static bool redoLastMoves();
+	static void undoLastMoves();
+	static void redoLastMoves();
 
 	/// Getters and Setters
-	static bool isWorking() { return _isWorking; }
-	static bool isPlayerWhite() { return _isPlayerWhite; }
+	static bool isWorking() noexcept { return _isWorking; }
+	static bool isPlayerWhite() noexcept { return _isPlayerWhite; }
 	static void setSearchOptions(const SearchOptions &searchOptions) { _searchOptions = searchOptions; }
-	static SearchOptions getSearchOptions() { return _searchOptions; }
-	static const auto &getBoard() { return _board; }
-	static const auto &getIndexedPieces() { return _indexedPieces; }
+	static SearchOptions getSearchOptions() noexcept { return _searchOptions; }
+	static const auto &getBoard() noexcept { return _currentBoard; }
+	static IndexedPieces getIndexedPieces() noexcept { return _undoRedoHistory.peek().getIndexedPieces(); }
 	static std::vector<Move> getMovesHistory();
 	static std::vector<Move> getPossibleMoves(Square from);
 
 private:
 	static GameState getBoardState();
-	static void generatedIndexedPieces();
-	static void updateIndexedPieces(Move move);
 };

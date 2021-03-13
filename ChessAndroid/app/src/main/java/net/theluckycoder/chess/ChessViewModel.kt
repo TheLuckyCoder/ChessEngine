@@ -10,7 +10,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.theluckycoder.chess.model.*
@@ -51,9 +51,16 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         initBoard()
 
         viewModelScope.launch(Dispatchers.IO) {
-            dataStore.showAdvancedDebug().collectLatest {
+            dataStore.showAdvancedDebug().distinctUntilChanged().collectLatest {
                 ensureActive()
                 withContext(Dispatchers.Main) { Native.enableStats(it) }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.getEngineSettings().distinctUntilChanged().collectLatest {
+                ensureActive()
+                withContext(Dispatchers.Main) { updateEngineSettings(it) }
             }
         }
     }
@@ -87,21 +94,13 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         piecesFlow.value = piecesMap.map { it.value }
     }
 
-    fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.Main.immediate) {
-        withContext(Dispatchers.IO) { dataStore.setDifficultyLevel(level) }
-        updateEngineSettings()
+    fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.IO) {
+        dataStore.setDifficultyLevel(level)
     }
 
     @OptIn(ExperimentalTime::class)
-    suspend fun updateEngineSettings() {
-        val engineSettings = withContext(Dispatchers.IO) {
-            if (dataStore.firstStart().first())
-                null
-            else
-                dataStore.getEngineSettings()
-        }
-
-        engineSettings?.let {
+    private fun updateEngineSettings(engineSettings: EngineSettings) {
+        engineSettings.also {
             Native.setSearchOptions(
                 it.searchDepth,
                 it.quietSearch,
@@ -177,7 +176,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         gameStateFlow.value = state
         debugStatsFlow.value = DebugStats.get()
 
-        SaveManager.saveToFileAsync(app)
+        if (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE)
+            SaveManager.saveToFileAsync(app)
     }
 
     private external fun initBoardNative(playerPlayingWhite: Boolean)
