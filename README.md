@@ -1,5 +1,7 @@
 # ChessEngine
 
+[![Build Status](https://circleci.com/gh/TheLuckyCoder/ChessEngine.svg?style=svg)](<LINK>)
+
 An UCI-compatible Chess Engine written in C++17 with an Android UI written in Kotlin.
 
 This project uses the evaluation function values (in the file Evaluation.cpp) from the Stockfish Chess Engine, licensed under GNU GPL 3.0.
@@ -38,7 +40,7 @@ This project uses the evaluation function values (in the file Evaluation.cpp) fr
 
 ## License
 
-Copyright (C) 2019-2020 Filea Razvan Gheorghe
+Copyright (C) 2019-2021 Filea Răzvan Gheorghe
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
