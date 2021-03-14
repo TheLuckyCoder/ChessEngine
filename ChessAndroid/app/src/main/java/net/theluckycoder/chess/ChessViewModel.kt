@@ -16,7 +16,6 @@ import kotlinx.coroutines.withContext
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.set
 import kotlin.time.ExperimentalTime
 
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
@@ -30,14 +29,14 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val isEngineThinkingFlow = MutableStateFlow(false)
     private val tilesFlow = MutableStateFlow(emptyList<Tile>())
-    private val piecesFlow = MutableStateFlow(emptyList<Piece>())
+    private val piecesFlow = MutableStateFlow(emptyList<IndexedPiece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
     private val debugStatsFlow = MutableStateFlow(DebugStats())
 
     val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
     val isEngineThinking: StateFlow<Boolean> = isEngineThinkingFlow
     val tiles: StateFlow<List<Tile>> = tilesFlow
-    val pieces: StateFlow<List<Piece>> = piecesFlow
+    val pieces: StateFlow<List<IndexedPiece>> = piecesFlow
     val gameState: StateFlow<GameState> = gameStateFlow
     val debugStats: StateFlow<DebugStats> = debugStatsFlow
 
@@ -80,18 +79,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun updatePiecesList() {
-        val pieces = Native.getPieces()
-        val piecesMap = mutableMapOf<Int, Piece>()
-        // TODO Temporary solution to fix animations
-        for (i in 0 until 64) {
-            piecesMap[i] = Piece(i, 0, false)
-        }
-
-        pieces.forEach {
-            piecesMap[it.id] = it.toPiece()
-        }
-
-        piecesFlow.value = piecesMap.map { it.value }
+        piecesFlow.value = Native.getPieces().toList()
     }
 
     fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.IO) {

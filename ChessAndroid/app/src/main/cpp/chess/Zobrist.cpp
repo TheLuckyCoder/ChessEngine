@@ -34,63 +34,68 @@ private:
 	u64 seed = 1070372ull;
 };
 
-constinit RandomGenerator _rand;
-
-static auto _pieces = [] {
-	std::array<std::array<std::array<u64, 2>, 7>, SQUARE_NB> array{};
-
-	for (auto &sq : array)
-		for (auto &piece : sq)
-			piece = _rand.randomArray<2>();
-
-	return array;
-}();
-static const u64 _side{ _rand.random64() };
-static const auto _castlingRights{ _rand.randomArray<4>() };
-static const auto _enPassant{ _rand.randomArray<8>() };
-
-u64 Zobrist::compute(const Board &board) noexcept
+namespace Zobrist
 {
-	u64 hash{};
+	constinit RandomGenerator randomGenerator;
 
-	for (u8 sq = 0; sq < SQUARE_NB; ++sq)
-		if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
-			hash ^= _pieces[sq][piece.type()][piece.color()];
+	static const auto pieces = []
+	{
+		std::array<std::array<std::array<u64, 2>, 7>, SQUARE_NB> array{};
 
-	xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
-	xorEnPassant(hash, board.enPassantSq);
+		for (auto &sq : array)
+			for (auto &piece : sq)
+				piece = randomGenerator.randomArray<2>();
 
-	if (board.colorToMove)
-		flipSide(hash);
+		return array;
+	}();
+	static const u64 side{ randomGenerator.random64() };
+	static const auto castlingRights{ randomGenerator.randomArray<4>() };
+	static const auto enPassant{ randomGenerator.randomArray<8>() };
 
-	return hash;
-}
 
-void Zobrist::xorPiece(u64 &key, const Square square, const Piece piece) noexcept
-{
-	key ^= _pieces[square][piece.type()][piece.color()];
-}
+	u64 compute(const Board &board) noexcept
+	{
+		u64 hash{};
 
-void Zobrist::flipSide(u64 &key) noexcept
-{
-	key ^= _side;
-}
+		for (u8 sq = 0; sq < SQUARE_NB; ++sq)
+			if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
+				hash ^= pieces[sq][piece.type()][piece.color()];
 
-void Zobrist::xorCastlingRights(u64 &key, const CastlingRights rights) noexcept
-{
-	if (rights & CASTLE_WHITE_KING)
-		key ^= _castlingRights[1];
-	if (rights & CASTLE_WHITE_QUEEN)
-		key ^= _castlingRights[2];
+		xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
+		xorEnPassant(hash, board.enPassantSq);
 
-	if (rights & CASTLE_BLACK_KING)
-		key ^= _castlingRights[4];
-	if (rights & CASTLE_BLACK_QUEEN)
-		key ^= _castlingRights[5];
-}
+		if (board.colorToMove)
+			flipSide(hash);
 
-void Zobrist::xorEnPassant(u64 &key, const Square square) noexcept
-{
-	if (square <= SQUARE_NB)
-		key ^= _enPassant[fileOf(square)];
+		return hash;
+	}
+
+	void xorPiece(u64 &key, const Square square, const Piece piece) noexcept
+	{
+		key ^= pieces[square][piece.type()][piece.color()];
+	}
+
+	void flipSide(u64 &key) noexcept
+	{
+		key ^= side;
+	}
+
+	void xorCastlingRights(u64 &key, const CastlingRights rights) noexcept
+	{
+		if (rights & CASTLE_WHITE_KING)
+			key ^= castlingRights[0];
+		if (rights & CASTLE_WHITE_QUEEN)
+			key ^= castlingRights[1];
+
+		if (rights & CASTLE_BLACK_KING)
+			key ^= castlingRights[2];
+		if (rights & CASTLE_BLACK_QUEEN)
+			key ^= castlingRights[3];
+	}
+
+	void xorEnPassant(u64 &key, const Square square) noexcept
+	{
+		if (square <= SQUARE_NB)
+			key ^= enPassant[fileOf(square)];
+	}
 }

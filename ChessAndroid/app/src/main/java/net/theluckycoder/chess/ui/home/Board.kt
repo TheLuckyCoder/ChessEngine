@@ -1,18 +1,19 @@
-package net.theluckycoder.chess.ui
+package net.theluckycoder.chess.ui.home
 
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
@@ -24,9 +25,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.R
+import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.model.Tile
+import net.theluckycoder.chess.ui.AlertDialogTitle
 import kotlin.math.min
 
 private val PIECES_RESOURCES = intArrayOf(
@@ -184,7 +187,7 @@ fun BoardCoordinates(tileDp: Dp) {
 fun BoardPieces(
     tileDp: Dp,
     isPlayerWhite: Boolean,
-    pieces: List<Piece>,
+    pieces: List<IndexedPiece>,
     chessViewModel: ChessViewModel = viewModel()
 ) {
 //    val gameState by chessViewModel.gameState.collectAsState()
@@ -193,21 +196,24 @@ fun BoardPieces(
 
     val tilePx = with(LocalDensity.current) { tileDp.toPx() }
 
-    for (piece in pieces) {
-        if (piece.square >= 64 || piece.type.toInt() == 0) continue
+    for (indexedPiece in pieces) {
+        key(indexedPiece.id) {
+            val piece = indexedPiece.toPiece()
+            if (piece.square < 64 && piece.type.toInt() != 0) {
+                val offset = getBoardOffset(isPlayerWhite, piece.square, tilePx)
+                val animatedOffset by animateOffsetAsState(targetValue = offset)
+                val (animatedX, animatedY) = with(LocalDensity.current) { animatedOffset.x.toDp() to animatedOffset.y.toDp() }
 
-        val offset = getBoardOffset(isPlayerWhite, piece.square, tilePx)
-        val animatedOffset by animateOffsetAsState(targetValue = offset)
-        val (animatedX, animatedY) = with(LocalDensity.current) { animatedOffset.x.toDp() to animatedOffset.y.toDp() }
-
-        IconButton(
-            modifier = Modifier
-                .requiredSize(tileDp)
-                .offset(animatedX, animatedY),
-            enabled = isPlayerWhite == piece.isWhite,
-            onClick = { chessViewModel.getPossibleMoves(piece.square) }
-        ) {
-            Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
+                IconButton(
+                    modifier = Modifier
+                        .requiredSize(tileDp)
+                        .offset(animatedX, animatedY),
+                    enabled = isPlayerWhite == piece.isWhite,
+                    onClick = { chessViewModel.getPossibleMoves(piece.square) }
+                ) {
+                    Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
+                }
+            }
         }
     }
 }

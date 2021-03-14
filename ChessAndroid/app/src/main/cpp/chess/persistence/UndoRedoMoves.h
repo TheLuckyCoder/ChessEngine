@@ -26,11 +26,11 @@ struct IndexedPiece
 
 using IndexedPieces = std::vector<IndexedPiece>;
 
-class IndexedBoard
+class HistoryBoard
 {
 public:
-	IndexedBoard(const Board &board)
-		: _fen(board.getFen())
+	HistoryBoard(const Board &board)
+		: _fen(board.getFen()), _colorToMove(board.colorToMove)
 	{
 		_pieces.reserve(32);
 
@@ -42,14 +42,16 @@ public:
 		}
 	}
 
-	IndexedBoard(const IndexedBoard &indexedBoard, const Board &board, Move move)
-		: _fen(board.getFen()), _pieces(indexedBoard.generateIndexedPieces(board, move))
+	HistoryBoard(const HistoryBoard &historyBoard, const Board &board, Move move)
+		: _fen(board.getFen()), _pieces(historyBoard.generateIndexedPieces(move)), _move(move), _colorToMove(board.colorToMove)
 	{
 	}
 
 private:
-	std::vector<IndexedPiece> generateIndexedPieces(const Board &board, const Move move) const noexcept
+	std::vector<IndexedPiece> generateIndexedPieces(const Move move) const noexcept
 	{
+		Board board;
+		board.setToFen(_fen);
 		auto pieces = _pieces;
 
 		const auto findPiece = [&](const Square square)
@@ -75,34 +77,19 @@ private:
 		if (flags.enPassant())
 		{
 			const Square capturedSq = toSquare(u8(to) + static_cast<u8>(side ? -8 : 8));
-
 			removePiece(capturedSq);
 		} else if (flags.kSideCastle())
 		{
-			switch (to)
-			{
-				case SQ_G1:
-					movePiece(SQ_H1, SQ_F1);
-					break;
-				case SQ_G8:
-					movePiece(SQ_H8, SQ_F8);
-					break;
-				default:
-					break;
-			}
+			if (to == SQ_G1)
+				movePiece(SQ_A1, SQ_D1);
+			else if (to == SQ_G8)
+				movePiece(SQ_A8, SQ_D8);
 		} else if (flags.qSideCastle())
 		{
-			switch (to)
-			{
-				case SQ_C1:
-					movePiece(SQ_A1, SQ_D1);
-					break;
-				case SQ_C8:
-					movePiece(SQ_A8, SQ_D8);
-					break;
-				default:
-					break;
-			}
+			if (to == SQ_C1)
+				movePiece(SQ_A1, SQ_D1);
+			else if (to == SQ_C8)
+				movePiece(SQ_A8, SQ_D8);
 		}
 
 		if (const PieceType capturedType = move.capturedPiece();
@@ -120,11 +107,23 @@ private:
 
 public:
 	const auto &getFen() const noexcept { return _fen; }
+
 	const auto &getIndexedPieces() const noexcept { return _pieces; }
+
+	auto getMove() const noexcept { return _move; }
+
+	auto colorToMove() const noexcept { return _colorToMove; }
 
 private:
 	std::string _fen;
 	IndexedPieces _pieces;
+	Move _move;
+	Color _colorToMove;
+};
+
+struct HistoryBoardPair
+{
+
 };
 
 class UndoRedoHistory
@@ -172,7 +171,7 @@ public:
 		return false;
 	}
 
-	const IndexedBoard &peek() noexcept
+	const HistoryBoard &peek() noexcept
 	{
 		return *_current;
 	}
@@ -188,6 +187,6 @@ public:
 	Color colorToMove{};
 
 private:
-	std::vector<IndexedBoard> _data;
-	std::vector<IndexedBoard>::iterator _current = _data.begin();
+	std::vector<HistoryBoard> _data;
+	std::vector<HistoryBoard>::iterator _current = _data.begin();
 };

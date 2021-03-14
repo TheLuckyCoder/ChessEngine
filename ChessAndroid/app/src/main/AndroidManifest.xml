@@ -16,7 +16,7 @@
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
 
         <activity
-            android:name=".ui.ChessActivity"
+            android:name=".ui.home.HomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,7 +26,7 @@
         </activity>
 
         <activity
-            android:name=".ui.PreferencesActivity"
+            android:name=".ui.preferences.PreferencesActivity"
             android:label="@string/title_settings" />
 
     </application>

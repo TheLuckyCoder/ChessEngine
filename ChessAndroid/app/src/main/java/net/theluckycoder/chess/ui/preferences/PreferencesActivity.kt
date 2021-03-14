@@ -1,4 +1,4 @@
-package net.theluckycoder.chess.ui
+package net.theluckycoder.chess.ui.preferences
 
 import android.app.Activity
 import android.content.Context
@@ -20,7 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.ui.preferences.*
+import net.theluckycoder.chess.ui.ChessMaterialTheme
 import net.theluckycoder.chess.utils.SettingsDataStore
 import net.theluckycoder.chess.utils.browseUrl
 import net.theluckycoder.chess.utils.settingsDataStore

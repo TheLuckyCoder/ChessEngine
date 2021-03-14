@@ -16,11 +16,9 @@ class PreferenceGroupItem(
 ) : BasePreferenceItem
 
 sealed class PreferenceItem : BasePreferenceItem {
-    abstract override val title: String
     abstract val summary: String
     abstract val icon: Painter?
     abstract val singleLineTitle: Boolean
-    abstract override val enabled: Boolean
 }
 
 class EmptyPreferenceItem(
