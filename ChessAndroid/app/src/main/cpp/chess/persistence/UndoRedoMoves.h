@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "../Board.h"
@@ -26,33 +27,12 @@ struct IndexedPiece
 
 using IndexedPieces = std::vector<IndexedPiece>;
 
-class HistoryBoard
+namespace UndoRedo
 {
-public:
-	HistoryBoard(const Board &board)
-		: _fen(board.getFen()), _colorToMove(board.colorToMove)
-	{
-		_pieces.reserve(32);
-
-		for (u8 square{}; square < SQUARE_NB; ++square)
-		{
-			auto &&piece = board.data[square];
-			if (piece.isValid())
-				_pieces.emplace_back(i32(square), toSquare(square), piece.color(), piece.type());
-		}
-	}
-
-	HistoryBoard(const HistoryBoard &historyBoard, const Board &board, Move move)
-		: _fen(board.getFen()), _pieces(historyBoard.generateIndexedPieces(move)), _move(move), _colorToMove(board.colorToMove)
-	{
-	}
-
-private:
-	std::vector<IndexedPiece> generateIndexedPieces(const Move move) const noexcept
+	static std::vector<IndexedPiece> incrementIndexedPieces(IndexedPieces pieces, const std::string fen, const Move move) noexcept
 	{
 		Board board;
-		board.setToFen(_fen);
-		auto pieces = _pieces;
+		board.setToFen(fen);
 
 		const auto findPiece = [&](const Square square)
 		{
@@ -68,15 +48,13 @@ private:
 		const auto promotePawn = [&](const Square square, const PieceType to) { findPiece(square)->pieceType = to; };
 		const auto removePiece = [&](const Square square) { pieces.erase(findPiece(square)); };
 
-		const Square from = move.from();
 		const Square to = move.to();
-		const Color side = board.colorToMove;
 		const auto flags = move.flags();
 
 		// Handle en passant capture and castling
 		if (flags.enPassant())
 		{
-			const Square capturedSq = toSquare(u8(to) + static_cast<u8>(side ? -8 : 8));
+			const Square capturedSq = toSquare(u8(to) + static_cast<u8>(board.colorToMove ? -8 : 8));
 			removePiece(capturedSq);
 		} else if (flags.kSideCastle())
 		{
@@ -96,7 +74,7 @@ private:
 			capturedType != PieceType::NO_PIECE_TYPE)
 			removePiece(to);
 
-		movePiece(from, to);
+		movePiece(move.from(), to);
 
 		if (move.flags().promotion())
 			promotePawn(to, move.promotedPiece());
@@ -104,89 +82,126 @@ private:
 		return pieces;
 	}
 
-
-public:
-	const auto &getFen() const noexcept { return _fen; }
-
-	const auto &getIndexedPieces() const noexcept { return _pieces; }
-
-	auto getMove() const noexcept { return _move; }
-
-	auto colorToMove() const noexcept { return _colorToMove; }
-
-private:
-	std::string _fen;
-	IndexedPieces _pieces;
-	Move _move;
-	Color _colorToMove;
-};
-
-struct HistoryBoardPair
-{
-
-};
-
-class UndoRedoHistory
-{
-public:
-	UndoRedoHistory()
+	static IndexedPieces makeIndexedPieces(const Board &board) noexcept
 	{
-		_data.reserve(64);
-	}
+		IndexedPieces pieces;
+		pieces.reserve(board.occupied.popcount());
 
-	void add(const Board &board, const Move move) noexcept
-	{
-		assert(!move.empty());
-
-		if (_current != _data.end() - 1)
-			_data.erase(_current, _data.end());
-
-		_data.emplace_back(_data.back(), board, move);
-
-		_current = _data.end() - 1;
-		colorToMove = board.colorToMove;
-	}
-
-	bool undo() noexcept
-	{
-		if (_current != _data.begin())
+		for (u8 square{}; square < SQUARE_NB; ++square)
 		{
-			--_current;
-			colorToMove = ~colorToMove;
-			return true;
+			auto &&piece = board.data[square];
+			if (piece.isValid())
+				pieces.emplace_back(i32(square), toSquare(square), piece.color(), piece.type());
 		}
 
-		return false;
+		return pieces;
 	}
 
-	bool redo() noexcept
+	class HistoryBoard
 	{
-		if (_current != _data.end() - 1)
+	public:
+		HistoryBoard(const Board &board, const Move &move)
+			: _fen(board.getFen()), _pieces(makeIndexedPieces(board)), _move(move), _colorToMove(board.colorToMove)
 		{
-			++_current;
-			colorToMove = ~colorToMove;
-			return true;
 		}
 
-		return false;
-	}
+		HistoryBoard(const IndexedPieces &previousPieces, const Board &board, const Move &move)
+			: _fen(board.getFen()), _pieces(incrementIndexedPieces(previousPieces, _fen, move)), _move(move),
+			  _colorToMove(board.colorToMove)
+		{
+		}
 
-	const HistoryBoard &peek() noexcept
+		const auto &getFen() const noexcept { return _fen; }
+
+		const auto &getIndexedPieces() const noexcept { return _pieces; }
+
+		Move getMove() const noexcept { return _move; }
+
+		bool colorToMove() const noexcept { return _colorToMove; }
+
+	private:
+		std::string _fen;
+		IndexedPieces _pieces;
+		Move _move;
+		Color _colorToMove;
+	};
+
+	using HistoryBoardPair = std::pair<HistoryBoard, std::optional<HistoryBoard>>;
+
+	class HistoryStack
 	{
-		return *_current;
-	}
+	public:
+		HistoryStack() = default;
 
-	void reset(const Board &board) noexcept
-	{
-		_data.clear();
-		_data.emplace_back(board);
-		_current = _data.begin();
-		colorToMove = board.colorToMove;
-	}
+		HistoryStack(const Board &board)
+			: _initialPieces(makeIndexedPieces(board))
+		{
+			_data.reserve(64);
+		}
 
-	Color colorToMove{};
+		void add(const Board &board, const Move move) noexcept
+		{
+			assert(!move.empty());
 
-private:
-	std::vector<HistoryBoard> _data;
-	std::vector<HistoryBoard>::iterator _current = _data.begin();
-};
+			if (!_data.empty() && _current != std::prev(_data.end()))
+				_data.erase(_current, _data.end());
+
+			_current = std::prev(_data.end());
+
+			if (!empty())
+			{
+				auto &&pair = peekPair();
+				if (pair.second.has_value() || pair.first.colorToMove() == board.colorToMove)
+					_data.emplace_back(HistoryBoard{ pair.second.value_or(pair.first).getIndexedPieces(), board, move }, std::nullopt);
+				else
+					pair.second = HistoryBoard{ pair.first.getIndexedPieces(), board, move };
+			} else
+				_data.emplace_back(HistoryBoard{ _initialPieces, board, move }, std::nullopt);
+
+			_current = std::prev(_data.end());
+		}
+
+		bool undo() noexcept
+		{
+			if (_current != _data.begin())
+			{
+				--_current;
+				return true;
+			}
+
+			return false;
+		}
+
+		bool redo() noexcept
+		{
+			if (_current != std::prev(_data.end()))
+			{
+				++_current;
+				return true;
+			}
+
+			return false;
+		}
+
+		bool empty() const noexcept { return _data.empty(); }
+
+		HistoryBoardPair &peekPair() noexcept
+		{
+			assert(!empty());
+			return *_current;
+		}
+
+		HistoryBoard peek() noexcept
+		{
+			auto &&pair = peekPair();
+			return pair.second.value_or(pair.first);
+		}
+
+		const auto &getInitialPieces() const noexcept { return _initialPieces; }
+
+	private:
+		IndexedPieces _initialPieces;
+		std::vector<HistoryBoardPair> _data;
+		std::vector<HistoryBoardPair>::iterator _current = _data.begin();
+	};
+}

@@ -9,7 +9,7 @@
 SearchOptions BoardManager::_searchOptions;
 BoardManager::BoardChangedCallback BoardManager::_callback;
 Board BoardManager::_currentBoard;
-UndoRedoHistory BoardManager::_undoRedoHistory{};
+UndoRedo::HistoryStack BoardManager::_undoRedoHistory;
 
 void BoardManager::initBoardManager(const BoardChangedCallback &callback, const bool isPlayerWhite)
 {
@@ -17,7 +17,7 @@ void BoardManager::initBoardManager(const BoardChangedCallback &callback, const 
 
 	_isPlayerWhite = isPlayerWhite;
 	_currentBoard.setToStartPos();
-	_undoRedoHistory.reset(_currentBoard);
+	_undoRedoHistory = { _currentBoard };
 	_callback = callback;
 
 	_callback(GameState::NONE);
@@ -34,7 +34,7 @@ bool BoardManager::loadGame(const std::string &fen, bool isPlayerWhite)
 	{
 		_isPlayerWhite = isPlayerWhite;
 		_currentBoard = tempBoard;
-		_undoRedoHistory.reset(_currentBoard);
+		_undoRedoHistory = { _currentBoard };
 
 		_callback(getBoardState());
 
@@ -53,7 +53,7 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 
 	_isPlayerWhite = isPlayerWhite;
 	_currentBoard.setToStartPos();
-	_undoRedoHistory.reset(_currentBoard);
+	_undoRedoHistory = { _currentBoard };
 
 	for (const Move &move : moves)
 	{
@@ -98,10 +98,7 @@ void BoardManager::makeEngineMove()
 
 void BoardManager::undoLastMoves()
 {
-	do {
-		if (!_undoRedoHistory.undo())
-			break;
-	} while (_undoRedoHistory.colorToMove == isPlayerWhite());
+	_undoRedoHistory.undo();
 
 	if (_currentBoard.setToFen(_undoRedoHistory.peek().getFen()))
 		_callback(getBoardState());
@@ -109,10 +106,7 @@ void BoardManager::undoLastMoves()
 
 void BoardManager::redoLastMoves()
 {
-	do {
-		if (!_undoRedoHistory.redo())
-			break;
-	} while (_undoRedoHistory.colorToMove == isPlayerWhite());
+	_undoRedoHistory.redo();
 
 	if (_currentBoard.setToFen(_undoRedoHistory.peek().getFen()))
 		_callback(getBoardState());

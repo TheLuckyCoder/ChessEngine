@@ -82,19 +82,19 @@ external JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *)
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_ChessViewModel_initBoardNative(JNIEnv *pEnv, jobject instance,
-		jboolean playerPlayingWhite)
+Java_net_theluckycoder_chess_ChessViewModel_initBoardNative(JNIEnv *pEnv, jobject instance, jboolean playerPlayingWhite)
 {
 	pEnv->ExceptionClear();
 
 	if (!pEnv->IsSameObject(viewModelInstance, instance))
 	{
-        LOGD(TAG, "initBoardNative");
-        if (viewModelInstance)
-        	pEnv->DeleteGlobalRef(viewModelInstance);
+		LOGD(TAG, "initBoardNative");
+		if (viewModelInstance)
+			pEnv->DeleteGlobalRef(viewModelInstance);
+
 		viewModelInstance = pEnv->NewGlobalRef(instance);
 
-        BoardManager::initBoardManager(boardChangedCallback);
+		BoardManager::initBoardManager(boardChangedCallback);
 	}
 
 	BoardManager::initBoardManager(boardChangedCallback, playerPlayingWhite);
@@ -129,7 +129,8 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 	for (size_t i{}; i < pieceList.size(); ++i)
 	{
 		const auto &it = pieceList[i];
-		jobject obj = pEnv->NewObject(JniCache::indexedPieceClass, constructorId, it.id, it.square, it.pieceType, it.pieceColor);
+		jobject obj = pEnv->NewObject(JniCache::indexedPieceClass, constructorId, it.id, it.square, it.pieceType,
+									  it.pieceColor);
 		pEnv->SetObjectArrayElement(array, i, obj);
 	}
 

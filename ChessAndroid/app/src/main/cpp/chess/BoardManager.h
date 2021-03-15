@@ -38,7 +38,7 @@ private:
 	inline static bool _isPlayerWhite{ true };
 	static SearchOptions _searchOptions;
 	static Board _currentBoard;
-	static UndoRedoHistory _undoRedoHistory;
+	static UndoRedo::HistoryStack _undoRedoHistory;
 	
 public:
 	static void initBoardManager(const BoardChangedCallback &callback, bool isPlayerWhite = true);
@@ -57,7 +57,14 @@ public:
 	static void setSearchOptions(const SearchOptions &searchOptions) { _searchOptions = searchOptions; }
 	static SearchOptions getSearchOptions() noexcept { return _searchOptions; }
 	static const auto &getBoard() noexcept { return _currentBoard; }
-	static IndexedPieces getIndexedPieces() noexcept { return _undoRedoHistory.peek().getIndexedPieces(); }
+	static IndexedPieces getIndexedPieces() noexcept
+	{
+		if (_undoRedoHistory.empty())
+			return _undoRedoHistory.getInitialPieces();
+		auto &&value = _undoRedoHistory.peekPair();
+
+		return value.second.value_or(value.first).getIndexedPieces();
+	}
 	static std::vector<Move> getMovesHistory();
 	static std::vector<Move> getPossibleMoves(Square from);
 
