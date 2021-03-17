@@ -33,6 +33,11 @@ private:
 			bestScore = VALUE_MIN;
 			time = 0;
 			lastReportedDepth = 0;
+		}
+
+		void fullReset() noexcept
+		{
+			reset();
 			useBook = true;
 		}
 	};

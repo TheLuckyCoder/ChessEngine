@@ -70,7 +70,7 @@ fun ChessBoard(
 }
 
 @Composable
-fun BoardTiles(
+private fun BoardTiles(
     boardDp: Dp,
     tileDp: Dp,
     isPlayerWhite: Boolean,
@@ -156,7 +156,7 @@ fun BoardTiles(
 }
 
 @Composable
-fun BoardCoordinates(tileDp: Dp) {
+private fun BoardCoordinates(tileDp: Dp) {
     val whiteTileColor = colorResource(id = R.color.tile_white)
     val blackTileColor = colorResource(id = R.color.tile_black)
 
@@ -184,7 +184,7 @@ fun BoardCoordinates(tileDp: Dp) {
 }
 
 @Composable
-fun BoardPieces(
+private fun BoardPieces(
     tileDp: Dp,
     isPlayerWhite: Boolean,
     pieces: List<IndexedPiece>,

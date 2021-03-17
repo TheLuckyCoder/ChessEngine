@@ -150,7 +150,7 @@ public:
 		return _move != rhs._move;
 	}
 
-	std::string toString(const bool showPiece = false) const
+	std::string toString(const bool showPiece = false, const bool showFrom = true) const
 	{
 		std::string str;
 		str.reserve(5);
@@ -176,8 +176,12 @@ public:
 			str += pChar;
 		}
 
-		str += 'a' + i8(fileOf(fromSq));
-		str += '1' + i8(rankOf(fromSq));
+		if (showFrom)
+		{
+			str += 'a' + i8(fileOf(fromSq));
+			str += '1' + i8(rankOf(fromSq));
+		}
+
 		str += 'a' + i8(fileOf(toSq));
 		str += '1' + i8(rankOf(toSq));
 

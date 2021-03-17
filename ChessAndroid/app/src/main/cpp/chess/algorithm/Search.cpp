@@ -33,7 +33,7 @@ Search::SharedState Search::_sharedState{};
 void Search::clearAll()
 {
 	_transpositionTable.clear();
-	_sharedState.reset();
+	_sharedState.fullReset();
 }
 
 void Search::stopSearch()

@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <functional>
-#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -33,13 +32,12 @@ public:
 private:
 	static BoardChangedCallback _callback;
 
-//	inline static std::mutex lock;
 	inline static std::atomic_bool _isWorking{ false };
 	inline static bool _isPlayerWhite{ true };
 	static SearchOptions _searchOptions;
 	static Board _currentBoard;
-	static UndoRedo::HistoryStack _undoRedoHistory;
-	
+	static UndoRedo::HistoryStack _undoRedoStack;
+
 public:
 	static void initBoardManager(const BoardChangedCallback &callback, bool isPlayerWhite = true);
 	static bool loadGame(const std::string &fen, bool isPlayerWhite);
@@ -53,19 +51,25 @@ public:
 
 	/// Getters and Setters
 	static bool isWorking() noexcept { return _isWorking; }
+
 	static bool isPlayerWhite() noexcept { return _isPlayerWhite; }
+
 	static void setSearchOptions(const SearchOptions &searchOptions) { _searchOptions = searchOptions; }
+
 	static SearchOptions getSearchOptions() noexcept { return _searchOptions; }
+
 	static const auto &getBoard() noexcept { return _currentBoard; }
+
 	static IndexedPieces getIndexedPieces() noexcept
 	{
-		if (_undoRedoHistory.empty())
-			return _undoRedoHistory.getInitialPieces();
-		auto &&value = _undoRedoHistory.peekPair();
+		if (_undoRedoStack.empty())
+			return _undoRedoStack.getInitialPieces();
+		auto &&value = _undoRedoStack.peekPair();
 
 		return value.second.value_or(value.first).getIndexedPieces();
 	}
-	static std::vector<Move> getMovesHistory();
+
+	static std::vector<std::pair<Move, Move>> getMovesHistory();
 	static std::vector<Move> getPossibleMoves(Square from);
 
 private:

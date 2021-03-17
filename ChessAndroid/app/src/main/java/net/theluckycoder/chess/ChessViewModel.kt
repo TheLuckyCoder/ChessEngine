@@ -31,6 +31,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     private val tilesFlow = MutableStateFlow(emptyList<Tile>())
     private val piecesFlow = MutableStateFlow(emptyList<IndexedPiece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
+    private val movesHistoryFlow = MutableStateFlow(emptyList<String>())
     private val debugStatsFlow = MutableStateFlow(DebugStats())
 
     val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
@@ -38,6 +39,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     val tiles: StateFlow<List<Tile>> = tilesFlow
     val pieces: StateFlow<List<IndexedPiece>> = piecesFlow
     val gameState: StateFlow<GameState> = gameStateFlow
+    val movesHistory: StateFlow<List<String>> = movesHistoryFlow
     val debugStats: StateFlow<DebugStats> = debugStatsFlow
 
     /*
@@ -162,6 +164,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         clearTiles()
         updatePiecesList()
         gameStateFlow.value = state
+        movesHistoryFlow.value = Native.getMovesHistory().toList()
         debugStatsFlow.value = DebugStats.get()
 
         if (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE)

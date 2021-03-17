@@ -5,6 +5,9 @@ import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
@@ -30,14 +34,18 @@ fun HomeScreen() = when (LocalConfiguration.current.orientation) {
     Configuration.ORIENTATION_LANDSCAPE -> {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            topBar = { Toolbar() },
+            topBar = { TopBar() },
         ) { padding ->
             Row(
                 Modifier
                     .padding(padding)
                     .fillMaxSize()
             ) {
-                BottomBar(modifier = Modifier.fillMaxHeight().weight(1f))
+                BottomBar(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f)
+                )
                 ChessBoard()
 
                 HomeDialogs()
@@ -47,7 +55,7 @@ fun HomeScreen() = when (LocalConfiguration.current.orientation) {
     else -> {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            topBar = { Toolbar() },
+            topBar = { TopBar() },
             bottomBar = { BottomBar() }
         ) { padding ->
             ChessBoard(Modifier.padding(padding))
@@ -60,7 +68,9 @@ fun HomeScreen() = when (LocalConfiguration.current.orientation) {
 @OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
-private fun Toolbar() {
+private fun TopBar(
+    chessViewModel: ChessViewModel = viewModel()
+) = Column(modifier = Modifier.fillMaxWidth()) {
     TopAppBar(
         modifier = Modifier.height(dimensionResource(id = R.dimen.toolbar_height)),
         backgroundColor = MaterialTheme.colors.primary,
@@ -72,7 +82,6 @@ private fun Toolbar() {
                 modifier = Modifier.padding(end = 16.dp)
             )
 
-            val chessViewModel = viewModel<ChessViewModel>()
             val isThinking by chessViewModel.isEngineThinking.collectAsState(false)
             AnimatedVisibility(visible = isThinking) {
                 Icon(
@@ -84,6 +93,38 @@ private fun Toolbar() {
         },
         actions = {
             AppBarActions()
+        }
+    )
+
+    val movesHistory by chessViewModel.movesHistory.collectAsState()
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    remember(movesHistory) {
+        coroutineScope.launch {
+            listState.animateScrollToItem(movesHistory.size - 1)
+        }
+    }
+
+    LazyRow(
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp),
+        content = {
+            if (movesHistory.isEmpty()) {
+                item {
+                    Text(text = "", fontSize = 13.sp)
+                }
+            } else {
+                items(movesHistory) {
+                    Text(
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        text = it,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
         }
     )
 }

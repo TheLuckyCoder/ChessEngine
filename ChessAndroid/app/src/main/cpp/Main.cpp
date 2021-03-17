@@ -261,6 +261,29 @@ Java_net_theluckycoder_chess_Native_getCurrentFen(JNIEnv *pEnv, jobject)
 	return pEnv->NewStringUTF(fenString.c_str());
 }
 
+external JNIEXPORT jobjectArray JNICALL
+Java_net_theluckycoder_chess_Native_getMovesHistory(JNIEnv *pEnv, jobject)
+{
+	const auto moves = BoardManager::getMovesHistory();
+	const auto array = pEnv->NewObjectArray(moves.size(), pEnv->FindClass("java/lang/String"), nullptr);
+
+	for (usize i{}; i < moves.size(); ++i)
+	{
+		const auto pair = moves[i];
+		std::ostringstream stream;
+		stream << i + 1 << ". "
+			   << pair.first.toString(true, false);
+
+		if (!pair.second.empty())
+			stream << ' ' << pair.second.toString(true, false);
+
+		const auto str = stream.str();
+		pEnv->SetObjectArrayElement(array, i, pEnv->NewStringUTF(str.c_str()));
+	}
+
+	return array;
+}
+
 external JNIEXPORT jstring JNICALL
 Java_net_theluckycoder_chess_Native_saveMoves(JNIEnv *pEnv, jobject)
 {

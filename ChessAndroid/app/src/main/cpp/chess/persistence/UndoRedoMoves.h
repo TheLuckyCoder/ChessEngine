@@ -7,7 +7,7 @@
 
 struct IndexedPiece
 {
-	IndexedPiece(const i32 id, const Square square, const Color pieceColor, const PieceType pieceType)
+	IndexedPiece(const u8 id, const Square square, const Color pieceColor, const PieceType pieceType)
 		: id(id), square(square), pieceColor(pieceColor), pieceType(pieceType)
 	{
 	}
@@ -15,12 +15,11 @@ struct IndexedPiece
 	/**
 	 * An unique ID assigned to this piece
 	 */
-	i32 id;
+	u8 id;
 	/**
 	 * The square on which the Piece is located
 	 */
 	Square square;
-	Piece piece;
 	Color pieceColor;
 	PieceType pieceType;
 };
@@ -29,11 +28,9 @@ using IndexedPieces = std::vector<IndexedPiece>;
 
 namespace UndoRedo
 {
-	static std::vector<IndexedPiece> incrementIndexedPieces(IndexedPieces pieces, const std::string fen, const Move move) noexcept
+	static std::vector<IndexedPiece>
+	incrementIndexedPieces(IndexedPieces pieces, const Color colorToMove, const Move move) noexcept
 	{
-		Board board;
-		board.setToFen(fen);
-
 		const auto findPiece = [&](const Square square)
 		{
 			const auto it = std::find_if(pieces.begin(), pieces.end(), [&square](const IndexedPiece &piece)
@@ -54,14 +51,14 @@ namespace UndoRedo
 		// Handle en passant capture and castling
 		if (flags.enPassant())
 		{
-			const Square capturedSq = toSquare(u8(to) + static_cast<u8>(board.colorToMove ? -8 : 8));
+			const Square capturedSq = toSquare(u8(to) + static_cast<u8>(colorToMove ? -8 : 8));
 			removePiece(capturedSq);
 		} else if (flags.kSideCastle())
 		{
 			if (to == SQ_G1)
-				movePiece(SQ_A1, SQ_D1);
+				movePiece(SQ_H1, SQ_F1);
 			else if (to == SQ_G8)
-				movePiece(SQ_A8, SQ_D8);
+				movePiece(SQ_H8, SQ_F8);
 		} else if (flags.qSideCastle())
 		{
 			if (to == SQ_C1)
@@ -91,7 +88,7 @@ namespace UndoRedo
 		{
 			auto &&piece = board.data[square];
 			if (piece.isValid())
-				pieces.emplace_back(i32(square), toSquare(square), piece.color(), piece.type());
+				pieces.emplace_back(square, toSquare(square), piece.color(), piece.type());
 		}
 
 		return pieces;
@@ -101,17 +98,15 @@ namespace UndoRedo
 	{
 	public:
 		HistoryBoard(const Board &board, const Move &move)
-			: _fen(board.getFen()), _pieces(makeIndexedPieces(board)), _move(move), _colorToMove(board.colorToMove)
+			: _pieces(makeIndexedPieces(board)), _move(move), _colorToMove(board.colorToMove)
 		{
 		}
 
 		HistoryBoard(const IndexedPieces &previousPieces, const Board &board, const Move &move)
-			: _fen(board.getFen()), _pieces(incrementIndexedPieces(previousPieces, _fen, move)), _move(move),
+			: _pieces(incrementIndexedPieces(previousPieces, board.colorToMove, move)), _move(move),
 			  _colorToMove(board.colorToMove)
 		{
 		}
-
-		const auto &getFen() const noexcept { return _fen; }
 
 		const auto &getIndexedPieces() const noexcept { return _pieces; }
 
@@ -120,7 +115,6 @@ namespace UndoRedo
 		bool colorToMove() const noexcept { return _colorToMove; }
 
 	private:
-		std::string _fen;
 		IndexedPieces _pieces;
 		Move _move;
 		Color _colorToMove;
@@ -144,7 +138,7 @@ namespace UndoRedo
 			assert(!move.empty());
 
 			if (!_data.empty() && _current != std::prev(_data.end()))
-				_data.erase(_current, _data.end());
+				_data.erase(_current + 1, _data.end());
 
 			_current = std::prev(_data.end());
 
@@ -152,7 +146,8 @@ namespace UndoRedo
 			{
 				auto &&pair = peekPair();
 				if (pair.second.has_value() || pair.first.colorToMove() == board.colorToMove)
-					_data.emplace_back(HistoryBoard{ pair.second.value_or(pair.first).getIndexedPieces(), board, move }, std::nullopt);
+					_data.emplace_back(HistoryBoard{ pair.second.value_or(pair.first).getIndexedPieces(), board, move },
+									   std::nullopt);
 				else
 					pair.second = HistoryBoard{ pair.first.getIndexedPieces(), board, move };
 			} else
@@ -161,26 +156,28 @@ namespace UndoRedo
 			_current = std::prev(_data.end());
 		}
 
-		bool undo() noexcept
+		std::pair<Move, Move> undo() noexcept
 		{
 			if (_current != _data.begin())
 			{
 				--_current;
-				return true;
+				const auto &pair = peekPair();
+				return std::make_pair(pair.first.getMove(), pair.second.has_value() ? pair.second->getMove() : Move{});
 			}
 
-			return false;
+			return std::make_pair(Move{}, Move{});
 		}
 
-		bool redo() noexcept
+		std::pair<Move, Move> redo() noexcept
 		{
 			if (_current != std::prev(_data.end()))
 			{
 				++_current;
-				return true;
+				const auto &pair = peekPair();
+				return std::make_pair(pair.first.getMove(), pair.second.has_value() ? pair.second->getMove() : Move{});
 			}
 
-			return false;
+			return std::make_pair(Move{}, Move{});
 		}
 
 		bool empty() const noexcept { return _data.empty(); }
@@ -196,6 +193,10 @@ namespace UndoRedo
 			auto &&pair = peekPair();
 			return pair.second.value_or(pair.first);
 		}
+
+		auto begin() const noexcept { return _data.begin(); }
+
+		auto end() const noexcept { return _data.end(); }
 
 		const auto &getInitialPieces() const noexcept { return _initialPieces; }
 

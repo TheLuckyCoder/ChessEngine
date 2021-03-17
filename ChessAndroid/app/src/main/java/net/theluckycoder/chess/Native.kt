@@ -38,6 +38,7 @@ object Native {
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
     external fun loadMoves(moves: String)
     external fun getCurrentFen(): String
+    external fun getMovesHistory(): Array<String>
 
     external fun saveMoves(): String?
 
