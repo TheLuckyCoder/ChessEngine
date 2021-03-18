@@ -8,7 +8,7 @@
 
 class Evaluation final
 {
-	static constexpr short _PIECE_VALUE[] = { 0, 128, 781, 825, 1276, 2538, 0 };
+	static constexpr short PieceValue[] = { 0, 128, 781, 825, 1276, 2538, 0 };
 
 public:
 	static constexpr short TEMPO_BONUS = 20;
@@ -51,6 +51,6 @@ public:
 
 	static constexpr short getPieceValue(const PieceType type) noexcept
 	{
-		return _PIECE_VALUE[type];
+		return PieceValue[type];
 	}
 };

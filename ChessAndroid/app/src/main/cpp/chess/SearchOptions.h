@@ -26,32 +26,32 @@ public:
 	{
 	}
 
-	constexpr auto depth() const noexcept
+	[[nodiscard]] constexpr auto depth() const noexcept
 	{
 		return _depth;
 	}
 
-	constexpr auto threadCount() const noexcept
+	[[nodiscard]] constexpr auto threadCount() const noexcept
 	{
 		return _threadCount;
 	}
 
-	constexpr auto tableSizeMb() const noexcept
+	[[nodiscard]] constexpr auto tableSizeMb() const noexcept
 	{
 		return _cacheTableSizeMb;
 	}
 
-	constexpr bool isTimeSet() const noexcept
+	[[nodiscard]] constexpr bool isTimeSet() const noexcept
 	{
 		return _searchTime != 0ull;
 	}
 
-	constexpr auto searchTime() const noexcept
+	[[nodiscard]] constexpr auto searchTime() const noexcept
 	{
 		return _searchTime;
 	}
 
-	constexpr bool quietSearch() const noexcept
+	[[nodiscard]] constexpr bool quietSearch() const noexcept
 	{
 		return _quiescenceSearch;
 	}

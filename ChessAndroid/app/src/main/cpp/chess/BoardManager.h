@@ -60,16 +60,9 @@ public:
 
 	static const auto &getBoard() noexcept { return _currentBoard; }
 
-	static IndexedPieces getIndexedPieces() noexcept
-	{
-		if (_undoRedoStack.empty())
-			return _undoRedoStack.getInitialPieces();
-		auto &&value = _undoRedoStack.peekPair();
+	static IndexedPieces getIndexedPieces() noexcept { return _undoRedoStack.getIndexedPieces(); }
 
-		return value.second.value_or(value.first).getIndexedPieces();
-	}
-
-	static std::vector<std::pair<Move, Move>> getMovesHistory();
+	static std::vector<Move> getMovesHistory();
 	static std::vector<Move> getPossibleMoves(Square from);
 
 private:

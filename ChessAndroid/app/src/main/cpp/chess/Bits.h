@@ -75,7 +75,7 @@ namespace Bits
 	/**
 	 * Calculated using Chebyshev distance
 	 */
-	static constexpr auto _DISTANCE_BETWEEN_SQUARES = []
+	static constexpr auto DistanceBetweenSquares = []
 	{
 		std::array<std::array<u8, SQUARE_NB>, SQUARE_NB> array{};
 
@@ -94,7 +94,7 @@ namespace Bits
 	/**
 	 * Table of precalculated shifted bitboards indexed by the times 1 has been shifted to the left
 	 */
-	static constexpr auto _SQUARES = []
+	static constexpr auto Squares = []
 	{
 		std::array<u64, SQUARE_NB> array{};
 
@@ -108,7 +108,7 @@ namespace Bits
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square
 	*/
-	static constexpr auto _RAYS = []
+	static constexpr auto Rays = []
 	{
 		std::array<std::array<u64, SQUARE_NB>, 8> rays{};
 
@@ -118,9 +118,9 @@ namespace Bits
 
 			rays[SOUTH][square] = 0x0080808080808080ULL >> (63u - square);
 
-			rays[EAST][square] = 2u * (_SQUARES[square | 7u] - _SQUARES[square]);
+			rays[EAST][square] = 2u * (Squares[square | 7u] - Squares[square]);
 
-			rays[WEST][square] = _SQUARES[square] - _SQUARES[square & 56u];
+			rays[WEST][square] = Squares[square] - Squares[square & 56u];
 
 			rays[NORTH_WEST][square] =
 				_westN(0x102040810204000ULL, 7u - fileOf(square)) << (rankOf(square) * 8u);
@@ -138,7 +138,7 @@ namespace Bits
 		return rays;
 	}();
 
-	static constexpr auto _RANKS = []
+	static constexpr auto Ranks = []
 	{
 		std::array<u64, 8> ranks{};
 
@@ -148,7 +148,7 @@ namespace Bits
 		return ranks;
 	}();
 
-	static constexpr auto _FILES = []
+	static constexpr auto Files = []
 	{
 		std::array<u64, 8> files{};
 
@@ -194,18 +194,18 @@ namespace Bits
 
 	static constexpr u64 _generateRayAttacksForwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const u64 attacks = _RAYS[direction][sq];
+		const u64 attacks = Rays[direction][sq];
 		const u64 blockers = attacks & occupied;
 		const u8 square = bitScanForward(blockers | 0x8000000000000000);
-		return attacks ^ _RAYS[direction][square];
+		return attacks ^ Rays[direction][square];
 	}
 
 	static constexpr u64 _generateRayAttacksBackwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const auto attacks = _RAYS[direction][sq];
+		const auto attacks = Rays[direction][sq];
 		const auto blockers = attacks & occupied;
 		const u8 square = bitScanReverse(blockers | 1ull);
-		return attacks ^ _RAYS[direction][square];
+		return attacks ^ Rays[direction][square];
 	}
 
 	static constexpr u64 generateBishopAttacks(const u8 square, const u64 blockers) noexcept
@@ -224,15 +224,15 @@ namespace Bits
 			   | _generateRayAttacksBackwards(square, blockers, WEST);
 	}
 
-	static const auto _RAYS_BETWEEN_SQUARES = []
+	static const auto RaysBetweenSquares = []
 	{
 		std::array<std::array<u64, SQUARE_NB>, SQUARE_NB> array{};
 
 		for (u8 sq1{}; sq1 < SQUARE_NB; ++sq1)
 			for (u8 sq2{}; sq2 < SQUARE_NB; ++sq2)
 			{
-				const auto bb1 = _SQUARES[sq1];
-				const auto bb2 = _SQUARES[sq2];
+				const auto bb1 = Squares[sq1];
+				const auto bb2 = Squares[sq2];
 
 				if (generateRookAttacks(sq1, {}) & bb2)
 					array[sq1][sq2] = generateRookAttacks(sq1, bb2) & generateRookAttacks(sq2, bb1);
@@ -245,7 +245,7 @@ namespace Bits
 
 	constexpr u8 getDistanceBetween(const Square sq1, const Square sq2)
 	{
-		return _DISTANCE_BETWEEN_SQUARES[u8(sq1)][u8(sq2)];
+		return DistanceBetweenSquares[u8(sq1)][u8(sq2)];
 	}
 
 // endregion Rays
@@ -258,6 +258,8 @@ public:
 
 	explicit constexpr Bitboard(const u64 value) noexcept
 		: _value(value) {}
+
+	/// Const functions
 
 	[[nodiscard]] constexpr auto value() const noexcept { return _value; }
 
@@ -379,12 +381,12 @@ public:
 
 	explicit constexpr operator bool() const noexcept { return bool(_value); }
 
-	// Static
+	/// Static
 
 public:
 	static constexpr Bitboard fromSquare(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_SQUARES.at(u8(square)) };
+		return Bitboard{ Bits::Squares.at(u8(square)) };
 	}
 
 	/**
@@ -395,22 +397,22 @@ public:
 	 */
 	static constexpr Bitboard fromRay(const Dir direction, const Square square) noexcept
 	{
-		return Bitboard{ Bits::_RAYS[direction].at(u8(square)) };
+		return Bitboard{ Bits::Rays[direction].at(u8(square)) };
 	}
 
 	static constexpr Bitboard fromRayBetween(const Square sq1, const Square sq2) noexcept
 	{
-		return Bitboard{ Bits::_RAYS_BETWEEN_SQUARES.at(u8(sq1)).at(u8(sq2)) };
+		return Bitboard{ Bits::RaysBetweenSquares.at(u8(sq1)).at(u8(sq2)) };
 	}
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_RANKS.at(rankOf(square)) };
+		return Bitboard{ Bits::Ranks.at(rankOf(square)) };
 	}
 
 	static constexpr Bitboard fromFile(const Square square) noexcept
 	{
-		return Bitboard{ Bits::_FILES.at(fileOf(square)) };
+		return Bitboard{ Bits::Files.at(fileOf(square)) };
 	}
 
 	static constexpr Bitboard fromAdjacentFiles(const Square square) noexcept

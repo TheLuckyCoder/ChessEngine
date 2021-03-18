@@ -63,7 +63,7 @@ namespace
 	};
 	constexpr Score ROOK_MOBILITY[] = {
 		{ -60, -82 }, { -24, -15 }, { 0, 17 }, { 3, 43 }, { 4, 72 },
-		{ 14, 100 }, { 20, 102 }, { 30,  122 }, { 41, 133 }, { 41, 139 },
+		{ 14, 100 }, { 20, 102 }, { 30, 122 }, { 41, 133 }, { 41, 139 },
 		{ 41, 153 }, { 45, 160 }, { 57, 165 }, { 58, 170 }, { 67, 175 }
 	};
 	constexpr Score QUEEN_MOBILITY[] = {
@@ -75,7 +75,7 @@ namespace
 	};
 }
 
-static thread_local PawnStructureTable _pawnTable{ 2 };
+static thread_local PawnStructureTable PawnTable{ 2 };
 
 constexpr auto MASK_PAWN_SHIELD = []
 {
@@ -120,9 +120,8 @@ struct Eval
 
 	int computeValue() noexcept;
 
-	const auto &getTrace() const noexcept
+	const auto &getTrace() const noexcept requires Trace
 	{
-		static_assert(Trace);
 		return *trace;
 	}
 
@@ -319,7 +318,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		if constexpr (Us == BLACK)
 			pawns = pawns.flipVertical();
 
-		const auto pawnsEntry = _pawnTable[pawns.value()];
+		const auto pawnsEntry = PawnTable[pawns.value()];
 
 		// Don't use the Pawn Structure Table if we are Tracing the Eval
 		if (Trace || pawnsEntry.pawns != pawns)
@@ -332,7 +331,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 				pawnScore += evaluatePawn<Us>(square);
 			}
 
-			_pawnTable.insert({ pawns, pawnScore });
+			PawnTable.insert({ pawns, pawnScore });
 		} else
 			pawnScore = pawnsEntry.score;
 	}

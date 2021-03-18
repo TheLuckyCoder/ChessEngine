@@ -61,7 +61,7 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 	{
 		if (move.empty() || !moveExists(_currentBoard, move) || !_currentBoard.makeMove(move))
 			break;
-		_undoRedoStack.add(_currentBoard, move);
+		_undoRedoStack.push(_currentBoard, move);
 	}
 
 	_callback(getBoardState());
@@ -73,7 +73,7 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 void BoardManager::makeMove(const Move move)
 {
 	_currentBoard.makeMove(move);
-	_undoRedoStack.add(_currentBoard, move);
+	_undoRedoStack.push(_currentBoard, move);
 	_callback(getBoardState());
 }
 
@@ -100,11 +100,9 @@ void BoardManager::makeEngineMove()
 
 void BoardManager::undoLastMoves()
 {
-	const auto movePair = _undoRedoStack.undo();
-
-	if (!movePair.second.empty())
+	if (!_undoRedoStack.undo().empty())
 		_currentBoard.undoMove();
-	if (!movePair.first.empty())
+	if (_undoRedoStack.peek().colorToMove() != isPlayerWhite() && !_undoRedoStack.undo().empty())
 		_currentBoard.undoMove();
 
 	_callback(getBoardState());
@@ -112,26 +110,27 @@ void BoardManager::undoLastMoves()
 
 void BoardManager::redoLastMoves()
 {
-	const auto movePair = _undoRedoStack.redo();
-
-	if (!movePair.first.empty())
-		_currentBoard.makeMove(movePair.first);
-	if (!movePair.second.empty())
-		_currentBoard.makeMove(movePair.second);
+	if (const Move move = _undoRedoStack.redo(); !move.empty())
+		_currentBoard.makeMove(move);
+	if (_undoRedoStack.peek().colorToMove() != isPlayerWhite())
+	{
+		const Move move = _undoRedoStack.redo();
+		if (!move.empty())
+			_currentBoard.makeMove(move);
+		else
+			makeEngineMove(); // If there was no move to redo, try to make one
+	}
 
 	_callback(getBoardState());
 }
 
-std::vector<std::pair<Move, Move>> BoardManager::getMovesHistory()
+std::vector<Move> BoardManager::getMovesHistory()
 {
-	std::vector<std::pair<Move, Move>> moves;
-	moves.reserve(64);
+	std::vector<Move> moves;
+	moves.reserve(_undoRedoStack.size());
+
 	std::transform(_undoRedoStack.begin(), _undoRedoStack.end(), std::back_inserter(moves),
-				   [](const UndoRedo::HistoryBoardPair &pair)
-				   {
-					   return std::make_pair(pair.first.getMove(),
-											 pair.second.has_value() ? pair.second->getMove() : Move{});
-				   });
+				   [](const auto &history) { return history.getMove(); });
 
 	return moves;
 }

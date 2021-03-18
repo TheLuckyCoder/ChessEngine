@@ -73,4 +73,4 @@ private:
 	
 };
 
-constexpr Piece EMPTY_PIECE{};
+constexpr Piece EmptyPiece{};

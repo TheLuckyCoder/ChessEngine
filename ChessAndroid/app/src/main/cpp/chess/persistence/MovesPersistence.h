@@ -13,7 +13,7 @@ public:
 	bool isPlayerWhite() const;
 	std::vector<Move> getMoves() const;
 
-	static std::string saveToString(const std::vector<std::pair<Move, Move>> &moves, bool isPlayerWhite);
+	static std::string saveToString(const std::vector<Move> &moves, bool isPlayerWhite);
 
 private:
 	std::string _content;

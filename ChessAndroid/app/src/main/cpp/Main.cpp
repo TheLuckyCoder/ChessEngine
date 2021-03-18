@@ -269,15 +269,7 @@ Java_net_theluckycoder_chess_Native_getMovesHistory(JNIEnv *pEnv, jobject)
 
 	for (usize i{}; i < moves.size(); ++i)
 	{
-		const auto pair = moves[i];
-		std::ostringstream stream;
-		stream << i + 1 << ". "
-			   << pair.first.toString(true, false);
-
-		if (!pair.second.empty())
-			stream << ' ' << pair.second.toString(true, false);
-
-		const auto str = stream.str();
+		const auto str = moves[i].toString(true, false);
 		pEnv->SetObjectArrayElement(array, i, pEnv->NewStringUTF(str.c_str()));
 	}
 

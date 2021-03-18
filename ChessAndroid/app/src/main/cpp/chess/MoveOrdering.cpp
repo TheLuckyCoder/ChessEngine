@@ -5,10 +5,12 @@
 
 namespace MoveOrdering
 {
-	static constexpr int EN_PASSANT_SCORE = 105;
+	static constexpr int NormalScore = 1000000;
+	static constexpr int PvScore = NormalScore * 2;
+	static constexpr int EnPassantScore = 105;
 
-	static constexpr std::array VICTIM_SCORE = { 0, 100, 200, 300, 400, 500, 600 };
-	static constexpr auto MVA_LVV = []
+	static constexpr std::array VictimScore = { 0, 100, 200, 300, 400, 500, 600 };
+	static constexpr auto MvaLvv = []
 	{
 		std::array<std::array<int, 7>, 7> array{};
 
@@ -16,7 +18,7 @@ namespace MoveOrdering
 		{
 			for (u8 victim = PAWN; victim <= KING; ++victim)
 			{
-				array[victim][attacker] = VICTIM_SCORE[victim] + 6 - VICTIM_SCORE[attacker] / 100;
+				array[victim][attacker] = VictimScore[victim] + 6 - VictimScore[attacker] / 100;
 			}
 		}
 
@@ -33,13 +35,13 @@ namespace MoveOrdering
 			const auto flags = move.flags();
 
 			if (move.fromToBits() == pvMove.fromToBits())
-				move.setScore(PV_SCORE);
+				move.setScore(PvScore);
 			else if (flags.capture())
-				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()] + NORMAL_SCORE);
+				move.setScore(MvaLvv[move.capturedPiece()][move.piece()] + NormalScore);
 			else if (flags.promotion())
-				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NORMAL_SCORE);
+				move.setScore(Evaluation::getPieceValue(move.promotedPiece()) + NormalScore);
 			else if (flags.enPassant())
-				move.setScore(EN_PASSANT_SCORE + NORMAL_SCORE);
+				move.setScore(EnPassantScore + NormalScore);
 			else if (thread.killers[0][board.ply] == move.getContents())
 				move.setScore(900000);
 			else if (thread.killers[1][board.ply] == move.getContents())
@@ -56,11 +58,11 @@ namespace MoveOrdering
 			const auto flags = move.flags();
 
 			if (flags.capture())
-				move.setScore(MVA_LVV[move.capturedPiece()][move.piece()]);
+				move.setScore(MvaLvv[move.capturedPiece()][move.piece()]);
 			else if (flags.promotion())
 				move.setScore(Evaluation::getPieceValue(move.promotedPiece()));
 			else if (flags.enPassant())
-				move.setScore(EN_PASSANT_SCORE);
+				move.setScore(EnPassantScore);
 		}
 	}
 

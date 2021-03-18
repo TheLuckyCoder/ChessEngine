@@ -28,8 +28,8 @@ using IndexedPieces = std::vector<IndexedPiece>;
 
 namespace UndoRedo
 {
-	static std::vector<IndexedPiece>
-	incrementIndexedPieces(IndexedPieces pieces, const Color colorToMove, const Move move) noexcept
+	static std::vector<IndexedPiece> incrementIndexedPieces(
+		IndexedPieces pieces, const Color colorToMove, const Move move) noexcept
 	{
 		const auto findPiece = [&](const Square square)
 		{
@@ -120,8 +120,6 @@ namespace UndoRedo
 		Color _colorToMove;
 	};
 
-	using HistoryBoardPair = std::pair<HistoryBoard, std::optional<HistoryBoard>>;
-
 	class HistoryStack
 	{
 	public:
@@ -133,76 +131,70 @@ namespace UndoRedo
 			_data.reserve(64);
 		}
 
-		void add(const Board &board, const Move move) noexcept
+		void push(const Board &board, const Move move) noexcept
 		{
 			assert(!move.empty());
 
-			if (!_data.empty() && _current != std::prev(_data.end()))
-				_data.erase(_current + 1, _data.end());
-
-			_current = std::prev(_data.end());
-
-			if (!empty())
+			if (_index < _data.size() && !_data.empty())
 			{
-				auto &&pair = peekPair();
-				if (pair.second.has_value() || pair.first.colorToMove() == board.colorToMove)
-					_data.emplace_back(HistoryBoard{ pair.second.value_or(pair.first).getIndexedPieces(), board, move },
-									   std::nullopt);
-				else
-					pair.second = HistoryBoard{ pair.first.getIndexedPieces(), board, move };
-			} else
-				_data.emplace_back(HistoryBoard{ _initialPieces, board, move }, std::nullopt);
-
-			_current = std::prev(_data.end());
-		}
-
-		std::pair<Move, Move> undo() noexcept
-		{
-			if (_current != _data.begin())
-			{
-				--_current;
-				const auto &pair = peekPair();
-				return std::make_pair(pair.first.getMove(), pair.second.has_value() ? pair.second->getMove() : Move{});
+				const auto it = _data.begin() + _index;
+				_data.erase(it + 1, _data.end());
 			}
 
-			return std::make_pair(Move{}, Move{});
+			if (!_data.empty())
+				_data.emplace_back(peek().getIndexedPieces(), board, move);
+			else
+				_data.emplace_back(_initialPieces, board, move);
+
+			_index = _data.size() - 1u;
 		}
 
-		std::pair<Move, Move> redo() noexcept
+		Move undo() noexcept
 		{
-			if (_current != std::prev(_data.end()))
+			if (_index >= 0 && _index < _data.size())
 			{
-				++_current;
-				const auto &pair = peekPair();
-				return std::make_pair(pair.first.getMove(), pair.second.has_value() ? pair.second->getMove() : Move{});
+				const Move move = peek().getMove();
+				--_index;
+				return move;
 			}
 
-			return std::make_pair(Move{}, Move{});
+			return {};
 		}
 
-		bool empty() const noexcept { return _data.empty(); }
-
-		HistoryBoardPair &peekPair() noexcept
+		Move redo() noexcept
 		{
-			assert(!empty());
-			return *_current;
+			if (_index + 1 < _data.size())
+			{
+				++_index;
+				return peek().getMove();
+			}
+
+			return {};
 		}
 
-		HistoryBoard peek() noexcept
+		auto size() const noexcept { return _data.size(); }
+
+		const HistoryBoard &peek() const noexcept
 		{
-			auto &&pair = peekPair();
-			return pair.second.value_or(pair.first);
+			if (_index < 0)
+				return _data.front();
+			if (_index >= _data.size())
+				return _data.back();
+			return _data.at(_index);
+		}
+
+		const auto &getIndexedPieces() const noexcept
+		{
+			return _index < _data.size() ? peek().getIndexedPieces() : _initialPieces;
 		}
 
 		auto begin() const noexcept { return _data.begin(); }
 
 		auto end() const noexcept { return _data.end(); }
 
-		const auto &getInitialPieces() const noexcept { return _initialPieces; }
-
 	private:
 		IndexedPieces _initialPieces;
-		std::vector<HistoryBoardPair> _data;
-		std::vector<HistoryBoardPair>::iterator _current = _data.begin();
+		std::vector<HistoryBoard> _data;
+		i64 _index{ -1l };
 	};
 }

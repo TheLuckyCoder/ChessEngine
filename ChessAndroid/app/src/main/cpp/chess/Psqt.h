@@ -7,13 +7,13 @@
 
 constexpr auto PSQT = []
 {
-	constexpr Score PAWN_SCORE{ 128, 213 };
-	constexpr Score KNIGHT_SCORE{ 781, 854 };
-	constexpr Score BISHOP_SCORE{ 825, 915 };
-	constexpr Score ROOK_SCORE{ 1276, 1380 };
-	constexpr Score QUEEN_SCORE{ 2538, 2682 };
+	constexpr Score pawnScore{ 128, 213 };
+	constexpr Score knightScore{ 781, 854 };
+	constexpr Score bishopScore{ 825, 915 };
+	constexpr Score rookScore{ 1276, 1380 };
+	constexpr Score queenScore{ 2538, 2682 };
 
-	constexpr Score PAWN_SQUARE[][4] = {
+	constexpr Score pawnSquare[][4] = {
 		{},
 		{{ 3,  -10 }, { 3,   -6 },  { 10,  10 },  { 19,  0 }},
 		{{ -9, -10 }, { -15, -10 }, { 11,  -10 }, { 15,  4 }},
@@ -24,7 +24,7 @@ constexpr auto PSQT = []
 		{}
 	};
 
-	constexpr Score KNIGHT_SQUARE[][4] = {
+	constexpr Score knightSquare[][4] = {
 		{{ -175, -96 },  { -92, -65 }, { -74, -49 }, { -73, -21 }},
 		{{ -77,  -67 },  { -41, -54 }, { -27, -18 }, { -15, 8 }},
 		{{ -61,  -40 },  { -17, -27 }, { 6,   -8 },  { 12,  29 }},
@@ -35,7 +35,7 @@ constexpr auto PSQT = []
 		{{ -201, -100 }, { -83, -88 }, { -56, -56 }, { -26, -17 }}
 	};
 
-	constexpr Score BISHOP_SQUARE[][4] = {
+	constexpr Score bishopSquare[][4] = {
 		{{ -37, -40 }, { -4,  -21 }, { -6,  -26 }, { -16, -8 }},
 		{{ -11, -26 }, { 6,   -9 },  { 13,  -12 }, { 3,   1 }},
 		{{ -5,  -11 }, { 15,  -1 },  { -4,  -1 },  { 12,  7 }},
@@ -46,7 +46,7 @@ constexpr auto PSQT = []
 		{{ -34, -32 }, { 1,   -29 }, { -10, -26 }, { -16, -17 }}
 	};
 
-	constexpr Score ROOK_SQUARE[][4] = {
+	constexpr Score rookSquare[][4] = {
 		{{ -31, -9 },  { -20, -13 }, { -14, -10 }, { -5, -9 }},
 		{{ -21, -12 }, { -13, -9 },  { -8,  -1 },  { 6,  -2 }},
 		{{ -25, 6 },   { -11, -8 },  { -1,  -2 },  { 3,  -6 }},
@@ -57,7 +57,7 @@ constexpr auto PSQT = []
 		{{ -17, 18 },  { -19, 0 },   { -1,  19 },  { 9,  13 }}
 	};
 
-	constexpr Score QUEEN_SQUARE[][4] = {
+	constexpr Score queenSquare[][4] = {
 		{{ 3,  -69 }, { -5, -57 }, { -5, -47 }, { 4,  -26 }},
 		{{ -3, -55 }, { 5,  -31 }, { 8,  -22 }, { 12, -4 }},
 		{{ -3, -39 }, { 6,  -18 }, { 13, -9 },  { 7,  3 }},
@@ -68,7 +68,7 @@ constexpr auto PSQT = []
 		{{ -2, -75 }, { -2, -52 }, { 1,  -43 }, { -2, -36 }}
 	};
 
-	constexpr Score KING_SQUARE[][4] = {
+	constexpr Score kingSquare[][4] = {
 		{{ 271, 1 },   { 327, 45 },  { 270, 85 },  { 192, 76 }},
 		{{ 278, 53 },  { 303, 100 }, { 230, 133 }, { 174, 135 }},
 		{{ 195, 88 },  { 258, 130 }, { 169, 169 }, { 120, 175 }},
@@ -81,18 +81,17 @@ constexpr auto PSQT = []
 
 	std::array<std::array<Score, SQUARE_NB>, 7> bonuses{};
 
-	for (u8 i{}; i < SQUARE_NB; ++i)
+	for (u8 sq{}; sq < SQUARE_NB; ++sq)
 	{
-		const u8 x = fileOf(i);
-		const u8 y = rankOf(i);
-		const u8 queenSideY = std::min<u8>(y, 7u - y);
+		const u8 file = fileOf(sq);
+		const u8 queenSideRank = distanceToRankEdge(toSquare(sq));
 
-		bonuses[PAWN][i] = PAWN_SCORE + PAWN_SQUARE[x][queenSideY];
-		bonuses[KNIGHT][i] = KNIGHT_SCORE + KNIGHT_SQUARE[x][queenSideY];
-		bonuses[BISHOP][i] = BISHOP_SCORE + BISHOP_SQUARE[x][queenSideY];
-		bonuses[ROOK][i] = ROOK_SCORE + ROOK_SQUARE[x][queenSideY];
-		bonuses[QUEEN][i] = QUEEN_SCORE + QUEEN_SQUARE[x][queenSideY];
-		bonuses[KING][i] = KING_SQUARE[x][queenSideY];
+		bonuses[PAWN][sq] = pawnScore + pawnSquare[file][queenSideRank];
+		bonuses[KNIGHT][sq] = knightScore + knightSquare[file][queenSideRank];
+		bonuses[BISHOP][sq] = bishopScore + bishopSquare[file][queenSideRank];
+		bonuses[ROOK][sq] = rookScore + rookSquare[file][queenSideRank];
+		bonuses[QUEEN][sq] = queenScore + queenSquare[file][queenSideRank];
+		bonuses[KING][sq] = kingSquare[file][queenSideRank];
 	}
 
 	return bonuses;

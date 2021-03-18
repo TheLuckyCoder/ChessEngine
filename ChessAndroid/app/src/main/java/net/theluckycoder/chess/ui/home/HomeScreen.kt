@@ -6,12 +6,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
@@ -96,6 +97,11 @@ private fun TopBar(
         }
     )
 
+    MovesHistory(chessViewModel)
+}
+
+@Composable
+private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
     val movesHistory by chessViewModel.movesHistory.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -117,12 +123,25 @@ private fun TopBar(
                     Text(text = "", fontSize = 13.sp)
                 }
             } else {
-                items(movesHistory) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        text = it,
-                        fontSize = 13.sp,
-                    )
+                itemsIndexed(movesHistory) { index, item ->
+                    val padding =
+                        if (index % 2 == 0) Modifier.padding(start = 4.dp) else Modifier.padding(end = 4.dp)
+
+                    Row(
+                        modifier = padding
+                    ) {
+                        if (index % 2 == 0) {
+                            Text(
+                                text = "${index / 2 + 1}. ",
+                                color = Color.Gray,
+                                fontSize = 13.sp,
+                            )
+                        }
+                        Text(
+                            text = item,
+                            fontSize = 13.sp,
+                        )
+                    }
                 }
             }
         }

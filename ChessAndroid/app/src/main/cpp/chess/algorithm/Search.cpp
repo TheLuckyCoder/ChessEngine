@@ -373,7 +373,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		assert(startPly == board.ply);
 
 		const Move move = MoveOrdering::getNextMove(moveList);
-		const bool pvMove = move.getScore() == MoveOrdering::PV_SCORE;
+		const bool pvMove = move.flags().pvMove();
 
 		if (!board.makeMove(move))
 			continue;

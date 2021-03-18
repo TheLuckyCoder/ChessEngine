@@ -74,7 +74,7 @@ std::string FenParser::exportToFen(const Board &board)
 		for (int file = 0; file <= 7; ++file)
 		{
 			int emptyCount = 0;
-			for (; file <= 7 && board.data[toSquare(file, rank)] == EMPTY_PIECE; ++file)
+			for (; file <= 7 && board.data[toSquare(file, rank)] == EmptyPiece; ++file)
 				++emptyCount;
 
 			if (emptyCount)
@@ -117,7 +117,7 @@ std::string FenParser::exportToFen(const Board &board)
 
 	if (board.canCastleQs<BLACK>()) out << 'q';
 
-	if (!board.canCastle(WHITE) && !board.canCastle(BLACK)) out << '-';
+	if (!board.canCastle<WHITE>() && !board.canCastle<BLACK>()) out << '-';
 
 	if (board.enPassantSq < SQ_NONE)
 		out << ' ' << char('a' + int(fileOf(board.enPassantSq))) << int(rankOf(board.enPassantSq)) << ' ';

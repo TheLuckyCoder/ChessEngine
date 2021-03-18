@@ -8,7 +8,7 @@
 
 namespace PolyKeys
 {
-	static constexpr u64 RANDOM64[781] = {
+	static constexpr u64 Random64[781] = {
 		u64(0x9D39247E33776D41), u64(0x2AF7398005AAA5C7), u64(0x44DB015024623547), u64(0x9C15F73E62A76AE2),
 		u64(0x75834465489C0C89), u64(0x3290AC3A203001BF), u64(0x0FBBAD1F61042279), u64(0xE83A908FF2FB60CA),
 		u64(0x0D7E765D58755C10), u64(0x1A083822CEAFE02D), u64(0x9605D5F0E25EC3B0), u64(0xD021FF5CD13A2ED5),
@@ -207,9 +207,12 @@ namespace PolyKeys
 		u64(0xF8D626AAAF278509),
 	};
 
-	static constexpr usize CASTLE_OFFSET = 768;
-	static constexpr usize EN_PASSANT_OFFSET = 772;
-	static constexpr usize TURN_OFFSET = 780;
+	enum
+	{
+		CASTLE_OFFSET = 768,
+		EN_PASSANT_OFFSET = 772,
+		TURN_OFFSET = 780,
+	};
 }
 
 namespace PolyBook
@@ -292,39 +295,39 @@ namespace PolyBook
 	{
 		u64 result{};
 
-		// Pieces
+		// PiecesKeys
 		for (u8 square = 0; square < SQUARE_NB; ++square)
 		{
 			const Piece piece = board.data[square];
-			if (piece == EMPTY_PIECE)
+			if (piece == EmptyPiece)
 				continue;
 
 			const auto polyPiece = toPolyPiece(piece);
 			const usize index = 64 * polyPiece + 8 * rankOf(square) + fileOf(square);
 
-			result ^= PolyKeys::RANDOM64[index];
+			result ^= PolyKeys::Random64[index];
 		}
 
 		// Castling
 		if (board.canCastleKs<WHITE>())
-			result ^= PolyKeys::RANDOM64[PolyKeys::CASTLE_OFFSET + 0];
+			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 0];
 		if (board.canCastleQs<WHITE>())
-			result ^= PolyKeys::RANDOM64[PolyKeys::CASTLE_OFFSET + 1];
+			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 1];
 		if (board.canCastleKs<BLACK>())
-			result ^= PolyKeys::RANDOM64[PolyKeys::CASTLE_OFFSET + 2];
+			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 2];
 		if (board.canCastleQs<BLACK>())
-			result ^= PolyKeys::RANDOM64[PolyKeys::CASTLE_OFFSET + 3];
+			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 3];
 
 		// En Passant
 		if (board.enPassantSq != SQ_NONE && hasEnPassPawnForCapture(board))
 		{
-			result ^= PolyKeys::RANDOM64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.enPassantSq)];
+			result ^= PolyKeys::Random64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.enPassantSq)];
 		}
 
-		// Side
+		// SideKey
 		if (board.colorToMove == WHITE)
 		{
-			result ^= PolyKeys::RANDOM64[PolyKeys::TURN_OFFSET];
+			result ^= PolyKeys::Random64[PolyKeys::TURN_OFFSET];
 		}
 
 		// Generate the key and swap it to big endian using flipVertical

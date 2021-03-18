@@ -39,13 +39,13 @@ std::vector<Move> MovesPersistence::getMoves() const
 	return moves;
 }
 
-std::string MovesPersistence::saveToString(const std::vector<std::pair<Move, Move>> &moves, const bool isPlayerWhite)
+std::string MovesPersistence::saveToString(const std::vector<Move> &moves, const bool isPlayerWhite)
 {
 	std::ostringstream stream;
 	stream << (isPlayerWhite ? 'W' : 'B');
 
-	for (const auto &pair : moves)
-		stream << pair.first.getContents() << ';' << pair.second.getContents() << ';';
+	for (const Move &move : moves)
+		stream << move.getContents() << ';';
 
 	return stream.str();
 }

@@ -14,10 +14,11 @@ public:
 		{
 			CAPTURE = 1, // The move is a capture
 			PROMOTION = 1 << 1, // The move is a promotion
-			KSIDE_CASTLE = 1 << 2, // The move is a king side castle
-			QSIDE_CASTLE = 1 << 3, // The move is a queen side castle
+			KSIDE_CASTLE = 1 << 2, // The move is a king SideKey castle
+			QSIDE_CASTLE = 1 << 3, // The move is a queen SideKey castle
 			DOUBLE_PAWN_PUSH = 1 << 4, // The move is a double pawn push
-			EN_PASSANT = 1 << 5 // The move is an en passant capture (Do not set the CAPTURE flag too)
+			EN_PASSANT = 1 << 5, // The move is an en passant capture (Do not set the CAPTURE flag too)
+			PV_MOVE = 1 << 6, // The move is a PV Move
 		};
 
 	public:
@@ -34,6 +35,8 @@ public:
 		constexpr bool doublePawnPush() const noexcept { return _flags & Internal::DOUBLE_PAWN_PUSH; }
 
 		constexpr bool enPassant() const noexcept { return _flags & Internal::EN_PASSANT; }
+
+		constexpr bool pvMove() const noexcept { return _flags & Internal::PV_MOVE; }
 
 	private:
 		u8 _flags;
@@ -211,7 +214,7 @@ private:
 	 * Bits 12 to 14 (3 bits) store the 'moved' piece type
 	 * Bits 15 to 17 (3 bits) store the 'captured' piece type
 	 * Bits 18 to 20 (3 bits) store the 'promoted' piece type
-	 * Bits 21 to 26 (6 bits) store the 'flags'
+	 * Bits 21 to 27 (7 bits) store the 'flags'
 	 */
 	u32 _move{};
 	i32 _score{};
@@ -228,5 +231,5 @@ private:
 	static constexpr u32 MOVED_MASK = 0b111;
 	static constexpr u32 CAPTURED_MASK = 0b111;
 	static constexpr u32 PROMOTED_MASK = 0b111;
-	static constexpr u32 FLAGS_MASK = 0b111'1111;
+	static constexpr u32 FLAGS_MASK = 0b1111'1111;
 };

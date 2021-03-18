@@ -25,8 +25,8 @@ public:
 	constexpr Move &front() noexcept { return *begin(); }
 	constexpr const Move &front() const noexcept { return *begin(); }
 
-	constexpr Move &back() noexcept { return *(end() - 1); }
-	constexpr const Move &back() const noexcept { return *(end() - 1); }
+	constexpr Move &back() noexcept { return *std::prev(end()); }
+	constexpr const Move &back() const noexcept { return *std::prev(end()); }
 
 	constexpr void popBack() noexcept { --_end; }
 
