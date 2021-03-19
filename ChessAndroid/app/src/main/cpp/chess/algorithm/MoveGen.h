@@ -6,26 +6,33 @@
 #include "../Move.h"
 #include "../Board.h"
 
-Move *generateMoves(const Board &board, Move *moveList) noexcept;
+class MoveList;
 
 class MoveList
 {
+	void generateMoves() noexcept;
+
 public:
 	explicit MoveList(Board &board)
-		: _board(board), _end(generateMoves(board, _moveList))
+		: _board(board), _end(begin())
 	{
+		generateMoves();
 	}
 
 	constexpr Move *begin() noexcept { return _moveList; }
+
 	constexpr const Move *begin() const noexcept { return _moveList; }
 
 	constexpr Move *end() noexcept { return _end; }
+
 	constexpr const Move *end() const noexcept { return _end; }
 
 	constexpr Move &front() noexcept { return *begin(); }
+
 	constexpr const Move &front() const noexcept { return *begin(); }
 
 	constexpr Move &back() noexcept { return *std::prev(end()); }
+
 	constexpr const Move &back() const noexcept { return *std::prev(end()); }
 
 	constexpr void popBack() noexcept { --_end; }
@@ -41,6 +48,12 @@ public:
 				return true;
 
 		return false;
+	}
+
+	template <class... Args>
+	constexpr void emplace_back(Args &&...args) noexcept
+	{
+		*_end++ = Move(std::forward<Args>(args)...);
 	}
 
 	void keepLegalMoves() noexcept
@@ -87,10 +100,11 @@ inline Move parseMove(Board &board, const std::string &str)
 	if (str[1] > '8' || str[1] < '1'
 		|| str[3] > '8' || str[3] < '1'
 		|| str[0] > 'h' || str[0] < 'a'
-		|| str[2] > 'h' || str[2] < 'a') return {};
+		|| str[2] > 'h' || str[2] < 'a')
+		return {};
 
-    const Square from = toSquare(u8(str[0] - 'a'), u8(str[1] - '1'));
-    const Square to = toSquare(u8(str[2] - 'a'), u8(str[3] - '1'));
+	const Square from = toSquare(u8(str[0] - 'a'), u8(str[1] - '1'));
+	const Square to = toSquare(u8(str[2] - 'a'), u8(str[3] - '1'));
 
 	const MoveList moveList(board);
 
@@ -106,7 +120,7 @@ inline Move parseMove(Board &board, const std::string &str)
 					|| (promoted == ROOK && str[4] == 'r')
 					|| (promoted == ROOK && str[4] == 'q'))
 					return move;
-				
+
 				continue;
 			}
 			return move;

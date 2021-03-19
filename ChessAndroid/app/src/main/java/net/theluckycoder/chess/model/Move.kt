@@ -47,4 +47,30 @@ data class Move(
     }
 
     val flags = Flags(internalFlags.toInt())
+
+    override fun toString(): String = buildString {
+        when {
+            flags.kSideCastle -> append("0-0")
+            flags.qSideCastle -> append("0-0-0")
+            else -> {
+                val piece = when (pieceType) {
+                    Piece.KNIGHT -> 'N'
+                    Piece.BISHOP -> 'B'
+                    Piece.ROOK -> 'R'
+                    Piece.QUEEN -> 'Q'
+                    Piece.KING -> 'K'
+                    else -> ' '
+                }
+                append(piece)
+
+                if (flags.capture)
+                    append('x')
+
+                val x = 'a' + to % 8
+                val y = '1' + to / 8
+                append(x)
+                append(y)
+            }
+        }
+    }
 }

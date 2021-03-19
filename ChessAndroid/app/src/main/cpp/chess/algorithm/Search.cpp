@@ -1,7 +1,6 @@
 #include "Search.h"
 
 #include <iostream>
-
 #include <vector>
 
 #include "../Stats.h"

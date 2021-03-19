@@ -135,7 +135,7 @@ namespace UndoRedo
 		{
 			assert(!move.empty());
 
-			if (_index < _data.size() && !_data.empty())
+			if (_index < static_cast<i64>(_data.size()) && !_data.empty())
 			{
 				const auto it = _data.begin() + _index;
 				_data.erase(it + 1, _data.end());
@@ -151,7 +151,7 @@ namespace UndoRedo
 
 		Move undo() noexcept
 		{
-			if (_index >= 0 && _index < _data.size())
+			if (_index >= 0 && _index < static_cast<i64>(_data.size()))
 			{
 				const Move move = peek().getMove();
 				--_index;
@@ -163,7 +163,7 @@ namespace UndoRedo
 
 		Move redo() noexcept
 		{
-			if (_index + 1 < _data.size())
+			if (_index + 1 < static_cast<i64>(_data.size()))
 			{
 				++_index;
 				return peek().getMove();
@@ -178,14 +178,15 @@ namespace UndoRedo
 		{
 			if (_index < 0)
 				return _data.front();
-			if (_index >= _data.size())
+			if (_index >= static_cast<i64>(_data.size()))
 				return _data.back();
-			return _data.at(_index);
+			return _data[_index];
 		}
 
 		const auto &getIndexedPieces() const noexcept
 		{
-			return _index < _data.size() ? peek().getIndexedPieces() : _initialPieces;
+			return (_index >= 0 && _index < static_cast<i64>(_data.size()))
+				   ? peek().getIndexedPieces() : _initialPieces;
 		}
 
 		auto begin() const noexcept { return _data.begin(); }

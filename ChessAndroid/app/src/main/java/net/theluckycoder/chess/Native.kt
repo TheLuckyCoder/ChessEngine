@@ -36,9 +36,9 @@ object Native {
     external fun redoMoves()
 
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
-    external fun loadMoves(moves: String)
+    external fun loadMoves(moves: IntArray)
     external fun getCurrentFen(): String
-    external fun getMovesHistory(): Array<String>
+    external fun getMovesHistory(): Array<Move>
 
     external fun saveMoves(): String?
 

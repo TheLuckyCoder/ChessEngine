@@ -138,7 +138,7 @@ private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
                             )
                         }
                         Text(
-                            text = item,
+                            text = item.toString(),
                             fontSize = 13.sp,
                         )
                     }

@@ -3,11 +3,11 @@
 namespace
 {
 	template <Color Us>
-	Move *generatePawnMoves(const Board &board, Move *moveList, const Bitboard targets)
+	void generatePawnMoves(const Board &board, MoveList &moveList, const Bitboard targets)
 	{
 		constexpr Piece Piece{ PAWN, Us };
-		constexpr Color Them = ~Us;
-		constexpr Dir Forward = Us == WHITE ? NORTH : SOUTH;
+		constexpr Color Them{ ~Us };
+		constexpr Dir Forward{ Us == WHITE ? NORTH : SOUTH };
 		constexpr Bitboard StartRank{ Us == WHITE ? RANK_2 : RANK_7 };
 		constexpr Bitboard LastRank{ Us == WHITE ? RANK_7 : RANK_2 };
 
@@ -21,10 +21,10 @@ namespace
 				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
-					*moveList++ = move;
+					moveList.emplace_back(move);
 				}
 			} else
-				*moveList++ = move;
+				moveList.emplace_back(move);
 		};
 
 		const auto addCaptureMove = [&](const Square from, const Square to, const Bitboard pos)
@@ -38,10 +38,10 @@ namespace
 				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
-					*moveList++ = move;
+					moveList.emplace_back(move);
 				}
 			} else
-				*moveList++ = move;
+				moveList.emplace_back(move);
 		};
 
 		for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
@@ -59,7 +59,7 @@ namespace
 				if (board.getType(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
 				{
 					attacks &= ~enPassantCapture;
-					*moveList++ = { from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT };
+					moveList.emplace_back(from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT);
 				}
 			}
 
@@ -81,20 +81,18 @@ namespace
 					if (!(board.occupied & doublePushBb))
 					{
 						const u8 targetSq = doublePushBb.bitScanForward();
-						*moveList++ = { from, targetSq, PAWN,Move::Flags::DOUBLE_PAWN_PUSH };
+						moveList.emplace_back(from, targetSq, PAWN, Move::Flags::DOUBLE_PAWN_PUSH);
 					}
 				}
 			}
 		}
-
-		return moveList;
 	}
 
 	template <Color Us, PieceType P>
-	Move *generatePieceMoves(const Board &board, Move *moveList, const Bitboard targets)
+	void generatePieceMoves(const Board &board, MoveList &moveList, const Bitboard targets)
 	{
 		static_assert(P != KING && P != PAWN);
-		constexpr Color Them = ~Us;
+		constexpr Color Them{ ~Us };
 		constexpr Piece Piece{ P, Us };
 
 		for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
@@ -126,17 +124,15 @@ namespace
 					move.setCapturedPiece(board.getPiece(to).type());
 				}
 
-				*moveList++ = move;
+				moveList.emplace_back(move);
 			}
 		}
-
-		return moveList;
 	}
 
 	template <Color Us>
-	Move *generateKingMoves(const Board &board, Move *moveList, const Bitboard targets)
+	void generateKingMoves(const Board &board, MoveList &moveList, const Bitboard targets)
 	{
-		constexpr Color Them = ~Us;
+		constexpr Color Them{ ~Us };
 
 		const Square kingSq = board.getKingSq<Us>();
 		assert(kingSq < SQUARE_NB);
@@ -170,11 +166,11 @@ namespace
 				move.setFlags(Move::Flags::CAPTURE);
 				move.setCapturedPiece(board.getPiece(to).type());
 			}
-			*moveList++ = move;
+			moveList.emplace_back(move);
 		}
 
 		if (board.isSideInCheck() || !board.canCastle<Us>())
-			return moveList;
+			return;
 
 		const auto addCastleMove = [&, kingSq](const Square kingTo, const Square rookSq,
 											   const Square rookTo, const u8 castleSide)
@@ -195,7 +191,7 @@ namespace
 					return;
 			}
 
-			*moveList++ = { kingSq, kingTo, KING, castleSide };
+			moveList.emplace_back(kingSq, kingTo, KING, castleSide);
 		};
 
 		if (board.canCastleKs<Us>())
@@ -213,12 +209,10 @@ namespace
 			constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
 			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::QSIDE_CASTLE);
 		}
-
-		return moveList;
 	}
 
 	template <Color Us>
-	Move *generateAllMoves(const Board &board, Move *moveList)
+	void generateAllMoves(const Board &board, MoveList &moveList)
 	{
 		constexpr Color Them = ~Us;
 
@@ -252,21 +246,19 @@ namespace
 		else
 			targets = kingTargets;
 
-		moveList = generatePawnMoves<Us>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, BISHOP>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, ROOK>(board, moveList, targets);
-		moveList = generatePieceMoves<Us, QUEEN>(board, moveList, targets);
-		moveList = generateKingMoves<Us>(board, moveList, kingTargets);
-
-		return moveList;
+		generatePawnMoves<Us>(board, moveList, targets);
+		generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
+		generatePieceMoves<Us, BISHOP>(board, moveList, targets);
+		generatePieceMoves<Us, ROOK>(board, moveList, targets);
+		generatePieceMoves<Us, QUEEN>(board, moveList, targets);
+		generateKingMoves<Us>(board, moveList, kingTargets);
 	}
 }
 
-Move *generateMoves(const Board &board, Move *moveList) noexcept
+void MoveList::generateMoves() noexcept
 {
-	const Color color = board.colorToMove;
-	return color == WHITE
-		   ? generateAllMoves<WHITE>(board, moveList)
-		   : generateAllMoves<BLACK>(board, moveList);
+	if (_board.colorToMove == WHITE)
+		generateAllMoves<WHITE>(_board, *this);
+	else
+		generateAllMoves<BLACK>(_board, *this);
 }

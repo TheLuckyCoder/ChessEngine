@@ -140,8 +140,6 @@ Java_net_theluckycoder_chess_Native_getPieces(JNIEnv *pEnv, jobject)
 external JNIEXPORT jobjectArray JNICALL
 Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyte square)
 {
-	pEnv->ExceptionClear();
-
 	const static auto constructorId = pEnv->GetMethodID(JniCache::moveClass, "<init>", "(IBBBBBB)V");
 
 	const auto possibleMoves = BoardManager::getPossibleMoves(toSquare(square));
@@ -149,14 +147,14 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 	jobjectArray result =
 		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), JniCache::moveClass, nullptr);
 
-	int i{};
-	std::for_each(possibleMoves.begin(), possibleMoves.end(), [&](const Move &move)
+	usize i{};
+	for (auto &&move : possibleMoves)
 	{
 		jobject obj = pEnv->NewObject(JniCache::moveClass, constructorId,
 									  move.getContents(), move.from(), move.to(), move.piece(),
 									  move.capturedPiece(), move.promotedPiece(), move.flags());
 		pEnv->SetObjectArrayElement(result, i++, obj);
-	});
+	}
 
 	return result;
 }
@@ -243,14 +241,18 @@ Java_net_theluckycoder_chess_Native_loadFen(JNIEnv *pEnv, jobject, jboolean play
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jobject, jstring moves)
+Java_net_theluckycoder_chess_Native_loadMoves(JNIEnv *pEnv, jobject, jintArray moves, jboolean isPlayerWhite)
 {
-	const char *nativeString = pEnv->GetStringUTFChars(moves, nullptr);
-	const MovesPersistence savedMoves(nativeString);
+	const usize size = pEnv->GetArrayLength(moves);
+	auto elements = pEnv->GetIntArrayElements(moves, JNI_FALSE);
 
-	BoardManager::loadGame(savedMoves.getMoves(), savedMoves.isPlayerWhite());
+	std::vector<Move> vector;
+	vector.reserve(size);
 
-	pEnv->ReleaseStringUTFChars(moves, nativeString);
+	for (usize i = 0; i < size; ++i)
+		vector.emplace_back(elements[i]);
+
+	BoardManager::loadGame(vector, isPlayerWhite);
 }
 
 external JNIEXPORT jstring JNICALL
@@ -265,15 +267,21 @@ external JNIEXPORT jobjectArray JNICALL
 Java_net_theluckycoder_chess_Native_getMovesHistory(JNIEnv *pEnv, jobject)
 {
 	const auto moves = BoardManager::getMovesHistory();
-	const auto array = pEnv->NewObjectArray(moves.size(), pEnv->FindClass("java/lang/String"), nullptr);
+	const static auto constructorId = pEnv->GetMethodID(JniCache::moveClass, "<init>", "(IBBBBBB)V");
 
-	for (usize i{}; i < moves.size(); ++i)
+	const auto result =
+		pEnv->NewObjectArray(static_cast<jsize>(moves.size()), JniCache::moveClass, nullptr);
+
+	usize i{};
+	for (auto &&move : moves)
 	{
-		const auto str = moves[i].toString(true, false);
-		pEnv->SetObjectArrayElement(array, i, pEnv->NewStringUTF(str.c_str()));
+		jobject obj = pEnv->NewObject(JniCache::moveClass, constructorId,
+									  move.getContents(), move.from(), move.to(), move.piece(),
+									  move.capturedPiece(), move.promotedPiece(), move.flags());
+		pEnv->SetObjectArrayElement(result, i++, obj);
 	}
 
-	return array;
+	return moves;
 }
 
 external JNIEXPORT jstring JNICALL
