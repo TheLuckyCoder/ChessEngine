@@ -36,12 +36,12 @@ private:
 	inline static bool _isPlayerWhite{ true };
 	static SearchOptions _searchOptions;
 	static Board _currentBoard;
-	static UndoRedo::HistoryStack _undoRedoStack;
+	static UndoRedo::MovesStack _movesStack;
 
 public:
 	static void initBoardManager(const BoardChangedCallback &callback, bool isPlayerWhite = true);
-	static bool loadGame(const std::string &fen, bool isPlayerWhite);
-	static void loadGame(const std::vector<Move> &moves, bool isPlayerWhite);
+	static bool loadGame(bool isPlayerWhite, const std::string &fen);
+	static void loadGame(bool isPlayerWhite, const std::vector<Move> &moves);
 
 	/// Actions
 	static void makeMove(Move move);
@@ -60,9 +60,8 @@ public:
 
 	static const auto &getBoard() noexcept { return _currentBoard; }
 
-	static IndexedPieces getIndexedPieces() noexcept { return _undoRedoStack.getIndexedPieces(); }
+	static const UndoRedo::MovesStack &getMovesStack() noexcept { return _movesStack; }
 
-	static std::vector<Move> getMovesHistory();
 	static std::vector<Move> getPossibleMoves(Square from);
 
 private:

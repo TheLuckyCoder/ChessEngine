@@ -32,6 +32,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     private val piecesFlow = MutableStateFlow(emptyList<IndexedPiece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
     private val movesHistoryFlow = MutableStateFlow(emptyList<Move>())
+    private val currentMoveIndexFlow = MutableStateFlow(0)
     private val debugStatsFlow = MutableStateFlow(DebugStats())
 
     val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
@@ -40,6 +41,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     val pieces: StateFlow<List<IndexedPiece>> = piecesFlow
     val gameState: StateFlow<GameState> = gameStateFlow
     val movesHistory: StateFlow<List<Move>> = movesHistoryFlow
+    val currentMoveIndex: StateFlow<Int> = currentMoveIndexFlow
     val debugStats: StateFlow<DebugStats> = debugStatsFlow
 
     /*
@@ -62,6 +64,16 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             dataStore.getEngineSettings().distinctUntilChanged().collectLatest {
                 ensureActive()
                 withContext(Dispatchers.Main) { updateEngineSettings(it) }
+            }
+        }
+
+        viewModelScope.launch {
+            movesHistoryFlow.collectLatest {
+                ensureActive()
+                val state = gameState.value
+
+                if (it.isNotEmpty() && (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE))
+                    SaveManager.saveToFileAsync(getApplication(), playerPlayingWhite.value, it)
             }
         }
     }
@@ -148,8 +160,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     @Suppress("unused")
     @Keep // Called by native code
     private fun boardChangedCallback(gameState: Int) {
-        val app = getApplication<Application>()
-
         val state = when (gameState) {
             1 -> GameState.WINNER_WHITE
             2 -> GameState.WINNER_BLACK
@@ -165,10 +175,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         updatePiecesList()
         gameStateFlow.value = state
         movesHistoryFlow.value = Native.getMovesHistory().toList()
+        currentMoveIndexFlow.value = Native.getCurrentMoveIndex()
         debugStatsFlow.value = DebugStats.get()
-
-        if (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE)
-            SaveManager.saveToFileAsync(app)
     }
 
     private external fun initBoardNative(playerPlayingWhite: Boolean)

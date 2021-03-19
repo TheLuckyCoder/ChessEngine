@@ -61,7 +61,9 @@ data class Move(
                     Piece.KING -> 'K'
                     else -> ' '
                 }
-                append(piece)
+
+                if (piece != ' ')
+                    append(piece)
 
                 if (flags.capture)
                     append('x')

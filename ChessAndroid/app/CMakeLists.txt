@@ -19,7 +19,6 @@ add_library(
         src/main/cpp/chess/TranspositionTable.cpp
         src/main/cpp/chess/Zobrist.cpp
         src/main/cpp/chess/persistence/FenParser.cpp
-        src/main/cpp/chess/persistence/MovesPersistence.cpp
         src/main/cpp/chess/polyglot/PolyBook.cpp
 )
 

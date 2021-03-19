@@ -120,12 +120,12 @@ namespace UndoRedo
 		Color _colorToMove;
 	};
 
-	class HistoryStack
+	class MovesStack
 	{
 	public:
-		HistoryStack() = default;
+		MovesStack() = default;
 
-		HistoryStack(const Board &board)
+		MovesStack(const Board &board)
 			: _initialPieces(makeIndexedPieces(board))
 		{
 			_data.reserve(64);
@@ -188,6 +188,8 @@ namespace UndoRedo
 			return (_index >= 0 && _index < static_cast<i64>(_data.size()))
 				   ? peek().getIndexedPieces() : _initialPieces;
 		}
+
+		auto getCurrentIndex() const noexcept { return _index; }
 
 		auto begin() const noexcept { return _data.begin(); }
 

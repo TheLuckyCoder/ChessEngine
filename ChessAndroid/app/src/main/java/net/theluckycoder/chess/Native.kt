@@ -36,11 +36,11 @@ object Native {
     external fun redoMoves()
 
     external fun loadFen(playerWhite: Boolean, position: String): Boolean
-    external fun loadMoves(moves: IntArray)
+    external fun loadMoves(playerWhite: Boolean, moves: IntArray)
+
     external fun getCurrentFen(): String
     external fun getMovesHistory(): Array<Move>
-
-    external fun saveMoves(): String?
+    external fun getCurrentMoveIndex(): Int
 
     external fun initBook(bookPath: String)
 

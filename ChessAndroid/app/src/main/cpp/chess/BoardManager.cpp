@@ -9,7 +9,7 @@
 SearchOptions BoardManager::_searchOptions;
 BoardManager::BoardChangedCallback BoardManager::_callback;
 Board BoardManager::_currentBoard;
-UndoRedo::HistoryStack BoardManager::_undoRedoStack;
+UndoRedo::MovesStack BoardManager::_movesStack;
 
 void BoardManager::initBoardManager(const BoardChangedCallback &callback, const bool isPlayerWhite)
 {
@@ -17,7 +17,7 @@ void BoardManager::initBoardManager(const BoardChangedCallback &callback, const 
 
 	_isPlayerWhite = isPlayerWhite;
 	_currentBoard.setToStartPos();
-	_undoRedoStack = { _currentBoard };
+	_movesStack = { _currentBoard };
 	_callback = callback;
 
 	_callback(GameState::NONE);
@@ -26,7 +26,7 @@ void BoardManager::initBoardManager(const BoardChangedCallback &callback, const 
 		makeEngineMove();
 }
 
-bool BoardManager::loadGame(const std::string &fen, bool isPlayerWhite)
+bool BoardManager::loadGame(bool isPlayerWhite, const std::string &fen)
 {
 	Search::clearAll();
 	Board tempBoard;
@@ -35,7 +35,7 @@ bool BoardManager::loadGame(const std::string &fen, bool isPlayerWhite)
 	{
 		_isPlayerWhite = isPlayerWhite;
 		_currentBoard = tempBoard;
-		_undoRedoStack = { _currentBoard };
+		_movesStack = { _currentBoard };
 
 		_callback(getBoardState());
 
@@ -48,20 +48,20 @@ bool BoardManager::loadGame(const std::string &fen, bool isPlayerWhite)
 	return false;
 }
 
-void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerWhite)
+void BoardManager::loadGame(bool isPlayerWhite, const std::vector<Move> &moves)
 {
 	Search::clearAll();
 	assert(moves.size() < MAX_MOVES);
 
 	_isPlayerWhite = isPlayerWhite;
 	_currentBoard.setToStartPos();
-	_undoRedoStack = { _currentBoard };
+	_movesStack = { _currentBoard };
 
 	for (const Move &move : moves)
 	{
 		if (move.empty() || !moveExists(_currentBoard, move) || !_currentBoard.makeMove(move))
 			break;
-		_undoRedoStack.push(_currentBoard, move);
+		_movesStack.push(_currentBoard, move);
 	}
 
 	_callback(getBoardState());
@@ -73,7 +73,7 @@ void BoardManager::loadGame(const std::vector<Move> &moves, const bool isPlayerW
 void BoardManager::makeMove(const Move move)
 {
 	_currentBoard.makeMove(move);
-	_undoRedoStack.push(_currentBoard, move);
+	_movesStack.push(_currentBoard, move);
 	_callback(getBoardState());
 }
 
@@ -100,9 +100,9 @@ void BoardManager::makeEngineMove()
 
 void BoardManager::undoLastMoves()
 {
-	if (!_undoRedoStack.undo().empty())
+	if (!_movesStack.undo().empty())
 		_currentBoard.undoMove();
-	if (_undoRedoStack.peek().colorToMove() != isPlayerWhite() && !_undoRedoStack.undo().empty())
+	if (_movesStack.peek().colorToMove() != isPlayerWhite() && !_movesStack.undo().empty())
 		_currentBoard.undoMove();
 
 	_callback(getBoardState());
@@ -110,11 +110,11 @@ void BoardManager::undoLastMoves()
 
 void BoardManager::redoLastMoves()
 {
-	if (const Move move = _undoRedoStack.redo(); !move.empty())
+	if (const Move move = _movesStack.redo(); !move.empty())
 		_currentBoard.makeMove(move);
-	if (_undoRedoStack.peek().colorToMove() != isPlayerWhite())
+	if (_movesStack.peek().colorToMove() != isPlayerWhite())
 	{
-		const Move move = _undoRedoStack.redo();
+		const Move move = _movesStack.redo();
 		if (!move.empty())
 			_currentBoard.makeMove(move);
 		else
@@ -122,17 +122,6 @@ void BoardManager::redoLastMoves()
 	}
 
 	_callback(getBoardState());
-}
-
-std::vector<Move> BoardManager::getMovesHistory()
-{
-	std::vector<Move> moves;
-	moves.reserve(_undoRedoStack.size());
-
-	std::transform(_undoRedoStack.begin(), _undoRedoStack.end(), std::back_inserter(moves),
-				   [](const auto &history) { return history.getMove(); });
-
-	return moves;
 }
 
 std::vector<Move> BoardManager::getPossibleMoves(const Square from)

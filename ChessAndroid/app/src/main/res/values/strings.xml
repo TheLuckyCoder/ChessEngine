@@ -43,6 +43,8 @@
     <string name="pref_category_debug">Debugging</string>
     <string name="pref_coordinates">Coordinates</string>
     <string name="pref_coordinates_desc">Display Coordinates alongside the board</string>
+    <string name="pref_moves_history">Moves History</string>
+    <string name="pref_moves_history_desc">Display all previously made moves</string>
     <string name="pref_search_depth">Search Depth</string>
     <string name="pref_search_depth_desc">The maximum amount of moves that the engine may look ahead</string>
     <string name="pref_quiet_search">Quiet Search (Recommended)</string>

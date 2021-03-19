@@ -31,37 +31,49 @@ import net.theluckycoder.chess.ui.preferences.PreferencesActivity
 import kotlin.time.ExperimentalTime
 
 @Composable
-fun HomeScreen() = when (LocalConfiguration.current.orientation) {
-    Configuration.ORIENTATION_LANDSCAPE -> {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = { TopBar() },
-        ) { padding ->
-            Row(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-            ) {
-                BottomBar(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(1f)
-                )
-                ChessBoard()
+fun HomeScreen(
+    viewModel: ChessViewModel = viewModel()
+) {
+    val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
+
+    when (LocalConfiguration.current.orientation) {
+        Configuration.ORIENTATION_LANDSCAPE -> {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = { if (showMovesHistory) MovesHistory() },
+            ) { padding ->
+                Row(
+                    Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                ) {
+                    BottomBar(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                    )
+                    ChessBoard()
+
+                    HomeDialogs()
+                }
+            }
+        }
+        else -> {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        TopBar()
+                        if (showMovesHistory)
+                            MovesHistory()
+                    }
+                },
+                bottomBar = { BottomBar() }
+            ) { padding ->
+                ChessBoard(Modifier.padding(padding))
 
                 HomeDialogs()
             }
-        }
-    }
-    else -> {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = { TopBar() },
-            bottomBar = { BottomBar() }
-        ) { padding ->
-            ChessBoard(Modifier.padding(padding))
-
-            HomeDialogs()
         }
     }
 }
@@ -69,9 +81,7 @@ fun HomeScreen() = when (LocalConfiguration.current.orientation) {
 @OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
-private fun TopBar(
-    chessViewModel: ChessViewModel = viewModel()
-) = Column(modifier = Modifier.fillMaxWidth()) {
+private fun TopBar(chessViewModel: ChessViewModel = viewModel()) {
     TopAppBar(
         modifier = Modifier.height(dimensionResource(id = R.dimen.toolbar_height)),
         backgroundColor = MaterialTheme.colors.primary,
@@ -96,19 +106,20 @@ private fun TopBar(
             AppBarActions()
         }
     )
-
-    MovesHistory(chessViewModel)
 }
 
 @Composable
 private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
     val movesHistory by chessViewModel.movesHistory.collectAsState()
+    val currentMoveIndex by chessViewModel.currentMoveIndex.collectAsState()
+
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     remember(movesHistory) {
         coroutineScope.launch {
-            listState.animateScrollToItem(movesHistory.size - 1)
+            if (movesHistory.isNotEmpty() && currentMoveIndex in movesHistory.indices)
+                listState.animateScrollToItem(currentMoveIndex)
         }
     }
 
@@ -118,11 +129,7 @@ private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
             .fillMaxWidth()
             .padding(4.dp),
         content = {
-            if (movesHistory.isEmpty()) {
-                item {
-                    Text(text = "", fontSize = 13.sp)
-                }
-            } else {
+            if (movesHistory.isNotEmpty()) {
                 itemsIndexed(movesHistory) { index, item ->
                     val padding =
                         if (index % 2 == 0) Modifier.padding(start = 4.dp) else Modifier.padding(end = 4.dp)
@@ -137,11 +144,18 @@ private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
                                 fontSize = 13.sp,
                             )
                         }
+
                         Text(
                             text = item.toString(),
+                            color = if (currentMoveIndex == index) MaterialTheme.colors.secondary else Color.Unspecified,
                             fontSize = 13.sp,
                         )
                     }
+                }
+
+            } else {
+                item {
+                    Text(text = "", fontSize = 13.sp)
                 }
             }
         }

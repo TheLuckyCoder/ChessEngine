@@ -70,6 +70,13 @@ private fun getPreferenceItems(
                 icon = painterResource(id = R.drawable.ic_pref_coords),
                 defaultValue = SettingsDataStore.DEFAULT_SHOW_COORDINATES,
             ),
+            SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_moves_history),
+                summary = stringResource(id = R.string.pref_moves_history_desc),
+                prefKey = SettingsDataStore.SHOW_MOVES_HISTORY,
+                icon = painterResource(id = R.drawable.ic_pref_moves_history),
+                defaultValue = SettingsDataStore.DEFAULT_SHOW_COORDINATES,
+            ),
         ),
     ),
 
