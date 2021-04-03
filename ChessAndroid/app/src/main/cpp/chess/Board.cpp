@@ -42,12 +42,17 @@ Bitboard &Board::getPieces(const Piece piece) noexcept
 
 Piece Board::getPiece(const Square square) const noexcept
 {
-	return data[square];
+    return data[square];
+}
+
+Bitboard Board::getPieces() const noexcept
+{
+    return occupied;
 }
 
 Bitboard Board::getPieces(const PieceType type, const Color color) const noexcept
 {
-	return pieces[color][type];
+    return pieces[color][type];
 }
 
 Bitboard Board::getPieces(const PieceType type) const noexcept
@@ -329,17 +334,23 @@ void Board::undoNullMove() noexcept
 	fiftyMoveRule = previousMove.fiftyMoveRule;
 	enPassantSq = previousMove.enPassantSq;
 
-	colorToMove = ~colorToMove;
+    colorToMove = ~colorToMove;
+}
+
+bool
+Board::isAttackedByAny(const Color attackerColor, const Square targetSquare, const Bitboard blockers) const noexcept
+{
+    return isAttacked<PAWN>(attackerColor, targetSquare, blockers)
+           || isAttacked<KNIGHT>(attackerColor, targetSquare, blockers)
+           || isAttacked<KING>(attackerColor, targetSquare, blockers)
+           || isAttacked<BISHOP>(attackerColor, targetSquare, blockers)
+           || isAttacked<ROOK>(attackerColor, targetSquare, blockers)
+           || isAttacked<QUEEN>(attackerColor, targetSquare, blockers);
 }
 
 bool Board::isAttackedByAny(const Color attackerColor, const Square targetSquare) const noexcept
 {
-	return isAttacked<PAWN>(attackerColor, targetSquare)
-		   || isAttacked<KNIGHT>(attackerColor, targetSquare)
-		   || isAttacked<KING>(attackerColor, targetSquare)
-		   || isAttacked<BISHOP>(attackerColor, targetSquare)
-		   || isAttacked<ROOK>(attackerColor, targetSquare)
-		   || isAttacked<QUEEN>(attackerColor, targetSquare);
+    return isAttackedByAny(attackerColor, targetSquare, getPieces());
 }
 
 bool Board::isSideInCheck() const noexcept
@@ -463,7 +474,7 @@ std::string Board::toString() const noexcept
 {
 	std::ostringstream ss;
 
-	constexpr auto Delimiter = "+---+---+---+---+---+---+---+---+";
+    static constexpr auto Delimiter = "+---+---+---+---+---+---+---+---+";
 
 	for (u8 sq{}; sq < SQUARE_NB; ++sq)
 	{

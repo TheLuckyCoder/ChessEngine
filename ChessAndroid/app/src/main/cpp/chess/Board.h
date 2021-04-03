@@ -66,6 +66,7 @@ private:
 
 public:
     Piece getPiece(Square square) const noexcept;
+    Bitboard getPieces() const noexcept;
 	Bitboard getPieces(PieceType type, Color color) const noexcept;
 	Bitboard getPieces(PieceType type) const noexcept;
 	Bitboard getPieces(Color color) const noexcept;
@@ -84,7 +85,8 @@ public:
 	void undoNullMove() noexcept;
 
 	template <PieceType>
-	bool isAttacked(Color attackerColor, Square targetSquare) const noexcept;
+	bool isAttacked(Color attackerColor, Square targetSquare, Bitboard blockers) const noexcept;
+	bool isAttackedByAny(Color attackerColor, Square targetSquare, Bitboard blockers) const noexcept;
 	bool isAttackedByAny(Color attackerColor, Square targetSquare) const noexcept;
 	template <Color C>
 	Bitboard generateKingAttackers() const noexcept;
@@ -133,7 +135,7 @@ Square Board::getKingSq() const noexcept
 }
 
 template <PieceType P>
-bool Board::isAttacked(const Color attackerColor, const Square targetSquare) const noexcept
+bool Board::isAttacked(const Color attackerColor, const Square targetSquare, Bitboard blockers) const noexcept
 {
 	static_assert(PAWN <= P);
 	static_assert(P <= KING);
@@ -149,11 +151,11 @@ bool Board::isAttacked(const Color attackerColor, const Square targetSquare) con
 	} else if constexpr (P == KNIGHT)
 		return bool(type & Attacks::knightAttacks(targetSquare));
 	else if constexpr (P == BISHOP)
-		return bool(type & Attacks::bishopAttacks(targetSquare, occupied));
+		return bool(type & Attacks::bishopAttacks(targetSquare, blockers));
 	else if constexpr (P == ROOK)
-		return bool(type & Attacks::rookAttacks(targetSquare, occupied));
+		return bool(type & Attacks::rookAttacks(targetSquare, blockers));
 	else if constexpr (P == QUEEN)
-		return bool(type & Attacks::queenAttacks(targetSquare, occupied));
+		return bool(type & Attacks::queenAttacks(targetSquare, blockers));
 	else if constexpr (P == KING)
 		return bool(type & Attacks::kingAttacks(targetSquare));
 

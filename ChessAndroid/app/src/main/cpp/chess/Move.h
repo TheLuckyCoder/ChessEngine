@@ -22,7 +22,9 @@ public:
 		};
 
 	public:
-		constexpr Flags(const u8 flags) noexcept: _flags(flags & 0x7F) {}
+		explicit constexpr Flags(const u8 flags) noexcept: _flags(flags & 0x7F) {}
+
+		constexpr u8 getContents() const noexcept { return _flags; }
 
 		constexpr bool capture() const noexcept { return _flags & Internal::CAPTURE; }
 

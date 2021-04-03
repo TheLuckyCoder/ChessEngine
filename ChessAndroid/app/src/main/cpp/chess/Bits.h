@@ -400,10 +400,15 @@ public:
 		return Bitboard{ Bits::Rays[direction].at(u8(square)) };
 	}
 
-	static constexpr Bitboard fromRayBetween(const Square sq1, const Square sq2) noexcept
+	static constexpr Bitboard fromLineBetween(const Square sq1, const Square sq2) noexcept
 	{
 		return Bitboard{ Bits::RaysBetweenSquares.at(u8(sq1)).at(u8(sq2)) };
 	}
+
+    static constexpr Bitboard fromLine(const Square sq1, const Square sq2) noexcept
+    {
+        return fromSquare(sq1) | fromSquare(sq2) | fromLineBetween(sq1, sq2);
+    }
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{

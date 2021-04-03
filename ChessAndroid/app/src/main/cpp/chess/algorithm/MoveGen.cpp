@@ -149,10 +149,10 @@ namespace
 				attackers & (board.getPieces(ROOK, Them) | board.getPieces(QUEEN, Them));
 
 			while (bishopAttackers)
-				moves &= ~Bitboard::fromRayBetween(bishopAttackers.popLsb(), kingSq);
+				moves &= ~Bitboard::fromLineBetween(bishopAttackers.popLsb(), kingSq);
 
 			while (rookAttackers)
-				moves &= ~Bitboard::fromRayBetween(rookAttackers.popLsb(), kingSq);
+				moves &= ~Bitboard::fromLineBetween(rookAttackers.popLsb(), kingSq);
 		}
 
 		while (moves)
@@ -175,8 +175,8 @@ namespace
 		const auto addCastleMove = [&, kingSq](const Square kingTo, const Square rookSq,
 											   const Square rookTo, const u8 castleSide)
 		{
-			auto mask = Bitboard::fromRayBetween(kingSq, kingTo) | Bitboard::fromSquare(kingTo);
-			mask |= Bitboard::fromRayBetween(rookSq, rookTo) | Bitboard::fromSquare(rookTo);
+			auto mask = Bitboard::fromLineBetween(kingSq, kingTo) | Bitboard::fromSquare(kingTo);
+			mask |= Bitboard::fromLineBetween(rookSq, rookTo) | Bitboard::fromSquare(rookTo);
 			mask &= ~(Bitboard::fromSquare(kingSq) | Bitboard::fromSquare(rookSq));
 
 			// There can't be any pieces in between the rook and king
@@ -184,7 +184,7 @@ namespace
 				return;
 
 			// The King can't pass through a checked square
-			mask = Bitboard::fromRayBetween(kingSq, kingTo);
+			mask = Bitboard::fromLineBetween(kingSq, kingTo);
 			while (mask)
 			{
 				if (board.isAttackedByAny(Them, mask.popLsb()))
