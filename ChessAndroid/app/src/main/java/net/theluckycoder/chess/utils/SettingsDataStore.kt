@@ -86,7 +86,7 @@ class SettingsDataStore(private val context: Context) {
         const val DEFAULT_MOVES_HISTORY = true
         const val DEFAULT_SEARCH_DEPTH = 6
         const val DEFAULT_QUIET_SEARCH = true
-        const val DEFAULT_SEARCH_TIME = 30
+        const val DEFAULT_SEARCH_TIME = 10
         const val DEFAULT_THREADS = 1
         const val DEFAULT_HASH_SIZE = 64
     }

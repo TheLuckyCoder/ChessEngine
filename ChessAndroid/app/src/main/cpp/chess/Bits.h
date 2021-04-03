@@ -443,6 +443,7 @@ constexpr Bitboard FILE_F{ FILE_A << 5 };
 constexpr Bitboard FILE_G{ FILE_A << 6 };
 constexpr Bitboard FILE_H{ FILE_A << 7 };
 
+constexpr Bitboard ALL_SQUARES{ UINT64_MAX };
 constexpr Bitboard DARK_SQUARES{ 0xAA55AA55AA55AA55ULL };
 
 constexpr Bitboard KING_SIDE{ FILE_E | FILE_F | FILE_G | FILE_H };

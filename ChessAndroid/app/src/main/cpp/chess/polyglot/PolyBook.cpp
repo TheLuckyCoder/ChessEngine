@@ -240,9 +240,9 @@ namespace PolyBook
 		const auto enPass = Bitboard::fromSquare(board.enPassantSq);
 
 		if (board.colorToMove == WHITE)
-			return !(Attacks::pawnAttacks<WHITE>(board.getType(PAWN, WHITE)) & enPass).empty();
+			return !(Attacks::pawnAttacks<WHITE>(board.getPieces(PAWN, WHITE)) & enPass).empty();
 		else
-			return !(Attacks::pawnAttacks<BLACK>(board.getType(PAWN, BLACK)) & enPass).empty();
+			return !(Attacks::pawnAttacks<BLACK>(board.getPieces(PAWN, BLACK)) & enPass).empty();
 	}
 
 	static std::optional<std::string> bookPath;

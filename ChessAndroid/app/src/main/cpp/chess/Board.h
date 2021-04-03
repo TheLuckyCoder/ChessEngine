@@ -26,9 +26,7 @@ public:
 	u64 zKey{};
 	Bitboard occupied{};
 	Bitboard kingAttackers{};
-	std::array<Bitboard, 2> allPieces{};
 	std::array<std::array<Bitboard, 7>, 2> pieces{};
-
 	std::array<std::array<u8, 16>, 15> pieceList{};
 	std::array<u8, 15> pieceCount{};
 
@@ -41,9 +39,12 @@ public:
 	u8 fiftyMoveRule{};
 
 	short ply{};
+
+private:
 	short historyPly{};
 	std::array<UndoMove, MAX_MOVES> history{};
 
+public:
 	void setToStartPos();
 	bool setToFen(const std::string &fen);
 	std::string getFen() const;
@@ -58,12 +59,19 @@ public:
 	template <Color C>
 	bool isCastled() const noexcept;
 
+	/// region Piece
+private:
 	Piece &getPiece(Square square) noexcept;
-	Piece getPiece(Square square) const noexcept;
-	Bitboard &getType(Piece piece) noexcept;
-	Bitboard &getType(PieceType type, Color color) noexcept;
-	Bitboard getType(PieceType type, Color color) const noexcept;
-	Bitboard getType(PieceType type) const noexcept;
+    Bitboard &getPieces(Piece piece) noexcept;
+
+public:
+    Piece getPiece(Square square) const noexcept;
+	Bitboard getPieces(PieceType type, Color color) const noexcept;
+	Bitboard getPieces(PieceType type) const noexcept;
+	Bitboard getPieces(Color color) const noexcept;
+
+	/// endregion Piece
+
 	template <Color C>
 	Square getKingSq() const noexcept;
 
@@ -79,7 +87,7 @@ public:
 	bool isAttacked(Color attackerColor, Square targetSquare) const noexcept;
 	bool isAttackedByAny(Color attackerColor, Square targetSquare) const noexcept;
 	template <Color C>
-	Bitboard allKingAttackers() const noexcept;
+	Bitboard generateKingAttackers() const noexcept;
 	bool isSideInCheck() const noexcept;
 
 private:
@@ -130,7 +138,7 @@ bool Board::isAttacked(const Color attackerColor, const Square targetSquare) con
 	static_assert(PAWN <= P);
 	static_assert(P <= KING);
 
-	const auto type = getType(P, attackerColor);
+	const auto type = getPieces(P, attackerColor);
 
 	if constexpr (P == PAWN)
 	{
@@ -153,19 +161,19 @@ bool Board::isAttacked(const Color attackerColor, const Square targetSquare) con
 }
 
 template <Color C>
-Bitboard Board::allKingAttackers() const noexcept
+Bitboard Board::generateKingAttackers() const noexcept
 {
 	constexpr Color ColorAttacking = ~C;
 	const Square kingSq = getKingSq<C>();
 	assert(kingSq < SQUARE_NB);
 
-	const auto queens = getType(QUEEN, ColorAttacking);
-	const auto bishops = getType(BISHOP, ColorAttacking) | queens;
-	const auto rooks = getType(ROOK, ColorAttacking) | queens;
+	const auto queens = getPieces(QUEEN, ColorAttacking);
+	const auto bishops = getPieces(BISHOP, ColorAttacking) | queens;
+	const auto rooks = getPieces(ROOK, ColorAttacking) | queens;
 
-	return (getType(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bitboard::fromSquare(kingSq)))
-		   | (getType(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
-		   | (getType(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
+	return (getPieces(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bitboard::fromSquare(kingSq)))
+		   | (getPieces(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
+		   | (getPieces(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
 		   | (bishops & Attacks::bishopAttacks(kingSq, occupied))
 		   | (rooks & Attacks::rookAttacks(kingSq, occupied));
 }

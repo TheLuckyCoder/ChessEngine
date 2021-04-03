@@ -106,9 +106,9 @@ struct Eval
 		const auto wKingSq = board.getKingSq<WHITE>();
 		const auto bKingSq = board.getKingSq<BLACK>();
 		const auto wKingRing = (Attacks::kingAttacks(wKingSq) | Bitboard::fromSquare(wKingSq))
-							   & ~Attacks::pawnDoubleAttacks<WHITE>(board.getType(PAWN, WHITE));
+							   & ~Attacks::pawnDoubleAttacks<WHITE>(board.getPieces(PAWN, WHITE));
 		const auto bKingRing = (Attacks::kingAttacks(bKingSq) | Bitboard::fromSquare(bKingSq))
-							   & ~Attacks::pawnDoubleAttacks<BLACK>(board.getType(PAWN, BLACK));
+							   & ~Attacks::pawnDoubleAttacks<BLACK>(board.getPieces(PAWN, BLACK));
 		_kingRing = { wKingRing, bKingRing };
 	}
 
@@ -281,7 +281,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 			trace->kingProtector[Us] -= kingProtectorScore;
 
 		const auto bb = Bitboard::fromSquare(square);
-		const auto pawns = board.getType(PAWN, Us).shift<Behind>();
+		const auto pawns = board.getPieces(PAWN, Us).shift<Behind>();
 
 		if (bool(bb & pawns))
 		{
@@ -313,7 +313,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	Score pawnScore;
 
 	{
-		Bitboard pawns = board.getType(PAWN, Us);
+		Bitboard pawns = board.getPieces(PAWN, Us);
 
 		if constexpr (Us == BLACK)
 			pawns = pawns.flipVertical();
@@ -338,7 +338,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 
 	// Pawns
 	{
-		const auto pawns = board.getType(PAWN, Us);
+		const auto pawns = board.getPieces(PAWN, Us);
 		const auto pawnsAttacks = Attacks::pawnAttacks<Us>(pawns);
 		const auto doublePawnsAttacks = Attacks::pawnDoubleAttacks<Us>(pawns);
 
@@ -350,7 +350,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	}
 
 	_mobilityArea[Us] =
-		~board.allPieces[Us] & ~Attacks::pawnAttacks<Them>(board.getType(PAWN, Them));
+		~board.getPieces(Us) & ~Attacks::pawnAttacks<Them>(board.getPieces(PAWN, Them));
 
 	Piece piece{ KNIGHT, Us };
 	for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
@@ -436,10 +436,10 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 	constexpr Color Them = ~Us;
 	Score totalValue{};
 
-	const auto nonPawnEnemies = board.allPieces[Them] & ~board.getType(PAWN, Us);
+	const auto nonPawnEnemies = board.getPieces(Them) & ~board.getPieces(PAWN, Us);
 	const auto stronglyProtected = _pieceAttacks[Them][PAWN]
 								   | (_attacksMultiple[Them] & ~_attacksMultiple[Us]);
-	const auto poorlyDefended = board.allPieces[Them] & ~stronglyProtected & _allAttacks[Us];
+	const auto poorlyDefended = board.getPieces(Them) & ~stronglyProtected & _allAttacks[Us];
 	const auto defended = nonPawnEnemies & stronglyProtected;
 
 	if (poorlyDefended | defended)
@@ -447,7 +447,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		Bitboard minorThreats =
 			(defended | poorlyDefended) &
 			(_pieceAttacks[Us][KNIGHT] | _pieceAttacks[Us][BISHOP]) &
-			board.allPieces[Them];
+			board.getPieces(Them);
 		while (minorThreats)
 		{
 			const auto value = THREATS_BY_MINOR[board.getPiece(minorThreats.popLsb()).type()];
@@ -456,7 +456,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 				trace->threatsByMinor[Us] += value;
 		}
 
-		Bitboard rookThreats = poorlyDefended & _pieceAttacks[Us][ROOK] & board.allPieces[Them];
+		Bitboard rookThreats = poorlyDefended & _pieceAttacks[Us][ROOK] & board.getPieces(Them);
 		while (rookThreats)
 		{
 			const auto value = THREAT_BY_ROOK[board.getPiece(rookThreats.popLsb()).type()];
@@ -497,7 +497,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 		const auto sq = toSquare(board.pieceList[Piece{ QUEEN, Them }][0]);
 		const auto safeSpots =
-			_mobilityArea[Us] & ~stronglyProtected & ~board.getType(PAWN, Them);
+			_mobilityArea[Us] & ~stronglyProtected & ~board.getPieces(PAWN, Them);
 
 		const auto knightAttacks = _pieceAttacks[Us][KNIGHT] & Attacks::knightAttacks(sq);
 		const auto sliderAttacks =
@@ -521,7 +521,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 	const auto safe = ~_allAttacks[Them] | _allAttacks[Us];
 	const auto safePawnsAttacks =
-		Attacks::pawnAttacks<Us>(board.getType(PAWN, Us) & safe) & nonPawnEnemies;
+        Attacks::pawnAttacks<Us>(board.getPieces(PAWN, Us) & safe) & nonPawnEnemies;
 	const auto safePawnThreatScore = THREAT_BY_SAFE_PAWN * safePawnsAttacks.popcount();
 	totalValue += safePawnThreatScore;
 
@@ -554,12 +554,12 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 	const u8 rank = (Us ? rankOf(square) : 7u - rankOf(square)) - 1u;
 
 	const auto adjacentFiles = Bitboard::fromAdjacentFiles(square);
-	const auto opposed = board.getType(PAWN, Them) & Bitboard::fromRay(ForwardDir, square);
-	const auto neighbours = board.getType(PAWN, Us) & adjacentFiles;
+	const auto opposed = board.getPieces(PAWN, Them) & Bitboard::fromRay(ForwardDir, square);
+	const auto neighbours = board.getPieces(PAWN, Us) & adjacentFiles;
 	const auto connected = neighbours & Bitboard::fromRank(square);
 	const auto support =
 		neighbours & Bitboard::fromRank(bb.shift<BehindDir>().bitScanForward());
-	const bool isDoubled = bool(bb.shift<BehindDir>() & board.getType(PAWN, Us));
+	const bool isDoubled = bool(bb.shift<BehindDir>() & board.getPieces(PAWN, Us));
 
 	if (support | connected)
 	{
@@ -577,7 +577,7 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 		Bitboard rays = Bitboard::fromRay(ForwardDir, square);
 		rays |= rays.shift<WEST>() | rays.shift<EAST>();
 
-		const bool isPassedPawn = !bool(rays & board.getType(PAWN, Them));
+		const bool isPassedPawn = !bool(rays & board.getPieces(PAWN, Them));
 
 		if (isPassedPawn)
 			value += PASSED_PAWN_RANK[rank];
@@ -601,10 +601,10 @@ Score Eval<Trace>::evaluateKnight(const Square square) const noexcept
 	Score value = PSQT[KNIGHT][square];
 
 	{
-		const auto pawns = board.getType(PAWN);
+		const auto pawns = board.getPieces(PAWN);
 		const auto bitboard =
 			OutpostRanks & (_pieceAttacks[Us][PAWN] | pawns.shift<BehindDir>());
-		const auto targets = board.allPieces[Them] & ~pawns;
+		const auto targets = board.getPieces(Them) & ~pawns;
 
 		if (bitboard & bb & ~CENTER_FILES // on a side outpost
 			&& !(attacks & targets)        // no relevant attacks
@@ -642,11 +642,11 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 	// Penalty according to the number of our pawns on the same color square as the
 	// bishop, bigger when the center files are blocked with pawns and smaller
 	// when the bishop is outside the pawn chain.
-	const auto blocked = board.getType(PAWN, Us) & board.occupied.shift<Down>();
+	const auto blocked = board.getPieces(PAWN, Us) & board.occupied.shift<Down>();
 
 	const i32 pawnsOnTheSameColorSquares =
-		(board.getType(PAWN, Us) &
-		 (bool(DARK_SQUARES & bb) ? DARK_SQUARES : ~DARK_SQUARES)).popcount();
+		(board.getPieces(PAWN, Us) &
+         (bool(DARK_SQUARES & bb) ? DARK_SQUARES : ~DARK_SQUARES)).popcount();
 	value -=
 		BISHOP_PAWNS[distanceToFileEdge(square)] *
 		pawnsOnTheSameColorSquares
@@ -654,16 +654,16 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 
 	// Enemy pawns x-rayed
 	value -= BISHOP_XRAY_PAWNS *
-			 (Attacks::bishopXRayAttacks(square) & board.getType(PAWN, Them)).popcount();
+			 (Attacks::bishopXRayAttacks(square) & board.getPieces(PAWN, Them)).popcount();
 
 	// Long Diagonal Bishop
 	const auto centerAttacks =
-		Attacks::bishopAttacks(square, board.getType(PAWN, Them)) & CENTER_SQUARES;
+        Attacks::bishopAttacks(square, board.getPieces(PAWN, Them)) & CENTER_SQUARES;
 	if (centerAttacks.several())
 		value.mg += 45;
 
 	// King Ring Threat
-	if (Attacks::bishopAttacks(square, board.getType(PAWN)) & _kingRing[Them])
+	if (Attacks::bishopAttacks(square, board.getPieces(PAWN)) & _kingRing[Them])
 		value += KING_RING_THREAT_BISHOP;
 
 	return value;
@@ -686,9 +686,9 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 
 	const auto file = Bitboard::fromFile(square);
 
-	if (!(board.getType(PAWN, Us) & file).empty())
+	if (!(board.getPieces(PAWN, Us) & file).empty())
 	{
-		value += ROOK_ON_FILE[!bool(board.getType(PAWN, Them) & file)];
+		value += ROOK_ON_FILE[!bool(board.getPieces(PAWN, Them) & file)];
 	} else if (mobility <= 3)
 	{
 		const u8 kingFile = fileOf(board.getKingSq<Us>());
@@ -744,7 +744,7 @@ Score Eval<Trace>::evaluateKing() const noexcept
 	}
 
 	value += KING_PAWN_SHIELD *
-			 (MASK_PAWN_SHIELD[Us][square] & board.getType(PAWN, Us)).popcount();
+			 (MASK_PAWN_SHIELD[Us][square] & board.getPieces(PAWN, Us)).popcount();
 
 	return value;
 }

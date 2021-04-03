@@ -4,14 +4,17 @@ import android.content.Intent
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -27,6 +30,7 @@ import kotlinx.coroutines.launch
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
+import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.ui.preferences.PreferencesActivity
 import kotlin.time.ExperimentalTime
 
@@ -35,12 +39,17 @@ fun HomeScreen(
     viewModel: ChessViewModel = viewModel()
 ) {
     val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
+    val movesHistory by viewModel.movesHistory.collectAsState()
+    val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
 
     when (LocalConfiguration.current.orientation) {
         Configuration.ORIENTATION_LANDSCAPE -> {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
-                topBar = { if (showMovesHistory) MovesHistory() },
+                topBar = {
+                    if (showMovesHistory)
+                        MovesHistory(movesHistory, currentMoveIndex)
+                },
             ) { padding ->
                 Row(
                     Modifier
@@ -65,14 +74,16 @@ fun HomeScreen(
                     Column(modifier = Modifier.fillMaxWidth()) {
                         TopBar()
                         if (showMovesHistory)
-                            MovesHistory()
+                            MovesHistory(movesHistory, currentMoveIndex)
                     }
                 },
                 bottomBar = { BottomBar() }
             ) { padding ->
-                ChessBoard(Modifier.padding(padding))
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    ChessBoard(Modifier.align(Alignment.TopCenter))
 
-                HomeDialogs()
+                    HomeDialogs()
+                }
             }
         }
     }
@@ -81,42 +92,41 @@ fun HomeScreen(
 @OptIn(ExperimentalAnimationApi::class)
 @Preview
 @Composable
-private fun TopBar(chessViewModel: ChessViewModel = viewModel()) {
-    TopAppBar(
-        modifier = Modifier.height(dimensionResource(id = R.dimen.toolbar_height)),
-        backgroundColor = MaterialTheme.colors.primary,
-        title = {
-            Text(
-                text = stringResource(id = R.string.app_name),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(end = 16.dp)
-            )
+private fun TopBar() = TopAppBar(
+    modifier = Modifier.fillMaxWidth().height(dimensionResource(id = R.dimen.toolbar_height)),
+    backgroundColor = MaterialTheme.colors.primary,
+    title = {
+        Text(
+            text = stringResource(id = R.string.app_name),
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(end = 16.dp)
+        )
 
-            val isThinking by chessViewModel.isEngineThinking.collectAsState(false)
-            AnimatedVisibility(visible = isThinking) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_engine_working),
-                    modifier = Modifier.size(18.dp),
-                    contentDescription = null,
-                )
-            }
-        },
-        actions = {
-            AppBarActions()
+        val viewModel: ChessViewModel = viewModel()
+        val isThinking by viewModel.isEngineThinking.collectAsState(false)
+        AnimatedVisibility(visible = isThinking) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_engine_working),
+                modifier = Modifier.size(18.dp),
+                contentDescription = null,
+            )
         }
-    )
-}
+    },
+    actions = {
+        AppBarActions()
+    }
+)
 
 @Composable
-private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
-    val movesHistory by chessViewModel.movesHistory.collectAsState()
-    val currentMoveIndex by chessViewModel.currentMoveIndex.collectAsState()
-
+private fun MovesHistory(
+    movesHistory: List<Move>,
+    currentMoveIndex: Int,
+) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    remember(movesHistory) {
+    remember(movesHistory, currentMoveIndex) {
         coroutineScope.launch {
             if (movesHistory.isNotEmpty() && currentMoveIndex in movesHistory.indices)
                 listState.animateScrollToItem(currentMoveIndex)
@@ -127,12 +137,15 @@ private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
         state = listState,
         modifier = Modifier
             .fillMaxWidth()
+            .background(Color(0xFF222222))
             .padding(4.dp),
         content = {
             if (movesHistory.isNotEmpty()) {
                 itemsIndexed(movesHistory) { index, item ->
-                    val padding =
-                        if (index % 2 == 0) Modifier.padding(start = 4.dp) else Modifier.padding(end = 4.dp)
+                    val padding = if (index % 2 == 0)
+                        Modifier.padding(start = 6.dp, end = 2.dp)
+                    else
+                        Modifier.padding(start = 2.dp, end = 6.dp)
 
                     Row(
                         modifier = padding
@@ -145,9 +158,16 @@ private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
                             )
                         }
 
+                        val modifier = Modifier.padding(1.dp).then(
+                            if (currentMoveIndex == index)
+                                Modifier
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(Color.Gray)
+                            else Modifier
+                        )
                         Text(
+                            modifier = modifier,
                             text = item.toString(),
-                            color = if (currentMoveIndex == index) MaterialTheme.colors.secondary else Color.Unspecified,
                             fontSize = 13.sp,
                         )
                     }
@@ -155,7 +175,7 @@ private fun MovesHistory(chessViewModel: ChessViewModel = viewModel()) {
 
             } else {
                 item {
-                    Text(text = "", fontSize = 13.sp)
+                    Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp)
                 }
             }
         }
@@ -192,16 +212,16 @@ private fun AppBarActions() {
 @Composable
 private fun BottomBar(
     modifier: Modifier = Modifier,
-    chessViewModel: ChessViewModel = viewModel()
+    viewModel: ChessViewModel = viewModel()
 ) = Column(
     modifier = modifier,
     verticalArrangement = Arrangement.Bottom,
     horizontalAlignment = Alignment.CenterHorizontally,
 ) {
-    val basicDebug by chessViewModel.dataStore.showBasicDebug().collectAsState(false)
+    val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
 
     if (basicDebug) {
-        val debugStats by chessViewModel.debugStats.collectAsState()
+        val debugStats by viewModel.debugStats.collectAsState()
 
         Text(
             text = stringResource(
@@ -210,7 +230,7 @@ private fun BottomBar(
                 debugStats.boardEvaluation,
                 debugStats.advancedStats
             ),
-            fontSize = 13.sp,
+            fontSize = 13.5.sp,
         )
     }
 
@@ -235,7 +255,7 @@ private fun BottomBar(
         }
 
         IconButton(
-            onClick = { chessViewModel.showNewGameDialog.value = true }
+            onClick = { viewModel.showNewGameDialog.value = true }
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_new_circle),
@@ -244,7 +264,7 @@ private fun BottomBar(
         }
 
         IconButton(
-            onClick = { chessViewModel.showImportExportDialog.value = true }
+            onClick = { viewModel.showImportExportDialog.value = true }
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_import_export),

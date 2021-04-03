@@ -47,8 +47,8 @@ namespace Tests
 		result.updatePieceList();
 		result.updateNonPieceBitboards();
 		result.fiftyMoveRule = board.fiftyMoveRule;
-		result.kingAttackers = result.colorToMove ? result.allKingAttackers<WHITE>()
-												  : result.allKingAttackers<BLACK>();
+		result.kingAttackers = result.colorToMove ? result.generateKingAttackers<WHITE>()
+												  : result.generateKingAttackers<BLACK>();
 
 		return result;
 	}

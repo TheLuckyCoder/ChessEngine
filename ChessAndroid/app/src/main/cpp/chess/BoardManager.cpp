@@ -150,8 +150,8 @@ GameState BoardManager::getBoardState()
 	if (_currentBoard.isDrawn())
 		return GameState::DRAW;
 
-	const bool whiteInCheck = bool(_currentBoard.allKingAttackers<WHITE>());
-	const bool blackInCheck = bool(_currentBoard.allKingAttackers<BLACK>());
+	const bool whiteInCheck = bool(_currentBoard.generateKingAttackers<WHITE>());
+	const bool blackInCheck = bool(_currentBoard.generateKingAttackers<BLACK>());
 
 	if (whiteInCheck && blackInCheck)
 		return GameState::INVALID;

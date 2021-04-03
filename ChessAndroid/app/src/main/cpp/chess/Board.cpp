@@ -35,29 +35,29 @@ Piece &Board::getPiece(const Square square) noexcept
 	return data[square];
 }
 
+Bitboard &Board::getPieces(const Piece piece) noexcept
+{
+    return pieces[piece.color()][piece.type()];
+}
+
 Piece Board::getPiece(const Square square) const noexcept
 {
 	return data[square];
 }
 
-Bitboard &Board::getType(const Piece piece) noexcept
-{
-	return pieces[piece.color()][piece.type()];
-}
-
-Bitboard &Board::getType(const PieceType type, const Color color) noexcept
+Bitboard Board::getPieces(const PieceType type, const Color color) const noexcept
 {
 	return pieces[color][type];
 }
 
-Bitboard Board::getType(const PieceType type, const Color color) const noexcept
-{
-	return pieces[color][type];
-}
-
-Bitboard Board::getType(const PieceType type) const noexcept
+Bitboard Board::getPieces(const PieceType type) const noexcept
 {
 	return pieces[BLACK][type] | pieces[WHITE][type];
+}
+
+Bitboard Board::getPieces(const Color color) const noexcept
+{
+    return pieces[color][PieceType::NO_PIECE_TYPE];
 }
 
 bool Board::isDrawn() const noexcept
@@ -67,27 +67,21 @@ bool Board::isDrawn() const noexcept
 		return true;
 
 	// Three-fold repetition
-	u8 repetitions = 1;
-	for (u8 i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
-	{
-		if (zKey == history[i].zKey)
-		{
-			++repetitions;
-			if (repetitions == 3)
-				return true;
-		}
-	}
+	i32 repetitions = 1;
+	for (i32 i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
+		if (zKey == history[i].zKey && ++repetitions == 3)
+			return true;
 
 	// Insufficient Material
 	// KvK, KvN, KvB, KvNN
-	const auto pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
-	const auto knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
-	const auto bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
-	const auto rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
-	const auto queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
+	const auto pawns = getPieces(PAWN);
+	const auto knight = getPieces(KNIGHT);
+	const auto bishop = getPieces(BISHOP);
+	const auto rooks = getPieces(ROOK);
+	const auto queens = getPieces(QUEEN);
 
-	return !bool(pawns | rooks | queens)
-		   && (!(allPieces[WHITE].several()) || !(allPieces[BLACK].several()))
+	return (pawns | rooks | queens).empty()
+		   && (!(getPieces(WHITE).several()) || !(getPieces(BLACK).several()))
 		   && (!((knight | bishop).several()) || (!bishop && knight.popcount() <= 2));
 }
 
@@ -227,13 +221,13 @@ bool Board::makeMove(const Move move) noexcept
 	updateNonPieceBitboards();
 
 	if (move.capturedPiece() == KING
-		|| (side ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>()))
+		|| (side ? generateKingAttackers<WHITE>() : generateKingAttackers<BLACK>()))
 	{
 		undoMove();
 		return false;
 	}
 
-	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
+	kingAttackers = colorToMove ? generateKingAttackers<WHITE>() : generateKingAttackers<BLACK>();
 
 	return true;
 }
@@ -320,7 +314,7 @@ void Board::makeNullMove() noexcept
 	colorToMove = ~colorToMove;
 	Zobrist::flipSide(zKey);
 
-	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
+	kingAttackers = colorToMove ? generateKingAttackers<WHITE>() : generateKingAttackers<BLACK>();
 }
 
 void Board::undoNullMove() noexcept
@@ -350,7 +344,7 @@ bool Board::isAttackedByAny(const Color attackerColor, const Square targetSquare
 
 bool Board::isSideInCheck() const noexcept
 {
-	return bool(kingAttackers);
+	return !kingAttackers.empty();
 }
 
 void Board::addPiece(const Square square, const Piece piece) noexcept
@@ -358,7 +352,7 @@ void Board::addPiece(const Square square, const Piece piece) noexcept
 	assert(piece.isValid());
 
 	Zobrist::xorPiece(zKey, square, piece);
-	getType(piece).addSquare(square);
+    getPieces(piece).addSquare(square);
 	getPiece(square) = piece;
 	if (piece.type() != PAWN)
 		npm += Evaluation::getPieceValue(piece.type());
@@ -376,13 +370,13 @@ void Board::movePiece(const Square from, const Square to) noexcept
 
 	Zobrist::xorPiece(zKey, from, piece);
 	getPiece(from) = Piece();
-	getType(piece).removeSquare(from);
+    getPieces(piece).removeSquare(from);
 
 	Zobrist::xorPiece(zKey, to, piece);
 	getPiece(to) = piece;
-	getType(piece).addSquare(to);
+    getPieces(piece).addSquare(to);
 
-	bool pieceMoved = false;
+    [[maybe_unused]] bool pieceMoved = false;
 	for (u8 &sq : pieceList[piece])
 	{
 		if (sq == from)
@@ -403,7 +397,7 @@ void Board::removePiece(const Square square) noexcept
 	assert(piece.isValid());
 
 	Zobrist::xorPiece(zKey, square, piece);
-	getType(piece).removeSquare(square);
+    getPieces(piece).removeSquare(square);
 	getPiece(square) = Piece();
 
 	if (piece.type() != PAWN)
@@ -438,7 +432,7 @@ void Board::updatePieceList() noexcept
 		{
 			pieceList[piece][pieceCount[piece]++] = sq;
 
-			getType(piece).addSquare(toSquare(sq));
+            getPieces(piece).addSquare(toSquare(sq));
 
 			if (piece.type() != PAWN)
 				npm += Evaluation::getPieceValue(piece.type());
@@ -448,21 +442,21 @@ void Board::updatePieceList() noexcept
 
 void Board::updateNonPieceBitboards() noexcept
 {
-	allPieces[BLACK] = getType(PAWN, BLACK)
-					   | getType(KNIGHT, BLACK)
-					   | getType(BISHOP, BLACK)
-					   | getType(ROOK, BLACK)
-					   | getType(QUEEN, BLACK)
-					   | getType(KING, BLACK);
+	pieces[BLACK][NO_PIECE_TYPE] = getPieces(PAWN, BLACK)
+                       | getPieces(KNIGHT, BLACK)
+                       | getPieces(BISHOP, BLACK)
+                       | getPieces(ROOK, BLACK)
+                       | getPieces(QUEEN, BLACK)
+                       | getPieces(KING, BLACK);
 
-	allPieces[WHITE] = getType(PAWN, WHITE)
-					   | getType(KNIGHT, WHITE)
-					   | getType(BISHOP, WHITE)
-					   | getType(ROOK, WHITE)
-					   | getType(QUEEN, WHITE)
-					   | getType(KING, WHITE);
+    pieces[WHITE][NO_PIECE_TYPE] = getPieces(PAWN, WHITE)
+                       | getPieces(KNIGHT, WHITE)
+                       | getPieces(BISHOP, WHITE)
+                       | getPieces(ROOK, WHITE)
+                       | getPieces(QUEEN, WHITE)
+                       | getPieces(KING, WHITE);
 
-	occupied = allPieces[BLACK] | allPieces[WHITE];
+	occupied = pieces[BLACK][NO_PIECE_TYPE] | pieces[WHITE][NO_PIECE_TYPE];
 }
 
 std::string Board::toString() const noexcept

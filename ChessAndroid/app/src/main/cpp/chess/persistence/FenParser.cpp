@@ -61,7 +61,7 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	board.updateNonPieceBitboards();
 	board.zKey = Zobrist::compute(board);
 
-	board.kingAttackers = board.colorToMove ? board.allKingAttackers<WHITE>() : board.allKingAttackers<BLACK>();
+	board.kingAttackers = board.colorToMove ? board.generateKingAttackers<WHITE>() : board.generateKingAttackers<BLACK>();
 	return true;
 }
 

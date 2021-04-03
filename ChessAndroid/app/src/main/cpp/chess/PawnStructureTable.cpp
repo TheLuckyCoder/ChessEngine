@@ -14,11 +14,13 @@ PawnStructureTable::~PawnStructureTable() noexcept
 
 PawnStructureEntry PawnStructureTable::operator[](const u64 key) const noexcept
 {
+	assert(_entries);
 	return _entries[key % _size];
 }
 
 void PawnStructureTable::insert(const PawnStructureEntry &value) const noexcept
 {
+	assert(_entries);
 	_entries[value.pawns.value() % _size] = value;
 }
 

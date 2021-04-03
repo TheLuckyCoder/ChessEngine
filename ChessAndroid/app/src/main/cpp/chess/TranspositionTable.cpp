@@ -24,6 +24,8 @@ void TranspositionTable::prefetch(const u64 zKey) const noexcept
 
 std::optional<SearchEntry> TranspositionTable::probe(const u64 zKey) const noexcept
 {
+	assert(_clusters);
+
 	const u16 key16 = zKey >> 48u;
 	const auto index = zKey & _hashMask;
 
@@ -43,6 +45,8 @@ std::optional<SearchEntry> TranspositionTable::probe(const u64 zKey) const noexc
 
 void TranspositionTable::insert(const u64 zKey, SearchEntry entry) noexcept
 {
+	assert(_clusters);
+
 	const auto key = entry.key();
 	const auto index = zKey & _hashMask;
 	const auto tableAge = currentAge();

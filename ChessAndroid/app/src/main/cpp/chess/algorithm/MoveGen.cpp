@@ -56,7 +56,7 @@ namespace
 				const auto enPassantCapture = Bitboard::fromSquare(board.enPassantSq);
 				const auto capturedPawn = enPassantCapture.shift<EnPassantDirection>();
 
-				if (board.getType(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
+				if (board.getPieces(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
 				{
 					attacks &= ~enPassantCapture;
 					moveList.emplace_back(from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT);
@@ -118,7 +118,7 @@ namespace
 				const auto bb = Bitboard::fromSquare(to);
 
 				Move move{ from, to, P };
-				if (bb & board.allPieces[Them])
+				if (bb & board.getPieces(Them))
 				{
 					move.setFlags(Move::Flags::CAPTURE);
 					move.setCapturedPiece(board.getPiece(to).type());
@@ -138,15 +138,15 @@ namespace
 		assert(kingSq < SQUARE_NB);
 
 		Bitboard moves = Attacks::kingAttacks(kingSq) & targets;
-		moves &= ~Attacks::pawnAttacks<Them>(board.getType(PAWN, Them));
+		moves &= ~Attacks::pawnAttacks<Them>(board.getPieces(PAWN, Them));
 
 		const auto attackers = board.kingAttackers;
 		if (attackers)
 		{
 			Bitboard bishopAttackers =
-				attackers & (board.getType(BISHOP, Them) | board.getType(QUEEN, Them));
+				attackers & (board.getPieces(BISHOP, Them) | board.getPieces(QUEEN, Them));
 			Bitboard rookAttackers =
-				attackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
+				attackers & (board.getPieces(ROOK, Them) | board.getPieces(QUEEN, Them));
 
 			while (bishopAttackers)
 				moves &= ~Bitboard::fromRayBetween(bishopAttackers.popLsb(), kingSq);
@@ -161,7 +161,7 @@ namespace
 			const auto bb = Bitboard::fromSquare(to);
 
 			Move move{ kingSq, to, KING };
-			if (bb & board.allPieces[Them])
+			if (bb & board.getPieces(Them))
 			{
 				move.setFlags(Move::Flags::CAPTURE);
 				move.setCapturedPiece(board.getPiece(to).type());
@@ -216,7 +216,7 @@ namespace
 	{
 		constexpr Color Them = ~Us;
 
-		const auto kingTargets = ~board.allPieces[Us];
+		const auto kingTargets = ~board.getPieces(Us);
 		if (board.kingAttackers.several())
 			return generateKingMoves<Us>(board, moveList, kingTargets);
 
@@ -229,9 +229,9 @@ namespace
 			targets |= kingAttackers;
 
 			Bitboard bishopAttackers =
-				kingAttackers & (board.getType(BISHOP, Them) | board.getType(QUEEN, Them));
+				kingAttackers & (board.getPieces(BISHOP, Them) | board.getPieces(QUEEN, Them));
 			Bitboard rookAttackers =
-				kingAttackers & (board.getType(ROOK, Them) | board.getType(QUEEN, Them));
+				kingAttackers & (board.getPieces(ROOK, Them) | board.getPieces(QUEEN, Them));
 
 			while (bishopAttackers)
 				targets |= Attacks::bishopXRayAttacks(bishopAttackers.popLsb());
