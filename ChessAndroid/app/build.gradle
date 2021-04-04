@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 30
-    ndkVersion "22.0.7026061"
+    ndkVersion "22.1.7171670"
 
     defaultConfig {
         applicationId "net.theluckycoder.chess"
@@ -71,8 +71,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.3")
 
     // AndroidX
-    implementation("androidx.activity:activity-ktx:1.2.1")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0")
+    implementation("androidx.activity:activity-ktx:1.2.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1")
     implementation("androidx.datastore:datastore-preferences:1.0.0-alpha08")
 
     // Compose
