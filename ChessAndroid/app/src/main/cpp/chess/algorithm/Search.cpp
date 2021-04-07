@@ -123,23 +123,23 @@ void Search::printUci(Board &board)
 		while (true)
 		{
 			const auto probedResult = _transpositionTable.probe(board.zKey);
-			const Move probedMove = probedResult.has_value() ? probedResult->move() : Move{};
 
-			if (probedMove.empty() || count >= depth)
+			if (!probedResult.has_value() || count >= depth)
 				break;
 
+			const Move probedMove = probedResult->move();
 			const MoveList moveList(board);
 
 			for (const Move &fullMove : moveList)
 			{
 				if (fullMove.fromToBits() == probedMove.fromToBits())
 				{
-					if (board.makeMove(fullMove))
+					if (board.isLegal(fullMove))
 					{
+						board.makeMove(fullMove);
 						pvArray[count++] = fullMove;
 						break;
-					} else
-						continue;
+					}
 				}
 			}
 		}
@@ -374,8 +374,9 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		const Move move = MoveOrdering::getNextMove(moveList);
 		const bool pvMove = move.flags().pvMove();
 
-		if (!board.makeMove(move))
+		if (!board.isLegal(move))
 			continue;
+		board.makeMove(move);
 		++legalCount;
 
 		// Futility Pruning
@@ -551,8 +552,9 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 		const Move move = MoveOrdering::getNextMove(moveList);
 
-		if (!board.makeMove(move))
+		if (!board.isLegal(move))
 			continue;
+		board.makeMove(move);
 		++legalCount;
 
 		if (!nodeInCheck // Look for all check evasions

@@ -22,6 +22,11 @@ enum Color : bool
 	WHITE = true
 };
 
+enum
+{
+	COLOR_NB = 2
+};
+
 constexpr Color operator~(const Color c) noexcept
 {
 	return Color(c ^ WHITE); // Toggle color
@@ -86,7 +91,9 @@ enum PieceType : u8
 	BISHOP = 3,
 	ROOK = 4,
 	QUEEN = 5,
-	KING = 6
+	KING = 6,
+
+	PIECE_TYPE_NB = 7
 };
 
 enum Square : u8
@@ -109,14 +116,39 @@ constexpr Square toSquare(const u8 square) noexcept
 	return static_cast<Square>(square);
 }
 
+constexpr Square toSquare(const u8 x, const u8 y) noexcept
+{
+    return static_cast<Square>((y << 3u) + x);
+}
+
+template <Dir D>
+constexpr Square shift(const Square square) noexcept
+{
+    i8 s{};
+    if constexpr (D == NORTH)
+        s = 8;
+    else if constexpr (D == SOUTH)
+        s = -8;
+    else if constexpr (D == EAST)
+        s = 1;
+    else if constexpr (D == WEST)
+        s = -1;
+
+    else if constexpr (D == NORTH_EAST)
+        s = 8 + 1;
+    else if constexpr (D == NORTH_WEST)
+        s = 8 - 1;
+    else if constexpr (D == SOUTH_EAST)
+        s = -8 + 1;
+    else if constexpr (D == SOUTH_WEST)
+        s = -8 - 1;
+
+    return toSquare(square + s);
+}
+
 constexpr u8 rankOf(const u8 square) noexcept { return u8(square >> 3u); }
 
 constexpr u8 fileOf(const u8 square) noexcept { return u8(square & 7u); }
-
-constexpr Square toSquare(const u8 x, const u8 y) noexcept
-{
-	return static_cast<Square>((y << 3u) + x);
-}
 
 constexpr u8 distanceToFileEdge(const Square square) noexcept
 {

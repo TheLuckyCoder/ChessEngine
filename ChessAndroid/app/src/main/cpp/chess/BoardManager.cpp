@@ -59,8 +59,9 @@ void BoardManager::loadGame(bool isPlayerWhite, const std::vector<Move> &moves)
 
 	for (const Move &move : moves)
 	{
-		if (move.empty() || !moveExists(_currentBoard, move) || !_currentBoard.makeMove(move))
+		if (move.empty() || !moveExists(_currentBoard, move) || !_currentBoard.isLegal(move))
 			break;
+		_currentBoard.makeMove(move);
 		_movesStack.push(_currentBoard, move);
 	}
 
@@ -134,12 +135,8 @@ std::vector<Move> BoardManager::getPossibleMoves(const Square from)
 
 	for (const Move &move : allMoves)
 	{
-		if (move.from() == from && tempBoard.makeMove(move))
-		{
+		if (move.from() == from && tempBoard.isLegal(move))
 			moves.push_back(move);
-
-			tempBoard.undoMove();
-		}
 	}
 
 	return moves;

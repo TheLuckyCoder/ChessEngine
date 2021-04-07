@@ -49,6 +49,7 @@ namespace Tests
 		result.fiftyMoveRule = board.fiftyMoveRule;
 		result.kingAttackers = result.colorToMove ? result.generateKingAttackers<WHITE>()
 												  : result.generateKingAttackers<BLACK>();
+		result.computeCheckInfo();
 
 		return result;
 	}
@@ -181,28 +182,76 @@ namespace Tests
 		return output.str();
 	}
 
-	static u64 perft(Board &board, const unsigned depth)
+	struct PerftInfo
 	{
-		if (board.fiftyMoveRule == 100)
-			return 0;
+		u64 nodes{};
+		u64 captures{};
+		u64 enPassant{};
+		u64 castles{};
+		u64 promotions{};
+		u64 checks{};
+		u64 doubleChecks{};
+
+		PerftInfo &operator+=(const PerftInfo &rhs)
+		{
+			nodes += rhs.nodes;
+			captures += rhs.captures;
+			enPassant += rhs.enPassant;
+			castles += rhs.castles;
+			promotions += rhs.promotions;
+			checks += rhs.checks;
+			doubleChecks += rhs.doubleChecks;
+			return *this;
+		}
+	};
+
+	static void perft(Board &board, PerftInfo &info, const unsigned depth, const Move lastMove)
+	{
+		if (board.isDrawn())
+			return;
 
 		if (depth == 0)
-			return 1;
-
-		MoveList moveList(board);
-
-		size_t legalCount{};
-
-		for (const Move move : moveList)
 		{
-			if (!board.makeMove(move))
-				continue;
-
-			legalCount += perft(board, depth - 1);
-			board.undoMove();
+			const auto flags = lastMove.flags();
+			++info.nodes;
+			info.captures += flags.capture() | flags.enPassant();
+			info.enPassant += flags.enPassant();
+			info.castles += flags.kSideCastle() | flags.qSideCastle();
+			info.promotions += flags.promotion();
+			info.checks += board.isSideInCheck();
+			info.doubleChecks += board.kingAttackers.several();
+			return;
 		}
 
-		return legalCount;
+		MoveList moveList(board);
+		moveList.keepLegalMoves();
+		for (const Move move : moveList)
+		{
+			board.makeMove(move);
+			perft(board, info, depth - 1, move);
+			board.undoMove();
+		}
+	}
+
+	static PerftInfo basePerft(std::ostringstream &out, Board &board, const unsigned depth)
+	{
+		PerftInfo info{};
+
+		MoveList moveList(board);
+		moveList.keepLegalMoves();
+
+		for (auto &&move : moveList)
+		{
+			PerftInfo localInfo{};
+			board.makeMove(move);
+			perft(board, localInfo, depth - 1, move);
+			board.undoMove();
+
+			info += localInfo;
+			out << move.toString() << ": " << localInfo.nodes << '\n';
+		}
+
+		return info;
 	}
 
 	static void perftTest(const std::string &fen, const std::initializer_list<u64> perftResults)
@@ -214,25 +263,41 @@ namespace Tests
 
 		std::vector<u64> perftVector(perftResults);
 
-		for (unsigned i = 1; i < perftVector.size(); ++i)
+		for (unsigned depth = 1; depth < perftVector.size(); ++depth)
 		{
-			std::cout << TAG << "Starting Depth " << i << " Test\n";
-
 			const auto startTime = std::chrono::high_resolution_clock::now();
-			const u64 nodeCount = perft(board, i);
+			std::ostringstream out;
+			const PerftInfo info = basePerft(out, board, depth);
 
 			const auto endTime = std::chrono::high_resolution_clock::now();
 			const auto timeNeeded =
-				std::chrono::duration<double, std::milli>(endTime - startTime).count();
+				std::chrono::duration<double, std::milli>(endTime - startTime).count() / 1000;
 
-			std::cout << TAG << "Time needed: " << timeNeeded << '\n';
+			std::cout << TAG << "Depth: " << depth;
+			if (timeNeeded > 1)
+				std::cout << ", Time needed: " << timeNeeded << 's';
 
-			const auto expectedNodeCount = perftVector[i];
-			if (nodeCount != expectedNodeCount)
-				std::cout << TAG << "Nodes count: " << nodeCount << '/' << expectedNodeCount
-						  << '\n';
-			else
-				std::cout << TAG << "Nodes count: " << nodeCount << '\n';
+			const auto expectedNodeCount = perftVector[depth];
+			std::cout << ", Nodes: " << info.nodes;
+			if (info.nodes != expectedNodeCount)
+				std::cout << '/' << expectedNodeCount << "(WRONG!)";
+			if (info.captures)
+				std::cout << ", Captures: " << info.captures;
+			if (info.enPassant)
+				std::cout << ", EnP: " << info.enPassant;
+			if (info.castles)
+				std::cout << ", Castles: " << info.castles;
+			if (info.promotions)
+				std::cout << ", Promotions: " << info.promotions;
+			if (info.checks)
+				std::cout << ", Checks: " << info.checks;
+			if (info.doubleChecks)
+				std::cout << ", Double-Checks: " << info.doubleChecks;
+
+			if (depth == perftVector.size() - 1)
+				std::cout << '\n' << out.str();
+
+			std::cout << std::endl;
 		}
 	}
 

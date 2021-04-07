@@ -2,263 +2,310 @@
 
 namespace
 {
-	template <Color Us>
-	void generatePawnMoves(const Board &board, MoveList &moveList, const Bitboard targets)
-	{
-		constexpr Piece Piece{ PAWN, Us };
-		constexpr Color Them{ ~Us };
-		constexpr Dir Forward{ Us == WHITE ? NORTH : SOUTH };
-		constexpr Bitboard StartRank{ Us == WHITE ? RANK_2 : RANK_7 };
-		constexpr Bitboard LastRank{ Us == WHITE ? RANK_7 : RANK_2 };
+    enum class GenType
+    {
+        ALL,
+        EVASIONS
+    };
 
-		const auto addQuietMove = [&](const u8 from, const u8 to, const Bitboard pos)
-		{
-			Move move{ from, to, PAWN };
+    template <Color Us>
+    void generatePawnMoves(const Board &board, MoveList &moveList, const Bitboard targets, const GenType type)
+    {
+        constexpr Color Them{ ~Us };
+        constexpr Dir Forward{ Us == WHITE ? NORTH : SOUTH };
+        constexpr Dir Backward{ Us == WHITE ? SOUTH : NORTH };
+        constexpr Bitboard ThirdRank{ Us == WHITE ? RANK_3 : RANK_6 };
+        constexpr Bitboard LastRank{ Us == WHITE ? RANK_7 : RANK_2 };
 
-			if (LastRank & pos)
-			{
-				move.setFlags(Move::Flags::PROMOTION);
-				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
-				{
-					move.setPromotedPiece(PieceType(promotionType));
-					moveList.emplace_back(move);
-				}
-			} else
-				moveList.emplace_back(move);
-		};
+        const Bitboard pawns = board.getPieces(PAWN, Us);
+        const Bitboard pawnsOnLastRank = pawns & LastRank;
+        const Bitboard pawnsNotOnLastRank = pawns & ~pawnsOnLastRank;
 
-		const auto addCaptureMove = [&](const Square from, const Square to, const Bitboard pos)
-		{
-			Move move{ from, to, PAWN, Move::Flags::CAPTURE };
-			move.setCapturedPiece(board.getPiece(to).type());
+        const Bitboard enemies = type == GenType::EVASIONS ? (board.getPieces(Them) & targets) : board.getPieces(Them);
+        const Bitboard emptySquares = ~board.getPieces();
 
-			if (LastRank & pos)
-			{
-				move.setFlags(Move::Flags::CAPTURE | Move::Flags::PROMOTION);
-				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
-				{
-					move.setPromotedPiece(PieceType(promotionType));
-					moveList.emplace_back(move);
-				}
-			} else
-				moveList.emplace_back(move);
-		};
+        // Promotions
+        if (pawnsOnLastRank)
+        {
+            auto forward = pawnsOnLastRank.shift<Forward>() & emptySquares;
+            auto left = pawnsOnLastRank.shift<Forward, WEST>() & enemies;
+            auto right = pawnsOnLastRank.shift<Forward, EAST>() & enemies;
 
-		for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
-		{
-			const Square from = toSquare(board.pieceList[Piece][pieceNumber]);
-			const auto bb = Bitboard::fromSquare(from);
-			auto attacks = Attacks::pawnAttacks<Us>(bb);
+            if (type == GenType::EVASIONS)
+                forward &= targets;
 
-			if (board.enPassantSq < SQ_NONE)
-			{
-				constexpr Dir EnPassantDirection = Us == WHITE ? SOUTH : NORTH;
-				const auto enPassantCapture = Bitboard::fromSquare(board.enPassantSq);
-				const auto capturedPawn = enPassantCapture.shift<EnPassantDirection>();
+            const auto makePromotions = [&](Square from, Square to)
+            {
+                const auto captured = board.getPiece(to).type();
+                u8 flags = Move::Flags::PROMOTION;
+                if (captured != PIECE_TYPE_NB)
+                    flags |= Move::Flags::CAPTURE;
 
-				if (board.getPieces(PAWN, Them) & capturedPawn && (attacks & enPassantCapture))
-				{
-					attacks &= ~enPassantCapture;
-					moveList.emplace_back(from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT);
-				}
-			}
+                Move move(from, to, PAWN, flags);
+                for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
+                {
+                    move.setPromotedPiece(PieceType(promotionType));
+                    move.setCapturedPiece(captured);
+                    moveList.emplace_back(move);
+                }
+            };
 
-			attacks &= targets & board.occupied;
+            while (forward.notEmpty())
+            {
+                const Square to = forward.popLsb();
+                makePromotions(shift<Backward>(to), to);
+            }
 
-			while (!attacks.empty())
-				addCaptureMove(from, attacks.popLsb(), bb);
+            while (left.notEmpty())
+            {
+                const Square to = left.popLsb();
+                makePromotions(shift<EAST>(shift<Backward>(to)), to);
+            }
 
-			const Bitboard moveBB = bb.shift<Forward>();
+            while (right.notEmpty())
+            {
+                const Square to = right.popLsb();
+                makePromotions(shift<WEST>(shift<Backward>(to)), to);
+            }
+        }
 
-			if (!(board.occupied & moveBB))
-			{
-				addQuietMove(from, moveBB.bitScanForward(), bb);
+        // EnPassant
+        if (board.enPassantSq != SQ_NONE)
+        {
+            const auto enPassant = Bitboard::fromSquare(board.enPassantSq);
 
-				if (StartRank & bb)
-				{
-					const auto doublePushBb = moveBB.shift<Forward>();
+            if (type != GenType::EVASIONS || (targets & enPassant.shift<Forward>()).empty())
+            {
+                auto pawnsThatCapture = Attacks::pawnAttacks<Them>(enPassant) & pawnsNotOnLastRank;
 
-					if (!(board.occupied & doublePushBb))
-					{
-						const u8 targetSq = doublePushBb.bitScanForward();
-						moveList.emplace_back(from, targetSq, PAWN, Move::Flags::DOUBLE_PAWN_PUSH);
-					}
-				}
-			}
-		}
-	}
+                while (pawnsThatCapture.notEmpty())
+                {
+                    const Square from = pawnsThatCapture.popLsb();
+                    moveList.emplace_back(from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT);
+                }
+            }
+        }
 
-	template <Color Us, PieceType P>
-	void generatePieceMoves(const Board &board, MoveList &moveList, const Bitboard targets)
-	{
-		static_assert(P != KING && P != PAWN);
-		constexpr Color Them{ ~Us };
-		constexpr Piece Piece{ P, Us };
+        // Captures
+        {
+            auto left = pawnsNotOnLastRank.shift<Forward, WEST>() & enemies;
+            auto right = pawnsNotOnLastRank.shift<Forward, EAST>() & enemies;
 
-		for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
-		{
-			const Square from = toSquare(board.pieceList[Piece][pieceNumber]);
+            if (type == GenType::EVASIONS)
+            {
+                left &= targets;
+                right &= targets;
+            }
 
-			Bitboard attacks{};
+            const auto makeCapture = [&](Square from, Square to)
+            {
+                Move move(from, to, PAWN, Move::Flags::CAPTURE);
+                move.setCapturedPiece(board.getPiece(to).type());
+                moveList.emplace_back(move);
+            };
 
-			if constexpr (P == KNIGHT)
-				attacks = Attacks::knightAttacks(from);
-			else if constexpr (P == BISHOP)
-				attacks = Attacks::bishopAttacks(from, board.occupied);
-			else if constexpr (P == ROOK)
-				attacks = Attacks::rookAttacks(from, board.occupied);
-			else if constexpr (P == QUEEN)
-				attacks = Attacks::queenAttacks(from, board.occupied);
+            while (left.notEmpty())
+            {
+                const Square to = left.popLsb();
+                makeCapture(shift<EAST>(shift<Backward>(to)), to);
+            }
 
-			attacks &= targets;
+            while (right.notEmpty())
+            {
+                const Square to = right.popLsb();
+                makeCapture(shift<WEST>(shift<Backward>(to)), to);
+            }
+        }
 
-			while (attacks)
-			{
-				const Square to = attacks.popLsb();
-				const auto bb = Bitboard::fromSquare(to);
+        // Pushes and Double Pushes
+        auto pushes = pawnsNotOnLastRank.shift<Forward>() & emptySquares;
+        auto doublePushes = (pushes & ThirdRank).template shift<Forward>() & emptySquares;
 
-				Move move{ from, to, P };
-				if (bb & board.getPieces(Them))
-				{
-					move.setFlags(Move::Flags::CAPTURE);
-					move.setCapturedPiece(board.getPiece(to).type());
-				}
+        if (type == GenType::EVASIONS)
+        {
+            pushes &= targets;
+            doublePushes &= targets;
+        }
 
-				moveList.emplace_back(move);
-			}
-		}
-	}
+        while (pushes.notEmpty())
+        {
+            const Square to = pushes.popLsb();
+            moveList.emplace_back(shift<Backward>(to), to, PAWN);
+        }
 
-	template <Color Us>
-	void generateKingMoves(const Board &board, MoveList &moveList, const Bitboard targets)
-	{
-		constexpr Color Them{ ~Us };
+        while (doublePushes.notEmpty())
+        {
+            const Square to = doublePushes.popLsb();
+            moveList.emplace_back(shift<Backward>(shift<Backward>(to)), to, PAWN, Move::Flags::DOUBLE_PAWN_PUSH);
+        }
+    }
 
-		const Square kingSq = board.getKingSq<Us>();
-		assert(kingSq < SQUARE_NB);
+    template <Color Us, PieceType P>
+    void generatePieceMoves(const Board &board, MoveList &moveList, const Bitboard targets)
+    {
+        static_assert(P > PAWN && P < KING, "Unsupported Piece Type");
+        constexpr Color Them{ ~Us };
+        constexpr Piece Piece{ P, Us };
 
-		Bitboard moves = Attacks::kingAttacks(kingSq) & targets;
-		moves &= ~Attacks::pawnAttacks<Them>(board.getPieces(PAWN, Them));
+        for (u8 pieceNumber{}; pieceNumber < board.pieceCount[Piece]; ++pieceNumber)
+        {
+            const Square from = toSquare(board.pieceList[Piece][pieceNumber]);
 
-		const auto attackers = board.kingAttackers;
-		if (attackers)
-		{
-			Bitboard bishopAttackers =
-				attackers & (board.getPieces(BISHOP, Them) | board.getPieces(QUEEN, Them));
-			Bitboard rookAttackers =
-				attackers & (board.getPieces(ROOK, Them) | board.getPieces(QUEEN, Them));
+            Bitboard attacks{};
 
-			while (bishopAttackers)
-				moves &= ~Bitboard::fromLineBetween(bishopAttackers.popLsb(), kingSq);
+            if constexpr (P == KNIGHT)
+                attacks = Attacks::knightAttacks(from);
+            else if constexpr (P == BISHOP)
+                attacks = Attacks::bishopAttacks(from, board.getPieces());
+            else if constexpr (P == ROOK)
+                attacks = Attacks::rookAttacks(from, board.getPieces());
+            else if constexpr (P == QUEEN)
+                attacks = Attacks::queenAttacks(from, board.getPieces());
 
-			while (rookAttackers)
-				moves &= ~Bitboard::fromLineBetween(rookAttackers.popLsb(), kingSq);
-		}
+            attacks &= targets;
 
-		while (moves)
-		{
-			const Square to = moves.popLsb();
-			const auto bb = Bitboard::fromSquare(to);
+            while (attacks)
+            {
+                const Square to = attacks.popLsb();
+                const auto bb = Bitboard::fromSquare(to);
 
-			Move move{ kingSq, to, KING };
-			if (bb & board.getPieces(Them))
-			{
-				move.setFlags(Move::Flags::CAPTURE);
-				move.setCapturedPiece(board.getPiece(to).type());
-			}
-			moveList.emplace_back(move);
-		}
+                Move move{ from, to, P };
+                if (bb & board.getPieces(Them))
+                {
+                    move.setFlags(Move::Flags::CAPTURE);
+                    move.setCapturedPiece(board.getPiece(to).type());
+                }
 
-		if (board.isSideInCheck() || !board.canCastle<Us>())
-			return;
+                moveList.emplace_back(move);
+            }
+        }
+    }
 
-		const auto addCastleMove = [&, kingSq](const Square kingTo, const Square rookSq,
-											   const Square rookTo, const u8 castleSide)
-		{
-			auto mask = Bitboard::fromLineBetween(kingSq, kingTo) | Bitboard::fromSquare(kingTo);
-			mask |= Bitboard::fromLineBetween(rookSq, rookTo) | Bitboard::fromSquare(rookTo);
-			mask &= ~(Bitboard::fromSquare(kingSq) | Bitboard::fromSquare(rookSq));
+    template <Color Us>
+    void generateKingMoves(const Board &board, MoveList &moveList, const Bitboard targets)
+    {
+        assert(!board.kingAttackers);
+        constexpr Color Them{ ~Us };
 
-			// There can't be any pieces in between the rook and king
-			if (board.occupied & mask)
-				return;
+        const Square kingSq = board.getKingSq<Us>();
 
-			// The King can't pass through a checked square
-			mask = Bitboard::fromLineBetween(kingSq, kingTo);
-			while (mask)
-			{
-				if (board.isAttackedByAny(Them, mask.popLsb()))
-					return;
-			}
+        Bitboard moves = Attacks::kingAttacks(kingSq) & targets;
 
-			moveList.emplace_back(kingSq, kingTo, KING, castleSide);
-		};
+        while (moves)
+        {
+            const Square to = moves.popLsb();
+            const PieceType capturedPiece = board.getPiece(to).type();
 
-		if (board.canCastleKs<Us>())
-		{
-			constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
-			constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
-			constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
-			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::KSIDE_CASTLE);
-		}
+            Move move{ kingSq, to, KING };
+            if (capturedPiece != NO_PIECE_TYPE)
+            {
+                move.setFlags(Move::Flags::CAPTURE);
+                move.setCapturedPiece(capturedPiece);
+            }
+            moveList.emplace_back(move);
+        }
 
-		if (board.canCastleQs<Us>())
-		{
-			constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
-			constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
-			constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
-			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::QSIDE_CASTLE);
-		}
-	}
+        if (!board.canCastle<Us>())
+            return;
 
-	template <Color Us>
-	void generateAllMoves(const Board &board, MoveList &moveList)
-	{
-		constexpr Color Them = ~Us;
+        const auto addCastleMove = [&, kingSq](const Square kingTo, const Square rookSq,
+                                               const Square rookTo, const u8 castleSide)
+        {
+            auto mask = Bitboard::fromLineBetween(kingSq, kingTo) | Bitboard::fromSquare(kingTo);
+            mask |= Bitboard::fromLineBetween(rookSq, rookTo) | Bitboard::fromSquare(rookTo);
+            mask &= ~(Bitboard::fromSquare(kingSq) | Bitboard::fromSquare(rookSq));
 
-		const auto kingTargets = ~board.getPieces(Us);
-		if (board.kingAttackers.several())
-			return generateKingMoves<Us>(board, moveList, kingTargets);
+            // There can't be any pieces in between the rook and king
+            if (board.getPieces() & mask)
+                return;
 
-		Bitboard targets{};
-		const auto kingAttackers = board.kingAttackers;
-		// When checked we must either capture the attacker
-		// or block it if is a slider piece
-		if (kingAttackers)
-		{
-			targets |= kingAttackers;
+            // The King can't pass through a checked square
+            mask = Bitboard::fromLineBetween(kingSq, kingTo);
+            while (mask)
+            {
+                // TODO Move this in Board::isLegal()
+                if (board.isAttackedByAny(Them, mask.popLsb()))
+                    return;
+            }
 
-			Bitboard bishopAttackers =
-				kingAttackers & (board.getPieces(BISHOP, Them) | board.getPieces(QUEEN, Them));
-			Bitboard rookAttackers =
-				kingAttackers & (board.getPieces(ROOK, Them) | board.getPieces(QUEEN, Them));
+            moveList.emplace_back(kingSq, kingTo, KING, castleSide);
+        };
 
-			while (bishopAttackers)
-				targets |= Attacks::bishopXRayAttacks(bishopAttackers.popLsb());
+        if (board.canCastleKs<Us>())
+        {
+            constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
+            constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
+            constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
+            addCastleMove(KingTo, RookSq, RookTo, Move::Flags::KSIDE_CASTLE);
+        }
 
-			while (rookAttackers)
-				targets |= Attacks::rookXRayAttacks(rookAttackers.popLsb());
-		}
+        if (board.canCastleQs<Us>())
+        {
+            constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
+            constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
+            constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
+            addCastleMove(KingTo, RookSq, RookTo, Move::Flags::QSIDE_CASTLE);
+        }
+    }
 
-		// Everywhere but our pieces
-		if (targets)
-			targets &= kingTargets;
-		else
-			targets = kingTargets;
+    template <Color Us>
+    void generateAllMoves(const Board &board, MoveList &moveList)
+    {
+        auto type = GenType::ALL;
+        auto targets = ~board.getPieces(Us); // Everywhere but our pieces
+        const auto kingAttackers = board.kingAttackers;
 
-		generatePawnMoves<Us>(board, moveList, targets);
-		generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
-		generatePieceMoves<Us, BISHOP>(board, moveList, targets);
-		generatePieceMoves<Us, ROOK>(board, moveList, targets);
-		generatePieceMoves<Us, QUEEN>(board, moveList, targets);
-		generateKingMoves<Us>(board, moveList, kingTargets);
-	}
+        // When checked we must either capture the attacker
+        // or block it if is a slider piece
+        if (kingAttackers)
+        {
+            const Square kingSq = board.getKingSq<Us>();
+            auto sliders = kingAttackers & ~(board.getPieces(PAWN) | board.getPieces(KNIGHT));
+            Bitboard sliderAttacks;
+
+            while (sliders)
+                sliderAttacks |= Bitboard::fromLine(kingSq, sliders.popLsb()) & ~kingAttackers;
+
+            // Evasions for king, capture and non capture moves
+            auto moves = Attacks::kingAttacks(kingSq) & ~board.getPieces(Us) & ~sliderAttacks;
+            while (moves)
+            {
+                const Square to = moves.popLsb();
+                const PieceType capturedPiece = board.getPiece(to).type();
+
+                Move move{ kingSq, to, KING };
+                if (capturedPiece != NO_PIECE_TYPE)
+                {
+                    move.setFlags(Move::Flags::CAPTURE);
+                    move.setCapturedPiece(capturedPiece);
+                }
+                moveList.emplace_back(move);
+            }
+
+            // We can't to anything else if there are two checkers
+            if (kingAttackers.several())
+                return;
+
+            const Square checkSq = kingAttackers.bitScanForward();
+            targets &= Bitboard::fromLineBetween(kingSq, checkSq) | kingAttackers;
+            type = GenType::EVASIONS;
+        }
+
+        generatePawnMoves<Us>(board, moveList, targets, type);
+        generatePieceMoves<Us, KNIGHT>(board, moveList, targets);
+        generatePieceMoves<Us, BISHOP>(board, moveList, targets);
+        generatePieceMoves<Us, ROOK>(board, moveList, targets);
+        generatePieceMoves<Us, QUEEN>(board, moveList, targets);
+
+        if (!kingAttackers)
+            generateKingMoves<Us>(board, moveList, targets);
+    }
 }
 
 void MoveList::generateMoves() noexcept
 {
-	if (_board.colorToMove == WHITE)
-		generateAllMoves<WHITE>(_board, *this);
-	else
-		generateAllMoves<BLACK>(_board, *this);
+    if (_board.colorToMove == WHITE)
+        generateAllMoves<WHITE>(_board, *this);
+    else
+        generateAllMoves<BLACK>(_board, *this);
 }

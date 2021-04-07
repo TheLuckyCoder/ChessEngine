@@ -40,11 +40,11 @@ namespace Zobrist
 
 	static const auto PiecesKeys = []
 	{
-		std::array<std::array<std::array<u64, 2>, 7>, SQUARE_NB> array{};
+		std::array<std::array<std::array<u64, COLOR_NB>, PIECE_TYPE_NB>, SQUARE_NB> array{};
 
 		for (auto &sq : array)
 			for (auto &piece : sq)
-				piece = Generator.randomArray<2>();
+				piece = Generator.randomArray<COLOR_NB>();
 
 		return array;
 	}();
@@ -56,7 +56,7 @@ namespace Zobrist
 	{
 		u64 hash{};
 
-		for (u8 sq = 0; sq < SQUARE_NB; ++sq)
+		for (u8 sq{}; sq < SQUARE_NB; ++sq)
 			if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
 				hash ^= PiecesKeys[sq][piece.type()][piece.color()];
 

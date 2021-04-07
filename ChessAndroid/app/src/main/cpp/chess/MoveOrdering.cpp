@@ -11,7 +11,7 @@ namespace MoveOrdering
     static constexpr std::array VictimScore = { 0, 100, 200, 300, 400, 500, 600 };
     static constexpr auto MvaLvv = []
     {
-        std::array<std::array<int, 7>, 7> array{};
+        std::array<std::array<int, PIECE_TYPE_NB>, PIECE_TYPE_NB> array{};
 
         for (u8 attacker = PAWN; attacker <= KING; ++attacker)
         {

@@ -60,12 +60,7 @@ public:
 	{
 		_end = std::remove_if(_moveList, _end, [&](const Move &move) -> bool
 		{
-			if (_board.makeMove(move))
-			{
-				_board.undoMove();
-				return false;
-			}
-			return true;
+			return !_board.isLegal(move);
 		});
 	}
 
@@ -80,17 +75,8 @@ inline bool moveExists(Board &board, const Move &move) noexcept
 	const MoveList moveList(board);
 
 	for (const Move &m : moveList)
-	{
 		if (m == move)
-		{
-			if (board.makeMove(m))
-			{
-				board.undoMove();
-				return true;
-			}
-			return false;
-		}
-	}
+			return board.isLegal(m);
 
 	return false;
 }

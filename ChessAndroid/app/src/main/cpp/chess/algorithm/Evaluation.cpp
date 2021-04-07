@@ -79,7 +79,7 @@ static thread_local PawnStructureTable PawnTable{ 2 };
 
 constexpr auto MASK_PAWN_SHIELD = []
 {
-	std::array<std::array<Bitboard, SQUARE_NB>, 2> array{};
+	std::array<std::array<Bitboard, SQUARE_NB>, COLOR_NB> array{};
 
 	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
@@ -145,16 +145,16 @@ private:
 
 	const Board &board;
 	Evaluation::Trace *trace = nullptr;
-	std::array<std::array<Bitboard, 6>, 2> _pieceAttacks{}; // No King
-	std::array<Bitboard, 2> _attacksMultiple{};
-	std::array<Bitboard, 2> _allAttacks{};
-	std::array<Bitboard, 2> _mobilityArea{};
+	std::array<std::array<Bitboard, 6>, COLOR_NB> _pieceAttacks{}; // No King
+	std::array<Bitboard, COLOR_NB> _attacksMultiple{};
+	std::array<Bitboard, COLOR_NB> _allAttacks{};
+	std::array<Bitboard, COLOR_NB> _mobilityArea{};
 
-	std::array<Bitboard, 2> _kingRing{};
+	std::array<Bitboard, COLOR_NB> _kingRing{};
 	// TODO
-	std::array<i32, 2> _kingAttacksCount{};
-	std::array<i32, 2> _kingAttackersCount{};
-	std::array<i32, 2> _kingAttackersWeight{};
+	std::array<i32, COLOR_NB> _kingAttacksCount{};
+	std::array<i32, COLOR_NB> _kingAttackersCount{};
+	std::array<i32, COLOR_NB> _kingAttackersWeight{};
 };
 
 int Evaluation::value(const Board &board) noexcept
@@ -177,7 +177,7 @@ std::string Evaluation::traceValue(const Board &board)
 	const auto &trace = eval.getTrace();
 	std::ostringstream output;
 
-	const auto element = [&](const std::string_view name, const std::array<Score, 2> &elem)
+	const auto traceElement = [&](const std::string_view name, const std::array<Score, COLOR_NB> &elem)
 	{
 		constexpr int MaxLetters = 24;
 		constexpr int MaxDigits = 5;
@@ -198,29 +198,29 @@ std::string Evaluation::traceValue(const Board &board)
 		   << "|                          |   MG   EG   |   MG   EG   |   MG   EG   |\n"
 		   << Separator;
 
-	element("Pawns", trace.pawns);
-	element("Knights", trace.knights);
-	element("Bishops", trace.bishops);
-	element("Rooks", trace.rooks);
-	element("Queens", trace.queen);
-	element("King", trace.king);
-	element("Mobility", trace.mobility);
-	element("Pieces Total", trace.piecesTotal);
-	element("King Protectors", trace.kingProtector);
-	element("Minors Pawn Shield", trace.minorPawnShield);
-	element("Threats By Minor", trace.threatsByMinor);
-	element("Threats By Rook", trace.threatsByRook);
-	element("Threats By King", trace.threatsByKing);
-	element("Threats By Safe-Pawns", trace.threatBySafePawn);
-	element("Hanging Pieces", trace.piecesHanging);
-	element("Protection by Weak Queen", trace.weakQueenProtection);
-	element("Queen Threat By Knight", trace.queenThreatByKnight);
-	element("Queen Threat By Slider", trace.queenThreatBySlider);
-	element("Restricted Movement", trace.restrictedMovement);
-	element("Attacks Total", trace.attacksTotal);
+	traceElement("Pawns", trace.pawns);
+	traceElement("Knights", trace.knights);
+	traceElement("Bishops", trace.bishops);
+	traceElement("Rooks", trace.rooks);
+	traceElement("Queens", trace.queen);
+	traceElement("King", trace.king);
+	traceElement("Mobility", trace.mobility);
+	traceElement("Pieces Total", trace.piecesTotal);
+	traceElement("King Protectors", trace.kingProtector);
+	traceElement("Minors Pawn Shield", trace.minorPawnShield);
+	traceElement("Threats By Minor", trace.threatsByMinor);
+	traceElement("Threats By Rook", trace.threatsByRook);
+	traceElement("Threats By King", trace.threatsByKing);
+	traceElement("Threats By Safe-Pawns", trace.threatBySafePawn);
+	traceElement("Hanging Pieces", trace.piecesHanging);
+	traceElement("Protection by Weak Queen", trace.weakQueenProtection);
+	traceElement("Queen Threat By Knight", trace.queenThreatByKnight);
+	traceElement("Queen Threat By Slider", trace.queenThreatBySlider);
+	traceElement("Restricted Movement", trace.restrictedMovement);
+	traceElement("Attacks Total", trace.attacksTotal);
 
 	output << Separator;
-	element("Total", trace.total);
+	traceElement("Total", trace.total);
 	output << "|                   Scaled |             |             | "
 		   << std::setw(11) << result << " |\n"
 		   << Separator;
@@ -379,7 +379,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 			trace->bishops[Us] += bishopScore;
 		score += bishopScore;
 
-		const auto attacks = Attacks::bishopAttacks(square, board.occupied);
+		const auto attacks = Attacks::bishopAttacks(square, board.getPieces());
 		updateAttacks(BISHOP, attacks);
 		updateKingAttacks(BISHOP, attacks);
 	}
@@ -397,7 +397,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 			trace->rooks[Us] += rookScore;
 		score += rookScore;
 
-		const auto attacks = Attacks::rookAttacks(square, board.occupied);
+		const auto attacks = Attacks::rookAttacks(square, board.getPieces());
 		updateAttacks(ROOK, attacks);
 		updateKingAttacks(ROOK, attacks);
 	}
@@ -412,7 +412,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 			trace->queen[Us] += queenScore;
 		score += queenScore;
 
-		const auto attacks = Attacks::queenAttacks(square, board.occupied);
+		const auto attacks = Attacks::queenAttacks(square, board.getPieces());
 		updateAttacks(QUEEN, attacks);
 		updateKingAttacks(QUEEN, attacks);
 	}
@@ -501,8 +501,8 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 		const auto knightAttacks = _pieceAttacks[Us][KNIGHT] & Attacks::knightAttacks(sq);
 		const auto sliderAttacks =
-			(_pieceAttacks[Us][BISHOP] & Attacks::bishopAttacks(sq, board.occupied))
-			| (_pieceAttacks[Us][ROOK] & Attacks::rookAttacks(sq, board.occupied));
+			(_pieceAttacks[Us][BISHOP] & Attacks::bishopAttacks(sq, board.getPieces()))
+			| (_pieceAttacks[Us][ROOK] & Attacks::rookAttacks(sq, board.getPieces()));
 
 		const auto knightAttacksScore =
 			QUEEN_THREAT_BY_KNIGHT * (knightAttacks & safeSpots).popcount();
@@ -632,7 +632,7 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 	const auto bb = Bitboard::fromSquare(square);
 	Score value = PSQT[BISHOP][square];
 
-	const i32 mobility = (Attacks::bishopAttacks(square, board.occupied) &
+	const i32 mobility = (Attacks::bishopAttacks(square, board.getPieces()) &
 						  _mobilityArea[Us]).popcount();
 	value += BISHOP_MOBILITY[mobility];
 
@@ -642,7 +642,7 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 	// Penalty according to the number of our pawns on the same color square as the
 	// bishop, bigger when the center files are blocked with pawns and smaller
 	// when the bishop is outside the pawn chain.
-	const auto blocked = board.getPieces(PAWN, Us) & board.occupied.shift<Down>();
+	const auto blocked = board.getPieces(PAWN, Us) & board.getPieces().shift<Down>();
 
 	const i32 pawnsOnTheSameColorSquares =
 		(board.getPieces(PAWN, Us) &
@@ -677,7 +677,7 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 
 	Score value = PSQT[ROOK][square];
 
-	const i32 mobility = (Attacks::rookAttacks(square, board.occupied) &
+	const i32 mobility = (Attacks::rookAttacks(square, board.getPieces()) &
 						  _mobilityArea[Us]).popcount();
 	value += ROOK_MOBILITY[mobility];
 
@@ -709,7 +709,7 @@ Score Eval<Trace>::evaluateQueen(const Square square) const noexcept
 {
 	Score value = PSQT[QUEEN][square];
 
-	const i32 mobility = (Attacks::queenAttacks(square, board.occupied) &
+	const i32 mobility = (Attacks::queenAttacks(square, board.getPieces()) &
 						  _mobilityArea[Us]).popcount();
 	value += QUEEN_MOBILITY[mobility];
 

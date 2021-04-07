@@ -5,7 +5,7 @@
 class Thread
 {
 public:
-	using Killers = std::array<std::array<u32, MAX_DEPTH>, 2>;
+	using Killers = std::array<std::array<u32, MAX_DEPTH>, COLOR_NB>;
 	using History = std::array<std::array<u16, SQUARE_NB>, SQUARE_NB>;
 	using EvalStack = std::array<int, MAX_DEPTH>;
 

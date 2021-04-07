@@ -8,7 +8,9 @@
 #ifdef _MSC_VER
 #  include <intrin.h>
 #elif defined(__linux__)
+
 #	include <byteswap.h>
+
 #endif
 
 namespace Bits
@@ -46,7 +48,7 @@ namespace Bits
 		return bswap_64(bb);
 	}
 
-#elif defined(__has_builtin) && __has_builtin(__builtin_bswap64))
+#elif defined(__has_builtin) && __has_builtin(__builtin_bswap64)
 
 	inline u64 flipVertical(const u64 bb) noexcept
 	{
@@ -158,7 +160,7 @@ namespace Bits
 		return files;
 	}();
 
-	template<Dir D>
+	template <Dir D>
 	static constexpr u64 _shiftT(const u64 bb) noexcept
 	{
 		if constexpr (D == NORTH)
@@ -224,7 +226,7 @@ namespace Bits
 			   | _generateRayAttacksBackwards(square, blockers, WEST);
 	}
 
-	static const auto RaysBetweenSquares = []
+	static const auto LineBetweenSquares = []
 	{
 		std::array<std::array<u64, SQUARE_NB>, SQUARE_NB> array{};
 
@@ -265,14 +267,11 @@ public:
 
 	[[nodiscard]] constexpr bool empty() const noexcept { return _value == 0ull; }
 
+	[[nodiscard]] constexpr bool notEmpty() const noexcept { return static_cast<bool>(_value); }
+
 	[[nodiscard]] constexpr Square bitScanForward() const noexcept
 	{
 		return toSquare(Bits::bitScanForward(_value));
-	}
-
-	[[nodiscard]] constexpr Square bitScanReverse() const noexcept
-	{
-		return toSquare(Bits::bitScanReverse(_value));
 	}
 
 	[[nodiscard]] constexpr i32 popcount() const noexcept
@@ -280,7 +279,7 @@ public:
 		return std::popcount(_value);
 	}
 
-	template<Dir D, Dir... Dirs>
+	template <Dir D, Dir... Dirs>
 	[[nodiscard]] constexpr Bitboard shift() const noexcept
 	{
 		u64 result = Bits::_shiftT<D>(_value);
@@ -295,7 +294,7 @@ public:
 
 	[[nodiscard]] constexpr bool several() const noexcept
 	{
-		return _value & (_value - 1);
+		return static_cast<bool>(_value & (_value - 1));
 	}
 
 	/// Non-Const functions
@@ -400,15 +399,15 @@ public:
 		return Bitboard{ Bits::Rays[direction].at(u8(square)) };
 	}
 
-	static constexpr Bitboard fromLineBetween(const Square sq1, const Square sq2) noexcept
+	static Bitboard fromLineBetween(const Square sq1, const Square sq2) noexcept
 	{
-		return Bitboard{ Bits::RaysBetweenSquares.at(u8(sq1)).at(u8(sq2)) };
+		return Bitboard{ Bits::LineBetweenSquares[u8(sq1)][u8(sq2)] };
 	}
 
-    static constexpr Bitboard fromLine(const Square sq1, const Square sq2) noexcept
-    {
-        return fromSquare(sq1) | fromSquare(sq2) | fromLineBetween(sq1, sq2);
-    }
+	static Bitboard fromLine(const Square sq1, const Square sq2) noexcept
+	{
+		return fromLineBetween(sq1, sq2) | fromSquare(sq1) | fromSquare(sq2);
+	}
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{
@@ -424,6 +423,12 @@ public:
 	{
 		const auto file = fromFile(square);
 		return file.shift<WEST>() | file.shift<EAST>();
+	}
+
+	static bool areAligned(const Square sq1, const Square sq2, const Square sq3) noexcept
+	{
+		auto bitboard = fromLine(sq1, sq2);
+		return (bitboard & fromSquare(sq3)).notEmpty();
 	}
 
 private:
@@ -448,10 +453,9 @@ constexpr Bitboard FILE_F{ FILE_A << 5 };
 constexpr Bitboard FILE_G{ FILE_A << 6 };
 constexpr Bitboard FILE_H{ FILE_A << 7 };
 
-constexpr Bitboard ALL_SQUARES{ UINT64_MAX };
 constexpr Bitboard DARK_SQUARES{ 0xAA55AA55AA55AA55ULL };
 
 constexpr Bitboard KING_SIDE{ FILE_E | FILE_F | FILE_G | FILE_H };
 constexpr Bitboard QUEEN_SIDE{ FILE_A | FILE_B | FILE_C | FILE_D };
-constexpr Bitboard CENTER_FILES{FILE_C | FILE_D | FILE_E | FILE_F };
+constexpr Bitboard CENTER_FILES{ FILE_C | FILE_D | FILE_E | FILE_F };
 constexpr Bitboard CENTER_SQUARES{ (FILE_D | FILE_E) & (RANK_4 | RANK_5) };

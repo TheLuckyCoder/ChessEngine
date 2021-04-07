@@ -35,6 +35,11 @@ public:
 			return pawns.shift<SOUTH_WEST>() | pawns.shift<SOUTH_EAST>();
 	}
 
+	static constexpr Bitboard pawnAttacks(const Color color, const Bitboard pawns)
+	{
+		return color == WHITE ? pawnAttacks<WHITE>(pawns) : pawnAttacks<BLACK>(pawns);
+	}
+
 	template <Color C>
 	static constexpr Bitboard pawnDoubleAttacks(const Bitboard pawns) noexcept
 	{

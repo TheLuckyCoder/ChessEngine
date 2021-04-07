@@ -82,7 +82,7 @@ namespace UndoRedo
 	static IndexedPieces makeIndexedPieces(const Board &board) noexcept
 	{
 		IndexedPieces pieces;
-		pieces.reserve(board.occupied.popcount());
+		pieces.reserve(board.getPieces().popcount());
 
 		for (u8 square{}; square < SQUARE_NB; ++square)
 		{
