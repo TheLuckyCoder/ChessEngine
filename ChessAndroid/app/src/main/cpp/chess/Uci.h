@@ -13,7 +13,7 @@
 class Uci
 {
 	inline static std::thread _searchThread{};
-	inline static usize _threadCount{ std::thread::hardware_concurrency() - 1 };
+	inline static usize _threadCount{ std::thread::hardware_concurrency() - 1u };
 	inline static usize _hashSizeMb{ 64 };
 	inline static Board _board{};
 

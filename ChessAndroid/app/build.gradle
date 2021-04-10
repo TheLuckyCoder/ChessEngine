@@ -68,6 +68,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    debugImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.3")
 
     // AndroidX
@@ -81,5 +82,4 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:$compose_version")
     implementation("androidx.compose.material:material:$compose_version")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha03")
-    debugImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
 }

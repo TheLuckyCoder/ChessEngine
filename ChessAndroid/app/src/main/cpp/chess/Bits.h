@@ -311,9 +311,9 @@ public:
 
 	constexpr Square popLsb() noexcept
 	{
-		const u8 lsbIndex = bitScanForward();
+		const Square lsbIndex = bitScanForward();
 		_value &= _value - 1u;
-		return toSquare(lsbIndex);
+		return lsbIndex;
 	}
 
 	/// Operators
@@ -385,7 +385,7 @@ public:
 public:
 	static constexpr Bitboard fromSquare(const Square square) noexcept
 	{
-		return Bitboard{ Bits::Squares.at(u8(square)) };
+		return Bitboard{ Bits::Squares[u8(square)] };
 	}
 
 	/**
@@ -396,7 +396,7 @@ public:
 	 */
 	static constexpr Bitboard fromRay(const Dir direction, const Square square) noexcept
 	{
-		return Bitboard{ Bits::Rays[direction].at(u8(square)) };
+		return Bitboard{ Bits::Rays[direction][u8(square)] };
 	}
 
 	static Bitboard fromLineBetween(const Square sq1, const Square sq2) noexcept
@@ -411,12 +411,12 @@ public:
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{
-		return Bitboard{ Bits::Ranks.at(rankOf(square)) };
+		return Bitboard{ Bits::Ranks[rankOf(square)] };
 	}
 
 	static constexpr Bitboard fromFile(const Square square) noexcept
 	{
-		return Bitboard{ Bits::Files.at(fileOf(square)) };
+		return Bitboard{ Bits::Files[fileOf(square)] };
 	}
 
 	static constexpr Bitboard fromAdjacentFiles(const Square square) noexcept
@@ -432,7 +432,7 @@ public:
 	}
 
 private:
-	u64 _value;
+	u64 _value{};
 };
 
 constexpr Bitboard RANK_1{ 0xFF };
@@ -453,6 +453,7 @@ constexpr Bitboard FILE_F{ FILE_A << 5 };
 constexpr Bitboard FILE_G{ FILE_A << 6 };
 constexpr Bitboard FILE_H{ FILE_A << 7 };
 
+constexpr Bitboard ALL_SQUARES{ UINT64_MAX };
 constexpr Bitboard DARK_SQUARES{ 0xAA55AA55AA55AA55ULL };
 
 constexpr Bitboard KING_SIDE{ FILE_E | FILE_F | FILE_G | FILE_H };

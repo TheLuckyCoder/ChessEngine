@@ -82,7 +82,7 @@ void Board::makeMove(const Move move) noexcept
     // Handle en passant capture and castling
     if (flags.enPassant())
     {
-        const Square capturedSq = toSquare(u8(to) + static_cast<u8>(side ? -8 : 8));
+        const Square capturedSq = (side == WHITE ? shift<SOUTH>(to) : shift<NORTH>(to));
         removePiece(capturedSq);
     } else if (flags.kSideCastle())
     {
@@ -121,7 +121,7 @@ void Board::makeMove(const Move move) noexcept
 
     // Store the position info in history
     history[historyPly] =
-        { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq, fiftyMoveRule, blockersForKing, pinners, checkSquares };
+        { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq, fiftyMoveRule, blockersForKing, kingPinners, checkSquares };
 
     if (canCastle(side))
     {
@@ -165,7 +165,7 @@ void Board::makeMove(const Move move) noexcept
 
         if (move.flags().doublePawnPush())
         {
-            enPassantSq = toSquare(u8(from) + static_cast<u8>(side ? 8 : -8));
+            enPassantSq = (side == WHITE ? shift<NORTH>(from) : shift<SOUTH>(from));
 
             Zobrist::xorEnPassant(zKey, enPassantSq);
             assert(Bitboard::fromRank(enPassantSq) == RANK_3
@@ -220,8 +220,8 @@ void Board::undoMove() noexcept
     castlingRights = previousMove.castlingRights;
     enPassantSq = previousMove.enPassantSq;
     fiftyMoveRule = previousMove.fiftyMoveRule;
-    blockersForKing = previousMove.blockersForKing;
-    pinners = previousMove.pinners;
+    blockersForKing = previousMove.kingBlockers;
+	kingPinners = previousMove.kingPinners;
     checkSquares = previousMove.checkSquares;
 
     colorToMove = ~colorToMove;
@@ -280,7 +280,7 @@ void Board::makeNullMove() noexcept
 
     ++ply;
     history[historyPly++] =
-        { zKey, kingAttackers, {}, castlingRights, enPassantSq, fiftyMoveRule, blockersForKing, pinners, checkSquares };
+        { zKey, kingAttackers, {}, castlingRights, enPassantSq, fiftyMoveRule, blockersForKing, kingPinners, checkSquares };
 
     Zobrist::xorEnPassant(zKey, enPassantSq);
     enPassantSq = SQ_NONE;
@@ -303,8 +303,8 @@ void Board::undoNullMove() noexcept
     castlingRights = previousMove.castlingRights;
     enPassantSq = previousMove.enPassantSq;
     fiftyMoveRule = previousMove.fiftyMoveRule;
-    blockersForKing = previousMove.blockersForKing;
-    pinners = previousMove.pinners;
+    blockersForKing = previousMove.kingBlockers;
+	kingPinners = previousMove.kingPinners;
     checkSquares = previousMove.checkSquares;
 
     colorToMove = ~colorToMove;
@@ -433,8 +433,8 @@ Bitboard Board::findBlockers(const Bitboard sliders, const Square sq, Bitboard &
 
 void Board::computeCheckInfo() noexcept
 {
-    blockersForKing[WHITE] = findBlockers(getPieces(BLACK), getKingSq(WHITE), pinners[BLACK]);
-    blockersForKing[BLACK] = findBlockers(getPieces(WHITE), getKingSq(BLACK), pinners[WHITE]);
+    blockersForKing[WHITE] = findBlockers(getPieces(BLACK), getKingSq(WHITE), kingPinners[BLACK]);
+    blockersForKing[BLACK] = findBlockers(getPieces(WHITE), getKingSq(BLACK), kingPinners[WHITE]);
 
     const Square ksq = getKingSq(~colorToMove);
 
@@ -520,16 +520,8 @@ bool Board::isLegal(const Move move) const noexcept
     if (move.piece() == KING)
         return !isAttackedByAny(~colorToMove, move.to(), getPieces() ^ Bitboard::fromSquare(from));
 
-    auto bitboard = kingBlockers(colorToMove) & Bitboard::fromSquare(from);
-    const auto b = Bitboard::areAligned(from, kingSq, to);
-
-    return bitboard.empty()
-           || b;
-}
-
-Bitboard Board::kingBlockers(const Color color) const noexcept
-{
-    return blockersForKing[color];
+    return (getKingBlockers(colorToMove) & Bitboard::fromSquare(from)).empty()
+           || Bitboard::areAligned(from, kingSq, to);
 }
 
 std::string Board::toString() const noexcept

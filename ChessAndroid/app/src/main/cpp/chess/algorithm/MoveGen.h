@@ -58,10 +58,15 @@ public:
 
 	void keepLegalMoves() noexcept
 	{
-		_end = std::remove_if(_moveList, _end, [&](const Move &move) -> bool
+		auto it = begin();
+		while (it != end())
 		{
-			return !_board.isLegal(move);
-		});
+			if (!_board.isLegal(*it)) {
+				*it = back();
+				popBack();
+			} else
+				++it;
+		}
 	}
 
 private:

@@ -17,8 +17,8 @@ public:
 	Square enPassantSq{};
 	u8 fiftyMoveRule{};
 
-	std::array<Bitboard, COLOR_NB> blockersForKing{};
-	std::array<Bitboard, COLOR_NB> pinners{};
+	std::array<Bitboard, COLOR_NB> kingBlockers{};
+	std::array<Bitboard, COLOR_NB> kingPinners{};
 	std::array<Bitboard, PIECE_TYPE_NB> checkSquares{};
 
 	Move getMove() const noexcept { return Move{ moveContents }; }
@@ -59,8 +59,6 @@ public:
 
 	// endregion Pieces
 
-	template <Color C>
-	Square getKingSq() const noexcept;
 	Square getKingSq(Color color) const noexcept;
 
 	bool isDrawn() const noexcept;
@@ -83,14 +81,14 @@ private:
 	void addPiece(Square square, Piece piece) noexcept;
 	void movePiece(Square from, Square to) noexcept;
 	void removePiece(Square square) noexcept;
-    Bitboard findBlockers(Bitboard sliders, Square sq, Bitboard &pinners) const noexcept;
+    Bitboard findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept;
 
 public:
     void computeCheckInfo() noexcept;
     void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
 	bool isLegal(Move move) const noexcept;
-	Bitboard kingBlockers(Color color) const noexcept;
+	Bitboard getKingBlockers(Color color) const noexcept;
 
 	std::string toString() const noexcept;
 
@@ -112,7 +110,7 @@ public:
     u8 fiftyMoveRule{};
 
     std::array<Bitboard, COLOR_NB> blockersForKing{};
-    std::array<Bitboard, COLOR_NB> pinners{};
+    std::array<Bitboard, COLOR_NB> kingPinners{};
     std::array<Bitboard, PIECE_TYPE_NB> checkSquares{};
 
 private:
@@ -184,12 +182,6 @@ inline Bitboard Board::getPieces(const Color color) const noexcept
 	return pieces[color][PieceType::NO_PIECE_TYPE];
 }
 
-template <Color C>
-Square Board::getKingSq() const noexcept
-{
-	return toSquare(pieceList[Piece{ KING, C }][0]);
-}
-
 inline Square Board::getKingSq(const Color color) const noexcept
 {
     return toSquare(pieceList[Piece{ KING, color }][0]);
@@ -227,7 +219,7 @@ template <Color C>
 Bitboard Board::generateKingAttackers() const noexcept
 {
 	constexpr Color ColorAttacking = ~C;
-	const Square kingSq = getKingSq<C>();
+	const Square kingSq = getKingSq(C);
 	assert(kingSq < SQUARE_NB);
 
 	const auto queens = getPieces(QUEEN, ColorAttacking);
@@ -239,4 +231,9 @@ Bitboard Board::generateKingAttackers() const noexcept
 		   | (getPieces(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
 		   | (bishops & Attacks::bishopAttacks(kingSq, getPieces()))
 		   | (rooks & Attacks::rookAttacks(kingSq, getPieces()));
+}
+
+inline Bitboard Board::getKingBlockers(const Color color) const noexcept
+{
+	return blockersForKing[color];
 }

@@ -103,8 +103,8 @@ struct Eval
 		if constexpr (Trace)
 			trace = new Evaluation::Trace{};
 
-		const auto wKingSq = board.getKingSq<WHITE>();
-		const auto bKingSq = board.getKingSq<BLACK>();
+		const auto wKingSq = board.getKingSq(WHITE);
+		const auto bKingSq = board.getKingSq(BLACK);
 		const auto wKingRing = (Attacks::kingAttacks(wKingSq) | Bitboard::fromSquare(wKingSq))
 							   & ~Attacks::pawnDoubleAttacks<WHITE>(board.getPieces(PAWN, WHITE));
 		const auto bKingRing = (Attacks::kingAttacks(bKingSq) | Bitboard::fromSquare(bKingSq))
@@ -275,7 +275,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		const bool isBishop = board.getPiece(square).type() == BISHOP;
 
 		const auto kingProtectorScore =
-			KING_PROTECTOR[isBishop] * Bits::getDistanceBetween(square, board.getKingSq<Us>());
+			KING_PROTECTOR[isBishop] * Bits::getDistanceBetween(square, board.getKingSq(Us));
 		score -= kingProtectorScore;
 		if constexpr (Trace)
 			trace->kingProtector[Us] -= kingProtectorScore;
@@ -691,7 +691,7 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 		value += ROOK_ON_FILE[!bool(board.getPieces(PAWN, Them) & file)];
 	} else if (mobility <= 3)
 	{
-		const u8 kingFile = fileOf(board.getKingSq<Us>());
+		const u8 kingFile = fileOf(board.getKingSq(Us));
 
 		if ((kingFile < 4) == (fileOf(square) < kingFile))
 			value -= TRAPPED_ROOK * (1 + !board.canCastle<Us>());
@@ -731,7 +731,7 @@ template <Color Us>
 Score Eval<Trace>::evaluateKing() const noexcept
 {
 	// constexpr Color Them = ~Us;
-	const u8 square = board.getKingSq<Us>();
+	const u8 square = board.getKingSq(Us);
 
 	Score value = PSQT[KNIGHT][square];
 
