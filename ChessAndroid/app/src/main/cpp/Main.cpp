@@ -1,5 +1,7 @@
 #include <jni.h>
 
+#include <iostream>
+
 #include "Log.h"
 #include "Cache.h"
 #include "AndroidBuffer.h"
@@ -8,7 +10,7 @@
 #include "chess/Stats.h"
 #include "chess/Tests.h"
 #include "chess/algorithm/Evaluation.h"
-#include "chess/algorithm/MoveGen.h"
+#include "chess/MoveGen.h"
 #include "chess/algorithm/Search.h"
 #include "chess/polyglot/PolyBook.h"
 

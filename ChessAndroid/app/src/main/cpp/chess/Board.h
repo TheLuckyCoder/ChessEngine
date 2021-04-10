@@ -200,17 +200,17 @@ bool Board::isAttacked(const Color attackerColor, const Square targetSquare, Bit
 		const auto pawnAttacks = attackerColor
 								 ? Attacks::pawnAttacks<WHITE>(type) : Attacks::pawnAttacks<BLACK>(type);
 
-		return bool(pawnAttacks & Bitboard::fromSquare(targetSquare));
+		return (pawnAttacks & Bitboard::fromSquare(targetSquare)).notEmpty();
 	} else if constexpr (P == KNIGHT)
-		return bool(type & Attacks::knightAttacks(targetSquare));
+		return (type & Attacks::knightAttacks(targetSquare)).notEmpty();
 	else if constexpr (P == BISHOP)
-		return bool(type & Attacks::bishopAttacks(targetSquare, blockers));
+		return (type & Attacks::bishopAttacks(targetSquare, blockers)).notEmpty();
 	else if constexpr (P == ROOK)
-		return bool(type & Attacks::rookAttacks(targetSquare, blockers));
+		return (type & Attacks::rookAttacks(targetSquare, blockers)).notEmpty();
 	else if constexpr (P == QUEEN)
-		return bool(type & Attacks::queenAttacks(targetSquare, blockers));
+		return (type & Attacks::queenAttacks(targetSquare, blockers)).notEmpty();
 	else if constexpr (P == KING)
-		return bool(type & Attacks::kingAttacks(targetSquare));
+		return (type & Attacks::kingAttacks(targetSquare)).notEmpty();
 
 	return false;
 }

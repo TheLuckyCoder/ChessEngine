@@ -26,35 +26,17 @@ public:
 	{
 	}
 
-	[[nodiscard]] constexpr auto depth() const noexcept
-	{
-		return _depth;
-	}
+	[[nodiscard]] constexpr auto depth() const noexcept { return _depth; }
 
-	[[nodiscard]] constexpr auto threadCount() const noexcept
-	{
-		return _threadCount;
-	}
+	[[nodiscard]] constexpr auto threadCount() const noexcept { return _threadCount; }
 
-	[[nodiscard]] constexpr auto tableSizeMb() const noexcept
-	{
-		return _cacheTableSizeMb;
-	}
+	[[nodiscard]] constexpr auto tableSizeMb() const noexcept { return _cacheTableSizeMb; }
 
-	[[nodiscard]] constexpr bool isTimeSet() const noexcept
-	{
-		return _searchTime != 0ull;
-	}
+	[[nodiscard]] constexpr bool isTimeSet() const noexcept { return _searchTime != 0ull; }
 
-	[[nodiscard]] constexpr auto searchTime() const noexcept
-	{
-		return _searchTime;
-	}
+	[[nodiscard]] constexpr auto searchTime() const noexcept { return _searchTime; }
 
-	[[nodiscard]] constexpr bool quietSearch() const noexcept
-	{
-		return _quiescenceSearch;
-	}
+	[[nodiscard]] constexpr bool quietSearch() const noexcept { return _quiescenceSearch; }
 
 private:
 	i32 _depth;

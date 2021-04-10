@@ -5,6 +5,7 @@
 #include "Stats.h"
 #include "Tests.h"
 #include "algorithm/Search.h"
+#include "MoveGen.h"
 #include "polyglot/PolyBook.h"
 
 void Uci::init()

@@ -1,12 +1,9 @@
 #pragma once
 
 #include <algorithm>
-#include <string>
 
-#include "../Move.h"
-#include "../Board.h"
-
-class MoveList;
+#include "Move.h"
+#include "Board.h"
 
 class MoveList
 {

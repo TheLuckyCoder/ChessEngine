@@ -1,6 +1,6 @@
 #pragma once
 
-#include "algorithm/MoveGen.h"
+#include "MoveGen.h"
 #include "algorithm/Search.h"
 #include "Thread.h"
 

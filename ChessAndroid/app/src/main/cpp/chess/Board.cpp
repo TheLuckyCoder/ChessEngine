@@ -47,7 +47,7 @@ bool Board::isDrawn() const noexcept
 
     return (pawns | rooks | queens).empty()
            && (!(getPieces(WHITE).several()) || !(getPieces(BLACK).several()))
-           && (!((knight | bishop).several()) || (!bishop && knight.popcount() <= 2));
+           && (!((knight | bishop).several()) || (bishop.empty() && knight.popcount() <= 2));
 }
 
 Phase Board::getPhase() const noexcept
@@ -190,13 +190,7 @@ void Board::makeMove(const Move move) noexcept
 
     updateNonPieceBitboards();
 
-    if ((side ? generateKingAttackers<WHITE>() : generateKingAttackers<BLACK>()))
-    {
-        undoMove();
-        std::cout << "This is not good: " << getFen() << std::endl;
-        isLegal(move);
-        assert(false);
-    }
+    assert((side ? generateKingAttackers<WHITE>() : generateKingAttackers<BLACK>()).empty());
 
     kingAttackers = colorToMove ? generateKingAttackers<WHITE>() : generateKingAttackers<BLACK>();
     computeCheckInfo();
@@ -353,7 +347,7 @@ void Board::movePiece(const Square from, const Square to) noexcept
     assert(piece.isValid());
 
     Zobrist::xorPiece(zKey, from, piece);
-    getPiece(from) = Piece();
+    getPiece(from) = EmptyPiece;
     getPieces(piece).removeSquare(from);
 
     Zobrist::xorPiece(zKey, to, piece);
@@ -511,8 +505,8 @@ bool Board::isLegal(const Move move) const noexcept
         const auto bishops = getPieces(QUEEN, ~colorToMove) | getPieces(BISHOP, ~colorToMove);
         const auto rooks = getPieces(QUEEN, ~colorToMove) | getPieces(ROOK, ~colorToMove);
 
-        return !(Attacks::bishopAttacks(kingSq, newOccupied) & bishops) &&
-               !(Attacks::rookAttacks(kingSq, newOccupied) & rooks);
+        return (Attacks::bishopAttacks(kingSq, newOccupied) & bishops).empty() &&
+               (Attacks::rookAttacks(kingSq, newOccupied) & rooks).empty();
     }
 
     // TODO: Move castling checking here

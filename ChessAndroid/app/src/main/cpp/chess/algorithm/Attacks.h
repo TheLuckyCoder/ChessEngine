@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Bits.h"
+#include "../Bitboard.h"
 
 class Attacks
 {

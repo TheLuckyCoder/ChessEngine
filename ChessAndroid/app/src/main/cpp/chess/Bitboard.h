@@ -378,8 +378,6 @@ public:
 		return Bitboard{ _value >> rhs };
 	}
 
-	explicit constexpr operator bool() const noexcept { return bool(_value); }
-
 	/// Static
 
 public:

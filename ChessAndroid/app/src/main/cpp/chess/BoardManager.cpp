@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "algorithm/Evaluation.h"
-#include "algorithm/MoveGen.h"
+#include "MoveGen.h"
 #include "algorithm/Search.h"
 
 SearchOptions BoardManager::_searchOptions;
@@ -147,8 +147,8 @@ GameState BoardManager::getBoardState()
 	if (_currentBoard.isDrawn())
 		return GameState::DRAW;
 
-	const bool whiteInCheck = bool(_currentBoard.generateKingAttackers<WHITE>());
-	const bool blackInCheck = bool(_currentBoard.generateKingAttackers<BLACK>());
+	const bool whiteInCheck = _currentBoard.generateKingAttackers<WHITE>().notEmpty();
+	const bool blackInCheck = _currentBoard.generateKingAttackers<BLACK>().notEmpty();
 
 	if (whiteInCheck && blackInCheck)
 		return GameState::INVALID;

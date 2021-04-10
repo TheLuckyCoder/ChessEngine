@@ -5,7 +5,7 @@
 
 #include "../Stats.h"
 #include "../Board.h"
-#include "MoveGen.h"
+#include "../MoveGen.h"
 #include "../MoveOrdering.h"
 #include "Evaluation.h"
 #include "../Psqt.h"

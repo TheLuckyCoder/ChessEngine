@@ -25,7 +25,7 @@ namespace
 		const Bitboard emptySquares = ~board.getPieces();
 
 		// Promotions
-		if (pawnsOnLastRank)
+		if (pawnsOnLastRank.notEmpty())
 		{
 			auto forward = pawnsOnLastRank.shift<Forward>() & emptySquares;
 			auto left = pawnsOnLastRank.shift<Forward, WEST>() & enemies;
@@ -164,7 +164,7 @@ namespace
 
 			attacks &= targets;
 
-			while (attacks)
+			while (attacks.notEmpty())
 			{
 				const Square to = attacks.popLsb();
 
@@ -183,14 +183,14 @@ namespace
 	template <Color Us>
 	void generateKingMoves(const Board &board, MoveList &moveList, const Bitboard targets)
 	{
-		assert(!board.kingAttackers);
+		assert(board.kingAttackers.empty());
 		constexpr Color Them{ ~Us };
 
 		const Square kingSq = board.getKingSq(Us);
 
 		Bitboard moves = Attacks::kingAttacks(kingSq) & targets;
 
-		while (moves)
+		while (moves.notEmpty())
 		{
 			const Square to = moves.popLsb();
 
@@ -215,12 +215,12 @@ namespace
 			mask &= ~(Bitboard::fromSquare(kingSq) | Bitboard::fromSquare(rookSq));
 
 			// There can't be any pieces in between the rook and king
-			if (board.getPieces() & mask)
+			if ((board.getPieces() & mask).notEmpty())
 				return;
 
 			// The King can't pass through a checked square
 			mask = Bitboard::fromLineBetween(kingSq, kingTo);
-			while (mask)
+			while (mask.notEmpty())
 			{
 				// TODO Move this in Board::isLegal()
 				if (board.isAttackedByAny(Them, mask.popLsb()))
@@ -256,18 +256,18 @@ namespace
 
 		// When checked we must either capture the attacker
 		// or block it if is a slider piece
-		if (kingAttackers)
+		if (kingAttackers.notEmpty())
 		{
 			const Square kingSq = board.getKingSq(Us);
 			auto sliders = kingAttackers & ~(board.getPieces(PAWN) | board.getPieces(KNIGHT));
 			Bitboard sliderAttacks;
 
-			while (sliders)
+			while (sliders.notEmpty())
 				sliderAttacks |= Bitboard::fromLine(kingSq, sliders.popLsb()) & ~kingAttackers;
 
 			// Evasions for king, capture and non capture moves
 			auto moves = Attacks::kingAttacks(kingSq) & ~board.getPieces(Us) & ~sliderAttacks;
-			while (moves)
+			while (moves.notEmpty())
 			{
 				const Square to = moves.popLsb();
 
@@ -296,7 +296,7 @@ namespace
 		generatePieceMoves<Us, ROOK>(board, moveList, targets);
 		generatePieceMoves<Us, QUEEN>(board, moveList, targets);
 
-		if (!kingAttackers)
+		if (kingAttackers.empty())
 			generateKingMoves<Us>(board, moveList, targets);
 	}
 }

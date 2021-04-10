@@ -12,10 +12,11 @@ add_library(
         src/main/cpp/chess/Board.cpp
         src/main/cpp/chess/algorithm/Attacks.cpp
         src/main/cpp/chess/algorithm/Evaluation.cpp
-        src/main/cpp/chess/algorithm/MoveGen.cpp
+        src/main/cpp/chess/MoveGen.cpp
         src/main/cpp/chess/MoveOrdering.cpp
         src/main/cpp/chess/PawnStructureTable.cpp
         src/main/cpp/chess/algorithm/Search.cpp
+        src/main/cpp/chess/Tests.cpp
         src/main/cpp/chess/TranspositionTable.cpp
         src/main/cpp/chess/Zobrist.cpp
         src/main/cpp/chess/persistence/FenParser.cpp
@@ -31,7 +32,7 @@ target_compile_options(${LIB_NAME} PUBLIC
         -Wpedantic -Wnull-dereference
         )
 
-set(FLAGS_DEBUG "-O2")
+set(FLAGS_DEBUG "-O1")
 set(FLAGS_RELEASE "-DNDEBUG" "-flto=thin" "-O3")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")

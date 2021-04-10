@@ -283,7 +283,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		const auto bb = Bitboard::fromSquare(square);
 		const auto pawns = board.getPieces(PAWN, Us).shift<Behind>();
 
-		if (bool(bb & pawns))
+		if ((bb & pawns).notEmpty())
 		{
 			score += MINOR_PAWN_SHIELD;
 
@@ -442,13 +442,14 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 	const auto poorlyDefended = board.getPieces(Them) & ~stronglyProtected & _allAttacks[Us];
 	const auto defended = nonPawnEnemies & stronglyProtected;
 
-	if (poorlyDefended | defended)
+	if ((poorlyDefended | defended).notEmpty())
 	{
 		Bitboard minorThreats =
 			(defended | poorlyDefended) &
 			(_pieceAttacks[Us][KNIGHT] | _pieceAttacks[Us][BISHOP]) &
 			board.getPieces(Them);
-		while (minorThreats)
+
+		while (minorThreats.notEmpty())
 		{
 			const auto value = THREATS_BY_MINOR[board.getPiece(minorThreats.popLsb()).type()];
 			totalValue += value;
@@ -457,7 +458,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		}
 
 		Bitboard rookThreats = poorlyDefended & _pieceAttacks[Us][ROOK] & board.getPieces(Them);
-		while (rookThreats)
+		while (rookThreats.notEmpty())
 		{
 			const auto value = THREAT_BY_ROOK[board.getPiece(rookThreats.popLsb()).type()];
 			totalValue += value;
@@ -465,7 +466,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 				trace->threatsByRook[Us] += value;
 		}
 
-		if (poorlyDefended & _kingRing[Us])
+		if ((poorlyDefended & _kingRing[Us]).notEmpty())
 		{
 			totalValue += THREAT_BY_KING;
 			if constexpr (Trace)
@@ -559,25 +560,25 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 	const auto connected = neighbours & Bitboard::fromRank(square);
 	const auto support =
 		neighbours & Bitboard::fromRank(bb.shift<BehindDir>().bitScanForward());
-	const bool isDoubled = bool(bb.shift<BehindDir>() & board.getPieces(PAWN, Us));
+	const bool isDoubled = (bb.shift<BehindDir>() & board.getPieces(PAWN, Us)).notEmpty();
 
-	if (support | connected)
+	if ((support | connected).notEmpty())
 	{
-		const int connectedScore = PAWN_CONNECTED[rank] * (2 + bool(connected) - bool(opposed))
+		const int connectedScore = PAWN_CONNECTED[rank] * (2 + (connected).notEmpty() - (opposed).notEmpty())
 								   + 21 * support.popcount();
 
 		value += Score(connectedScore, connectedScore * (rank - 2) / 4);
-	} else if (!neighbours)
+	} else if (neighbours.empty())
 		value -= PAWN_ISOLATED;
 
-	if (!support && isDoubled)
+	if (support.empty() && isDoubled)
 		value -= PAWN_DOUBLED;
 
 	{ // Passed Pawn
 		Bitboard rays = Bitboard::fromRay(ForwardDir, square);
 		rays |= rays.shift<WEST>() | rays.shift<EAST>();
 
-		const bool isPassedPawn = !bool(rays & board.getPieces(PAWN, Them));
+		const bool isPassedPawn = (rays & board.getPieces(PAWN, Them)).empty();
 
 		if (isPassedPawn)
 			value += PASSED_PAWN_RANK[rank];
@@ -606,11 +607,11 @@ Score Eval<Trace>::evaluateKnight(const Square square) const noexcept
 			OutpostRanks & (_pieceAttacks[Us][PAWN] | pawns.shift<BehindDir>());
 		const auto targets = board.getPieces(Them) & ~pawns;
 
-		if (bitboard & bb & ~CENTER_FILES // on a side outpost
-			&& !(attacks & targets)        // no relevant attacks
-			&& (!(targets & (bb & QUEEN_SIDE ? QUEEN_SIDE : KING_SIDE)).several()))
+		if ((bitboard & bb & ~CENTER_FILES).notEmpty() // on a side outpost
+			&& (attacks & targets).empty()        // no relevant attacks
+			&& (!(targets & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).several()))
 			value += UNCONTESTED_OUTPOST *
-					 (pawns & (bb & QUEEN_SIDE ? QUEEN_SIDE : KING_SIDE)).popcount();
+					 (pawns & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).popcount();
 	}
 
 	const int mobility = (attacks & _mobilityArea[Us]).popcount();
@@ -646,11 +647,11 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 
 	const i32 pawnsOnTheSameColorSquares =
 		(board.getPieces(PAWN, Us) &
-         (bool(DARK_SQUARES & bb) ? DARK_SQUARES : ~DARK_SQUARES)).popcount();
+         ((DARK_SQUARES & bb).notEmpty() ? DARK_SQUARES : ~DARK_SQUARES)).popcount();
 	value -=
 		BISHOP_PAWNS[distanceToFileEdge(square)] *
 		pawnsOnTheSameColorSquares
-		* (!bool(_pieceAttacks[Us][PAWN] & bb) + (blocked & CENTER_FILES).popcount());
+		* ((_pieceAttacks[Us][PAWN] & bb).empty() + (blocked & CENTER_FILES).popcount());
 
 	// Enemy pawns x-rayed
 	value -= BISHOP_XRAY_PAWNS *
@@ -663,7 +664,7 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 		value.mg += 45;
 
 	// King Ring Threat
-	if (Attacks::bishopAttacks(square, board.getPieces(PAWN)) & _kingRing[Them])
+	if ((Attacks::bishopAttacks(square, board.getPieces(PAWN)) & _kingRing[Them]).notEmpty())
 		value += KING_RING_THREAT_BISHOP;
 
 	return value;
@@ -688,7 +689,7 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 
 	if (!(board.getPieces(PAWN, Us) & file).empty())
 	{
-		value += ROOK_ON_FILE[!bool(board.getPieces(PAWN, Them) & file)];
+		value += ROOK_ON_FILE[(board.getPieces(PAWN, Them) & file).empty()];
 	} else if (mobility <= 3)
 	{
 		const u8 kingFile = fileOf(board.getKingSq(Us));
@@ -697,7 +698,7 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 			value -= TRAPPED_ROOK * (1 + !board.canCastle<Us>());
 	}
 
-	if (Bitboard::fromFile(square) & _kingRing[Them])
+	if ((Bitboard::fromFile(square) & _kingRing[Them]).notEmpty())
 		value += KING_RING_THREAT_ROOK;
 
 	return value;

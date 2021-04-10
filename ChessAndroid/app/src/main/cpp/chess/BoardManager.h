@@ -7,7 +7,7 @@
 
 #include "SearchOptions.h"
 #include "Board.h"
-#include "algorithm/MoveGen.h"
+#include "MoveGen.h"
 #include "persistence/UndoRedoMoves.h"
 
 enum class GameState : u8
