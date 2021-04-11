@@ -26,7 +26,7 @@ namespace MoveOrdering
 
     void sortMoves(const Thread &thread, const Board &board, MoveList &moveList) noexcept
     {
-        const auto probeResult = Search::getTranspTable().probe(board.zKey);
+        const auto probeResult = Search::getTranspTable().probe(board.zKey());
         const Move pvMove = probeResult.has_value() ? probeResult->move() : Move{};
 
         for (Move &move : moveList)

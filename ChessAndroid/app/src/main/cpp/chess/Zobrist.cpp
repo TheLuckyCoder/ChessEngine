@@ -60,8 +60,8 @@ namespace Zobrist
 			if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
 				hash ^= PiecesKeys[sq][piece.type()][piece.color()];
 
-		xorCastlingRights(hash, static_cast<CastlingRights>(board.castlingRights));
-		xorEnPassant(hash, board.enPassantSq);
+		xorCastlingRights(hash, static_cast<CastlingRights>(board.state.castlingRights));
+		xorEnPassant(hash, board.getEnPassant());
 
 		if (board.colorToMove)
 			flipSide(hash);

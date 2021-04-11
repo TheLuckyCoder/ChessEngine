@@ -84,11 +84,11 @@ namespace UndoRedo
 		IndexedPieces pieces;
 		pieces.reserve(board.getPieces().popcount());
 
-		for (u8 square{}; square < SQUARE_NB; ++square)
+		for (Square square{}; square < SQUARE_NB; ++square)
 		{
-			auto &&piece = board.data[square];
+			const auto piece = board.getPiece(square);
 			if (piece.isValid())
-				pieces.emplace_back(square, toSquare(square), piece.color(), piece.type());
+				pieces.emplace_back(square, square, piece.color(), piece.type());
 		}
 
 		return pieces;

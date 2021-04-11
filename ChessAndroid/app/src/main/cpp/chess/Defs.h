@@ -111,12 +111,18 @@ enum Square : u8
 	SQUARE_NB = 64
 };
 
-constexpr Square toSquare(const u8 square) noexcept
+inline constexpr Square toSquare(const u8 square) noexcept
 {
 	return static_cast<Square>(square);
 }
 
-constexpr Square toSquare(const u8 x, const u8 y) noexcept
+inline constexpr Square &operator++(Square &square) noexcept
+{
+	square = static_cast<Square>(square + 1u);
+	return square;
+}
+
+inline constexpr Square toSquare(const u8 x, const u8 y) noexcept
 {
     return static_cast<Square>((y << 3u) + x);
 }

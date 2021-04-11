@@ -1,6 +1,7 @@
 #include "Tests.h"
 
 #include <array>
+#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -37,19 +38,19 @@ namespace Tests
 		}
 
 		// Castling
-		const u8 originalRights = board.castlingRights;
-		auto &rights = result.castlingRights;
+		const u8 originalRights = board.getCastlingRights();
+		u8 &rights = result.state.castlingRights;
 		rights |= (originalRights & 0b111u) << 3u; // Black -> White
 		rights |= originalRights >> 3u; // White -> Black
 
-		if (board.enPassantSq != SQ_NONE)
-			result.enPassantSq = toSquare(MirrorSquare.at(u8(board.enPassantSq)));
+		if (board.getEnPassant() != SQ_NONE)
+			result.state.enPassantSq = toSquare(MirrorSquare.at(u8(board.getEnPassant())));
 
 		result.updatePieceList();
 		result.updateNonPieceBitboards();
-		result.fiftyMoveRule = board.fiftyMoveRule;
-		result.kingAttackers = result.colorToMove ? result.generateKingAttackers<WHITE>()
-												  : result.generateKingAttackers<BLACK>();
+		result.state.fiftyMoveRule = board.state.fiftyMoveRule;
+		result.state.kingAttackers = result.generateAllAttackers(result.getKingSq(result.colorToMove))
+			& result.getPieces(~result.colorToMove);
 		result.computeCheckInfo();
 
 		return result;
@@ -212,7 +213,7 @@ namespace Tests
 
 	static void perft(Board &board, PerftInfo &info, const unsigned depth, const Move lastMove)
 	{
-		if (board.fiftyMoveRule > 99)
+		if (board.state.fiftyMoveRule > 99)
 			return;
 
 		if (depth == 0)
@@ -223,8 +224,9 @@ namespace Tests
 			info.enPassant += flags.enPassant();
 			info.castles += flags.kSideCastle() | flags.qSideCastle();
 			info.promotions += flags.promotion();
-			info.checks += board.isSideInCheck();
-			info.doubleChecks += board.kingAttackers.several();
+			const auto kingAttackers = board.getKingAttackers();
+			info.checks += kingAttackers.notEmpty();
+			info.doubleChecks += kingAttackers.several();
 			return;
 		}
 
@@ -239,7 +241,7 @@ namespace Tests
 		}
 	}
 
-	static PerftInfo basePerft(std::ostringstream &out, Board &board, const unsigned depth)
+	static PerftInfo basePerft(/*std::ostringstream &out, */Board &board, const unsigned depth)
 	{
 		PerftInfo info{};
 
@@ -254,7 +256,7 @@ namespace Tests
 			board.undoMove();
 
 			info += localInfo;
-			out << move.toString() << ": " << localInfo.nodes << '\n';
+//			out << move.toString() << ": " << localInfo.nodes << '\n';
 		}
 
 		return info;
@@ -272,8 +274,8 @@ namespace Tests
 		for (unsigned depth = 1; depth < perftVector.size(); ++depth)
 		{
 			const auto startTime = std::chrono::high_resolution_clock::now();
-			std::ostringstream out;
-			const PerftInfo info = basePerft(out, board, depth);
+//			std::ostringstream out;
+			const PerftInfo info = basePerft(board, depth);
 
 			const auto endTime = std::chrono::high_resolution_clock::now();
 			const auto timeNeeded =
@@ -300,11 +302,11 @@ namespace Tests
 			if (info.doubleChecks)
 				std::cout << ", Double-Checks: " << info.doubleChecks;
 
-			if (depth == perftVector.size() - 1 || info.nodes != expectedNodeCount)
+			/*if (depth == perftVector.size() - 1 || info.nodes != expectedNodeCount)
 			{
 				std::cout << '\n' << out.str();
 				break;
-			}
+			}*/
 
 			std::cout << std::endl;
 		}

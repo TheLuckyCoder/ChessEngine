@@ -122,7 +122,7 @@ void Search::printUci(Board &board)
 
 		while (true)
 		{
-			const auto probedResult = _transpositionTable.probe(board.zKey);
+			const auto probedResult = _transpositionTable.probe(board.zKey());
 
 			if (!probedResult.has_value() || count >= depth)
 				break;
@@ -280,7 +280,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		assert(isPvNode);
 
 	// Try to prefetch the Transposition Table as soon as possible
-	_transpositionTable.prefetch(board.zKey);
+	_transpositionTable.prefetch(board.zKey());
 
 	if (checkTimeAndStop())
 		return 0;
@@ -307,7 +307,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	// Probe the Transposition Table
 	{
-		const auto probeResult = _transpositionTable.probe(board.zKey);
+		const auto probeResult = _transpositionTable.probe(board.zKey());
 		// Only cut with a with a greater depth and if this is not a PvNode
 		if (probeResult.has_value()
 			&& !probeResult->qSearch()
@@ -474,7 +474,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		}
 	}
 
-	_transpositionTable.prefetch(board.zKey);
+	_transpositionTable.prefetch(board.zKey());
 
 	if (legalCount == 0)
 		return board.isSideInCheck() ? Value::VALUE_MIN + startPly : 0;
@@ -483,7 +483,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 
 	// Store the results of search
 	bestMove.setScore(bestScore);
-	storeTTEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, false);
+	storeTTEntry(bestMove, board.zKey(), alpha, originalAlpha, beta, depth, false);
 
 	assert(abs(bestScore) != VALUE_MIN);
 	return alpha;
@@ -513,7 +513,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 	if (!nodeInCheck)
 	{
-		const auto probeResult = _transpositionTable.probe(board.zKey);
+		const auto probeResult = _transpositionTable.probe(board.zKey());
 		if (probeResult.has_value()
 			&& probeResult->depth() >= depth)
 		{
@@ -610,7 +610,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 	if (!nodeInCheck)
 	{
 		bestMove.setScore(bestScore);
-		storeTTEntry(bestMove, board.zKey, alpha, originalAlpha, beta, depth, true);
+		storeTTEntry(bestMove, board.zKey(), alpha, originalAlpha, beta, depth, true);
 	}
 
 	Stats::incNodesSearched(searchedCount);

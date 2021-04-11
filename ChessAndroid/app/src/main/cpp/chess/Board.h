@@ -7,19 +7,20 @@
 #include "Move.h"
 #include "algorithm/Attacks.h"
 
-class UndoMove final
+class BoardState final
 {
 public:
 	u64 zKey{};
+
 	Bitboard kingAttackers{};
+	std::array<Bitboard, COLOR_NB> kingBlockers{};
+	std::array<Bitboard, COLOR_NB> kingPinners{};
+	std::array<Bitboard, PIECE_TYPE_NB> checkSquares{};
+
 	u32 moveContents{};
 	u8 castlingRights{};
 	Square enPassantSq{};
 	u8 fiftyMoveRule{};
-
-	std::array<Bitboard, COLOR_NB> kingBlockers{};
-	std::array<Bitboard, COLOR_NB> kingPinners{};
-	std::array<Bitboard, PIECE_TYPE_NB> checkSquares{};
 
 	Move getMove() const noexcept { return Move{ moveContents }; }
 };
@@ -57,12 +58,20 @@ public:
 	Bitboard getPieces(PieceType type) const noexcept;
 	Bitboard getPieces(Color color) const noexcept;
 
+	Square getKingSq(Color color) const noexcept;
+
 	// endregion Pieces
 
-	Square getKingSq(Color color) const noexcept;
+	// region State
+
+	u64 zKey() const noexcept;
+	Square getEnPassant() const noexcept;
+	CastlingRights getCastlingRights() const noexcept;
 
 	bool isDrawn() const noexcept;
 	Phase getPhase() const noexcept;
+
+	// endregion State
 
 	void makeMove(Move move) noexcept;
 	void undoMove() noexcept;
@@ -72,9 +81,7 @@ public:
 	template <PieceType>
 	bool isAttacked(Color attackerColor, Square targetSquare, Bitboard blockers) const noexcept;
 	bool isAttackedByAny(Color attackerColor, Square targetSquare, Bitboard blockers) const noexcept;
-	bool isAttackedByAny(Color attackerColor, Square targetSquare) const noexcept;
-	template <Color C>
-	Bitboard generateKingAttackers() const noexcept;
+	Bitboard generateAllAttackers(Square sq) const noexcept;
 	bool isSideInCheck() const noexcept;
 
 private:
@@ -88,58 +95,52 @@ public:
     void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
 	bool isLegal(Move move) const noexcept;
+	Bitboard getKingAttackers() const noexcept;
 	Bitboard getKingBlockers(Color color) const noexcept;
 
 	std::string toString() const noexcept;
 
 public:
-    u64 zKey{};
     Bitboard occupied{};
-    Bitboard kingAttackers{};
     std::array<std::array<Bitboard, PIECE_TYPE_NB>, COLOR_NB> pieces{};
     std::array<std::array<u8, 16>, 15> pieceList{};
     std::array<u8, 15> pieceCount{};
 
     std::array<Piece, SQUARE_NB> data{};
 
+    BoardState state{};
+
     short ply{};
     short npm{};
     Color colorToMove{};
-    u8 castlingRights{};
-    Square enPassantSq{};
-    u8 fiftyMoveRule{};
-
-    std::array<Bitboard, COLOR_NB> blockersForKing{};
-    std::array<Bitboard, COLOR_NB> kingPinners{};
-    std::array<Bitboard, PIECE_TYPE_NB> checkSquares{};
 
 private:
     short historyPly{};
-    std::array<UndoMove, MAX_MOVES> history{};
+    std::array<BoardState, MAX_MOVES> history{};
 };
 
 template <Color C>
 bool Board::canCastle() const noexcept
 {
-	return castlingRights & (C == BLACK ? CASTLE_BLACK_BOTH : CASTLE_WHITE_BOTH);
+	return state.castlingRights & (C == BLACK ? CASTLE_BLACK_BOTH : CASTLE_WHITE_BOTH);
 }
 
 template <Color C>
 bool Board::canCastleKs() const noexcept
 {
-	return castlingRights & (C == BLACK ? CASTLE_BLACK_KING : CASTLE_WHITE_KING);
+	return state.castlingRights & (C == BLACK ? CASTLE_BLACK_KING : CASTLE_WHITE_KING);
 }
 
 template <Color C>
 bool Board::canCastleQs() const noexcept
 {
-	return castlingRights & (C == BLACK ? CASTLE_BLACK_QUEEN : CASTLE_WHITE_QUEEN);
+	return state.castlingRights & (C == BLACK ? CASTLE_BLACK_QUEEN : CASTLE_WHITE_QUEEN);
 }
 
 template <Color C>
 bool Board::isCastled() const noexcept
 {
-	return castlingRights & (C == BLACK ? CASTLED_BLACK : CASTLED_WHITE);
+	return state.castlingRights & (C == BLACK ? CASTLED_BLACK : CASTLED_WHITE);
 }
 
 inline bool Board::canCastle(const Color color) const noexcept
@@ -187,6 +188,21 @@ inline Square Board::getKingSq(const Color color) const noexcept
     return toSquare(pieceList[Piece{ KING, color }][0]);
 }
 
+inline u64 Board::zKey() const noexcept
+{
+	return state.zKey;
+}
+
+inline Square Board::getEnPassant() const noexcept
+{
+	return state.enPassantSq;
+}
+
+inline CastlingRights Board::getCastlingRights() const noexcept
+{
+	return CastlingRights(state.castlingRights);
+}
+
 template <PieceType P>
 bool Board::isAttacked(const Color attackerColor, const Square targetSquare, Bitboard blockers) const noexcept
 {
@@ -215,25 +231,12 @@ bool Board::isAttacked(const Color attackerColor, const Square targetSquare, Bit
 	return false;
 }
 
-template <Color C>
-Bitboard Board::generateKingAttackers() const noexcept
+inline Bitboard Board::getKingAttackers() const noexcept
 {
-	constexpr Color ColorAttacking = ~C;
-	const Square kingSq = getKingSq(C);
-	assert(kingSq < SQUARE_NB);
-
-	const auto queens = getPieces(QUEEN, ColorAttacking);
-	const auto bishops = getPieces(BISHOP, ColorAttacking) | queens;
-	const auto rooks = getPieces(ROOK, ColorAttacking) | queens;
-
-	return (getPieces(PAWN, ColorAttacking) & Attacks::pawnAttacks<C>(Bitboard::fromSquare(kingSq)))
-		   | (getPieces(KNIGHT, ColorAttacking) & Attacks::knightAttacks(kingSq))
-		   | (getPieces(KING, ColorAttacking) & Attacks::kingAttacks(kingSq))
-		   | (bishops & Attacks::bishopAttacks(kingSq, getPieces()))
-		   | (rooks & Attacks::rookAttacks(kingSq, getPieces()));
+	return state.kingAttackers;
 }
 
 inline Bitboard Board::getKingBlockers(const Color color) const noexcept
 {
-	return blockersForKing[color];
+	return state.kingBlockers[color];
 }

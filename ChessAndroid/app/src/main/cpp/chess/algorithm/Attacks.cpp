@@ -66,31 +66,27 @@ static constexpr auto BishopMasks = []
 	constexpr Bitboard edgeSquares{ FILE_A | FILE_H | RANK_1 | RANK_8 };
 	std::array<Bitboard, SQUARE_NB> masks{};
 
-	for (u8 square{}; square < SQUARE_NB; ++square)
+	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		const Square sq = toSquare(square);
-		masks[square] = (Bitboard::fromRay(NORTH_EAST, sq)
-						 | Bitboard::fromRay(NORTH_WEST, sq)
-						 | Bitboard::fromRay(SOUTH_WEST, sq)
-						 | Bitboard::fromRay(SOUTH_EAST, sq)) & ~(edgeSquares);
+		masks[square] = (Bitboard::fromRay(NORTH_EAST, square)
+						 | Bitboard::fromRay(NORTH_WEST, square)
+						 | Bitboard::fromRay(SOUTH_WEST, square)
+						 | Bitboard::fromRay(SOUTH_EAST, square)) & ~(edgeSquares);
 	}
 
 	return masks;
 }();
 
-#include <iostream>
-
 static constexpr auto RookMasks = []
 {
 	std::array<Bitboard, SQUARE_NB> masks{};
 
-	for (u8 square{}; square < SQUARE_NB; ++square)
+	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		const Square sq = toSquare(square);
-		masks[square] = (Bitboard::fromRay(NORTH, sq) & Bitboard{ ~RANK_8 })
-						| (Bitboard::fromRay(SOUTH, sq) & Bitboard{ ~RANK_1 })
-						| (Bitboard::fromRay(EAST, sq) & Bitboard{ ~FILE_H })
-						| (Bitboard::fromRay(WEST, sq) & Bitboard{ ~FILE_A });
+		masks[square] = (Bitboard::fromRay(NORTH, square) & ~RANK_8)
+						| (Bitboard::fromRay(SOUTH, square) & ~RANK_1)
+						| (Bitboard::fromRay(EAST, square) & ~FILE_H)
+						| (Bitboard::fromRay(WEST, square) & ~FILE_A);
 	}
 
 	return masks;
@@ -160,13 +156,12 @@ static constexpr auto BishopXRayAttacks = []
 {
 	std::array<Bitboard, SQUARE_NB> moves{};
 
-	for (u8 square{}; square < SQUARE_NB; ++square)
+	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		const Square sq = toSquare(square);
-		moves[square] = Bitboard::fromRay(NORTH_WEST, sq)
-						| Bitboard::fromRay(NORTH_EAST, sq)
-						| Bitboard::fromRay(SOUTH_WEST, sq)
-						| Bitboard::fromRay(SOUTH_EAST, sq);
+		moves[square] = Bitboard::fromRay(NORTH_WEST, square)
+						| Bitboard::fromRay(NORTH_EAST, square)
+						| Bitboard::fromRay(SOUTH_WEST, square)
+						| Bitboard::fromRay(SOUTH_EAST, square);
 	}
 
 	return moves;
@@ -176,13 +171,12 @@ static constexpr auto RookXRayAttacks = []
 {
 	std::array<Bitboard, SQUARE_NB> moves{};
 
-	for (u8 square{}; square < SQUARE_NB; ++square)
+	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		const Square sq = toSquare(square);
-		moves[square] = Bitboard::fromRay(NORTH, sq)
-						| Bitboard::fromRay(EAST, sq)
-						| Bitboard::fromRay(SOUTH, sq)
-						| Bitboard::fromRay(WEST, sq);
+		moves[square] = Bitboard::fromRay(NORTH, square)
+						| Bitboard::fromRay(EAST, square)
+						| Bitboard::fromRay(SOUTH, square)
+						| Bitboard::fromRay(WEST, square);
 	}
 
 	return moves;

@@ -147,29 +147,26 @@ GameState BoardManager::getBoardState()
 	if (_currentBoard.isDrawn())
 		return GameState::DRAW;
 
-	const bool whiteInCheck = _currentBoard.generateKingAttackers<WHITE>().notEmpty();
-	const bool blackInCheck = _currentBoard.generateKingAttackers<BLACK>().notEmpty();
+	const Color colorToMove = _currentBoard.colorToMove;
 
-	if (whiteInCheck && blackInCheck)
+	const bool otherInCheck =
+		(_currentBoard.generateAllAttackers(_currentBoard.getKingSq(colorToMove)) &
+		 _currentBoard.getPieces(~colorToMove)).notEmpty();
+
+	if (_currentBoard.isSideInCheck() && otherInCheck)
 		return GameState::INVALID;
-
-	auto state = GameState::NONE;
-
-	if (whiteInCheck)
-		state = GameState::WHITE_IN_CHECK;
-	else if (blackInCheck)
-		state = GameState::BLACK_IN_CHECK;
 
 	MoveList moveList(_currentBoard);
 	moveList.keepLegalMoves();
 
 	if (moveList.empty())
 	{
-		if (_currentBoard.colorToMove)
-			state = whiteInCheck ? GameState::WINNER_BLACK : GameState::DRAW;
-		else
-			state = blackInCheck ? GameState::WINNER_WHITE : GameState::DRAW;
+		const auto winner = (colorToMove == WHITE ? GameState::WINNER_BLACK : GameState::WINNER_WHITE);
+		return (_currentBoard.isSideInCheck() ? winner : GameState::DRAW);
 	}
 
-	return state;
+	if (_currentBoard.isSideInCheck())
+		return colorToMove == WHITE ? GameState::WHITE_IN_CHECK : GameState::BLACK_IN_CHECK;
+
+	return GameState::NONE;
 }

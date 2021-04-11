@@ -70,9 +70,10 @@ namespace
 		}
 
 		// EnPassant
-		if (board.enPassantSq != SQ_NONE)
+		const Square enPassantSq = board.getEnPassant();
+		if (enPassantSq != SQ_NONE)
 		{
-			const auto enPassant = Bitboard::fromSquare(board.enPassantSq);
+			const auto enPassant = Bitboard::fromSquare(enPassantSq);
 
 			if (type != GenType::EVASIONS || (targets & enPassant.shift<Forward>()).empty())
 			{
@@ -81,7 +82,7 @@ namespace
 				while (pawnsThatCapture.notEmpty())
 				{
 					const Square from = pawnsThatCapture.popLsb();
-					moveList.emplace_back(from, board.enPassantSq, PAWN, Move::Flags::EN_PASSANT);
+					moveList.emplace_back(from, enPassantSq, PAWN, Move::Flags::EN_PASSANT);
 				}
 			}
 		}
@@ -183,7 +184,7 @@ namespace
 	template <Color Us>
 	void generateKingMoves(const Board &board, MoveList &moveList, const Bitboard targets)
 	{
-		assert(board.kingAttackers.empty());
+		assert(board.getKingAttackers().empty());
 		constexpr Color Them{ ~Us };
 
 		const Square kingSq = board.getKingSq(Us);
@@ -223,7 +224,7 @@ namespace
 			while (mask.notEmpty())
 			{
 				// TODO Move this in Board::isLegal()
-				if (board.isAttackedByAny(Them, mask.popLsb()))
+				if (board.isAttackedByAny(Them, mask.popLsb(), board.getPieces()))
 					return;
 			}
 
@@ -252,7 +253,7 @@ namespace
 	{
 		auto type = GenType::ALL;
 		auto targets = ~board.getPieces(Us); // Everywhere but our pieces
-		const auto kingAttackers = board.kingAttackers;
+		const auto kingAttackers = board.getKingAttackers();
 
 		// When checked we must either capture the attacker
 		// or block it if is a slider piece

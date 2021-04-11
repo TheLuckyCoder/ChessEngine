@@ -17,21 +17,23 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	// Next to move
 	std::string side;
 	stream >> side;
-	board.colorToMove = side == "w" ? WHITE : BLACK;
+	Color &colorToMove = board.colorToMove;
+	colorToMove = side == "w" ? WHITE : BLACK;
 
 	// Castling availability
 	std::string castling = "-";
 	stream >> castling;
-	board.castlingRights = CastlingRights::CASTLE_NONE;
+	auto &castlingRights = board.state.castlingRights;
+	castlingRights = CastlingRights::CASTLE_NONE;
 	for (char currChar : castling) {
 		switch (currChar) {
-			case 'K': board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
+			case 'K': castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
-			case 'Q': board.castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
+			case 'Q': castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
 				break;
-			case 'k': board.castlingRights |= CastlingRights::CASTLE_BLACK_KING;
+			case 'k': castlingRights |= CastlingRights::CASTLE_BLACK_KING;
 				break;
-			case 'q': board.castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
+			case 'q': castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
 				break;
 			default:
 				break;
@@ -40,7 +42,8 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 
 	std::string ep = "-";
 	stream >> ep;
-	board.enPassantSq = SQUARE_NB;
+	auto &enPassantSq = board.state.enPassantSq;
+	enPassantSq = SQUARE_NB;
 	if (ep != "-")
 	{
 		if (ep.length() != 2)
@@ -49,19 +52,19 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 			return false;
 
 		const Square sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
-		board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
+		enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
 	}
 
 	// HalfMove Clock
 	int halfMove{};
 	stream >> halfMove;
-	board.fiftyMoveRule = static_cast<u8>(halfMove);
+	board.state.fiftyMoveRule = static_cast<u8>(halfMove);
 
+	board.state.zKey = Zobrist::compute(board);
 	board.updatePieceList();
 	board.updateNonPieceBitboards();
-	board.zKey = Zobrist::compute(board);
 
-	board.kingAttackers = board.colorToMove ? board.generateKingAttackers<WHITE>() : board.generateKingAttackers<BLACK>();
+	board.state.kingAttackers = board.generateAllAttackers(board.getKingSq(colorToMove)) & board.getPieces(~colorToMove);
 	board.computeCheckInfo();
 	return true;
 }
@@ -120,12 +123,13 @@ std::string FenParser::exportToFen(const Board &board)
 
 	if (!board.canCastle<WHITE>() && !board.canCastle<BLACK>()) out << '-';
 
-	if (board.enPassantSq < SQ_NONE)
-		out << ' ' << char('a' + int(fileOf(board.enPassantSq))) << int(rankOf(board.enPassantSq)) << ' ';
+	const Square enPassantSq = board.getEnPassant();
+	if (enPassantSq != SQ_NONE)
+		out << ' ' << char('a' + int(fileOf(enPassantSq))) << int(rankOf(enPassantSq)) << ' ';
 	else
 		out << " - ";
 
-	out << short(board.fiftyMoveRule / 2);
+	out << short(board.state.fiftyMoveRule / 2);
 
 	return out.str();
 }

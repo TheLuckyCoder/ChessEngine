@@ -59,20 +59,11 @@ public:
 	{
 	}
 
-	constexpr bool empty() const noexcept
-	{
-		return !bool(_move);
-	}
+	constexpr bool empty() const noexcept { return !static_cast<bool>(_move); }
 
-	constexpr u32 getContents() const noexcept
-	{
-		return _move;
-	}
+	constexpr u32 getContents() const noexcept { return _move; }
 
-	constexpr i32 getScore() const noexcept
-	{
-		return _score;
-	}
+	constexpr i32 getScore() const noexcept { return _score; }
 
 	constexpr void setScore(const int score) noexcept
 	{

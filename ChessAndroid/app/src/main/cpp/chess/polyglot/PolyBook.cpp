@@ -237,7 +237,7 @@ namespace PolyBook
 
 	static constexpr bool hasEnPassPawnForCapture(const Board &board) noexcept
 	{
-		const auto enPass = Bitboard::fromSquare(board.enPassantSq);
+		const auto enPass = Bitboard::fromSquare(board.getEnPassant());
 
 		if (board.colorToMove == WHITE)
 			return !(Attacks::pawnAttacks<WHITE>(board.getPieces(PAWN, WHITE)) & enPass).empty();
@@ -296,9 +296,9 @@ namespace PolyBook
 		u64 result{};
 
 		// PiecesKeys
-		for (u8 square = 0; square < SQUARE_NB; ++square)
+		for (Square square{}; square < SQUARE_NB; ++square)
 		{
-			const Piece piece = board.data[square];
+			const Piece piece = board.getPiece(square);
 			if (piece == EmptyPiece)
 				continue;
 
@@ -319,9 +319,9 @@ namespace PolyBook
 			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 3];
 
 		// En Passant
-		if (board.enPassantSq != SQ_NONE && hasEnPassPawnForCapture(board))
+		if (board.getEnPassant() != SQ_NONE && hasEnPassPawnForCapture(board))
 		{
-			result ^= PolyKeys::Random64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.enPassantSq)];
+			result ^= PolyKeys::Random64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.getEnPassant())];
 		}
 
 		// SideKey
@@ -341,12 +341,24 @@ namespace PolyBook
 		const Square toSquare = ::toSquare(bookMove & 7u, (bookMove >> 3u) & 7u);
 		const auto promotedPiece = (bookMove >> 12u) & 7u;
 
-		Move move(fromSquare, toSquare, board.data[fromSquare].type());
-		move.setCapturedPiece(board.data[toSquare].type());
+		Move move(fromSquare, toSquare, board.getPiece(fromSquare).type());
+		u8 flags{};
+		if (const PieceType capturedPieceType = board.getPiece(toSquare).type();
+			capturedPieceType != NO_PIECE_TYPE)
+		{
+			flags |= Move::Flags::CAPTURE;
+			move.setCapturedPiece(capturedPieceType);
+		}
 		if (promotedPiece != 0)
 		{
+			flags |= Move::Flags::PROMOTION;
 			move.setPromotedPiece(static_cast<PieceType>(promotedPiece + 1));
 		}
+
+		if (move.piece() == PAWN && Bits::getDistanceBetween(fromSquare, toSquare) == 2)
+			flags |= Move::Flags::DOUBLE_PAWN_PUSH;
+		
+		move.setFlags(flags);
 
 		return move;
 	}
