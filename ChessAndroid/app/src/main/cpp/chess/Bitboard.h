@@ -386,12 +386,6 @@ public:
 		return Bitboard{ Bits::Squares[u8(square)] };
 	}
 
-	/**
-	 * Returns a bitboard containing the given ray in the given direction.
-	 *
-	 * @param direction Direction of ray to return
-	 * @param square Square to get ray starting from (in little endian rank file mapping form)
-	 */
 	static constexpr Bitboard fromRay(const Dir direction, const Square square) noexcept
 	{
 		return Bitboard{ Bits::Rays[direction][u8(square)] };

@@ -104,7 +104,7 @@ private fun getPreferenceItems(
                 prefKey = SettingsDataStore.SEARCH_TIME,
                 icon = painterResource(id = R.drawable.ic_pref_search_time),
                 defaultValue = SettingsDataStore.DEFAULT_SEARCH_TIME,
-                valueRange = 1..120,
+                valueRange = 1..90,
             ),
         ),
     ),

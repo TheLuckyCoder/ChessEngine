@@ -22,7 +22,7 @@ public:
 	SearchEntry() = default;
 
 	constexpr SearchEntry(const u64 key, const int depth, const Move move, const bool qSearch, const Bound bound)
-		: _key16(key >> 48u), _moveFromTo(move.fromToBits()), _value(move.getScore()), _depth8(depth),
+		: _key16(key >> 48u), _moveFromTo(move.getFromToBits()), _value(move.getScore()), _depth8(depth),
 		  generation((qSearch << 7u) | (u8(bound) << 5u)) {}
 
 	constexpr u16 key() const noexcept { return _key16; }

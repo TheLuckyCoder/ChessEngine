@@ -21,7 +21,7 @@ namespace
 		const Bitboard pawnsOnLastRank = pawns & LastRank;
 		const Bitboard pawnsNotOnLastRank = pawns & ~pawnsOnLastRank;
 
-		const Bitboard enemies = type == GenType::EVASIONS ? (board.getPieces(Them) & targets) : board.getPieces(Them);
+		const Bitboard enemies = type == GenType::EVASIONS ? board.getKingAttackers() : board.getPieces(Them);
 		const Bitboard emptySquares = ~board.getPieces();
 
 		// Promotions
@@ -223,8 +223,8 @@ namespace
 			mask = Bitboard::fromLineBetween(kingSq, kingTo);
 			while (mask.notEmpty())
 			{
-				// TODO Move this in Board::isLegal()
-				if (board.isAttackedByAny(Them, mask.popLsb(), board.getPieces()))
+				// TODO Move this in Board::isMoveLegal()
+				if (board.isAttackedByAny(Them, mask.popLsb(), board.getPieces()).notEmpty())
 					return;
 			}
 

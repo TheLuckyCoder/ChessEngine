@@ -248,6 +248,27 @@ Bitboard Attacks::kingAttacks(const Square square) noexcept
 	return KingAttacks[u8(square)];
 }
 
+Bitboard Attacks::pieceAttacks(const PieceType pieceType, const Square square, const Bitboard blockers) noexcept
+{
+	switch (pieceType)
+	{
+		case KNIGHT:
+			return knightAttacks(square);
+		case BISHOP:
+			return bishopAttacks(square, blockers);
+		case ROOK:
+			return rookAttacks(square, blockers);
+		case QUEEN:
+			return queenAttacks(square, blockers);
+		case KING:
+			return kingAttacks(square);
+		case PAWN:
+			assert(false);
+		default:
+			return {};
+	}
+}
+
 Bitboard Attacks::bishopXRayAttacks(const Square square) noexcept
 {
 	return BishopXRayAttacks[u8(square)];

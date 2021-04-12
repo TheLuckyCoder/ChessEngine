@@ -132,9 +132,9 @@ void Search::printUci(Board &board)
 
 			for (const Move &fullMove : moveList)
 			{
-				if (fullMove.fromToBits() == probedMove.fromToBits())
+				if (fullMove.getFromToBits() == probedMove.getFromToBits())
 				{
-					if (board.isLegal(fullMove))
+					if (board.isMoveLegal(fullMove))
 					{
 						board.makeMove(fullMove);
 						pvArray[count++] = fullMove;
@@ -374,10 +374,11 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		const Move move = MoveOrdering::getNextMove(moveList);
 		const bool pvMove = move.flags().pvMove();
 
-		if (!board.isLegal(move))
+		if (!board.isMoveLegal(move))
 			continue;
-		board.makeMove(move);
 		++legalCount;
+
+		const bool moveGivesCheck = board.doesMoveGiveCheck(move);
 
 		// Futility Pruning
 		if (depth < FUTILITY_MAX_DEPTH
@@ -386,17 +387,19 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& futilityMarginEval <= alpha
 			&& !isMateValue(static_cast<Value>(alpha))
 			&& !move.isTactical()
-			&& !(move.flags().doublePawnPush())
-			&& !move.isAdvancedPawnPush()
+			&& !move.flags().doublePawnPush()
+			&& !move.flags().promotion()
 			&& !nodeInCheck
-			&& !board.isSideInCheck())
+			&& !moveGivesCheck)
 		{
 			Stats::incFutilityCuts();
 			if (futilityMarginEval > bestScore)
 				bestScore = eval;
-			board.undoMove();
 			continue;
 		}
+
+		board.makeMove(move);
+		assert(moveGivesCheck == board.isSideInCheck());
 
 		int moveScore = alpha;
 		bool doFullSearch = true;
@@ -410,7 +413,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			&& board.ply > 4
 			&& !move.isTactical()
 			&& !nodeInCheck
-			&& !board.isSideInCheck())
+			&& !moveGivesCheck)
 		{
 			moveScore = -search(board, -alpha - 1, -alpha, depth - 2, false, true, false);
 
@@ -552,7 +555,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 		const Move move = MoveOrdering::getNextMove(moveList);
 
-		if (!board.isLegal(move))
+		if (!board.isMoveLegal(move))
 			continue;
 		board.makeMove(move);
 		++legalCount;

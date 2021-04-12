@@ -58,7 +58,7 @@ public:
 		auto it = begin();
 		while (it != end())
 		{
-			if (!_board.isLegal(*it)) {
+			if (!_board.isMoveLegal(*it)) {
 				*it = back();
 				popBack();
 			} else
@@ -78,7 +78,7 @@ inline bool moveExists(Board &board, const Move &move) noexcept
 
 	for (const Move &m : moveList)
 		if (m == move)
-			return board.isLegal(m);
+			return board.isMoveLegal(m);
 
 	return false;
 }

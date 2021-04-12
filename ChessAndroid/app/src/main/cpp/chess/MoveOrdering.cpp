@@ -33,7 +33,7 @@ namespace MoveOrdering
         {
             const auto flags = move.flags();
 
-            if (move.fromToBits() == pvMove.fromToBits())
+            if (move.getFromToBits() == pvMove.getFromToBits())
             {
                 move.setScore(PvScore);
                 move.setFlags(move.flags().getContents() | Move::Flags::PV_MOVE);

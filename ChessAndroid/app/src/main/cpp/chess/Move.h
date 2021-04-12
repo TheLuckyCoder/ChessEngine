@@ -124,13 +124,7 @@ public:
 		return f.capture() | f.promotion();
 	}
 
-	constexpr bool isAdvancedPawnPush() const noexcept
-	{
-		const u8 y = rankOf(to());
-		return piece() == PAWN && (y == 7 || y == 2);
-	}
-
-	constexpr u16 fromToBits() const noexcept
+	constexpr u16 getFromToBits() const noexcept
 	{
 		constexpr u16 Mask = (FROM_MASK | (TO_MASK << TO_SHIFT));
 		return _move & Mask;

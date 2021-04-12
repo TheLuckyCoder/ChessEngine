@@ -15,7 +15,7 @@ public:
 	Bitboard kingAttackers{};
 	std::array<Bitboard, COLOR_NB> kingBlockers{};
 	std::array<Bitboard, COLOR_NB> kingPinners{};
-	std::array<Bitboard, PIECE_TYPE_NB> checkSquares{};
+	std::array<Bitboard, PIECE_TYPE_NB> possibleCheckSquares{};
 
 	u32 moveContents{};
 	u8 castlingRights{};
@@ -73,14 +73,19 @@ public:
 
 	// endregion State
 
+	// region Move functions
+
 	void makeMove(Move move) noexcept;
 	void undoMove() noexcept;
 	void makeNullMove() noexcept;
 	void undoNullMove() noexcept;
+	bool doesMoveGiveCheck(Move move) const noexcept;
+	bool isMoveLegal(const Move move) const noexcept;
 
-	template <PieceType>
-	bool isAttacked(Color attackerColor, Square targetSquare, Bitboard blockers) const noexcept;
-	bool isAttackedByAny(Color attackerColor, Square targetSquare, Bitboard blockers) const noexcept;
+	// endregion
+
+	Bitboard generateAttackers(Color attackerColor, Square sq, Bitboard blockers) const noexcept;
+	Bitboard generateAllAttackers(Square sq, Bitboard blockers) const noexcept;
 	Bitboard generateAllAttackers(Square sq) const noexcept;
 	bool isSideInCheck() const noexcept;
 
@@ -94,7 +99,6 @@ public:
     void computeCheckInfo() noexcept;
     void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
-	bool isLegal(Move move) const noexcept;
 	Bitboard getKingAttackers() const noexcept;
 	Bitboard getKingBlockers(Color color) const noexcept;
 
@@ -201,34 +205,6 @@ inline Square Board::getEnPassant() const noexcept
 inline CastlingRights Board::getCastlingRights() const noexcept
 {
 	return CastlingRights(state.castlingRights);
-}
-
-template <PieceType P>
-bool Board::isAttacked(const Color attackerColor, const Square targetSquare, Bitboard blockers) const noexcept
-{
-	static_assert(PAWN <= P);
-	static_assert(P <= KING);
-
-	const auto type = getPieces(P, attackerColor);
-
-	if constexpr (P == PAWN)
-	{
-		const auto pawnAttacks = attackerColor
-								 ? Attacks::pawnAttacks<WHITE>(type) : Attacks::pawnAttacks<BLACK>(type);
-
-		return (pawnAttacks & Bitboard::fromSquare(targetSquare)).notEmpty();
-	} else if constexpr (P == KNIGHT)
-		return (type & Attacks::knightAttacks(targetSquare)).notEmpty();
-	else if constexpr (P == BISHOP)
-		return (type & Attacks::bishopAttacks(targetSquare, blockers)).notEmpty();
-	else if constexpr (P == ROOK)
-		return (type & Attacks::rookAttacks(targetSquare, blockers)).notEmpty();
-	else if constexpr (P == QUEEN)
-		return (type & Attacks::queenAttacks(targetSquare, blockers)).notEmpty();
-	else if constexpr (P == KING)
-		return (type & Attacks::kingAttacks(targetSquare)).notEmpty();
-
-	return false;
 }
 
 inline Bitboard Board::getKingAttackers() const noexcept
