@@ -110,7 +110,7 @@ namespace Bits
 	/**
 	* Table of precalculated ray bitboards indexed by direction and square
 	*/
-	static constexpr auto Rays = []
+	static constexpr auto Direction = []
 	{
 		std::array<std::array<u64, SQUARE_NB>, 8> rays{};
 
@@ -138,16 +138,6 @@ namespace Bits
 		}
 
 		return rays;
-	}();
-
-	static constexpr auto Ranks = []
-	{
-		std::array<u64, 8> ranks{};
-
-		for (u8 r{}; r < 8u; ++r)
-			ranks[r] = 0b1111'1111ull << (8u * r);
-
-		return ranks;
 	}();
 
 	static constexpr auto Files = []
@@ -196,18 +186,18 @@ namespace Bits
 
 	static constexpr u64 _generateRayAttacksForwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const u64 attacks = Rays[direction][sq];
+		const u64 attacks = Direction[direction][sq];
 		const u64 blockers = attacks & occupied;
 		const u8 square = bitScanForward(blockers | 0x8000000000000000);
-		return attacks ^ Rays[direction][square];
+		return attacks ^ Direction[direction][square];
 	}
 
 	static constexpr u64 _generateRayAttacksBackwards(const u8 sq, const u64 occupied, const Dir direction)
 	{
-		const auto attacks = Rays[direction][sq];
+		const auto attacks = Direction[direction][sq];
 		const auto blockers = attacks & occupied;
 		const u8 square = bitScanReverse(blockers | 1ull);
-		return attacks ^ Rays[direction][square];
+		return attacks ^ Direction[direction][square];
 	}
 
 	static constexpr u64 generateBishopAttacks(const u8 square, const u64 blockers) noexcept
@@ -225,25 +215,6 @@ namespace Bits
 			   | _generateRayAttacksBackwards(square, blockers, SOUTH)
 			   | _generateRayAttacksBackwards(square, blockers, WEST);
 	}
-
-	static const auto LineBetweenSquares = []
-	{
-		std::array<std::array<u64, SQUARE_NB>, SQUARE_NB> array{};
-
-		for (u8 sq1{}; sq1 < SQUARE_NB; ++sq1)
-			for (u8 sq2{}; sq2 < SQUARE_NB; ++sq2)
-			{
-				const auto bb1 = Squares[sq1];
-				const auto bb2 = Squares[sq2];
-
-				if (generateRookAttacks(sq1, {}) & bb2)
-					array[sq1][sq2] = generateRookAttacks(sq1, bb2) & generateRookAttacks(sq2, bb1);
-				else if (generateBishopAttacks(sq1, {}) & bb2)
-					array[sq1][sq2] = generateBishopAttacks(sq1, bb2) & generateBishopAttacks(sq2, bb1);
-			}
-
-		return array;
-	}();
 
 	constexpr u8 getDistanceBetween(const Square sq1, const Square sq2)
 	{
@@ -386,24 +357,59 @@ public:
 		return Bitboard{ Bits::Squares[u8(square)] };
 	}
 
-	static constexpr Bitboard fromRay(const Dir direction, const Square square) noexcept
+	static constexpr Bitboard fromDirection(const Dir direction, const Square square) noexcept
 	{
-		return Bitboard{ Bits::Rays[direction][u8(square)] };
+		return Bitboard{ Bits::Direction[direction][u8(square)] };
 	}
 
-	static Bitboard fromLineBetween(const Square sq1, const Square sq2) noexcept
+	static constexpr Bitboard fromBetween(const Square sq1, const Square sq2) noexcept
 	{
-		return Bitboard{ Bits::LineBetweenSquares[u8(sq1)][u8(sq2)] };
+		constexpr auto BetweenSquares = []
+		{
+			std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> array{};
+
+			for (Square sq1{}; sq1 < SQUARE_NB; ++sq1)
+			{
+				const auto bb1 = Bitboard::fromSquare(sq1).value();
+				Bitboard rookAttacks{ Bits::generateRookAttacks(sq1, {}) };
+				while (rookAttacks.notEmpty())
+				{
+					const Square sq2 = rookAttacks.popLsb();
+					const auto bb2 = Bitboard::fromSquare(sq2).value();
+					array[sq1][sq2] = Bitboard{ Bits::generateRookAttacks(sq1, bb2) & Bits::generateRookAttacks(sq2, bb1) };
+				}
+
+				Bitboard bishopAttacks{ Bits::generateBishopAttacks(sq1, {}) };
+				while (bishopAttacks.notEmpty())
+				{
+					const Square sq2 = bishopAttacks.popLsb();
+					const auto bb2 = Bitboard::fromSquare(sq2).value();
+					array[sq1][sq2] = Bitboard{ Bits::generateBishopAttacks(sq1, bb2) & Bits::generateBishopAttacks(sq2, bb1) };
+				}
+			}
+
+			return array;
+		}();
+
+		return BetweenSquares[u8(sq1)][u8(sq2)];
 	}
 
 	static Bitboard fromLine(const Square sq1, const Square sq2) noexcept
 	{
-		return fromLineBetween(sq1, sq2) | fromSquare(sq1) | fromSquare(sq2);
+		return fromBetween(sq1, sq2) | fromSquare(sq1) | fromSquare(sq2);
 	}
 
 	static constexpr Bitboard fromRank(const Square square) noexcept
 	{
-		return Bitboard{ Bits::Ranks[rankOf(square)] };
+		constexpr auto Ranks = []
+		{
+			std::array<Bitboard, 8> ranks{};
+			for (u8 r{}; r < 8u; ++r)
+				ranks[r] = Bitboard{ 0xFFull << (8ull * r) };
+			return ranks;
+		}();
+
+		return Ranks[rankOf(square)];
 	}
 
 	static constexpr Bitboard fromFile(const Square square) noexcept
@@ -417,10 +423,41 @@ public:
 		return file.shift<WEST>() | file.shift<EAST>();
 	}
 
-	static bool areAligned(const Square sq1, const Square sq2, const Square sq3) noexcept
+	static constexpr bool areAligned(const Square sq1, const Square sq2, const Square sq3) noexcept
 	{
-		auto bitboard = fromLine(sq1, sq2);
-		return (bitboard & fromSquare(sq3)).notEmpty();
+		/**
+		 *  The rank, file or diagonal with the two squares or an empty Bitboard if they are not aligned.
+		 */
+		constexpr auto SquaresLine = []
+		{
+			std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> array{};
+
+			for (Square sq1{}; sq1 < SQUARE_NB; ++sq1)
+			{
+				const auto bb1 = Bitboard::fromSquare(sq1);
+				Bitboard rookAttacks{ Bits::generateRookAttacks(sq1, {}) };
+				while (rookAttacks.notEmpty())
+				{
+					const Square sq2 = rookAttacks.popLsb();
+					const auto bb2 = Bitboard::fromSquare(sq2);
+					array[sq1][sq2] =
+						Bitboard{ Bits::generateRookAttacks(sq1, {}) & Bits::generateRookAttacks(sq2, {}) } | bb1 | bb2;
+				}
+
+				Bitboard bishopAttacks{ Bits::generateBishopAttacks(sq1, {}) };
+				while (bishopAttacks.notEmpty())
+				{
+					const Square sq2 = bishopAttacks.popLsb();
+					const auto bb2 = Bitboard::fromSquare(sq2);
+					array[sq1][sq2] =
+						Bitboard{ Bits::generateBishopAttacks(sq1, {}) & Bits::generateBishopAttacks(sq2, {}) } | bb1 | bb2;
+				}
+			}
+
+			return array;
+		}();
+
+		return (SquaresLine[sq1][sq2] & fromSquare(sq3)).notEmpty();
 	}
 
 private:

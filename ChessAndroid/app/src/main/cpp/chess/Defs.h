@@ -152,6 +152,18 @@ constexpr Square shift(const Square square) noexcept
     return toSquare(square + s);
 }
 
+inline constexpr Square capturedEnPassant(const Color colorToMove, const Square enPassantSq) noexcept
+{
+	return (colorToMove == WHITE) ? shift<SOUTH>(enPassantSq) : shift<NORTH>(enPassantSq);
+}
+
+inline constexpr Square shiftToKingRank(const Color colorToMove, const Square square) noexcept
+{
+	if (colorToMove == BLACK)
+		return toSquare(square + 56u);
+	return square;
+}
+
 constexpr u8 rankOf(const u8 square) noexcept { return u8(square >> 3u); }
 
 constexpr u8 fileOf(const u8 square) noexcept { return u8(square & 7u); }

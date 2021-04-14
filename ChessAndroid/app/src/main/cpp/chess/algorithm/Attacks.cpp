@@ -68,10 +68,10 @@ static constexpr auto BishopMasks = []
 
 	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (Bitboard::fromRay(NORTH_EAST, square)
-						 | Bitboard::fromRay(NORTH_WEST, square)
-						 | Bitboard::fromRay(SOUTH_WEST, square)
-						 | Bitboard::fromRay(SOUTH_EAST, square)) & ~(edgeSquares);
+		masks[square] = (Bitboard::fromDirection(NORTH_EAST, square)
+						 | Bitboard::fromDirection(NORTH_WEST, square)
+						 | Bitboard::fromDirection(SOUTH_WEST, square)
+						 | Bitboard::fromDirection(SOUTH_EAST, square)) & ~(edgeSquares);
 	}
 
 	return masks;
@@ -83,10 +83,10 @@ static constexpr auto RookMasks = []
 
 	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (Bitboard::fromRay(NORTH, square) & ~RANK_8)
-						| (Bitboard::fromRay(SOUTH, square) & ~RANK_1)
-						| (Bitboard::fromRay(EAST, square) & ~FILE_H)
-						| (Bitboard::fromRay(WEST, square) & ~FILE_A);
+		masks[square] = (Bitboard::fromDirection(NORTH, square) & ~RANK_8)
+						| (Bitboard::fromDirection(SOUTH, square) & ~RANK_1)
+						| (Bitboard::fromDirection(EAST, square) & ~FILE_H)
+						| (Bitboard::fromDirection(WEST, square) & ~FILE_A);
 	}
 
 	return masks;
@@ -158,10 +158,10 @@ static constexpr auto BishopXRayAttacks = []
 
 	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		moves[square] = Bitboard::fromRay(NORTH_WEST, square)
-						| Bitboard::fromRay(NORTH_EAST, square)
-						| Bitboard::fromRay(SOUTH_WEST, square)
-						| Bitboard::fromRay(SOUTH_EAST, square);
+		moves[square] = Bitboard::fromDirection(NORTH_WEST, square)
+						| Bitboard::fromDirection(NORTH_EAST, square)
+						| Bitboard::fromDirection(SOUTH_WEST, square)
+						| Bitboard::fromDirection(SOUTH_EAST, square);
 	}
 
 	return moves;
@@ -173,10 +173,10 @@ static constexpr auto RookXRayAttacks = []
 
 	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		moves[square] = Bitboard::fromRay(NORTH, square)
-						| Bitboard::fromRay(EAST, square)
-						| Bitboard::fromRay(SOUTH, square)
-						| Bitboard::fromRay(WEST, square);
+		moves[square] = Bitboard::fromDirection(NORTH, square)
+						| Bitboard::fromDirection(EAST, square)
+						| Bitboard::fromDirection(SOUTH, square)
+						| Bitboard::fromDirection(WEST, square);
 	}
 
 	return moves;

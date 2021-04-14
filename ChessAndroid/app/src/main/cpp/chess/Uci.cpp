@@ -61,9 +61,11 @@ void Uci::loop()
 			if (token.empty())
 				std::cout << "No move specified";
 			else if (const Move move = parseMove(_board, token); move.empty())
-				std::cout << "Move could not pe parsed";
+				std::cout << "Move could not be parsed";
 			else if (!MoveList(_board).contains(move))
-				std::cout << "Invalid move";
+				std::cout << "Move is invalid";
+			else if (!_board.isMoveLegal(move))
+				std::cout << "Move is illegal";
 			else
 			{
 				_board.makeMove(move);
@@ -93,7 +95,7 @@ void Uci::loop()
 		{
 			Search::stopSearch();
 			_searchThread.join();
-			std::cout << "Joined Thread" << std::endl;
+			std::cout << "Joined Thread\n";
 		} else if (token == "quit")
 			quit = true;
 
@@ -102,12 +104,15 @@ void Uci::loop()
 		{
 			const auto results = Tests::runEvaluationTests();
 			if (results.empty())
-				std::cout << "Test Completed Successfully";
+				std::cout << "Test Completed Successfully\n";
 			else
 				std::cout << results;
-			std::cout << std::endl;
 		} else if (token == "perft")
 			Tests::runPerftTests();
+		else
+			std::cout << "Unknown command\n";
+
+		std::cout.flush();
 
 		if (quit)
 			break;
@@ -132,9 +137,9 @@ void Uci::setOption(std::istringstream &is)
 	{
 		usize hashSize{};
 		is >> hashSize;
-		_hashSizeMb = std::clamp<usize>(hashSize, 4u, 1024u);
+		_hashSizeMb = std::clamp<usize>(hashSize, 4u, 2048u);
 
-		std::cout << "Hash Size has been set to " << _threadCount << "MB" << std::endl;
+		std::cout << "Hash Size has been set to " << _hashSizeMb << "MB" << std::endl;
 	} else if (token == "bookpath")
 	{
 		is >> token;

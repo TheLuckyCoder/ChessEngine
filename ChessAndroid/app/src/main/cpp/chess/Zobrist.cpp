@@ -61,7 +61,7 @@ namespace Zobrist
 				hash ^= PiecesKeys[sq][piece.type()][piece.color()];
 
 		xorCastlingRights(hash, static_cast<CastlingRights>(board.state.castlingRights));
-		xorEnPassant(hash, board.getEnPassant());
+		xorEnPassant(hash, board.getEnPassantSq());
 
 		if (board.colorToMove)
 			flipSide(hash);

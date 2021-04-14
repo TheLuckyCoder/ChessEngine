@@ -70,7 +70,7 @@ namespace
 		}
 
 		// EnPassant
-		const Square enPassantSq = board.getEnPassant();
+		const Square enPassantSq = board.getEnPassantSq();
 		if (enPassantSq != SQ_NONE)
 		{
 			const auto enPassant = Bitboard::fromSquare(enPassantSq);
@@ -208,11 +208,13 @@ namespace
 		if (!board.canCastle<Us>())
 			return;
 
+		assert(shiftToKingRank(Us, SQ_E1) == kingSq);
+
 		const auto addCastleMove = [&, kingSq](const Square kingTo, const Square rookSq,
 											   const Square rookTo, const u8 castleSide)
 		{
-			auto mask = Bitboard::fromLineBetween(kingSq, kingTo) | Bitboard::fromSquare(kingTo);
-			mask |= Bitboard::fromLineBetween(rookSq, rookTo) | Bitboard::fromSquare(rookTo);
+			auto mask = Bitboard::fromBetween(kingSq, kingTo) | Bitboard::fromSquare(kingTo);
+			mask |= Bitboard::fromBetween(rookSq, rookTo) | Bitboard::fromSquare(rookTo);
 			mask &= ~(Bitboard::fromSquare(kingSq) | Bitboard::fromSquare(rookSq));
 
 			// There can't be any pieces in between the rook and king
@@ -220,11 +222,11 @@ namespace
 				return;
 
 			// The King can't pass through a checked square
-			mask = Bitboard::fromLineBetween(kingSq, kingTo);
+			mask = Bitboard::fromBetween(kingSq, kingTo);
 			while (mask.notEmpty())
 			{
 				// TODO Move this in Board::isMoveLegal()
-				if (board.isAttackedByAny(Them, mask.popLsb(), board.getPieces()).notEmpty())
+				if (board.generateAttackers(Them, mask.popLsb(), board.getPieces()).notEmpty())
 					return;
 			}
 
@@ -233,18 +235,22 @@ namespace
 
 		if (board.canCastleKs<Us>())
 		{
-			constexpr Square KingTo = Us ? SQ_G1 : SQ_G8;
-			constexpr Square RookSq = Us ? SQ_H1 : SQ_H8;
-			constexpr Square RookTo = Us ? SQ_F1 : SQ_F8;
-			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::KSIDE_CASTLE);
+			constexpr Square KingTo = shiftToKingRank(Us, SQ_G1);
+			constexpr Square RookFrom = shiftToKingRank(Us, SQ_H1);
+			constexpr Square RookTo = shiftToKingRank(Us, SQ_F1);
+			static_assert(RookFrom == (Us ? SQ_H1 : SQ_H8));
+			static_assert(RookTo == (Us ? SQ_F1 : SQ_F8));
+
+			addCastleMove(KingTo, RookFrom, RookTo, Move::Flags::KSIDE_CASTLE);
 		}
 
 		if (board.canCastleQs<Us>())
 		{
-			constexpr Square KingTo = Us ? SQ_C1 : SQ_C8;
-			constexpr Square RookSq = Us ? SQ_A1 : SQ_A8;
-			constexpr Square RookTo = Us ? SQ_D1 : SQ_D8;
-			addCastleMove(KingTo, RookSq, RookTo, Move::Flags::QSIDE_CASTLE);
+			constexpr Square KingTo = shiftToKingRank(Us, SQ_C1);
+			constexpr Square RookFrom = shiftToKingRank(Us, SQ_A1);
+			constexpr Square RookTo = shiftToKingRank(Us, SQ_D1);
+
+			addCastleMove(KingTo, RookFrom, RookTo, Move::Flags::QSIDE_CASTLE);
 		}
 	}
 
@@ -287,7 +293,7 @@ namespace
 				return;
 
 			const Square checkSq = kingAttackers.bitScanForward();
-			targets &= Bitboard::fromLineBetween(kingSq, checkSq) | kingAttackers;
+			targets &= Bitboard::fromBetween(kingSq, checkSq) | kingAttackers;
 			type = GenType::EVASIONS;
 		}
 

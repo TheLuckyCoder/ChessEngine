@@ -237,7 +237,7 @@ namespace PolyBook
 
 	static constexpr bool hasEnPassPawnForCapture(const Board &board) noexcept
 	{
-		const auto enPass = Bitboard::fromSquare(board.getEnPassant());
+		const auto enPass = Bitboard::fromSquare(board.getEnPassantSq());
 
 		if (board.colorToMove == WHITE)
 			return !(Attacks::pawnAttacks<WHITE>(board.getPieces(PAWN, WHITE)) & enPass).empty();
@@ -319,9 +319,9 @@ namespace PolyBook
 			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 3];
 
 		// En Passant
-		if (board.getEnPassant() != SQ_NONE && hasEnPassPawnForCapture(board))
+		if (board.getEnPassantSq() != SQ_NONE && hasEnPassPawnForCapture(board))
 		{
-			result ^= PolyKeys::Random64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.getEnPassant())];
+			result ^= PolyKeys::Random64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.getEnPassantSq())];
 		}
 
 		// SideKey

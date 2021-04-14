@@ -345,8 +345,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		&& depth >= 4
 		&& eval >= beta
 		&& !nodeInCheck
-		&& board.pieceCount[Piece{ QUEEN, board.colorToMove }]
-		   + board.pieceCount[Piece{ ROOK, board.colorToMove }] > 0)
+		&& (board.getPieces(QUEEN, board.colorToMove) | board.getPieces(ROOK, board.colorToMove)).notEmpty())
 	{
 		board.makeNullMove();
 		const int nullScore = -search(board, -beta, -beta + 1, depth - 4, false, false, false);
@@ -398,8 +397,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 			continue;
 		}
 
-		board.makeMove(move);
-		assert(moveGivesCheck == board.isSideInCheck());
+		board.makeMove(move, moveGivesCheck);
 
 		int moveScore = alpha;
 		bool doFullSearch = true;
@@ -557,14 +555,12 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 
 		if (!board.isMoveLegal(move))
 			continue;
-		board.makeMove(move);
 		++legalCount;
 
 		if (!nodeInCheck // Look for all check evasions
 			&& !move.isTactical()
 			&& searchedCount)
 		{
-			board.undoMove();
 			break; // The moves are sorted so we can break if is not a capture
 		}
 
@@ -572,19 +568,20 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 								 + Evaluation::getPieceValue(move.promotedPiece())
 								 + FUTILITY_QUIESCENCE_MARGIN;
 		// Futility Pruning
+		const auto moveGivesCheck = board.doesMoveGiveCheck(move);
 		if (!nodeInCheck
 			&& !isEndGame
 			&& board.ply > 2
 			&& standPat != VALUE_MIN
 			&& searchedCount
 			&& futilityEval <= alpha
-			&& !board.isSideInCheck())
+			&& !moveGivesCheck)
 		{
-			board.undoMove();
 			Stats::incFutilityCuts();
 			continue;
 		}
 
+		board.makeMove(move, moveGivesCheck);
 		const int moveScore = -searchCaptures(board, -beta, -alpha, depth - 1);
 		board.undoMove();
 		++searchedCount;
@@ -599,10 +596,7 @@ int Search::searchCaptures(Board &board, int alpha, int beta, const int depth)
 		}
 
 		if (bestScore >= beta)
-		{
-			Stats::incNodesSearched(searchedCount);
 			break;
-		}
 
 		alpha = std::max(alpha, moveScore);
 	}

@@ -64,7 +64,7 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	board.updatePieceList();
 	board.updateNonPieceBitboards();
 
-	board.state.kingAttackers = board.generateAllAttackers(board.getKingSq(colorToMove)) & board.getPieces(~colorToMove);
+	board.state.kingAttackers = board.generateAttackers(board.getKingSq(colorToMove)) & board.getPieces(~colorToMove);
 	board.computeCheckInfo();
 	return true;
 }
@@ -123,7 +123,7 @@ std::string FenParser::exportToFen(const Board &board)
 
 	if (!board.canCastle<WHITE>() && !board.canCastle<BLACK>()) out << '-';
 
-	const Square enPassantSq = board.getEnPassant();
+	const Square enPassantSq = board.getEnPassantSq();
 	if (enPassantSq != SQ_NONE)
 		out << ' ' << char('a' + int(fileOf(enPassantSq))) << int(rankOf(enPassantSq)) << ' ';
 	else

@@ -43,13 +43,13 @@ namespace Tests
 		rights |= (originalRights & 0b111u) << 3u; // Black -> White
 		rights |= originalRights >> 3u; // White -> Black
 
-		if (board.getEnPassant() != SQ_NONE)
-			result.state.enPassantSq = toSquare(MirrorSquare.at(u8(board.getEnPassant())));
+		if (board.getEnPassantSq() != SQ_NONE)
+			result.state.enPassantSq = toSquare(MirrorSquare.at(u8(board.getEnPassantSq())));
 
 		result.updatePieceList();
 		result.updateNonPieceBitboards();
 		result.state.fiftyMoveRule = board.state.fiftyMoveRule;
-		result.state.kingAttackers = result.generateAllAttackers(result.getKingSq(result.colorToMove))
+		result.state.kingAttackers = result.generateAttackers(result.getKingSq(result.colorToMove))
 			& result.getPieces(~result.colorToMove);
 		result.computeCheckInfo();
 
@@ -211,14 +211,14 @@ namespace Tests
 		}
 	};
 
-	static void perft(Board &board, PerftInfo &info, const unsigned depth, const Move lastMove)
+	static void perft(Board &board, PerftInfo &info, const unsigned depth)
 	{
 		if (board.state.fiftyMoveRule > 99)
 			return;
 
 		if (depth == 0)
 		{
-			const auto flags = lastMove.flags();
+			const auto flags = board.state.getMove().flags();
 			++info.nodes;
 			info.captures += flags.capture() | flags.enPassant();
 			info.enPassant += flags.enPassant();
@@ -236,23 +236,23 @@ namespace Tests
 		for (const Move move : moveList)
 		{
 			board.makeMove(move);
-			perft(board, info, depth - 1, move);
+			perft(board, info, depth - 1);
 			board.undoMove();
 		}
 	}
 
-	static PerftInfo basePerft(/*std::ostringstream &out, */Board &board, const unsigned depth)
+	static PerftInfo basePerft(Board &board, const unsigned depth)
 	{
 		PerftInfo info{};
 
 		MoveList moveList(board);
 		moveList.keepLegalMoves();
 
-		for (auto &&move : moveList)
+		for (const Move move : moveList)
 		{
 			PerftInfo localInfo{};
 			board.makeMove(move);
-			perft(board, localInfo, depth - 1, move);
+			perft(board, localInfo, depth - 1);
 			board.undoMove();
 
 			info += localInfo;
@@ -274,7 +274,6 @@ namespace Tests
 		for (unsigned depth = 1; depth < perftVector.size(); ++depth)
 		{
 			const auto startTime = std::chrono::high_resolution_clock::now();
-//			std::ostringstream out;
 			const PerftInfo info = basePerft(board, depth);
 
 			const auto endTime = std::chrono::high_resolution_clock::now();
@@ -339,6 +338,7 @@ namespace Tests
 		perftWrapper("r4rk1/1pp1qppp/p1npBn2/2b1p1B1/4P1b1/P1NP1N2/1PP1QPPP/R4RK1 b - - 0 1", {
 			1, 46, 2079, 89890, 3894594, 164075551, 6923051137
 		});
+		std::cout << "Perft tests execution finished" << std::endl;
 	}
 
 	// endregion Perft

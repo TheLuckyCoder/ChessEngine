@@ -61,6 +61,11 @@ Phase Board::getPhase() const noexcept
 
 void Board::makeMove(const Move move) noexcept
 {
+	makeMove(move, doesMoveGiveCheck(move));
+}
+
+void Board::makeMove(const Move move, const bool moveGivesCheck) noexcept
+{
 	assert(!move.empty());
 	const Square from = move.from();
 	const Square to = move.to();
@@ -85,36 +90,20 @@ void Board::makeMove(const Move move) noexcept
 
 	if (flags.enPassant())
 	{
-		const Square capturedSq = (side == WHITE ? shift<SOUTH>(to) : shift<NORTH>(to));
-		removePiece(capturedSq);
+		assert(to == enPassantSq);
+		removePiece(capturedEnPassant(side, enPassantSq));
 	} else if (flags.kSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_G1:
-				movePiece(SQ_H1, SQ_F1);
-				break;
-			case SQ_G8:
-				movePiece(SQ_H8, SQ_F8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_H1);
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_F1);
+		movePiece(rookFrom, rookTo);
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
 	} else if (flags.qSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_C1:
-				movePiece(SQ_A1, SQ_D1);
-				break;
-			case SQ_C8:
-				movePiece(SQ_A8, SQ_D8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_A1);
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_D1);
+		movePiece(rookFrom, rookTo);
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
 	}
@@ -164,7 +153,7 @@ void Board::makeMove(const Move move) noexcept
 
 		if (move.flags().doublePawnPush())
 		{
-			enPassantSq = (side == WHITE ? shift<NORTH>(from) : shift<SOUTH>(from));
+			enPassantSq = capturedEnPassant(~side, from);
 
 			Zobrist::xorEnPassant(state.zKey, enPassantSq);
 			assert(Bitboard::fromRank(enPassantSq) == RANK_3
@@ -189,9 +178,12 @@ void Board::makeMove(const Move move) noexcept
 
 	updateNonPieceBitboards();
 
-	assert((generateAllAttackers(getKingSq(~colorToMove)) & getPieces(colorToMove)).empty());
+	assert((generateAttackers(getKingSq(~colorToMove)) & getPieces(colorToMove)).empty());
 
-	state.kingAttackers = generateAllAttackers(getKingSq(colorToMove)) & getPieces(~colorToMove);
+	state.kingAttackers = {};
+	if (moveGivesCheck)
+		state.kingAttackers = generateAttackers(getKingSq(colorToMove)) & getPieces(~colorToMove);
+
 	computeCheckInfo();
 }
 
@@ -215,46 +207,30 @@ void Board::undoMove() noexcept
 
 	if (flags.enPassant())
 	{
-		const Square capturesSq = toSquare(u8(to) + static_cast<u8>(colorToMove ? -8 : 8));
-		addPiece(capturesSq, { PAWN, ~colorToMove });
+		const Square capturedSq = capturedEnPassant(colorToMove, to);
+		addPiece(capturedSq, { PAWN, ~colorToMove });
 	} else if (flags.kSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_G1:
-				movePiece(SQ_F1, SQ_H1);
-				break;
-			case SQ_G8:
-				movePiece(SQ_F8, SQ_H8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_F1);
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_H1);
+		movePiece(rookTo, rookFrom);
 	} else if (flags.qSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_C1:
-				movePiece(SQ_D1, SQ_A1);
-				break;
-			case SQ_C8:
-				movePiece(SQ_D8, SQ_A8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_D1);
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_A1);
+		movePiece(rookTo, rookFrom);
 	}
 
 	movePiece(to, from);
 
 	if (const PieceType capturedType = move.capturedPiece();
 		capturedType != NO_PIECE_TYPE)
-		addPiece(to, Piece(capturedType, ~colorToMove));
+		addPiece(to, Piece{ capturedType, ~colorToMove });
 
 	if (flags.promotion())
 	{
 		removePiece(from);
-		addPiece(from, Piece(PAWN, colorToMove));
+		addPiece(from, Piece{ PAWN, colorToMove });
 	}
 
 	state.zKey = previousState.zKey;
@@ -276,7 +252,6 @@ void Board::makeNullMove() noexcept
 	colorToMove = ~colorToMove;
 	Zobrist::flipSide(state.zKey);
 
-	state.kingAttackers = generateAllAttackers(getKingSq(colorToMove)) & getPieces(~colorToMove);
 	computeCheckInfo();
 }
 
@@ -295,7 +270,8 @@ bool Board::doesMoveGiveCheck(const Move move) const noexcept
 	const Square from = move.from();
 	const Square to = move.to();
 
-	if ((state.possibleCheckSquares[move.piece()] & Bitboard::fromSquare(to)).notEmpty())
+	auto &checkSq = state.possibleCheckSquares[move.piece()];
+	if ((checkSq & Bitboard::fromSquare(to)).notEmpty())
 		return true;
 
 	const Square enemyKingSq = getKingSq(~colorToMove);
@@ -309,10 +285,41 @@ bool Board::doesMoveGiveCheck(const Move move) const noexcept
 	if (flags.promotion())
 	{
 		return (Attacks::pieceAttacks(move.promotedPiece(), to, getPieces() ^ Bitboard::fromSquare(from))
-			   & Bitboard::fromSquare(enemyKingSq)).notEmpty();
+				& Bitboard::fromSquare(enemyKingSq)).notEmpty();
 	}
 
-	// TODO: EnP, Castling
+	if (flags.kSideCastle() | flags.qSideCastle())
+	{
+		Square rookFrom, rookTo;
+
+		if (flags.kSideCastle())
+		{
+			rookTo = shiftToKingRank(colorToMove, SQ_F1);
+			rookFrom = shiftToKingRank(colorToMove, SQ_H1);
+		} else // Must be a Queen Side Castle
+		{
+			rookFrom = shiftToKingRank(colorToMove, SQ_A1);
+			rookTo = shiftToKingRank(colorToMove, SQ_D1);
+		}
+
+		const auto blockers = (getPieces() ^ Bitboard::fromSquare(rookFrom) ^ Bitboard::fromSquare(from))
+							  | Bitboard::fromSquare(rookTo) | Bitboard::fromSquare(to);
+		return (Attacks::rookXRayAttacks(rookTo) & Bitboard::fromSquare(enemyKingSq)).notEmpty()
+			   && (Attacks::rookAttacks(rookTo, blockers) & Bitboard::fromSquare(enemyKingSq)).notEmpty();
+	}
+
+	if (flags.enPassant())
+	{
+		const Square captured = capturedEnPassant(colorToMove, getEnPassantSq());
+		const auto occupancy = (getPieces() ^ Bitboard::fromSquare(from) ^ Bitboard::fromSquare(captured))
+							   | Bitboard::fromSquare(to);
+
+		const auto queens = getPieces(QUEEN, colorToMove);
+		return (
+			(Attacks::rookAttacks(enemyKingSq, occupancy) & (getPieces(ROOK, colorToMove) | queens)) |
+			(Attacks::bishopAttacks(enemyKingSq, occupancy) & (getPieces(BISHOP, colorToMove) | queens))
+		).notEmpty();
+	}
 
 	return false;
 }
@@ -333,8 +340,8 @@ bool Board::isMoveLegal(const Move move) const noexcept
 
 	if (move.flags().enPassant())
 	{
-		const Square capturedSquare =
-			(colorToMove == WHITE) ? shift<SOUTH>(state.enPassantSq) : shift<NORTH>(state.enPassantSq);
+		const Square capturedSquare = capturedEnPassant(colorToMove, getEnPassantSq());
+
 		const auto newOccupied = (getPieces() & ~(Bitboard::fromSquare(from) | Bitboard::fromSquare(capturedSquare)))
 								 | Bitboard::fromSquare(to);
 
@@ -360,10 +367,10 @@ bool Board::isMoveLegal(const Move move) const noexcept
 
 Bitboard Board::generateAttackers(Color attackerColor, Square sq, Bitboard blockers) const noexcept
 {
-	return generateAllAttackers(sq, blockers) & getPieces(attackerColor);
+	return generateAttackers(sq, blockers) & getPieces(attackerColor);
 }
 
-Bitboard Board::generateAllAttackers(const Square sq, const Bitboard blockers) const noexcept
+Bitboard Board::generateAttackers(Square sq, Bitboard blockers) const noexcept
 {
 	const auto queens = getPieces(QUEEN);
 	const auto bishops = getPieces(BISHOP) | queens;
@@ -377,9 +384,9 @@ Bitboard Board::generateAllAttackers(const Square sq, const Bitboard blockers) c
 		   | (rooks & Attacks::rookAttacks(sq, blockers));
 }
 
-Bitboard Board::generateAllAttackers(const Square sq) const noexcept
+Bitboard Board::generateAttackers(Square sq) const noexcept
 {
-	return generateAllAttackers(sq, getPieces());
+	return generateAttackers(sq, getPieces());
 }
 
 bool Board::isSideInCheck() const noexcept
@@ -412,6 +419,7 @@ void Board::movePiece(const Square from, const Square to) noexcept
 	getPiece(from) = EmptyPiece;
 	getPieces(piece).removeSquare(from);
 
+	assert(!getPiece(to).isValid());
 	Zobrist::xorPiece(state.zKey, to, piece);
 	getPiece(to) = piece;
 	getPieces(piece).addSquare(to);
@@ -474,7 +482,7 @@ Bitboard Board::findBlockers(const Bitboard sliders, const Square sq, Bitboard &
 	while (hiddenPinners.notEmpty())
 	{
 		const Square hiddenSq = hiddenPinners.popLsb();
-		const auto bb = Bitboard::fromLineBetween(sq, hiddenSq) & occupancy;
+		const auto bb = Bitboard::fromBetween(sq, hiddenSq) & occupancy;
 
 		if (bb.notEmpty() && !bb.several())
 		{
@@ -492,13 +500,13 @@ void Board::computeCheckInfo() noexcept
 	state.kingBlockers[WHITE] = findBlockers(getPieces(BLACK), getKingSq(WHITE), state.kingPinners[BLACK]);
 	state.kingBlockers[BLACK] = findBlockers(getPieces(WHITE), getKingSq(BLACK), state.kingPinners[WHITE]);
 
-	const Square kingSq = getKingSq(~colorToMove);
+	const Square enemyKingSq = getKingSq(~colorToMove);
 
-	auto checkSquares = state.possibleCheckSquares;
-	checkSquares[PAWN] = Attacks::pawnAttacks(~colorToMove, Bitboard::fromSquare(kingSq));
-	checkSquares[KNIGHT] = Attacks::knightAttacks(kingSq);
-	checkSquares[BISHOP] = Attacks::bishopAttacks(kingSq, getPieces());
-	checkSquares[ROOK] = Attacks::rookAttacks(kingSq, getPieces());
+	auto &checkSquares = state.possibleCheckSquares;
+	checkSquares[PAWN] = Attacks::pawnAttacks(~colorToMove, Bitboard::fromSquare(enemyKingSq));
+	checkSquares[KNIGHT] = Attacks::knightAttacks(enemyKingSq);
+	checkSquares[BISHOP] = Attacks::bishopAttacks(enemyKingSq, getPieces());
+	checkSquares[ROOK] = Attacks::rookAttacks(enemyKingSq, getPieces());
 	checkSquares[QUEEN] = checkSquares[BISHOP] | checkSquares[ROOK];
 	checkSquares[KING] = {};
 }
@@ -507,14 +515,14 @@ void Board::updatePieceList() noexcept
 {
 	pieceCount.fill({});
 
-	for (u8 sq{}; sq < SQUARE_NB; ++sq)
+	for (Square sq{}; sq < SQUARE_NB; ++sq)
 	{
-		const Piece &piece = data[sq];
+		const Piece piece = getPiece(sq);
 		if (piece)
 		{
 			pieceList[piece][pieceCount[piece]++] = sq;
 
-			getPieces(piece).addSquare(toSquare(sq));
+			getPieces(piece).addSquare(sq);
 
 			if (piece.type() != PAWN)
 				npm += Evaluation::getPieceValue(piece.type());

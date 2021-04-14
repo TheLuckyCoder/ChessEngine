@@ -65,7 +65,7 @@ public:
 	// region State
 
 	u64 zKey() const noexcept;
-	Square getEnPassant() const noexcept;
+	Square getEnPassantSq() const noexcept;
 	CastlingRights getCastlingRights() const noexcept;
 
 	bool isDrawn() const noexcept;
@@ -76,6 +76,7 @@ public:
 	// region Move functions
 
 	void makeMove(Move move) noexcept;
+	void makeMove(Move move, bool moveGivesCheck) noexcept;
 	void undoMove() noexcept;
 	void makeNullMove() noexcept;
 	void undoNullMove() noexcept;
@@ -85,8 +86,8 @@ public:
 	// endregion
 
 	Bitboard generateAttackers(Color attackerColor, Square sq, Bitboard blockers) const noexcept;
-	Bitboard generateAllAttackers(Square sq, Bitboard blockers) const noexcept;
-	Bitboard generateAllAttackers(Square sq) const noexcept;
+	Bitboard generateAttackers(Square sq, Bitboard blockers) const noexcept;
+	Bitboard generateAttackers(Square sq) const noexcept;
 	bool isSideInCheck() const noexcept;
 
 private:
@@ -197,7 +198,7 @@ inline u64 Board::zKey() const noexcept
 	return state.zKey;
 }
 
-inline Square Board::getEnPassant() const noexcept
+inline Square Board::getEnPassantSq() const noexcept
 {
 	return state.enPassantSq;
 }

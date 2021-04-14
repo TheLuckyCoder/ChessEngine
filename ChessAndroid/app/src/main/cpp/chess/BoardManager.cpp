@@ -150,7 +150,7 @@ GameState BoardManager::getBoardState()
 	const Color colorToMove = _currentBoard.colorToMove;
 
 	const bool otherInCheck =
-		(_currentBoard.generateAllAttackers(_currentBoard.getKingSq(colorToMove)) &
+		(_currentBoard.generateAttackers(_currentBoard.getKingSq(colorToMove)) &
 		 _currentBoard.getPieces(~colorToMove)).notEmpty();
 
 	if (_currentBoard.isSideInCheck() && otherInCheck)

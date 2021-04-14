@@ -1,11 +1,13 @@
 #include "Evaluation.h"
 
+#include <array>
 #include <sstream>
 #include <iomanip>
 
 #include "../Stats.h"
 #include "../Psqt.h"
 #include "../PawnStructureTable.h"
+#include "../Score.h"
 
 namespace
 {
@@ -97,11 +99,43 @@ constexpr auto MASK_PAWN_SHIELD = []
 template <bool Trace>
 struct Eval
 {
+	struct Traces
+	{
+		// Pieces
+		std::array<Score, COLOR_NB> pawns{};
+		std::array<Score, COLOR_NB> knights{};
+		std::array<Score, COLOR_NB> bishops{};
+		std::array<Score, COLOR_NB> rooks{};
+		std::array<Score, COLOR_NB> queen{};
+		std::array<Score, COLOR_NB> king{};
+		std::array<Score, COLOR_NB> mobility{};
+		std::array<Score, COLOR_NB> piecesTotal{};
+
+		std::array<Score, COLOR_NB> kingProtector{};
+		std::array<Score, COLOR_NB> minorPawnShield{};
+
+		// Threats
+		std::array<Score, COLOR_NB> threatsByMinor{};
+		std::array<Score, COLOR_NB> threatsByRook{};
+		std::array<Score, COLOR_NB> threatsByKing{};
+		std::array<Score, COLOR_NB> threatBySafePawn{};
+		std::array<Score, COLOR_NB> piecesHanging{};
+		std::array<Score, COLOR_NB> weakQueenProtection{};
+		std::array<Score, COLOR_NB> queenThreatByKnight{};
+		std::array<Score, COLOR_NB> queenThreatBySlider{};
+		std::array<Score, COLOR_NB> restrictedMovement{};
+		std::array<Score, COLOR_NB> attacksTotal{};
+
+		std::array<Score, COLOR_NB> kingSafety{};
+
+		std::array<Score, COLOR_NB> total{};
+	};
+
 	explicit Eval(const Board &board) noexcept
 		: board(board)
 	{
 		if constexpr (Trace)
-			trace = new Evaluation::Trace{};
+			trace = new Traces{};
 
 		const auto wKingSq = board.getKingSq(WHITE);
 		const auto bKingSq = board.getKingSq(BLACK);
@@ -120,7 +154,7 @@ struct Eval
 
 	int computeValue() noexcept;
 
-	const auto &getTrace() const noexcept requires Trace
+	[[nodiscard]] const auto &getTrace() const noexcept requires Trace
 	{
 		return *trace;
 	}
@@ -144,7 +178,7 @@ private:
 	Score evaluateKing() const noexcept;
 
 	const Board &board;
-	Evaluation::Trace *trace = nullptr;
+	Traces *trace = nullptr;
 	std::array<std::array<Bitboard, 6>, COLOR_NB> _pieceAttacks{}; // No King
 	std::array<Bitboard, COLOR_NB> _attacksMultiple{};
 	std::array<Bitboard, COLOR_NB> _allAttacks{};
@@ -555,7 +589,7 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 	const u8 rank = (Us ? rankOf(square) : 7u - rankOf(square)) - 1u;
 
 	const auto adjacentFiles = Bitboard::fromAdjacentFiles(square);
-	const auto opposed = board.getPieces(PAWN, Them) & Bitboard::fromRay(ForwardDir, square);
+	const auto opposed = board.getPieces(PAWN, Them) & Bitboard::fromDirection(ForwardDir, square);
 	const auto neighbours = board.getPieces(PAWN, Us) & adjacentFiles;
 	const auto connected = neighbours & Bitboard::fromRank(square);
 	const auto support =
@@ -575,7 +609,7 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 		value -= PAWN_DOUBLED;
 
 	{ // Passed Pawn
-		Bitboard rays = Bitboard::fromRay(ForwardDir, square);
+		Bitboard rays = Bitboard::fromDirection(ForwardDir, square);
 		rays |= rays.shift<WEST>() | rays.shift<EAST>();
 
 		const bool isPassedPawn = (rays & board.getPieces(PAWN, Them)).empty();
