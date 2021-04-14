@@ -152,7 +152,7 @@ constexpr Square shift(const Square square) noexcept
     return toSquare(square + s);
 }
 
-inline constexpr Square capturedEnPassant(const Color colorToMove, const Square enPassantSq) noexcept
+inline constexpr Square capturedEnPassantSq(const Color colorToMove, const Square enPassantSq) noexcept
 {
 	return (colorToMove == WHITE) ? shift<SOUTH>(enPassantSq) : shift<NORTH>(enPassantSq);
 }

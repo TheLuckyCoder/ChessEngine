@@ -1,5 +1,6 @@
 package net.theluckycoder.chess.utils
 
+import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -14,14 +15,14 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
-val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "settings",
 )
 
 @OptIn(ExperimentalTime::class)
-class SettingsDataStore(private val context: Context) {
+class SettingsDataStore private constructor(private val application: Application) {
 
-    private fun dataStore() = context.settingsDataStore
+    fun dataStore() = application.settingsDataStore
 
     fun firstStart(): Flow<Boolean> =
         dataStore().data.map { it[FIRST_START] ?: true }
@@ -68,6 +69,17 @@ class SettingsDataStore(private val context: Context) {
         dataStore().data.map { it[SHOW_DEBUG_ADVANCED] ?: false }
 
     companion object {
+        private var instance: SettingsDataStore? = null
+
+        fun get(application: Application): SettingsDataStore {
+            instance?.let { return it }
+            synchronized(this) {
+                val local = instance ?: SettingsDataStore(application)
+                instance = local
+                return local
+            }
+        }
+
         val FIRST_START = booleanPreferencesKey("first_start")
 
         val SHOW_COORDINATES = booleanPreferencesKey("show_coordinates")

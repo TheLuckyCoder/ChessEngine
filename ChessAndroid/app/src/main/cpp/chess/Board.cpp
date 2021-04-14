@@ -91,7 +91,7 @@ void Board::makeMove(const Move move, const bool moveGivesCheck) noexcept
 	if (flags.enPassant())
 	{
 		assert(to == enPassantSq);
-		removePiece(capturedEnPassant(side, enPassantSq));
+		removePiece(capturedEnPassantSq(side, enPassantSq));
 	} else if (flags.kSideCastle())
 	{
 		const Square rookFrom = shiftToKingRank(colorToMove, SQ_H1);
@@ -153,7 +153,7 @@ void Board::makeMove(const Move move, const bool moveGivesCheck) noexcept
 
 		if (move.flags().doublePawnPush())
 		{
-			enPassantSq = capturedEnPassant(~side, from);
+			enPassantSq = capturedEnPassantSq(~side, from);
 
 			Zobrist::xorEnPassant(state.zKey, enPassantSq);
 			assert(Bitboard::fromRank(enPassantSq) == RANK_3
@@ -207,7 +207,7 @@ void Board::undoMove() noexcept
 
 	if (flags.enPassant())
 	{
-		const Square capturedSq = capturedEnPassant(colorToMove, to);
+		const Square capturedSq = capturedEnPassantSq(colorToMove, to);
 		addPiece(capturedSq, { PAWN, ~colorToMove });
 	} else if (flags.kSideCastle())
 	{
@@ -225,12 +225,12 @@ void Board::undoMove() noexcept
 
 	if (const PieceType capturedType = move.capturedPiece();
 		capturedType != NO_PIECE_TYPE)
-		addPiece(to, Piece{ capturedType, ~colorToMove });
+		addPiece(to, { capturedType, ~colorToMove });
 
 	if (flags.promotion())
 	{
 		removePiece(from);
-		addPiece(from, Piece{ PAWN, colorToMove });
+		addPiece(from, { PAWN, colorToMove });
 	}
 
 	state.zKey = previousState.zKey;
@@ -310,7 +310,7 @@ bool Board::doesMoveGiveCheck(const Move move) const noexcept
 
 	if (flags.enPassant())
 	{
-		const Square captured = capturedEnPassant(colorToMove, getEnPassantSq());
+		const Square captured = capturedEnPassantSq(colorToMove, getEnPassantSq());
 		const auto occupancy = (getPieces() ^ Bitboard::fromSquare(from) ^ Bitboard::fromSquare(captured))
 							   | Bitboard::fromSquare(to);
 
@@ -340,7 +340,7 @@ bool Board::isMoveLegal(const Move move) const noexcept
 
 	if (move.flags().enPassant())
 	{
-		const Square capturedSquare = capturedEnPassant(colorToMove, getEnPassantSq());
+		const Square capturedSquare = capturedEnPassantSq(colorToMove, getEnPassantSq());
 
 		const auto newOccupied = (getPieces() & ~(Bitboard::fromSquare(from) | Bitboard::fromSquare(capturedSquare)))
 								 | Bitboard::fromSquare(to);

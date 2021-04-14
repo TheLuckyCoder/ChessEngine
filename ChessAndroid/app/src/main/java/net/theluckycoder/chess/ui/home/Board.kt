@@ -65,8 +65,9 @@ fun ChessBoard(
 
     BoardPieces(tileSize, isPlayerWhite, pieces, chessViewModel)
 
-    if (showCoordinates)
+    if (showCoordinates) {
         BoardCoordinates(tileSize)
+    }
 }
 
 @Composable

@@ -47,25 +47,15 @@ namespace UndoRedo
 
 		const Square to = move.to();
 		const auto flags = move.flags();
+		const Color side = ~colorToMove;
 
 		// Handle en passant capture and castling
 		if (flags.enPassant())
-		{
-			const Square capturedSq = toSquare(u8(to) + static_cast<u8>(colorToMove ? -8 : 8));
-			removePiece(capturedSq);
-		} else if (flags.kSideCastle())
-		{
-			if (to == SQ_G1)
-				movePiece(SQ_H1, SQ_F1);
-			else if (to == SQ_G8)
-				movePiece(SQ_H8, SQ_F8);
-		} else if (flags.qSideCastle())
-		{
-			if (to == SQ_C1)
-				movePiece(SQ_A1, SQ_D1);
-			else if (to == SQ_C8)
-				movePiece(SQ_A8, SQ_D8);
-		}
+			removePiece(capturedEnPassantSq(side, to));
+		else if (flags.kSideCastle())
+			movePiece(shiftToKingRank(side, SQ_H1), shiftToKingRank(side, SQ_F1));
+		else if (flags.qSideCastle())
+			movePiece(shiftToKingRank(side, SQ_A1), shiftToKingRank(side, SQ_D1));
 
 		if (const PieceType capturedType = move.capturedPiece();
 			capturedType != PieceType::NO_PIECE_TYPE)

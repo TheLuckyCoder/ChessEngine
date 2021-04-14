@@ -15,7 +15,7 @@ class ChessApp : Application() {
         super.onCreate()
 
         GlobalScope.launch(Dispatchers.IO) {
-            val dataStore = SettingsDataStore(this@ChessApp)
+            val dataStore = SettingsDataStore.get(this@ChessApp)
 
             try {
                 copyBook()

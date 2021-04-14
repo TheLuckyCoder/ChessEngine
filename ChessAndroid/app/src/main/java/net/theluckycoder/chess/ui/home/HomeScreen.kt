@@ -2,8 +2,7 @@ package net.theluckycoder.chess.ui.home
 
 import android.content.Intent
 import android.content.res.Configuration
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -47,8 +46,7 @@ fun HomeScreen(
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
-                    if (showMovesHistory)
-                        MovesHistory(movesHistory, currentMoveIndex)
+                    MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
                 },
             ) { padding ->
                 Row(
@@ -73,8 +71,7 @@ fun HomeScreen(
                 topBar = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         TopBar()
-                        if (showMovesHistory)
-                            MovesHistory(movesHistory, currentMoveIndex)
+                        MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
                     }
                 },
                 bottomBar = { BottomBar() }
@@ -118,10 +115,17 @@ private fun TopBar() = TopAppBar(
     }
 )
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun MovesHistory(
+    show: Boolean,
     movesHistory: List<Move>,
     currentMoveIndex: Int,
+) = AnimatedVisibility(
+    visible = show,
+    enter = fadeIn() + expandIn(Alignment.TopCenter),
+    exit = shrinkOut(Alignment.TopCenter) + fadeOut(),
+    initiallyVisible = false,
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -172,12 +176,8 @@ private fun MovesHistory(
                         )
                     }
                 }
-
-            } else {
-                item {
-                    Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp)
-                }
-            }
+            } else
+                item { Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp) }
         }
     )
 }

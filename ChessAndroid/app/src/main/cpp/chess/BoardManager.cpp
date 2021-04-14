@@ -150,8 +150,8 @@ GameState BoardManager::getBoardState()
 	const Color colorToMove = _currentBoard.colorToMove;
 
 	const bool otherInCheck =
-		(_currentBoard.generateAttackers(_currentBoard.getKingSq(colorToMove)) &
-		 _currentBoard.getPieces(~colorToMove)).notEmpty();
+		(_currentBoard.generateAttackers(_currentBoard.getKingSq(~colorToMove)) &
+		 _currentBoard.getPieces(colorToMove)).notEmpty();
 
 	if (_currentBoard.isSideInCheck() && otherInCheck)
 		return GameState::INVALID;
@@ -161,12 +161,12 @@ GameState BoardManager::getBoardState()
 
 	if (moveList.empty())
 	{
-		const auto winner = (colorToMove == WHITE ? GameState::WINNER_BLACK : GameState::WINNER_WHITE);
+		const auto winner = (colorToMove == WHITE) ? GameState::WINNER_BLACK : GameState::WINNER_WHITE;
 		return (_currentBoard.isSideInCheck() ? winner : GameState::DRAW);
 	}
 
 	if (_currentBoard.isSideInCheck())
-		return colorToMove == WHITE ? GameState::WHITE_IN_CHECK : GameState::BLACK_IN_CHECK;
+		return (colorToMove == WHITE) ? GameState::WHITE_IN_CHECK : GameState::BLACK_IN_CHECK;
 
 	return GameState::NONE;
 }

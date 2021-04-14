@@ -21,7 +21,7 @@ import kotlin.time.ExperimentalTime
 class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     private val initialized = AtomicBoolean(false)
-    val dataStore = SettingsDataStore(application)
+    val dataStore = SettingsDataStore.get(application)
 
     /*
      * Chess Game Data
@@ -67,13 +67,15 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             movesHistoryFlow.collectLatest {
                 ensureActive()
                 val state = gameState.value
-
-                if (it.isNotEmpty() && (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE))
-                    SaveManager.saveToFileAsync(getApplication(), playerPlayingWhite.value, it)
+                if (it.isNotEmpty() && (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE)) {
+                    withContext(Dispatchers.Main.immediate) {
+                        SaveManager.saveToFileAsync(getApplication(), playerPlayingWhite.value, it)
+                    }
+                }
             }
         }
     }
@@ -89,7 +91,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             SaveManager.loadFromFile(getApplication())
         }
 
-        clearTiles()
+        tilesFlow.value = getEmptyTiles()
     }
 
     private fun updatePiecesList() {
@@ -150,13 +152,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-    private fun clearTiles() {
-        val tiles = ArrayList<Tile>(64)
-        for (i in 0 until 64)
-            tiles.add(Tile(i, Tile.State.None))
-        tilesFlow.value = tiles
-    }
-
     @Suppress("unused")
     @Keep // Called by native code
     private fun boardChangedCallback(gameState: Int) {
@@ -171,13 +166,33 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
         playerPlayingWhiteFlow.value = Native.isPlayerWhite()
         isEngineThinkingFlow.value = Native.isWorking()
-        clearTiles()
-        updatePiecesList()
+
         gameStateFlow.value = state
-        movesHistoryFlow.value = Native.getMovesHistory().toList()
-        currentMoveIndexFlow.value = Native.getCurrentMoveIndex()
+        val movesHistoryList = Native.getMovesHistory().toList()
+        movesHistoryFlow.value = movesHistoryList
+        val moveIndex = Native.getCurrentMoveIndex()
+        currentMoveIndexFlow.value = moveIndex
         debugStatsFlow.value = DebugStats.get()
+
+        val currentIndex = currentMoveIndexFlow.value
+        val currentMove = movesHistoryList.getOrNull(currentIndex)
+        tilesFlow.value = if (currentMove != null) {
+            getEmptyTiles().map {
+                if (it.square.toByte() == currentMove.from || it.square.toByte() == currentMove.to)
+                    it.copy(state = Tile.State.Moved)
+                else it
+            }
+        } else
+            getEmptyTiles()
+
+        updatePiecesList()
     }
 
     private external fun initBoardNative(playerPlayingWhite: Boolean)
+
+    private companion object {
+        private val emptyTiles = Array(64) { Tile(it, Tile.State.None) }
+
+        fun getEmptyTiles() = emptyTiles.toList()
+    }
 }

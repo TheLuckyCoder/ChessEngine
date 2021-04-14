@@ -1,6 +1,7 @@
 package net.theluckycoder.chess.ui.preferences
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,7 +24,6 @@ import net.theluckycoder.chess.R
 import net.theluckycoder.chess.ui.ChessMaterialTheme
 import net.theluckycoder.chess.utils.SettingsDataStore
 import net.theluckycoder.chess.utils.browseUrl
-import net.theluckycoder.chess.utils.settingsDataStore
 
 class PreferencesActivity : ComponentActivity() {
 
@@ -46,11 +46,11 @@ class PreferencesActivity : ComponentActivity() {
 private fun PreferencesActivityContent() = Scaffold(
     topBar = { Toolbar() }
 ) { padding ->
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext as Application
 
     Box(modifier = Modifier.padding(padding)) {
         PreferenceScreen(
-            dataStore = context.settingsDataStore,
+            dataStore = SettingsDataStore.get(context).dataStore(),
             items = getPreferenceItems(context),
         )
     }

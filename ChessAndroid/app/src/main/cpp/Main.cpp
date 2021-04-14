@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "Log.h"
-#include "Cache.h"
+#include "JniCache.h"
 #include "AndroidBuffer.h"
 
 #include "chess/BoardManager.h"
