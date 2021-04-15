@@ -303,7 +303,7 @@ namespace PolyBook
 				continue;
 
 			const auto polyPiece = toPolyPiece(piece);
-			const usize index = 64 * polyPiece + 8 * rankOf(square) + fileOf(square);
+			const auto index = 64 * polyPiece + 8 * rankOf(square) + fileOf(square);
 
 			result ^= PolyKeys::Random64[index];
 		}

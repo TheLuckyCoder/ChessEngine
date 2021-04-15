@@ -10,4 +10,5 @@ enum class GameState {
     DRAW,
     WHITE_IN_CHESS,
     BLACK_IN_CHESS,
+    INVALID,
 }

@@ -48,7 +48,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
      * UI
      */
     val showNewGameDialog = mutableStateOf(false)
-    val showImportExportDialog = mutableStateOf(false)
+    val showShareDialog = mutableStateOf(false)
+    val showImportDialog = mutableStateOf(false)
 
     init {
         initBoard()
@@ -117,7 +118,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     fun makeMove(move: Move) {
         Native.makeMove(move.content)
-        isEngineThinkingFlow.value = Native.isWorking()
+        isEngineThinkingFlow.value = Native.isEngineWorking()
 
         tilesFlow.value = tilesFlow.value
             .map { tile ->
@@ -161,11 +162,12 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             3 -> GameState.DRAW
             4 -> GameState.WHITE_IN_CHESS
             5 -> GameState.BLACK_IN_CHESS
+            10 -> GameState.INVALID
             else -> GameState.NONE
         }
 
         playerPlayingWhiteFlow.value = Native.isPlayerWhite()
-        isEngineThinkingFlow.value = Native.isWorking()
+        isEngineThinkingFlow.value = Native.isEngineWorking()
 
         gameStateFlow.value = state
         val movesHistoryList = Native.getMovesHistory().toList()
@@ -176,6 +178,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
         val currentIndex = currentMoveIndexFlow.value
         val currentMove = movesHistoryList.getOrNull(currentIndex)
+
         tilesFlow.value = if (currentMove != null) {
             getEmptyTiles().map {
                 if (it.square.toByte() == currentMove.from || it.square.toByte() == currentMove.to)

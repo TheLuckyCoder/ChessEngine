@@ -104,7 +104,7 @@ Java_net_theluckycoder_chess_ChessViewModel_initBoardNative(JNIEnv *pEnv, jobjec
 // Native Class
 
 external JNIEXPORT jboolean JNICALL
-Java_net_theluckycoder_chess_Native_isWorking(JNIEnv *, jobject)
+Java_net_theluckycoder_chess_Native_isEngineWorking(JNIEnv *, jobject)
 {
 	return static_cast<jboolean>(BoardManager::isWorking());
 }
@@ -143,7 +143,7 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 {
 	const static auto constructorId = pEnv->GetMethodID(JniCache::moveClass, "<init>", "(IBBBBBB)V");
 
-	const auto possibleMoves = BoardManager::getPossibleMoves(toSquare(square));
+	const auto possibleMoves = BoardManager::getPossibleMoves(toSquare(u8(square)));
 
 	jobjectArray result =
 		pEnv->NewObjectArray(static_cast<jsize>(possibleMoves.size()), JniCache::moveClass, nullptr);
@@ -204,7 +204,7 @@ Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jint move)
 }
 
 external JNIEXPORT void JNICALL
-Java_net_theluckycoder_chess_Native_forceMove(JNIEnv *, jobject)
+Java_net_theluckycoder_chess_Native_makeEngineMove(JNIEnv *, jobject)
 {
 	BoardManager::makeEngineMove();
 }

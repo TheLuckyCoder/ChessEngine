@@ -6,7 +6,7 @@ import net.theluckycoder.chess.model.Move
 
 object Native {
 
-    external fun isWorking(): Boolean
+    external fun isEngineWorking(): Boolean
 
     external fun isPlayerWhite(): Boolean
 
@@ -16,7 +16,7 @@ object Native {
 
     external fun makeMove(move: Int)
 
-    external fun forceMove()
+    external fun makeEngineMove()
 
     external fun stopSearch()
 

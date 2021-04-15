@@ -1,14 +1,10 @@
 package net.theluckycoder.chess.ui.home
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,8 +29,11 @@ fun HomeDialogs(chessViewModel: ChessViewModel = viewModel()) {
     if (chessViewModel.showNewGameDialog.value)
         NewGameDialog(chessViewModel)
 
-    if (chessViewModel.showImportExportDialog.value)
-        ImportExportDialog(chessViewModel)
+    if (chessViewModel.showShareDialog.value)
+        SharePositionDialog(chessViewModel)
+
+    if (chessViewModel.showImportDialog.value)
+        ImportPositionDialog(chessViewModel)
 
     val gameState by chessViewModel.gameState.collectAsState()
     when (gameState) {
@@ -89,10 +88,10 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
                 val level = difficultyLevel.roundToInt()
                 chessViewModel.updateDifficulty(level)
 
-                if (Native.isWorking()) {
+                if (Native.isEngineWorking()) {
                     Native.stopSearch()
                     thread {
-                        while (Native.isWorking())
+                        while (Native.isEngineWorking())
                             Thread.sleep(20)
 
                         chessViewModel.initBoard(playerWhite)
@@ -115,16 +114,12 @@ private fun NewGameDialog(chessViewModel: ChessViewModel = viewModel()) {
 }
 
 @Composable
-private fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
+private fun SharePositionDialog(chessViewModel: ChessViewModel = viewModel()) {
     val currentFen = remember { Native.getCurrentFen() }
 
-    var newFen by remember { mutableStateOf("") }
-    val sidesToggleIndex = remember { mutableStateOf(0) }
-    var failedToLoad by remember { mutableStateOf(false) }
-
     AlertDialog(
-        onDismissRequest = { chessViewModel.showImportExportDialog.value = false },
-        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_position)) },
+        onDismissRequest = { chessViewModel.showShareDialog.value = false },
+        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_position_share)) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
@@ -132,48 +127,59 @@ private fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
                     color = MaterialTheme.colors.secondary
                 )
                 Text(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                     text = currentFen,
-                    fontSize = 15.sp
+                    fontSize = 14.5.sp
                 )
-
-                val context = LocalContext.current
-                val clipboardManager = LocalClipboardManager.current
-                TextButton(
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(top = 4.dp, bottom = 16.dp),
-                    onClick = {
-                        clipboardManager.setText(AnnotatedString(currentFen))
-                        Toast.makeText(context, R.string.fen_position_copied, Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                ) {
-                    Text(text = stringResource(id = R.string.action_copy))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { chessViewModel.showShareDialog.value = false }
+            ) {
+                Text(text = stringResource(id = R.string.action_close))
+            }
+        },
+        confirmButton = {
+            val context = LocalContext.current
+            val clipboardManager = LocalClipboardManager.current
+            TextButton(
+                onClick = {
+                    clipboardManager.setText(AnnotatedString(currentFen))
+                    Toast.makeText(context, R.string.fen_position_copied, Toast.LENGTH_SHORT)
+                        .show()
+                    chessViewModel.showShareDialog.value = false
                 }
+            ) {
+                Text(text = stringResource(id = R.string.action_copy))
+            }
+        }
+    )
+}
 
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .requiredHeight(1.dp)
-                        .background(LocalContentColor.current)
-                        .clip(RoundedCornerShape(1.dp))
-                )
+@Composable
+private fun ImportPositionDialog(chessViewModel: ChessViewModel = viewModel()) {
+    var newFen by remember { mutableStateOf("") }
+    val sidesToggleIndex = remember { mutableStateOf(0) }
+    var failedToLoad by remember { mutableStateOf(false) }
 
-                Text(
-                    modifier = Modifier.padding(top = 16.dp),
-                    text = stringResource(id = R.string.fen_position_load),
-                    color = MaterialTheme.colors.secondary
-                )
-
+    AlertDialog(
+        onDismissRequest = { chessViewModel.showImportDialog.value = false },
+        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_position_load)) },
+        text = {
+            Column(Modifier.fillMaxWidth()) {
                 TextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     value = newFen,
                     onValueChange = { newFen = it },
                     placeholder = { Text(text = "FEN") },
                     isError = failedToLoad
+                )
+
+                Text(
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    text = stringResource(id = R.string.side),
+                    color = MaterialTheme.colors.secondary
                 )
 
                 ChooseSidesToggle(sidesToggleIndex = sidesToggleIndex)
@@ -187,7 +193,7 @@ private fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
             ) {
                 TextButton(
                     modifier = Modifier.weight(1f),
-                    onClick = { chessViewModel.showImportExportDialog.value = false }
+                    onClick = { chessViewModel.showImportDialog.value = false }
                 ) {
                     Text(text = stringResource(id = R.string.action_close))
                 }
@@ -196,6 +202,15 @@ private fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
                 Button(
                     modifier = Modifier.weight(1f),
                     onClick = {
+                        if (newFen.isBlank()) {
+                            Toast.makeText(
+                                context,
+                                R.string.fen_position_error_empty,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
                         val playerWhite = when (sidesToggleIndex.value) {
                             0 -> true
                             1 -> false
@@ -204,7 +219,7 @@ private fun ImportExportDialog(chessViewModel: ChessViewModel = viewModel()) {
 
                         if (Native.loadFen(playerWhite, newFen)) {
                             failedToLoad = false
-                            chessViewModel.showImportExportDialog.value = false
+                            chessViewModel.showImportDialog.value = false
                             Toast.makeText(
                                 context,
                                 R.string.fen_position_loaded,
@@ -230,6 +245,7 @@ private fun GameFinishedDialog(gameState: GameState) {
         GameState.WINNER_WHITE -> R.string.victory_white
         GameState.WINNER_BLACK -> R.string.victory_black
         GameState.DRAW -> R.string.draw
+        GameState.INVALID -> R.string.invalid_game
         else -> return
     }
 

@@ -12,11 +12,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.animatedVectorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -25,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.Native
@@ -86,10 +89,10 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
 @Preview
 @Composable
-private fun TopBar() = TopAppBar(
+private fun TopBar(viewModel: ChessViewModel = viewModel()) = TopAppBar(
     modifier = Modifier.fillMaxWidth().height(dimensionResource(id = R.dimen.toolbar_height)),
     backgroundColor = MaterialTheme.colors.primary,
     title = {
@@ -100,14 +103,27 @@ private fun TopBar() = TopAppBar(
             modifier = Modifier.padding(end = 16.dp)
         )
 
-        val viewModel: ChessViewModel = viewModel()
         val isThinking by viewModel.isEngineThinking.collectAsState(false)
-        AnimatedVisibility(visible = isThinking) {
+
+        AnimatedVisibility(
+            visible = isThinking,
+            enter = expandIn(Alignment.CenterStart),
+            exit = shrinkOut(Alignment.CenterStart),
+        ) {
+            val scope = rememberCoroutineScope()
+            val icon = animatedVectorResource(R.drawable.ic_animated_hourglass)
+            var atEnd by remember { mutableStateOf(false) }
+
             Icon(
-                painter = painterResource(id = R.drawable.ic_engine_working),
+                painter = icon.painterFor(atEnd = atEnd),
                 modifier = Modifier.size(18.dp),
                 contentDescription = null,
             )
+
+            scope.launch {
+                delay(250)
+                atEnd = true
+            }
         }
     },
     actions = {
@@ -183,7 +199,7 @@ private fun MovesHistory(
 }
 
 @Composable
-private fun AppBarActions() {
+private fun AppBarActions(chessViewModel: ChessViewModel = viewModel()) {
     var showActionsMenu by remember { mutableStateOf(false) }
 
     IconButton(onClick = { showActionsMenu = true }) {
@@ -199,9 +215,16 @@ private fun AppBarActions() {
             ) {
                 DropdownMenuItem(onClick = {
                     showActionsMenu = false
-                    Native.forceMove()
+                    chessViewModel.showImportDialog.value = true
                 }) {
-                    Text(text = stringResource(id = R.string.action_force_move))
+                    Text(text = stringResource(id = R.string.fen_position_load))
+                }
+
+                DropdownMenuItem(onClick = {
+                    showActionsMenu = false
+                    Native.makeEngineMove()
+                }) {
+                    Text(text = stringResource(id = R.string.action_make_engine_move))
                 }
             }
         }
@@ -234,20 +257,29 @@ private fun BottomBar(
         )
     }
 
+    val movesHistory by viewModel.movesHistory.collectAsState()
+    val movesIndex by viewModel.currentMoveIndex.collectAsState()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(onClick = { Native.undoMoves() }) {
+        IconButton(
+            onClick = { Native.undoMoves() },
+            enabled = movesIndex >= 0,
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_undo),
                 contentDescription = stringResource(id = R.string.action_undo_move)
             )
         }
 
-        IconButton(onClick = { Native.redoMoves() }) {
+        IconButton(
+            onClick = { Native.redoMoves() },
+            enabled = movesIndex != movesHistory.lastIndex,
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_redo),
                 contentDescription = stringResource(id = R.string.action_redo_move)
@@ -264,10 +296,10 @@ private fun BottomBar(
         }
 
         IconButton(
-            onClick = { viewModel.showImportExportDialog.value = true }
+            onClick = { viewModel.showShareDialog.value = true }
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_import_export),
+                painter = painterResource(id = R.drawable.ic_share),
                 contentDescription = null
             )
         }

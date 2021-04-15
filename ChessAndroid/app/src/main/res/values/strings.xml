@@ -13,12 +13,11 @@
     <string name="victory_white">White has won!</string>
     <string name="victory_black">Black has won!</string>
     <string name="draw">Draw</string>
+    <string name="invalid_game">Oops! The position is invalid</string>
 
     <!-- Actions -->
     <string name="action_start">Start</string>
-    <string name="action_load_fen">Load FEN Position</string>
-    <string name="action_export_fen">Export FEN Position</string>
-    <string name="action_force_move">Force Move</string>
+    <string name="action_make_engine_move">Make Engine Move</string>
     <string name="action_load">Load</string>
     <string name="action_more_options">More Options</string>
     <string name="action_undo_move">Undo Move</string>
@@ -27,11 +26,12 @@
     <string name="action_copy">Copy</string>
 
     <!-- FEN -->
-    <string name="fen_position">FEN String Position</string>
-    <string name="fen_position_load">Load FEN Position:</string>
+    <string name="fen_position_share">Share FEN Position</string>
+    <string name="fen_position_current">Current\'s game FEN Position:</string>
+    <string name="fen_position_load">Load FEN Position</string>
     <string name="fen_position_loaded">FEN Position Loaded</string>
     <string name="fen_position_error">FEN Position could not be loaded</string>
-    <string name="fen_position_current">Current\'s game FEN Position:</string>
+    <string name="fen_position_error_empty">FEN Position can not be empty</string>
     <string name="fen_position_copied">FEN Position copied to Clipboard</string>
     <string name="error_fen_position_invalid">FEN Position might be invalid</string>
 

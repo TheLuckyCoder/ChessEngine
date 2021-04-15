@@ -5,7 +5,7 @@ namespace
 	enum class GenType
 	{
 		ALL,
-		EVASIONS
+		CHECK_EVASION
 	};
 
 	template <Color Us>
@@ -21,7 +21,7 @@ namespace
 		const Bitboard pawnsOnLastRank = pawns & LastRank;
 		const Bitboard pawnsNotOnLastRank = pawns & ~pawnsOnLastRank;
 
-		const Bitboard enemies = type == GenType::EVASIONS ? board.getKingAttackers() : board.getPieces(Them);
+		const Bitboard enemies = type == GenType::CHECK_EVASION ? board.getKingAttackers() : board.getPieces(Them);
 		const Bitboard emptySquares = ~board.getPieces();
 
 		// Promotions
@@ -31,7 +31,7 @@ namespace
 			auto left = pawnsOnLastRank.shift<Forward, WEST>() & enemies;
 			auto right = pawnsOnLastRank.shift<Forward, EAST>() & enemies;
 
-			if (type == GenType::EVASIONS)
+			if (type == GenType::CHECK_EVASION)
 				forward &= targets;
 
 			const auto makePromotions = [&](Square from, Square to)
@@ -75,7 +75,7 @@ namespace
 		{
 			const auto enPassant = Bitboard::fromSquare(enPassantSq);
 
-			if (type != GenType::EVASIONS || (targets & enPassant.shift<Forward>()).empty())
+			if (type != GenType::CHECK_EVASION || (targets & enPassant.shift<Forward>()).empty())
 			{
 				auto pawnsThatCapture = Attacks::pawnAttacks<Them>(enPassant) & pawnsNotOnLastRank;
 
@@ -92,7 +92,7 @@ namespace
 			auto left = pawnsNotOnLastRank.shift<Forward, WEST>() & enemies;
 			auto right = pawnsNotOnLastRank.shift<Forward, EAST>() & enemies;
 
-			if (type == GenType::EVASIONS)
+			if (type == GenType::CHECK_EVASION)
 			{
 				left &= targets;
 				right &= targets;
@@ -122,7 +122,7 @@ namespace
 		auto pushes = pawnsNotOnLastRank.shift<Forward>() & emptySquares;
 		auto doublePushes = (pushes & ThirdRank).template shift<Forward>() & emptySquares;
 
-		if (type == GenType::EVASIONS)
+		if (type == GenType::CHECK_EVASION)
 		{
 			pushes &= targets;
 			doublePushes &= targets;
@@ -294,7 +294,7 @@ namespace
 
 			const Square checkSq = kingAttackers.bitScanForward();
 			targets &= Bitboard::fromBetween(kingSq, checkSq) | kingAttackers;
-			type = GenType::EVASIONS;
+			type = GenType::CHECK_EVASION;
 		}
 
 		generatePawnMoves<Us>(board, moveList, targets, type);

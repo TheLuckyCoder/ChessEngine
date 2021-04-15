@@ -53,14 +53,7 @@ data class Move(
             flags.kSideCastle -> append("0-0")
             flags.qSideCastle -> append("0-0-0")
             else -> {
-                val piece = when (pieceType) {
-                    Piece.KNIGHT -> 'N'
-                    Piece.BISHOP -> 'B'
-                    Piece.ROOK -> 'R'
-                    Piece.QUEEN -> 'Q'
-                    Piece.KING -> 'K'
-                    else -> ' '
-                }
+                val piece = getPieceChar(pieceType)
 
                 if (piece != ' ')
                     append(piece)
@@ -72,7 +65,22 @@ data class Move(
                 val y = '1' + to / 8
                 append(x)
                 append(y)
+
+                if (flags.promotion) {
+                    append('=')
+                    append(getPieceChar(promotedPieceType))
+                    append('+')
+                }
             }
         }
+    }
+
+    private fun getPieceChar(piece: Byte) = when (piece) {
+        Piece.KNIGHT -> 'N'
+        Piece.BISHOP -> 'B'
+        Piece.ROOK -> 'R'
+        Piece.QUEEN -> 'Q'
+        Piece.KING -> 'K'
+        else -> ' '
     }
 }
