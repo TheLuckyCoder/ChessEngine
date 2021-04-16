@@ -58,6 +58,11 @@ data class Move(
                 if (piece != ' ')
                     append(piece)
 
+                if (flags.enPassant) {
+                    append('a' + from % 8)
+                    append('x')
+                }
+
                 if (flags.capture)
                     append('x')
 

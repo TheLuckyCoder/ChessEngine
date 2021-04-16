@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 @ExperimentalMaterialApi
 @Composable
@@ -47,7 +48,7 @@ fun SeekBarIntPreference(
             PreferenceSummary(
                 item = item,
                 sliderValue = currentValue.value,
-                onValueChanged = { currentValue.value = it.toInt() },
+                onValueChanged = { currentValue.value = it.roundToInt() },
                 onValueChangeFinished = { onValueChanged(currentValue.value) }
             )
         },

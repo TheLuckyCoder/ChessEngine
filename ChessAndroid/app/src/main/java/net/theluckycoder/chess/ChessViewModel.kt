@@ -160,8 +160,8 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             1 -> GameState.WINNER_WHITE
             2 -> GameState.WINNER_BLACK
             3 -> GameState.DRAW
-            4 -> GameState.WHITE_IN_CHESS
-            5 -> GameState.BLACK_IN_CHESS
+            4 -> GameState.WHITE_IN_CHECK
+            5 -> GameState.BLACK_IN_CHECK
             10 -> GameState.INVALID
             else -> GameState.NONE
         }

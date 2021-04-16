@@ -509,12 +509,12 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		}
 
 		const auto hangingPieces = ~_allAttacks[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
-		const auto hangingScore = HANGING * (poorlyDefended & hangingPieces).popcount();
+		const auto hangingScore = HANGING * (poorlyDefended & hangingPieces).count();
 
 		totalValue += hangingScore;
 
 		const auto weakQueenScore =
-			WEAK_QUEEN_PROTECTION * (poorlyDefended & _pieceAttacks[Them][QUEEN]).popcount();
+			WEAK_QUEEN_PROTECTION * (poorlyDefended & _pieceAttacks[Them][QUEEN]).count();
 		totalValue += weakQueenScore;
 
 		if constexpr (Trace)
@@ -541,10 +541,10 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 			| (_pieceAttacks[Us][ROOK] & Attacks::rookAttacks(sq, board.getPieces()));
 
 		const auto knightAttacksScore =
-			QUEEN_THREAT_BY_KNIGHT * (knightAttacks & safeSpots).popcount();
+			QUEEN_THREAT_BY_KNIGHT * (knightAttacks & safeSpots).count();
 		const auto sliderAttacksScore =
 			QUEEN_THREAT_BY_SLIDER *
-			(sliderAttacks & safeSpots & _attacksMultiple[Us]).popcount() *
+				(sliderAttacks & safeSpots & _attacksMultiple[Us]).count() *
 			(1 + imbalance);
 
 		totalValue += knightAttacksScore + sliderAttacksScore;
@@ -558,12 +558,12 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 	const auto safe = ~_allAttacks[Them] | _allAttacks[Us];
 	const auto safePawnsAttacks =
         Attacks::pawnAttacks<Us>(board.getPieces(PAWN, Us) & safe) & nonPawnEnemies;
-	const auto safePawnThreatScore = THREAT_BY_SAFE_PAWN * safePawnsAttacks.popcount();
+	const auto safePawnThreatScore = THREAT_BY_SAFE_PAWN * safePawnsAttacks.count();
 	totalValue += safePawnThreatScore;
 
 	const auto restrictedMovement = _allAttacks[Them] & _allAttacks[Us] & ~stronglyProtected;
 	const Score restrictedMovementScore =
-		RESTRICTED_PIECE_MOVEMENT * restrictedMovement.popcount();
+		RESTRICTED_PIECE_MOVEMENT * restrictedMovement.count();
 	totalValue += restrictedMovementScore;
 
 	if constexpr (Trace)
@@ -600,7 +600,7 @@ Score Eval<Trace>::evaluatePawn(const Square square) const noexcept
 	if ((support | connected).notEmpty())
 	{
 		const int connectedScore = PAWN_CONNECTED[rank] * (2 + (connected).notEmpty() - (opposed).notEmpty())
-								   + 21 * support.popcount();
+								   + 21 * support.count();
 
 		value += Score(connectedScore, connectedScore * (rank - 2) / 4);
 	} else if (neighbours.empty())
@@ -651,10 +651,10 @@ Score Eval<Trace>::evaluateKnight(const Square square) const noexcept
 			&& (attacks & targets).empty()        // no relevant attacks
 			&& (!(targets & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).several()))
 			value += UNCONTESTED_OUTPOST *
-					 (pawns & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).popcount();
+				(pawns & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).count();
 	}
 
-	const int mobility = (attacks & _mobilityArea[Us]).popcount();
+	const int mobility = (attacks & _mobilityArea[Us]).count();
 	value += KNIGHT_MOBILITY[mobility];
 
 	if constexpr (Trace)
@@ -674,7 +674,7 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 	Score value = PSQT[BISHOP][square];
 
 	const i32 mobility = (Attacks::bishopAttacks(square, board.getPieces()) &
-						  _mobilityArea[Us]).popcount();
+						  _mobilityArea[Us]).count();
 	value += BISHOP_MOBILITY[mobility];
 
 	if constexpr (Trace)
@@ -687,15 +687,15 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 
 	const i32 pawnsOnTheSameColorSquares =
 		(board.getPieces(PAWN, Us) &
-         ((DARK_SQUARES & bb).notEmpty() ? DARK_SQUARES : ~DARK_SQUARES)).popcount();
+		 ((DARK_SQUARES & bb).notEmpty() ? DARK_SQUARES : ~DARK_SQUARES)).count();
 	value -=
 		BISHOP_PAWNS[distanceToFileEdge(square)] *
 		pawnsOnTheSameColorSquares
-		* ((_pieceAttacks[Us][PAWN] & bb).empty() + (blocked & CENTER_FILES).popcount());
+		* ((_pieceAttacks[Us][PAWN] & bb).empty() + (blocked & CENTER_FILES).count());
 
 	// Enemy pawns x-rayed
 	value -= BISHOP_XRAY_PAWNS *
-			 (Attacks::bishopXRayAttacks(square) & board.getPieces(PAWN, Them)).popcount();
+		(Attacks::bishopXRayAttacks(square) & board.getPieces(PAWN, Them)).count();
 
 	// Long Diagonal Bishop
 	const auto centerAttacks =
@@ -719,7 +719,7 @@ Score Eval<Trace>::evaluateRook(const Square square) const noexcept
 	Score value = PSQT[ROOK][square];
 
 	const i32 mobility = (Attacks::rookAttacks(square, board.getPieces()) &
-						  _mobilityArea[Us]).popcount();
+						  _mobilityArea[Us]).count();
 	value += ROOK_MOBILITY[mobility];
 
 	if constexpr (Trace)
@@ -751,7 +751,7 @@ Score Eval<Trace>::evaluateQueen(const Square square) const noexcept
 	Score value = PSQT[QUEEN][square];
 
 	const i32 mobility = (Attacks::queenAttacks(square, board.getPieces()) &
-						  _mobilityArea[Us]).popcount();
+						  _mobilityArea[Us]).count();
 	value += QUEEN_MOBILITY[mobility];
 
 	if constexpr (Trace)
@@ -784,7 +784,7 @@ Score Eval<Trace>::evaluateKing() const noexcept
 	}
 
 	value += KING_PAWN_SHIELD *
-			 (MASK_PAWN_SHIELD[Us][square] & board.getPieces(PAWN, Us)).popcount();
+		(MASK_PAWN_SHIELD[Us][square] & board.getPieces(PAWN, Us)).count();
 
 	return value;
 }

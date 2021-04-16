@@ -37,6 +37,9 @@ class SettingsDataStore private constructor(private val application: Application
     fun showMoveHistory(): Flow<Boolean> =
         dataStore().data.map { it[SHOW_MOVES_HISTORY] ?: DEFAULT_MOVES_HISTORY }
 
+    fun showPieceDestination(): Flow<Boolean> =
+        dataStore().data.map { it[PIECE_DESTINATIONS] ?: DEFAULT_PIECE_DESTINATIONS }
+
     suspend fun setDifficultyLevel(value: Int) = dataStore().edit { preferences ->
         preferences[SEARCH_DEPTH] = if (value == 0 || value == 1) value + 2 else value + 3
         preferences[QUIET_SEARCH] = value != 0
@@ -84,6 +87,7 @@ class SettingsDataStore private constructor(private val application: Application
 
         val SHOW_COORDINATES = booleanPreferencesKey("show_coordinates")
         val SHOW_MOVES_HISTORY = booleanPreferencesKey("show_moves_history")
+        val PIECE_DESTINATIONS = booleanPreferencesKey("piece_destinations")
 
         val SEARCH_DEPTH = intPreferencesKey("search_depth")
         val QUIET_SEARCH = booleanPreferencesKey("quiet_search")
@@ -96,6 +100,7 @@ class SettingsDataStore private constructor(private val application: Application
 
         const val DEFAULT_SHOW_COORDINATES = true
         const val DEFAULT_MOVES_HISTORY = true
+        const val DEFAULT_PIECE_DESTINATIONS = true
         const val DEFAULT_SEARCH_DEPTH = 6
         const val DEFAULT_QUIET_SEARCH = true
         const val DEFAULT_SEARCH_TIME = 10

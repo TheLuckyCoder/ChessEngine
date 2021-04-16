@@ -237,7 +237,7 @@ public:
 		return toSquare(Bits::bitScanForward(_value));
 	}
 
-	[[nodiscard]] constexpr i32 popcount() const noexcept
+	[[nodiscard]] constexpr i32 count() const noexcept
 	{
 		return std::popcount(_value);
 	}

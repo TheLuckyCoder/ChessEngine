@@ -35,6 +35,7 @@ void Uci::loop()
 
 		is >> token;
 
+		// UCI Commands
 		if (token == "isready")
 			std::cout << "readyok\n";
 		else if (token == "position" || token == "pos")
@@ -43,9 +44,6 @@ void Uci::loop()
 			parseGo(is);
 		else if (token == "uci")
 			printEngineInfo();
-		else if (token == "polykey")
-			std::cout << std::hex << "PolyKey: " << PolyBook::getKeyFromBoard(_board) << '\n'
-					  << std::dec;
 		if (token == "ucinewgame")
 		{
 			_board.setToStartPos();
@@ -55,11 +53,22 @@ void Uci::loop()
 			setOption(is);
 		else if (token == "board")
 			std::cout << _board.toString() << std::endl;
+		else if (token == "stop")
+		{
+			Search::stopSearch();
+			_searchThread.join();
+			std::cout << "Joined Thread\n";
+		} else if (token == "quit")
+			quit = true;
+
+			// Non-UCI Commands
 		else if (token == "usermove")
 		{
 			is >> token;
 			if (token.empty())
 				std::cout << "No move specified";
+			else if (token == "undo")
+				_board.undoMove();
 			else if (const Move move = parseMove(_board, token); move.empty())
 				std::cout << "Move could not be parsed";
 			else if (!MoveList(_board).contains(move))
@@ -73,7 +82,9 @@ void Uci::loop()
 			}
 
 			std::cout << _board.toString() << std::endl;
-		} else if (token == "debug")
+		} else if (token == "polykey")
+			std::cout << std::hex << "PolyKey: " << PolyBook::getKeyFromBoard(_board) << '\n' << std::dec;
+		else if (token == "debug")
 		{
 			is >> token;
 
@@ -91,16 +102,7 @@ void Uci::loop()
 			}
 
 			std::cout << std::endl;
-		} else if (token == "stop")
-		{
-			Search::stopSearch();
-			_searchThread.join();
-			std::cout << "Joined Thread\n";
-		} else if (token == "quit")
-			quit = true;
-
-			// Non-Uci Commands
-		else if (token == "evaltest")
+		} else if (token == "evaltest")
 		{
 			const auto results = Tests::runEvaluationTests();
 			if (results.empty())
@@ -240,7 +242,9 @@ void Uci::parsePosition(std::istringstream &is)
 			fen += token;
 			fen += ' ';
 		}
-		_board.setToFen(fen);
+
+		if (!fen.empty())
+			_board.setToFen(fen);
 	} else
 	{
 		// Load the default position anyhow
@@ -264,7 +268,7 @@ void Uci::parsePosition(std::istringstream &is)
 
 void Uci::printEngineInfo()
 {
-	std::cout << "id name TestEngine\n"
-			  << "id author TheLuckyCoder\n"
+	std::cout << "id name LuckyEngine\n"
+			  << "id author Filea (TheLuckyCoder) Razvan\n"
 			  << "uciok" << std::endl;
 }

@@ -47,7 +47,7 @@ bool Board::isDrawn() const noexcept
 
 	return (pawns | rooks | queens).empty()
 		   && (!(getPieces(WHITE).several()) || !(getPieces(BLACK).several()))
-		   && (!((knight | bishop).several()) || (bishop.empty() && knight.popcount() <= 2));
+		   && (!((knight | bishop).several()) || (bishop.empty() && knight.count() <= 2));
 }
 
 Phase Board::getPhase() const noexcept
@@ -589,6 +589,8 @@ std::string Board::toString() const noexcept
 	}
 
 	ss << Delimiter;
+
+	ss << "\nFEN: " << getFen() << '\n';
 
 	return ss.str();
 }

@@ -77,6 +77,12 @@ private fun getPreferenceItems(
                 icon = painterResource(id = R.drawable.ic_pref_moves_history),
                 defaultValue = SettingsDataStore.DEFAULT_SHOW_COORDINATES,
             ),
+            SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_piece_destinations),
+                summary = stringResource(id = R.string.pref_piece_destinations_desc),
+                prefKey = SettingsDataStore.PIECE_DESTINATIONS,
+                defaultValue = SettingsDataStore.DEFAULT_PIECE_DESTINATIONS,
+            ),
         ),
     ),
 
@@ -104,7 +110,7 @@ private fun getPreferenceItems(
                 prefKey = SettingsDataStore.SEARCH_TIME,
                 icon = painterResource(id = R.drawable.ic_pref_search_time),
                 defaultValue = SettingsDataStore.DEFAULT_SEARCH_TIME,
-                valueRange = 1..90,
+                valueRange = 1..60,
             ),
         ),
     ),

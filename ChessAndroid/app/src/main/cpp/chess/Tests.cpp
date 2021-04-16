@@ -2,9 +2,11 @@
 
 #include <array>
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <string_view>
 
 #include "Board.h"
 #include "MoveGen.h"
@@ -50,7 +52,7 @@ namespace Tests
 		result.updateNonPieceBitboards();
 		result.state.fiftyMoveRule = board.state.fiftyMoveRule;
 		result.state.kingAttackers = result.generateAttackers(result.getKingSq(result.colorToMove))
-			& result.getPieces(~result.colorToMove);
+									 & result.getPieces(~result.colorToMove);
 		result.computeCheckInfo();
 
 		return result;
@@ -241,7 +243,7 @@ namespace Tests
 		}
 	}
 
-	static PerftInfo basePerft(Board &board, const unsigned depth)
+	static PerftInfo basePerft(std::ostringstream &out, Board &board, const unsigned depth)
 	{
 		PerftInfo info{};
 
@@ -256,50 +258,67 @@ namespace Tests
 			board.undoMove();
 
 			info += localInfo;
-//			out << move.toString() << ": " << localInfo.nodes << '\n';
+			out << move.toString() << ": " << localInfo.nodes << '\n';
 		}
 
 		return info;
 	}
 
-	static void perftWrapper(const std::string &fen, const std::initializer_list<u64> perftResults)
+	static void perftWrapper(std::string_view tag, std::string_view fen, const std::initializer_list<u64> perftResults)
 	{
 		Board board;
-		board.setToFen(fen);
-
-		constexpr auto TAG = "Perft: ";
+		board.setToFen(std::string(fen));
 
 		std::vector<u64> perftVector(perftResults);
 
+		constexpr auto DepthW = 5;
+		constexpr auto ColumnW = 12;
+		constexpr std::string_view Pipe = " | ";
+
+		const auto displayRow = [&](const i32 depth, const double time, const PerftInfo &info)
+		{
+			using std::setw;
+			const auto expectedNodes = perftVector[depth];
+			const auto wrongResult = expectedNodes != info.nodes;
+			const auto nodes = (wrongResult ? (std::string("!!!") + std::to_string(expectedNodes)) : std::to_string(expectedNodes));
+
+			std::cout << "| " << std::setfill(' ') << std::fixed << std::setprecision(1)
+					  << setw(DepthW) << depth << Pipe
+					  << setw(ColumnW) << time << Pipe
+					  << setw(ColumnW) << expectedNodes << Pipe
+					  << setw(ColumnW) << nodes << Pipe
+					  << setw(ColumnW) << info.captures << Pipe
+					  << setw(ColumnW) << info.enPassant << Pipe
+					  << setw(ColumnW) << info.castles << Pipe
+					  << setw(ColumnW) << info.promotions << Pipe
+					  << setw(ColumnW) << info.checks << Pipe
+					  << setw(ColumnW) << info.doubleChecks << Pipe;
+		};
+
+		std::cout << tag << ':' << '\n';
+		std::cout << "| " << std::setfill(' ')
+				  << std::setw(DepthW) << "Depth" << Pipe
+				  << std::setw(ColumnW) << "Seconds" << Pipe
+				  << std::setw(ColumnW) << "Expected" << Pipe
+				  << std::setw(ColumnW) << "Nodes" << Pipe
+				  << std::setw(ColumnW) << "E.P." << Pipe
+				  << std::setw(ColumnW) << "Captures" << Pipe
+				  << std::setw(ColumnW) << "Castles" << Pipe
+				  << std::setw(ColumnW) << "Promotions" << Pipe
+				  << std::setw(ColumnW) << "Checks" << Pipe
+				  << std::setw(ColumnW) << "DoubleChecks" << Pipe << '\n';
+
 		for (unsigned depth = 1; depth < perftVector.size(); ++depth)
 		{
+			std::ostringstream out;
 			const auto startTime = std::chrono::high_resolution_clock::now();
-			const PerftInfo info = basePerft(board, depth);
+			const PerftInfo info = basePerft(out, board, depth);
 
 			const auto endTime = std::chrono::high_resolution_clock::now();
 			const auto timeNeeded =
 				std::chrono::duration<double, std::milli>(endTime - startTime).count() / 1000;
 
-			std::cout << TAG << "Depth: " << depth;
-			if (timeNeeded > 1)
-				std::cout << ", Time needed: " << timeNeeded << 's';
-
-			const auto expectedNodeCount = perftVector[depth];
-			std::cout << ", Nodes: " << info.nodes;
-			if (info.nodes != expectedNodeCount)
-				std::cout << '/' << expectedNodeCount << "(WRONG!)";
-			if (info.captures)
-				std::cout << ", Captures: " << info.captures;
-			if (info.enPassant)
-				std::cout << ", EnP: " << info.enPassant;
-			if (info.castles)
-				std::cout << ", Castles: " << info.castles;
-			if (info.promotions)
-				std::cout << ", Promotions: " << info.promotions;
-			if (info.checks)
-				std::cout << ", Checks: " << info.checks;
-			if (info.doubleChecks)
-				std::cout << ", Double-Checks: " << info.doubleChecks;
+			displayRow(depth, timeNeeded, info);
 
 			/*if (depth == perftVector.size() - 1 || info.nodes != expectedNodeCount)
 			{
@@ -309,35 +328,36 @@ namespace Tests
 
 			std::cout << std::endl;
 		}
+
 		std::cout.flush();
 	}
 
 	void runPerftTests() noexcept
 	{
-		// Position 1
-		perftWrapper("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq", {
+		perftWrapper("Position 1", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq", {
 			1, 20, 400, 8902, 197281, 4865609, 119060324
 		});
-		// Position 2
-		perftWrapper("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq", {
-			1, 48, 2039, 97862, 4085603, 193690690, 8031647685
+
+		perftWrapper("Position 2", "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq", {
+			1, 48, 2039, 97862, 4085603, 193690690
 		});
-		// Position 3
-		perftWrapper("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w", {
+
+		perftWrapper("Position 3", "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w", {
 			1, 14, 191, 2812, 43238, 674624, 11030083, 178633661
 		});
-		// Position 4
-		perftWrapper("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq", {
-			1, 6, 264, 9467, 422333, 15833292, 706045033
+
+		perftWrapper("Position 4", "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", {
+			1, 6, 264, 9467, 422333, 15833292
 		});
-		// Position 5
-		perftWrapper("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", {
+
+		perftWrapper("Position 5", "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", {
 			1, 44, 1486, 62379, 2103487, 89941194
 		});
-		// Position 6
-		perftWrapper("r4rk1/1pp1qppp/p1npBn2/2b1p1B1/4P1b1/P1NP1N2/1PP1QPPP/R4RK1 b - - 0 1", {
-			1, 46, 2079, 89890, 3894594, 164075551, 6923051137
+
+		perftWrapper("Position 6", "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", {
+			1, 46, 2079, 89890, 3894594, 164075551
 		});
+
 		std::cout << "Perft tests execution finished" << std::endl;
 	}
 

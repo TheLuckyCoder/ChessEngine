@@ -29,6 +29,7 @@ data class Piece(
         }
 
     companion object {
+        const val NONE: Byte = 0
         const val PAWN: Byte = 1
         const val KNIGHT: Byte = 2
         const val BISHOP: Byte = 3

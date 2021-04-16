@@ -45,10 +45,12 @@
     <string name="pref_coordinates_desc">Display Coordinates alongside the board</string>
     <string name="pref_moves_history">Moves History</string>
     <string name="pref_moves_history_desc">Display all previously made moves</string>
+    <string name="pref_piece_destinations">Piece Destinations</string>
+    <string name="pref_piece_destinations_desc">Display legal moves for selected pieces</string>
     <string name="pref_search_depth">Search Depth</string>
-    <string name="pref_search_depth_desc">The maximum amount of moves that the engine may look ahead</string>
+    <string name="pref_search_depth_desc">The maximum amount of moves that the engine may look ahead. (This is set automatically by the difficulty)</string>
     <string name="pref_quiet_search">Quiet Search (Recommended)</string>
-    <string name="pref_quiet_search_desc">Perform a Quiescence Search at the end of each normal search</string>
+    <string name="pref_quiet_search_desc">Perform a Quiescence Search at the end of each normal search. (This is set automatically by the difficulty)</string>
     <string name="pref_search_time">Search Time</string>
     <string name="pref_search_time_desc">The maximum time the engine is allowed to think</string>
     <string name="pref_thread_count">Thread Count</string>
