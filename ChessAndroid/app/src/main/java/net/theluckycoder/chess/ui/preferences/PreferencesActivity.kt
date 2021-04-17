@@ -169,17 +169,20 @@ private fun getPreferenceItems(
                 title = stringResource(id = R.string.pref_debug_advanced),
                 summary = stringResource(id = R.string.pref_debug_advanced_desc),
                 prefKey = SettingsDataStore.SHOW_DEBUG_ADVANCED,
+                dependencyKey = SettingsDataStore.SHOW_DEBUG_BASIC,
                 icon = painterResource(id = R.drawable.ic_pref_stats),
                 defaultValue = false,
             ),
             EmptyPreferenceItem(
                 title = "Run Perft Test",
                 summary = "This is only meant for debugging",
+                dependencyKey = SettingsDataStore.SHOW_DEBUG_BASIC,
                 onClick = { Native.perftTests() }
             ),
             EmptyPreferenceItem(
                 title = "Run Evaluation Test",
                 summary = "This is only meant for debugging",
+                dependencyKey = SettingsDataStore.SHOW_DEBUG_BASIC,
                 onClick = { Native.evaluationTests() }
             ),
         ),

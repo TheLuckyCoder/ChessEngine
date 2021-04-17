@@ -1,7 +1,6 @@
-package net.theluckycoder.chess
+package net.theluckycoder.chess.viewmodel
 
 import android.app.Application
-import androidx.annotation.Keep
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,12 +12,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.theluckycoder.chess.BoardChangeListener
+import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.model.*
+import net.theluckycoder.chess.utils.SaveManager
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.time.ExperimentalTime
 
-class ChessViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(application: Application) : AndroidViewModel(application), BoardChangeListener {
 
     private val initialized = AtomicBoolean(false)
     val dataStore = SettingsDataStore.get(application)
@@ -26,9 +27,9 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     /*
      * Chess Game Data
      */
-    private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val isEngineThinkingFlow = MutableStateFlow(false)
-    private val tilesFlow = MutableStateFlow(emptyList<Tile>())
+    private val playerPlayingWhiteFlow = MutableStateFlow(true)
+    private val tilesFlow = MutableStateFlow(getEmptyTiles())
     private val piecesFlow = MutableStateFlow(emptyList<IndexedPiece>())
     private val gameStateFlow = MutableStateFlow(GameState.NONE)
     private val movesHistoryFlow = MutableStateFlow(emptyList<Move>())
@@ -55,26 +56,31 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
         initBoard()
 
         viewModelScope.launch(Dispatchers.IO) {
-            dataStore.showAdvancedDebug().distinctUntilChanged().collectLatest {
-                ensureActive()
-                withContext(Dispatchers.Main) { Native.enableStats(it) }
+            launch {
+                dataStore.showAdvancedDebug().distinctUntilChanged().collectLatest {
+                    ensureActive()
+                    withContext(Dispatchers.Main) { Native.enableStats(it) }
+                }
             }
-        }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            dataStore.getEngineSettings().distinctUntilChanged().collectLatest {
-                ensureActive()
-                withContext(Dispatchers.Main) { updateEngineSettings(it) }
+            launch {
+                dataStore.getEngineSettings().distinctUntilChanged().collectLatest {
+                    ensureActive()
+                    withContext(Dispatchers.Main) { Native.setSearchOptions(it) }
+                }
             }
-        }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            movesHistoryFlow.collectLatest {
-                ensureActive()
-                val state = gameState.value
-                if (it.isNotEmpty() && (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE)) {
-                    withContext(Dispatchers.Main.immediate) {
-                        SaveManager.saveToFileAsync(getApplication(), playerPlayingWhite.value, it)
+            launch {
+                movesHistoryFlow.collectLatest {
+                    ensureActive()
+                    val state = gameState.value
+                    if (it.isNotEmpty() && (state != GameState.WINNER_BLACK || state != GameState.WINNER_WHITE)) {
+                        SaveManager.saveToFileAsync(
+                            getApplication(),
+                            Native.getStartFen(),
+                            playerPlayingWhite.value,
+                            it
+                        )
                     }
                 }
             }
@@ -83,16 +89,16 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     fun initBoard(playerWhite: Boolean = true) {
         if (initialized.get()) {
-            initBoardNative(playerWhite)
+            if (isEngineThinking.value)
+                Native.stopSearch()
+            Native.initBoard(this, playerWhite)
         } else {
             // First time it is called, load the last game
             initialized.set(true)
 
-            initBoardNative(playerWhite)
+            Native.initBoard(this, true)
             SaveManager.loadFromFile(getApplication())
         }
-
-        tilesFlow.value = getEmptyTiles()
     }
 
     private fun updatePiecesList() {
@@ -101,19 +107,6 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.IO) {
         dataStore.setDifficultyLevel(level)
-    }
-
-    @OptIn(ExperimentalTime::class)
-    private fun updateEngineSettings(engineSettings: EngineSettings) {
-        engineSettings.also {
-            Native.setSearchOptions(
-                it.searchDepth,
-                it.quietSearch,
-                it.threadCount,
-                it.hashSize,
-                it.searchTime.toLongMilliseconds(),
-            )
-        }
     }
 
     fun makeMove(move: Move) {
@@ -134,7 +127,7 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getPossibleMoves(square: Int) {
-        val moves = Native.getPossibleMoves(square.toByte())
+        val moves = Native.getPossibleMoves(square.toByte()).toList()
 
         tilesFlow.value = tilesFlow.value
             .map { tile ->
@@ -153,23 +146,13 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-    @Suppress("unused")
-    @Keep // Called by native code
-    private fun boardChangedCallback(gameState: Int) {
-        val state = when (gameState) {
-            1 -> GameState.WINNER_WHITE
-            2 -> GameState.WINNER_BLACK
-            3 -> GameState.DRAW
-            4 -> GameState.WHITE_IN_CHECK
-            5 -> GameState.BLACK_IN_CHECK
-            10 -> GameState.INVALID
-            else -> GameState.NONE
-        }
+    override fun boardChanged(gameStateInt: Int) {
+        val gameState = GameState.getState(gameStateInt)
 
         playerPlayingWhiteFlow.value = Native.isPlayerWhite()
         isEngineThinkingFlow.value = Native.isEngineWorking()
 
-        gameStateFlow.value = state
+        gameStateFlow.value = gameState
         val movesHistoryList = Native.getMovesHistory().toList()
         movesHistoryFlow.value = movesHistoryList
         val moveIndex = Native.getCurrentMoveIndex()
@@ -189,9 +172,10 @@ class ChessViewModel(application: Application) : AndroidViewModel(application) {
             getEmptyTiles()
 
         updatePiecesList()
-    }
 
-    private external fun initBoardNative(playerPlayingWhite: Boolean)
+        if (!Native.isPlayersTurn())
+            Native.makeEngineMove()
+    }
 
     private companion object {
         private val emptyTiles = Array(64) { Tile(it, Tile.State.None) }

@@ -19,6 +19,7 @@ sealed class PreferenceItem : BasePreferenceItem {
     abstract val summary: String
     abstract val icon: Painter?
     abstract val singleLineTitle: Boolean
+    abstract val dependencyKey: Preferences.Key<Boolean>?
 }
 
 class EmptyPreferenceItem(
@@ -27,6 +28,7 @@ class EmptyPreferenceItem(
     override val icon: Painter? = null,
     override val singleLineTitle: Boolean = false,
     override val enabled: Boolean = true,
+    override val dependencyKey: Preferences.Key<Boolean>? = null,
     val onClick: () -> Unit = { },
 ) : PreferenceItem()
 
@@ -41,6 +43,7 @@ class SwitchPreferenceItem(
     override val icon: Painter? = null,
     override val singleLineTitle: Boolean = false,
     override val enabled: Boolean = true,
+    override val dependencyKey: Preferences.Key<Boolean>? = null,
     val defaultValue: Boolean = false,
 ) : KeyPreferenceItem<Boolean>()
 
@@ -51,6 +54,7 @@ sealed class SeekbarBasePreferenceItem<T : Number>(
     final override val icon: Painter?,
     final override val singleLineTitle: Boolean,
     final override val enabled: Boolean,
+    override val dependencyKey: Preferences.Key<Boolean>? = null,
     val defaultValue: T,
     val valueRange: ClosedFloatingPointRange<Float>,
     val steps: Int,
@@ -64,6 +68,7 @@ class SeekbarIntPreferenceItem(
     icon: Painter? = null,
     singleLineTitle: Boolean = false,
     enabled: Boolean = true,
+    dependencyKey: Preferences.Key<Boolean>? = null,
     defaultValue: Int = 0,
     valueRange: IntRange = 0..100,
     steps: Int = 0,
@@ -75,6 +80,7 @@ class SeekbarIntPreferenceItem(
     icon = icon,
     singleLineTitle = singleLineTitle,
     enabled = enabled,
+    dependencyKey = dependencyKey,
     defaultValue = defaultValue,
     valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
     steps = steps,
@@ -88,6 +94,7 @@ class SeekbarFloatPreferenceItem(
     icon: Painter? = null,
     singleLineTitle: Boolean = false,
     enabled: Boolean = true,
+    dependencyKey: Preferences.Key<Boolean>? = null,
     defaultValue: Float = 0f,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
@@ -99,6 +106,7 @@ class SeekbarFloatPreferenceItem(
     icon = icon,
     singleLineTitle = singleLineTitle,
     enabled = enabled,
+    dependencyKey = dependencyKey,
     defaultValue = defaultValue,
     valueRange = valueRange,
     steps = steps,

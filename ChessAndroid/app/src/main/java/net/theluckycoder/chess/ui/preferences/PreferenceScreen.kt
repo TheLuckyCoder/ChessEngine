@@ -1,5 +1,6 @@
 package net.theluckycoder.chess.ui.preferences
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,7 +31,7 @@ fun PreferenceScreen(
     val scope = rememberCoroutineScope()
     val prefs by dataStore.data.collectAsState(initial = null)
 
-    LazyColumn {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(items = items) { item ->
             MatchPreferenceItem(scope, dataStore, prefs, item)
         }
@@ -45,6 +46,12 @@ private fun MatchPreferenceItem(
     prefs: Preferences?,
     item: BasePreferenceItem
 ) {
+    if (item is PreferenceItem) {
+        val dependencyKey = item.dependencyKey
+        if (dependencyKey != null && prefs?.get(dependencyKey) != true)
+            return
+    }
+
     when (item) {
         is PreferenceGroupItem -> {
             Text(
@@ -54,6 +61,7 @@ private fun MatchPreferenceItem(
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = 72.dp, top = 24.dp, bottom = 8.dp)
             )
+
             item.items.forEach { child ->
                 MatchPreferenceItem(scope, dataStore, prefs, child)
             }

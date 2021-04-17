@@ -1,28 +1,36 @@
-package net.theluckycoder.chess
+package net.theluckycoder.chess.utils
 
+import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.model.Move
 import java.io.File
 import java.io.FileNotFoundException
 
 object SaveManager {
 
-    private const val SAVE_FILE_NAME = "moves.sav"
+    private const val SAVE_FILE_NAME = "moves.save"
 
-    suspend fun saveToFileAsync(context: Context, playerWhite: Boolean, moves: List<Move>) {
+    suspend fun saveToFileAsync(
+        application: Application,
+        startFen: String,
+        playerWhite: Boolean,
+        moves: List<Move>
+    ) {
         if (moves.isEmpty()) return
 
         val content = buildString {
+            append(startFen)
+            append('\n')
             append(if (playerWhite) 1 else 0)
             moves.forEach {
                 append('\n').append(it.content.toString())
             }
         }
 
-        val appContext = context.applicationContext
-        withContext(Dispatchers.IO) { saveToFile(appContext, content) }
+        withContext(Dispatchers.IO) { saveToFile(application, content) }
     }
 
     private fun saveToFile(context: Context, content: String) {
@@ -39,16 +47,19 @@ object SaveManager {
     fun loadFromFile(context: Context): Boolean {
         try {
             context.openFileInput(SAVE_FILE_NAME).bufferedReader().use { reader ->
-                val moves = reader.readLines().map { it.toInt() }.toMutableList()
-                val playerWhite = moves.removeFirst() == 1
+                val lines = reader.readLines().toMutableList()
 
-                return if (moves.isNotEmpty()) {
-                    Native.loadMoves(playerWhite, moves.toIntArray())
+                val fen = lines.removeFirst()
+                val playerWhite = lines.removeFirst().toInt() == 1
+
+                val moves = lines.map { it.toInt() }
+
+                return if (fen.isNotBlank() && moves.isNotEmpty()) {
+                    Native.loadFenMoves(playerWhite, fen, moves.toIntArray())
                     true
                 } else false
             }
         } catch (e: FileNotFoundException) {
-            e.printStackTrace()
             return false
         }
     }

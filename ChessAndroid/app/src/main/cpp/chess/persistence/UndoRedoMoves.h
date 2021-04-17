@@ -116,7 +116,7 @@ namespace UndoRedo
 		MovesStack() = default;
 
 		MovesStack(const Board &board)
-			: _initialPieces(makeIndexedPieces(board))
+			: _initialPieces(makeIndexedPieces(board)), _startFen(board.getFen())
 		{
 			_data.reserve(64);
 		}
@@ -179,6 +179,8 @@ namespace UndoRedo
 				   ? peek().getIndexedPieces() : _initialPieces;
 		}
 
+		const auto &getStartFen() const noexcept { return _startFen; }
+
 		auto getCurrentIndex() const noexcept { return _index; }
 
 		auto begin() const noexcept { return _data.begin(); }
@@ -187,6 +189,7 @@ namespace UndoRedo
 
 	private:
 		IndexedPieces _initialPieces;
+		std::string _startFen;
 		std::vector<HistoryBoard> _data;
 		i64 _index{ -1l };
 	};

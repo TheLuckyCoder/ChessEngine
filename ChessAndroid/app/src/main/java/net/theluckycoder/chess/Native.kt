@@ -3,19 +3,21 @@ package net.theluckycoder.chess
 import net.theluckycoder.chess.model.EngineSettings
 import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
+import kotlin.time.ExperimentalTime
 
 object Native {
 
-    external fun isEngineWorking(): Boolean
+    external fun initBoard(boardChangeListener: BoardChangeListener, isPlayerWhite: Boolean)
+    external fun initBook(bookPath: String)
 
+    external fun isEngineWorking(): Boolean
     external fun isPlayerWhite(): Boolean
+    external fun isPlayersTurn(): Boolean
 
     external fun getPieces(): Array<IndexedPiece>
-
     external fun getPossibleMoves(square: Byte): Array<Move>
 
     external fun makeMove(move: Int)
-
     external fun makeEngineMove()
 
     external fun stopSearch()
@@ -24,25 +26,31 @@ object Native {
 
     external fun getSearchOptions(): EngineSettings
 
-    external fun setSearchOptions(
-        searchDepth: Int,
-        quietSearch: Boolean,
-        threadCount: Int,
-        hashSizeMb: Int,
+    @OptIn(ExperimentalTime::class)
+    fun setSearchOptions(settings: EngineSettings) = setSearchOptions(
+        settings.searchDepth,
+        settings.quietSearch,
+        settings.threadCount,
+        settings.hashSize,
+        settings.searchTime.toLongMilliseconds(),
+    )
+
+    private external fun setSearchOptions(
+        searchDepth: Int, quietSearch: Boolean,
+        threadCount: Int, hashSizeMb: Int,
         searchTime: Long,
     )
 
     external fun undoMoves()
     external fun redoMoves()
 
-    external fun loadFen(playerWhite: Boolean, position: String): Boolean
-    external fun loadMoves(playerWhite: Boolean, moves: IntArray)
+    external fun loadFen(playerWhite: Boolean, fen: String): Boolean
+    external fun loadFenMoves(playerWhite: Boolean, fen: String, moves: IntArray)
 
     external fun getCurrentFen(): String
+    external fun getStartFen(): String
     external fun getMovesHistory(): Array<Move>
     external fun getCurrentMoveIndex(): Int
-
-    external fun initBook(bookPath: String)
 
     // region Tests
 

@@ -72,7 +72,7 @@ Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 		} else
 		{
 			// No move has been found so no other moves will be found from here on out
-			_sharedState.useBook = false; // This is reset in clearAll
+			_sharedState.useBook = false; // This is reset in clearAll()
 		}
 	}
 
@@ -90,8 +90,8 @@ Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 			iterativeDeepening(board, std::min<i32>(depth, _searchOptions.depth()));
 		}
 
-		// Clean Heuristics after search
 		delete _thread;
+		_thread = nullptr;
 	};
 
 	std::vector<std::thread> threads;

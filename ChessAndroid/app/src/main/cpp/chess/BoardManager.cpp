@@ -6,14 +6,14 @@
 #include "MoveGen.h"
 #include "algorithm/Search.h"
 
-SearchOptions BoardManager::_searchOptions;
+std::recursive_mutex BoardManager::_mutex;
 BoardManager::BoardChangedCallback BoardManager::_callback;
-Board BoardManager::_currentBoard;
-UndoRedo::MovesStack BoardManager::_movesStack;
 
 void BoardManager::initBoardManager(const BoardChangedCallback &callback, const bool isPlayerWhite)
 {
+	std::lock_guard lock{ _mutex };
 	Attacks::init();
+	Search::clearAll();
 
 	_isPlayerWhite = isPlayerWhite;
 	_currentBoard.setToStartPos();
@@ -21,26 +21,19 @@ void BoardManager::initBoardManager(const BoardChangedCallback &callback, const 
 	_callback = callback;
 
 	_callback(GameState::NONE);
-
-	if (!isPlayerWhite)
-		makeEngineMove();
 }
 
-bool BoardManager::loadGame(bool isPlayerWhite, const std::string &fen)
+bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 {
+	std::lock_guard lock{ _mutex };
 	Search::clearAll();
-	Board tempBoard;
 
-	if (tempBoard.setToFen(fen))
+	if (_currentBoard.setToFen(fen))
 	{
 		_isPlayerWhite = isPlayerWhite;
-		_currentBoard = tempBoard;
 		_movesStack = { _currentBoard };
 
 		_callback(getBoardState());
-
-		if (isPlayerWhite != _currentBoard.colorToMove)
-			makeEngineMove();
 
 		return true;
 	}
@@ -48,14 +41,13 @@ bool BoardManager::loadGame(bool isPlayerWhite, const std::string &fen)
 	return false;
 }
 
-void BoardManager::loadGame(bool isPlayerWhite, const std::vector<Move> &moves)
+bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen, const std::vector<Move> &moves)
 {
-	Search::clearAll();
 	assert(moves.size() < MAX_MOVES);
 
-	_isPlayerWhite = isPlayerWhite;
-	_currentBoard.setToStartPos();
-	_movesStack = { _currentBoard };
+	std::lock_guard lock{ _mutex };
+	if (!loadGame(isPlayerWhite, fen))
+		return false;
 
 	for (const Move &move : moves)
 	{
@@ -67,12 +59,12 @@ void BoardManager::loadGame(bool isPlayerWhite, const std::vector<Move> &moves)
 
 	_callback(getBoardState());
 
-	if (isPlayerWhite != _currentBoard.colorToMove)
-		makeEngineMove();
+	return true;
 }
 
 void BoardManager::makeMove(const Move move)
 {
+	std::lock_guard lock{ _mutex };
 	_currentBoard.makeMove(move);
 	_movesStack.push(_currentBoard, move);
 	_callback(getBoardState());
@@ -80,6 +72,7 @@ void BoardManager::makeMove(const Move move)
 
 void BoardManager::makeEngineMove()
 {
+	std::lock_guard lock{ _mutex };
 	if (const auto state = getBoardState();
 		!(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
 		return;
@@ -95,12 +88,18 @@ void BoardManager::makeEngineMove()
 					const Move bestMove = Search::findBestMove(tempBoard, settings);
 					_isWorking = false;
 
-					makeMove(bestMove);
+					std::lock_guard lock{ _mutex };
+					// Make sure the board has not changed in the time we were searching
+					if (tempBoard.zKey() == _currentBoard.zKey())
+						makeMove(bestMove);
+					else
+						std::cout << "Board was changed while searching, cannot make found move\n";
 				}).detach();
 }
 
 void BoardManager::undoLastMoves()
 {
+	std::lock_guard lock{ _mutex };
 	if (!_movesStack.undo().empty())
 		_currentBoard.undoMove();
 	if (_movesStack.peek().colorToMove() != isPlayerWhite() && !_movesStack.undo().empty())
@@ -111,6 +110,7 @@ void BoardManager::undoLastMoves()
 
 void BoardManager::redoLastMoves()
 {
+	std::lock_guard lock{ _mutex };
 	if (const Move move = _movesStack.redo(); !move.empty())
 		_currentBoard.makeMove(move);
 	if (_movesStack.peek().colorToMove() != isPlayerWhite())
@@ -127,23 +127,24 @@ void BoardManager::redoLastMoves()
 
 std::vector<Move> BoardManager::getPossibleMoves(const Square from)
 {
-	std::vector<Move> moves;
-	moves.reserve(27);
+	std::lock_guard lock{ _mutex };
 
 	Board tempBoard = _currentBoard;
 	const MoveList allMoves(tempBoard);
 
+	std::vector<Move> moves;
+	moves.reserve(allMoves.size());
+
 	for (const Move &move : allMoves)
-	{
 		if (move.from() == from && tempBoard.isMoveLegal(move))
 			moves.push_back(move);
-	}
 
 	return moves;
 }
 
 GameState BoardManager::getBoardState()
 {
+	std::lock_guard lock{ _mutex };
 	if (_currentBoard.isDrawn())
 		return GameState::DRAW;
 

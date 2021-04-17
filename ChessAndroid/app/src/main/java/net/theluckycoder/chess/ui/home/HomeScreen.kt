@@ -29,16 +29,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.theluckycoder.chess.ChessViewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.ui.preferences.PreferencesActivity
+import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.time.ExperimentalTime
 
 @Composable
 fun HomeScreen(
-    viewModel: ChessViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel()
 ) {
     val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
     val movesHistory by viewModel.movesHistory.collectAsState()
@@ -92,7 +92,7 @@ fun HomeScreen(
 @OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
 @Preview
 @Composable
-private fun TopBar(viewModel: ChessViewModel = viewModel()) = TopAppBar(
+private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
     modifier = Modifier.fillMaxWidth().height(dimensionResource(id = R.dimen.toolbar_height)),
     backgroundColor = MaterialTheme.colors.primary,
     title = {
@@ -103,10 +103,10 @@ private fun TopBar(viewModel: ChessViewModel = viewModel()) = TopAppBar(
             modifier = Modifier.padding(end = 16.dp)
         )
 
-        val isThinking by viewModel.isEngineThinking.collectAsState(false)
+        val isEngineThinking by viewModel.isEngineThinking.collectAsState()
 
         AnimatedVisibility(
-            visible = isThinking,
+            visible = isEngineThinking,
             enter = expandIn(Alignment.CenterStart),
             exit = shrinkOut(Alignment.CenterStart),
         ) {
@@ -199,7 +199,7 @@ private fun MovesHistory(
 }
 
 @Composable
-private fun AppBarActions(chessViewModel: ChessViewModel = viewModel()) {
+private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
     var showActionsMenu by remember { mutableStateOf(false) }
 
     IconButton(onClick = { showActionsMenu = true }) {
@@ -215,16 +215,24 @@ private fun AppBarActions(chessViewModel: ChessViewModel = viewModel()) {
             ) {
                 DropdownMenuItem(onClick = {
                     showActionsMenu = false
-                    chessViewModel.showImportDialog.value = true
-                }) {
-                    Text(text = stringResource(id = R.string.fen_position_load))
-                }
+                    viewModel.showImportDialog.value = true
+                }) { Text(text = stringResource(id = R.string.fen_position_load)) }
 
-                DropdownMenuItem(onClick = {
-                    showActionsMenu = false
-                    Native.makeEngineMove()
-                }) {
-                    Text(text = stringResource(id = R.string.action_make_engine_move))
+                val isEngineThinking by viewModel.isEngineThinking.collectAsState()
+                val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
+
+                if (basicDebug) {
+                    DropdownMenuItem(onClick = {
+                        showActionsMenu = false
+                        Native.makeEngineMove()
+                    }) { Text(text = stringResource(id = R.string.action_make_engine_move)) }
+
+                    if (isEngineThinking) {
+                        DropdownMenuItem(onClick = {
+                            showActionsMenu = false
+                            Native.stopSearch()
+                        }) { Text(text = stringResource(id = R.string.action_stop_search)) }
+                    }
                 }
             }
         }
@@ -235,7 +243,7 @@ private fun AppBarActions(chessViewModel: ChessViewModel = viewModel()) {
 @Composable
 private fun BottomBar(
     modifier: Modifier = Modifier,
-    viewModel: ChessViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel()
 ) = Column(
     modifier = modifier,
     verticalArrangement = Arrangement.Bottom,

@@ -5,9 +5,9 @@
 
 bool FenParser::parseFen(Board &board, const std::string &fen)
 {
-	std::istringstream stream(fen);
+	if (fen.empty()) return false;
 
-	if (!stream) return false;
+	std::istringstream stream(fen);
 
 	// Clean board
 	board = {};
@@ -63,6 +63,8 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	board.state.zKey = Zobrist::compute(board);
 	board.updatePieceList();
 	board.updateNonPieceBitboards();
+
+	if (board.getPieces().count() < 2 || board.getPieces(KING).count() != 2) return false;
 
 	board.state.kingAttackers = board.generateAttackers(board.getKingSq(colorToMove)) & board.getPieces(~colorToMove);
 	board.computeCheckInfo();

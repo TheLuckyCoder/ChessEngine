@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.ChessViewModel
+import net.theluckycoder.chess.viewmodel.HomeViewModel
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.ui.AlertDialogTitle
@@ -48,7 +48,7 @@ private fun getPieceDrawable(piece: Piece): Painter {
 @Composable
 fun ChessBoard(
     modifier: Modifier = Modifier,
-    chessViewModel: ChessViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel()
 ) = BoxWithConstraints(
     modifier = modifier
 ) {
@@ -56,14 +56,14 @@ fun ChessBoard(
         with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
     val tileSize = boardSize / 8f
 
-    val showCoordinates by chessViewModel.dataStore.showCoordinates().collectAsState(false)
-    val isPlayerWhite by chessViewModel.playerPlayingWhite.collectAsState()
-    val tiles by chessViewModel.tiles.collectAsState()
-    val pieces by chessViewModel.pieces.collectAsState()
+    val showCoordinates by viewModel.dataStore.showCoordinates().collectAsState(false)
+    val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
+    val tiles by viewModel.tiles.collectAsState()
+    val pieces by viewModel.pieces.collectAsState()
 
-    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, chessViewModel)
+    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, viewModel)
 
-    BoardPieces(tileSize, isPlayerWhite, pieces, chessViewModel)
+    BoardPieces(tileSize, isPlayerWhite, pieces, viewModel)
 
     if (showCoordinates) {
         BoardCoordinates(tileSize)
@@ -76,9 +76,9 @@ private fun BoardTiles(
     tileDp: Dp,
     isPlayerWhite: Boolean,
     tiles: List<Tile>,
-    chessViewModel: ChessViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel()
 ) {
-    val showPossibleMoves by chessViewModel.dataStore.showPieceDestination()
+    val showPossibleMoves by viewModel.dataStore.showPieceDestination()
         .collectAsState(SettingsDataStore.DEFAULT_PIECE_DESTINATIONS)
 
     val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
@@ -148,7 +148,7 @@ private fun BoardTiles(
                         val moves = state.moves
                         when {
                             moves.size > 1 -> showPromotionDialog.value = moves
-                            else -> chessViewModel.makeMove(moves.first())
+                            else -> viewModel.makeMove(moves.first())
                         }
                     }
             )
@@ -191,9 +191,9 @@ private fun BoardPieces(
     tileDp: Dp,
     isPlayerWhite: Boolean,
     pieces: List<IndexedPiece>,
-    chessViewModel: ChessViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel()
 ) {
-    val gameState by chessViewModel.gameState.collectAsState()
+    val gameState by viewModel.gameState.collectAsState()
     val whiteInCheck = gameState == GameState.WHITE_IN_CHECK
     val blackInCheck = gameState == GameState.BLACK_IN_CHECK
 
@@ -222,7 +222,7 @@ private fun BoardPieces(
                         .offset(animatedX, animatedY)
                         .then(backgroundModifier),
                     enabled = isPlayerWhite == piece.isWhite,
-                    onClick = { chessViewModel.getPossibleMoves(piece.square) }
+                    onClick = { viewModel.getPossibleMoves(piece.square) }
                 ) {
                     Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
                 }
@@ -233,7 +233,7 @@ private fun BoardPieces(
 
 @Composable
 private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
-    val viewModel = viewModel<ChessViewModel>()
+    val viewModel = viewModel<HomeViewModel>()
 
     val promotionResources = intArrayOf(
         R.drawable.w_queen, R.drawable.w_rook,

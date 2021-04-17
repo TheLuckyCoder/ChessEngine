@@ -11,11 +11,11 @@ void Board::setToStartPos()
 
 bool Board::setToFen(const std::string &fen)
 {
-	Board copy = *this;
-	const bool result = FenParser::parseFen(*this, fen);
+	Board temp = *this;
+	const bool result = FenParser::parseFen(temp, fen);
 
-	if (!result)
-		*this = copy;
+	if (result)
+		*this = temp;
 
 	return result;
 }
