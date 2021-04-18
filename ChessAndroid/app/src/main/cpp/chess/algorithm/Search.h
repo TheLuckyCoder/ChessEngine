@@ -18,7 +18,7 @@ private:
 		// Stats for the last time the depth was updated
 		std::atomic_int depth{};
 		int bestScore{};
-		usize time{};
+		i64 time{};
 
 		// This should only be read and written by the main thread
 		int lastReportedDepth{};

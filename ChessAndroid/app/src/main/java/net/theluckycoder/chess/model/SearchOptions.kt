@@ -7,7 +7,7 @@ import kotlin.time.milliseconds
 
 @OptIn(ExperimentalTime::class)
 @Keep
-data class EngineSettings(
+data class SearchOptions(
     val searchDepth: Int,
     val threadCount: Int,
     val searchTime: Duration,

@@ -21,12 +21,15 @@ data class DebugStats(
         )
 
         @JvmStatic
-        private external fun getNativeSearchTime(): Double
+        private external fun getNativeSearchTime(): Long
 
         @JvmStatic
         private external fun getNativeBoardEvaluation(): Int
 
         @JvmStatic
         private external fun getNativeAdvancedStats(): String
+
+        @JvmStatic
+        external fun enable(enabled: Boolean)
     }
 }

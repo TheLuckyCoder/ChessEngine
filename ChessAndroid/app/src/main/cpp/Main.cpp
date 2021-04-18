@@ -166,22 +166,14 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 	return result;
 }
 
-
-external void JNICALL
-Java_net_theluckycoder_chess_Native_enableStats(JNIEnv *, jobject, jboolean enabled)
-{
-	Stats::setEnabled(enabled);
-}
-
-
 external jobject JNICALL
 Java_net_theluckycoder_chess_Native_getSearchOptions(JNIEnv *pEnv, jobject)
 {
-	const static auto constructorId = pEnv->GetMethodID(JniCache::engineSettingsClass, "<init>", "(IIJIZ)V");
+	const static auto constructorId = pEnv->GetMethodID(JniCache::searchOptionsClass, "<init>", "(IIJIZ)V");
 
 	const auto options = BoardManager::getSearchOptions();
 
-	return pEnv->NewObject(JniCache::engineSettingsClass, constructorId,
+	return pEnv->NewObject(JniCache::searchOptionsClass, constructorId,
 						   options.depth(), options.threadCount(),
 						   static_cast<jlong>(options.searchTime()), options.tableSizeMb(),
 						   options.quietSearch());
@@ -194,11 +186,11 @@ Java_net_theluckycoder_chess_Native_setSearchOptions(JNIEnv *, jobject, jint sea
 													 jint hashSizeMb,
 													 jlong searchTime)
 {
-	BoardManager::setSearchOptions(SearchOptions{ searchDepth,
+	BoardManager::setSearchOptions({ searchDepth,
 												  static_cast<u32>(threadCount),
 												  static_cast<u32>(hashSizeMb),
 												  static_cast<bool>(quietSearch),
-												  static_cast<u64>(searchTime) });
+												  static_cast<i64>(searchTime) });
 }
 
 
@@ -206,7 +198,6 @@ external void JNICALL
 Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jint move)
 {
 	BoardManager::makeMove(Move{ static_cast<u32>(move) });
-	BoardManager::makeEngineMove();
 }
 
 external void JNICALL
@@ -337,10 +328,16 @@ Java_net_theluckycoder_chess_Native_evaluationTests(JNIEnv *pEnv, jobject)
 
 // region DebugStats
 
-external jdouble JNICALL
+external void JNICALL
+Java_net_theluckycoder_chess_model_DebugStats_enable(JNIEnv *, jclass, jboolean enabled)
+{
+	Stats::setEnabled(enabled);
+}
+
+external jlong JNICALL
 Java_net_theluckycoder_chess_model_DebugStats_getNativeSearchTime(JNIEnv *, jclass)
 {
-	return static_cast<jdouble>(Stats::getElapsedMs());
+	return static_cast<jlong>(Stats::getElapsedMs());
 }
 
 external jint JNICALL

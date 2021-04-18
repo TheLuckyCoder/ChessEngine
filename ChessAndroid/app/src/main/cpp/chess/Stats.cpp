@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+std::atomic_bool Stats::_statsEnabled{ false };
 std::chrono::time_point<std::chrono::high_resolution_clock> Stats::_startTime;
 std::atomic_size_t Stats::_boardsEvaluated;
 std::atomic_size_t Stats::_nodesSearched;
@@ -58,18 +59,17 @@ void Stats::restartTimer() noexcept
 	_startTime = std::chrono::high_resolution_clock::now();
 }
 
-usize Stats::getElapsedMs() noexcept
+i64 Stats::getElapsedMs() noexcept
 {
 	const auto currentTime = std::chrono::high_resolution_clock::now();
-	const auto time = std::chrono::duration<double, std::milli>(currentTime - _startTime).count();
-	return static_cast<usize>(time);
+	return std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - _startTime).count();
 }
 
 std::string Stats::formatStats(const char separator)
 {
 	std::stringstream stream;
 
-	const usize timeMs = getElapsedMs();
+	const auto timeMs = getElapsedMs();
 
 	stream << "Elapsed Time: " << timeMs << "ms" << separator;
 

@@ -23,7 +23,7 @@ enum class GameState : u8
 };
 
 /**
- * This is a wrapper for the actual Chess Engine in order to make it easier to be used with custom UIs
+ * This is a wrapper for the actual Chess Engine in order to hopefully make it easier to be used with custom UIs
  */
 class BoardManager final
 {
@@ -54,18 +54,38 @@ public:
 	/// Getters and Setters
 	static bool isWorking() noexcept { return _isWorking; }
 
-	static bool isPlayerWhite() noexcept { std::lock_guard lock{ _mutex }; return _isPlayerWhite; }
+	static bool isPlayerWhite() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _isPlayerWhite;
+	}
 
-	static void setSearchOptions(const SearchOptions &searchOptions) { std::lock_guard lock{ _mutex }; _searchOptions = searchOptions; }
+	static void setSearchOptions(const SearchOptions &searchOptions) noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		_searchOptions = searchOptions;
+	}
 
-	static SearchOptions getSearchOptions() noexcept { std::lock_guard lock{ _mutex }; return _searchOptions; }
+	static SearchOptions getSearchOptions() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _searchOptions;
+	}
 
-	static const auto &getBoard() noexcept { std::lock_guard lock{ _mutex }; return _currentBoard; }
+	static const auto &getBoard() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _currentBoard;
+	}
 
-	static const UndoRedo::MovesStack &getMovesStack() noexcept { std::lock_guard lock{ _mutex }; return _movesStack; }
+	static const UndoRedo::MovesStack &getMovesStack() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _movesStack;
+	}
 
 	static std::vector<Move> getPossibleMoves(Square from);
 
 private:
-	static GameState getBoardState();
+	static GameState getBoardState() noexcept;
 };

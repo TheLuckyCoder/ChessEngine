@@ -62,8 +62,7 @@ fun HomeScreen(
                             .fillMaxHeight()
                             .weight(1f)
                     )
-                    ChessBoard()
-
+                    HomeChessBoard()
                     HomeDialogs()
                 }
             }
@@ -80,13 +79,31 @@ fun HomeScreen(
                 bottomBar = { BottomBar() }
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
-                    ChessBoard(Modifier.align(Alignment.TopCenter))
-
+                    HomeChessBoard(Modifier.align(Alignment.TopCenter))
                     HomeDialogs()
                 }
             }
         }
     }
+}
+
+@Composable
+private fun HomeChessBoard(
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = viewModel()
+) {
+    val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
+    val tiles by viewModel.tiles.collectAsState()
+    val pieces by viewModel.pieces.collectAsState()
+    val gameState by viewModel.gameState.collectAsState()
+
+    ChessBoard(
+        modifier = modifier,
+        isPlayerWhite = isPlayerWhite,
+        tiles = tiles,
+        pieces = pieces,
+        gameState = gameState
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)

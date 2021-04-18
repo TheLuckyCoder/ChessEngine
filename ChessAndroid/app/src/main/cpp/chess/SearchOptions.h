@@ -9,7 +9,7 @@ class SearchOptions final
 {
 public:
 
-	SearchOptions() : SearchOptions(6, std::max<usize>(1u, std::thread::hardware_concurrency() / 2), 64, true, 30000)
+	SearchOptions() : SearchOptions(6, std::max<usize>(1u, std::thread::hardware_concurrency() / 2u), 64, true, 10000)
 	{
 	}
 
@@ -17,7 +17,7 @@ public:
 				  const usize threadCount,
 				  const usize tableSizeMb,
 				  const bool quietSearch,
-				  const u64 searchTime = {}) noexcept
+				  const i64 searchTime = {}) noexcept
 		: _depth(std::clamp<i32>(depth, 2, MAX_DEPTH)),
 		  _threadCount(std::clamp<usize>(threadCount, 1u, std::thread::hardware_concurrency())),
 		  _cacheTableSizeMb(tableSizeMb),
@@ -42,6 +42,6 @@ private:
 	i32 _depth;
 	usize _threadCount;
 	usize _cacheTableSizeMb;
-	u64 _searchTime;
+	i64 _searchTime;
 	bool _quiescenceSearch;
 };

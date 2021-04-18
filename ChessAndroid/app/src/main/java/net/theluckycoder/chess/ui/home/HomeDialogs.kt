@@ -13,13 +13,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.viewmodel.HomeViewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.ui.AlertDialogTitle
 import net.theluckycoder.chess.ui.ChooseSidesToggle
-import kotlin.concurrent.thread
+import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -87,18 +86,11 @@ private fun NewGameDialog(viewModel: HomeViewModel = viewModel()) {
 
                 val level = difficultyLevel.roundToInt()
                 viewModel.updateDifficulty(level)
-
-                if (Native.isEngineWorking()) {
-                    Native.stopSearch()
-                    thread {
-                        while (Native.isEngineWorking())
-                            Thread.sleep(20)
-
-                        viewModel.initBoard(playerWhite)
-                    }
-                } else viewModel.initBoard(playerWhite)
-
                 viewModel.showNewGameDialog.value = false
+
+                // Restart the Game
+                viewModel.resetBoard(playerWhite)
+
             }) {
                 Text(text = stringResource(id = R.string.action_start))
             }

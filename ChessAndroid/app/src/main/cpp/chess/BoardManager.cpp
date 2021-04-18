@@ -80,17 +80,26 @@ void BoardManager::makeEngineMove()
 	if (_isWorking) return;
 	_isWorking = true;
 
-	const auto tempBoard = _currentBoard;
-	const auto settings = _searchOptions;
+	const auto startZKey = _currentBoard.zKey();
 
-	std::thread([tempBoard, settings]
+	std::thread([startZKey]
 				{
-					const Move bestMove = Search::findBestMove(tempBoard, settings);
+					std::unique_lock lock{ _mutex };
+					const auto tempBoard = _currentBoard;
+					const auto options = _searchOptions;
+
+					// This will should start executing exactly after makeEngineMove()
+					// if the key is not as the specified one, cancel the search
+
+					if (startZKey != _currentBoard.zKey()) return;
+					lock.unlock();
+
+					const Move bestMove = Search::findBestMove(tempBoard, options);
 					_isWorking = false;
 
-					std::lock_guard lock{ _mutex };
+					lock.lock();
 					// Make sure the board has not changed in the time we were searching
-					if (tempBoard.zKey() == _currentBoard.zKey())
+					if (startZKey == _currentBoard.zKey())
 						makeMove(bestMove);
 					else
 						std::cout << "Board was changed while searching, cannot make found move\n";
@@ -142,7 +151,7 @@ std::vector<Move> BoardManager::getPossibleMoves(const Square from)
 	return moves;
 }
 
-GameState BoardManager::getBoardState()
+GameState BoardManager::getBoardState() noexcept
 {
 	std::lock_guard lock{ _mutex };
 	if (_currentBoard.isDrawn())

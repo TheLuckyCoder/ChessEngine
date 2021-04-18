@@ -8,7 +8,7 @@
 
 class Stats final
 {
-	inline static bool _statsEnabled = false;
+	static std::atomic_bool _statsEnabled;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> _startTime;
 
 	static std::atomic_size_t _boardsEvaluated;
@@ -34,7 +34,7 @@ public:
 	static void incLmrCount() noexcept;
 
 	static void restartTimer() noexcept;
-	static usize getElapsedMs() noexcept;
+	static i64 getElapsedMs() noexcept;
 
 	static std::string formatStats(char separator);
 };

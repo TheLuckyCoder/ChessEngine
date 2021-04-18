@@ -53,13 +53,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
     val showImportDialog = mutableStateOf(false)
 
     init {
-        initBoard()
+        resetBoard()
 
         viewModelScope.launch(Dispatchers.IO) {
             launch {
                 dataStore.showAdvancedDebug().distinctUntilChanged().collectLatest {
                     ensureActive()
-                    withContext(Dispatchers.Main) { Native.enableStats(it) }
+                    DebugStats.enable(it)
                 }
             }
 
@@ -87,7 +87,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
         }
     }
 
-    fun initBoard(playerWhite: Boolean = true) {
+    fun resetBoard(playerWhite: Boolean = true) {
         if (initialized.get()) {
             if (isEngineThinking.value)
                 Native.stopSearch()
@@ -107,23 +107,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
     fun updateDifficulty(level: Int) = viewModelScope.launch(Dispatchers.IO) {
         dataStore.setDifficultyLevel(level)
-    }
-
-    fun makeMove(move: Move) {
-        Native.makeMove(move.content)
-        isEngineThinkingFlow.value = Native.isEngineWorking()
-
-        tilesFlow.value = tilesFlow.value
-            .map { tile ->
-                when {
-                    // Mark the moved from and to squares
-                    tile.square == move.from.toInt() || tile.square == move.to.toInt() ->
-                        tile.copy(state = Tile.State.Moved)
-                    // Clear everything else
-                    tile.state != Tile.State.None -> tile.copy(state = Tile.State.None)
-                    else -> tile
-                }
-            }
     }
 
     fun getPossibleMoves(square: Int) {
@@ -150,7 +133,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
         val gameState = GameState.getState(gameStateInt)
 
         playerPlayingWhiteFlow.value = Native.isPlayerWhite()
-        isEngineThinkingFlow.value = Native.isEngineWorking()
 
         gameStateFlow.value = gameState
         val movesHistoryList = Native.getMovesHistory().toList()
@@ -175,6 +157,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
         if (!Native.isPlayersTurn())
             Native.makeEngineMove()
+
+        isEngineThinkingFlow.value = Native.isEngineWorking()
     }
 
     private companion object {

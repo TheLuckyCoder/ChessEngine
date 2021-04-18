@@ -154,12 +154,12 @@ void Uci::setOption(std::istringstream &is)
 
 void Uci::parseGo(std::istringstream &is)
 {
-	int depth = MAX_DEPTH;
-	int movesToGo = 35;
-	int moveTime = -1;
-	int time = -1;
+	i32 depth = MAX_DEPTH;
+	i32 movesToGo = 35;
+	i64 moveTime = -1;
+	i64 time = -1;
 	bool timeSet = false;
-	int inc = 0;
+	i64 inc = 0;
 	bool infinite = false;
 
 	std::string token;
@@ -206,7 +206,7 @@ void Uci::parseGo(std::istringstream &is)
 	}
 
 	if (timeSet)
-		time = std::max(5, time);
+		time = std::max<i64>(5, time);
 
 	if (infinite)
 	{
@@ -214,10 +214,10 @@ void Uci::parseGo(std::istringstream &is)
 		timeSet = false;
 	}
 
-	std::cout << "time: " << time << " depth: " << depth << " timeSet: " << std::boolalpha
-			  << timeSet << std::endl;
+	std::cout << "time: " << time << " depth: " << depth
+			  << " timeSet: " << std::boolalpha << timeSet << std::endl;
 
-	const auto searchTime = timeSet ? static_cast<size_t>(time) : 0ul;
+	const i64 searchTime = timeSet ? time : 0;
 	const SearchOptions options{ depth, _threadCount, _hashSizeMb, true, searchTime };
 
 	if (_searchThread.joinable())

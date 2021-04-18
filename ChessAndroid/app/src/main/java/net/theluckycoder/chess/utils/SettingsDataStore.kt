@@ -10,7 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.theluckycoder.chess.model.EngineSettings
+import net.theluckycoder.chess.model.SearchOptions
 import java.util.concurrent.TimeUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
@@ -45,9 +45,9 @@ class SettingsDataStore private constructor(private val application: Application
         preferences[QUIET_SEARCH] = value != 0
     }
 
-    fun getEngineSettings(): Flow<EngineSettings> =
+    fun getEngineSettings(): Flow<SearchOptions> =
         dataStore().data.map {
-            EngineSettings(
+            SearchOptions(
                 searchDepth = it[SEARCH_DEPTH] ?: DEFAULT_SEARCH_DEPTH,
                 quietSearch = it[QUIET_SEARCH] ?: DEFAULT_QUIET_SEARCH,
                 searchTime = (it[SEARCH_TIME] ?: DEFAULT_SEARCH_TIME).seconds,
@@ -56,13 +56,13 @@ class SettingsDataStore private constructor(private val application: Application
             )
         }
 
-    suspend fun setEngineSettings(engineSettings: EngineSettings) =
+    suspend fun setEngineSettings(searchOptions: SearchOptions) =
         dataStore().edit { preferences ->
-            preferences[SEARCH_DEPTH] = engineSettings.searchDepth
-            preferences[QUIET_SEARCH] = engineSettings.quietSearch
-            preferences[SEARCH_TIME] = engineSettings.searchTime.toInt(TimeUnit.SECONDS)
-            preferences[THREADS] = engineSettings.threadCount
-            preferences[HASH_SIZE] = engineSettings.hashSize
+            preferences[SEARCH_DEPTH] = searchOptions.searchDepth
+            preferences[QUIET_SEARCH] = searchOptions.quietSearch
+            preferences[SEARCH_TIME] = searchOptions.searchTime.toInt(TimeUnit.SECONDS)
+            preferences[THREADS] = searchOptions.threadCount
+            preferences[HASH_SIZE] = searchOptions.hashSize
         }
 
     fun showBasicDebug(): Flow<Boolean> =
@@ -101,7 +101,9 @@ class SettingsDataStore private constructor(private val application: Application
         const val DEFAULT_SHOW_COORDINATES = true
         const val DEFAULT_MOVES_HISTORY = true
         const val DEFAULT_PIECE_DESTINATIONS = true
-        const val DEFAULT_SEARCH_DEPTH = 6
+
+        // These will be overridden by the default [SearchOptions] in the Native Code
+        const val DEFAULT_SEARCH_DEPTH = 1
         const val DEFAULT_QUIET_SEARCH = true
         const val DEFAULT_SEARCH_TIME = 10
         const val DEFAULT_THREADS = 1

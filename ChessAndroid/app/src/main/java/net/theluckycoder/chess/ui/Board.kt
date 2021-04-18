@@ -1,5 +1,6 @@
 package net.theluckycoder.chess.ui.home
 
+import android.app.Application
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -17,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -25,11 +27,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.viewmodel.HomeViewModel
+import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.ui.AlertDialogTitle
 import net.theluckycoder.chess.utils.SettingsDataStore
+import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.math.min
 
 private val PIECES_RESOURCES = intArrayOf(
@@ -48,7 +51,10 @@ private fun getPieceDrawable(piece: Piece): Painter {
 @Composable
 fun ChessBoard(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel()
+    isPlayerWhite: Boolean,
+    tiles: List<Tile>,
+    pieces: List<IndexedPiece>,
+    gameState: GameState,
 ) = BoxWithConstraints(
     modifier = modifier
 ) {
@@ -56,14 +62,16 @@ fun ChessBoard(
         with(LocalDensity.current) { min(constraints.maxWidth, constraints.maxHeight).toDp() }
     val tileSize = boardSize / 8f
 
-    val showCoordinates by viewModel.dataStore.showCoordinates().collectAsState(false)
-    val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
-    val tiles by viewModel.tiles.collectAsState()
-    val pieces by viewModel.pieces.collectAsState()
+    val application = LocalContext.current.applicationContext as Application
+    val dataStore = remember { SettingsDataStore.get(application) }
 
-    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, viewModel)
+    // Preferences
+    val showCoordinates by dataStore.showCoordinates().collectAsState(false)
+    val showPossibleMoves by dataStore.showPieceDestination().collectAsState(false)
 
-    BoardPieces(tileSize, isPlayerWhite, pieces, viewModel)
+    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, showPossibleMoves)
+
+    BoardPieces(tileSize, isPlayerWhite, pieces, gameState)
 
     if (showCoordinates) {
         BoardCoordinates(tileSize)
@@ -76,11 +84,8 @@ private fun BoardTiles(
     tileDp: Dp,
     isPlayerWhite: Boolean,
     tiles: List<Tile>,
-    viewModel: HomeViewModel = viewModel()
+    showPossibleMoves: Boolean,
 ) {
-    val showPossibleMoves by viewModel.dataStore.showPieceDestination()
-        .collectAsState(SettingsDataStore.DEFAULT_PIECE_DESTINATIONS)
-
     val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
     val currentDensity = LocalDensity.current
 
@@ -148,7 +153,7 @@ private fun BoardTiles(
                         val moves = state.moves
                         when {
                             moves.size > 1 -> showPromotionDialog.value = moves
-                            else -> viewModel.makeMove(moves.first())
+                            else -> Native.makeMove(moves.first())
                         }
                     }
             )
@@ -191,9 +196,9 @@ private fun BoardPieces(
     tileDp: Dp,
     isPlayerWhite: Boolean,
     pieces: List<IndexedPiece>,
+    gameState: GameState,
     viewModel: HomeViewModel = viewModel()
 ) {
-    val gameState by viewModel.gameState.collectAsState()
     val whiteInCheck = gameState == GameState.WHITE_IN_CHECK
     val blackInCheck = gameState == GameState.BLACK_IN_CHECK
 
@@ -233,8 +238,6 @@ private fun BoardPieces(
 
 @Composable
 private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
-    val viewModel = viewModel<HomeViewModel>()
-
     val promotionResources = intArrayOf(
         R.drawable.w_queen, R.drawable.w_rook,
         R.drawable.w_knight, R.drawable.w_bishop
@@ -251,7 +254,7 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
                     IconButton(
                         modifier = Modifier.weight(1f),
                         onClick = {
-                            viewModel.makeMove(showPromotionDialog.value[index])
+                            Native.makeMove(showPromotionDialog.value[index])
                             showPromotionDialog.value = emptyList()
                         }
                     ) {
