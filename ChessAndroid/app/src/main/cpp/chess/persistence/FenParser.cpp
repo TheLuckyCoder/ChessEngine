@@ -1,13 +1,13 @@
 #include "FenParser.h"
 
 #include "../algorithm/Evaluation.h"
-#include "../algorithm/Hash.h"
+#include "../Zobrist.h"
 
 bool FenParser::parseFen(Board &board, const std::string &fen)
 {
-	std::istringstream stream(fen);
+	if (fen.empty()) return false;
 
-	if (!stream) return false;
+	std::istringstream stream(fen);
 
 	// Clean board
 	board = {};
@@ -17,21 +17,23 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	// Next to move
 	std::string side;
 	stream >> side;
-	board.colorToMove = side == "w" ? WHITE : BLACK;
+	Color &colorToMove = board.colorToMove;
+	colorToMove = side == "w" ? WHITE : BLACK;
 
 	// Castling availability
 	std::string castling = "-";
 	stream >> castling;
-	board.castlingRights = CastlingRights::CASTLE_NONE;
+	auto &castlingRights = board.state.castlingRights;
+	castlingRights = CastlingRights::CASTLE_NONE;
 	for (char currChar : castling) {
 		switch (currChar) {
-			case 'K': board.castlingRights |= CastlingRights::CASTLE_WHITE_KING;
+			case 'K': castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
-			case 'Q': board.castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
+			case 'Q': castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
 				break;
-			case 'k': board.castlingRights |= CastlingRights::CASTLE_BLACK_KING;
+			case 'k': castlingRights |= CastlingRights::CASTLE_BLACK_KING;
 				break;
-			case 'q': board.castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
+			case 'q': castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
 				break;
 			default:
 				break;
@@ -40,7 +42,8 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 
 	std::string ep = "-";
 	stream >> ep;
-	board.enPassantSq = SQUARE_NB;
+	auto &enPassantSq = board.state.enPassantSq;
+	enPassantSq = SQUARE_NB;
 	if (ep != "-")
 	{
 		if (ep.length() != 2)
@@ -48,20 +51,23 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 		if (!(ep[0] >= 'a' && ep[0] <= 'h'))
 			return false;
 
-		const byte sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
-		board.enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
+		const Square sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
+		enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
 	}
 
 	// HalfMove Clock
 	int halfMove{};
 	stream >> halfMove;
-	board.fiftyMoveRule = static_cast<byte>(halfMove);
+	board.state.fiftyMoveRule = static_cast<u8>(halfMove);
 
+	board.state.zKey = Zobrist::compute(board);
 	board.updatePieceList();
 	board.updateNonPieceBitboards();
-	board.zKey = Hash::compute(board);
 
-	board.kingAttackers = board.colorToMove ? board.allKingAttackers<WHITE>() : board.allKingAttackers<BLACK>();
+	if (board.getPieces().count() < 2 || board.getPieces(KING).count() != 2) return false;
+
+	board.state.kingAttackers = board.generateAttackers(board.getKingSq(colorToMove)) & board.getPieces(~colorToMove);
+	board.computeCheckInfo();
 	return true;
 }
 
@@ -74,7 +80,7 @@ std::string FenParser::exportToFen(const Board &board)
 		for (int file = 0; file <= 7; ++file)
 		{
 			int emptyCount = 0;
-			for (; file <= 7 && board.data[toSquare(file, rank)] == EMPTY_PIECE; ++file)
+			for (; file <= 7 && board.data[toSquare(file, rank)] == EmptyPiece; ++file)
 				++emptyCount;
 
 			if (emptyCount)
@@ -117,14 +123,15 @@ std::string FenParser::exportToFen(const Board &board)
 
 	if (board.canCastleQs<BLACK>()) out << 'q';
 
-	if (!board.canCastle(WHITE) && !board.canCastle(BLACK)) out << '-';
+	if (!board.canCastle<WHITE>() && !board.canCastle<BLACK>()) out << '-';
 
-	if (board.enPassantSq < SQ_NONE)
-		out << ' ' << char('a' + int(col(board.enPassantSq))) << int(row(board.enPassantSq)) << ' ';
+	const Square enPassantSq = board.getEnPassantSq();
+	if (enPassantSq != SQ_NONE)
+		out << ' ' << char('a' + int(fileOf(enPassantSq))) << int(rankOf(enPassantSq)) << ' ';
 	else
 		out << " - ";
 
-	out << short(board.fiftyMoveRule / 2);
+	out << short(board.state.fiftyMoveRule / 2);
 
 	return out.str();
 }
@@ -134,7 +141,7 @@ void FenParser::parsePieces(Board &board, std::istringstream &stream)
 	std::string token;
 	token.reserve(32);
 
-	U64 boardPos = 56ull; // Fen string starts at a8 = index 56
+	u64 boardPos = 56ull; // Fen string starts at a8 = index 56
 	stream >> token;
 	for (auto currChar : token)
 	{
@@ -179,7 +186,7 @@ void FenParser::parsePieces(Board &board, std::istringstream &stream)
 			case '/': boardPos -= 16u; // Go down one rank
 				break;
 			default:
-				boardPos += static_cast<U64>(currChar - '0');
+				boardPos += static_cast<u64>(currChar - '0');
 		}
 	}
 }

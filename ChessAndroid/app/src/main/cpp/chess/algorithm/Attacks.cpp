@@ -1,19 +1,6 @@
 #include "Attacks.h"
 
-static constexpr std::array<byte, SQUARE_NB> rookIndexBits
-{
-	12, 11, 11, 11, 11, 11, 11, 12,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	11, 10, 10, 10, 10, 10, 10, 11,
-	12, 11, 11, 11, 11, 11, 11, 12
-};
-
-static constexpr std::array<byte, SQUARE_NB> bishopIndexBits
-{
+static constexpr std::array<u8, SQUARE_NB> BishopIndexBits = {
 	6, 5, 5, 5, 5, 5, 5, 6,
 	5, 5, 5, 5, 5, 5, 5, 5,
 	5, 5, 7, 7, 7, 7, 5, 5,
@@ -24,11 +11,21 @@ static constexpr std::array<byte, SQUARE_NB> bishopIndexBits
 	6, 5, 5, 5, 5, 5, 5, 6
 };
 
+static constexpr std::array<u8, SQUARE_NB> RookIndexBits = {
+	12, 11, 11, 11, 11, 11, 11, 12,
+	11, 10, 10, 10, 10, 10, 10, 11,
+	11, 10, 10, 10, 10, 10, 10, 11,
+	11, 10, 10, 10, 10, 10, 10, 11,
+	11, 10, 10, 10, 10, 10, 10, 11,
+	11, 10, 10, 10, 10, 10, 10, 11,
+	11, 10, 10, 10, 10, 10, 10, 11,
+	12, 11, 11, 11, 11, 11, 11, 12
+};
+
 /**
  * Rook and bishop magic values for magic table lookups
  */
-static constexpr std::array<U64, 64> bishopMagics
-{
+static constexpr std::array<u64, SQUARE_NB> BishopMagics = {
 	0x89a1121896040240ull, 0x2004844802002010ull, 0x2068080051921000ull, 0x62880a0220200808ull, 0x4042004000000ull,
 	0x100822020200011ull, 0xc00444222012000aull, 0x28808801216001ull, 0x400492088408100ull, 0x201c401040c0084ull,
 	0x840800910a0010ull, 0x82080240060ull, 0x2000840504006000ull, 0x30010c4108405004ull, 0x1008005410080802ull,
@@ -44,8 +41,7 @@ static constexpr std::array<U64, 64> bishopMagics
 	0x1000042304105ull, 0x10008830412a00ull, 0x2520081090008908ull, 0x40102000a0a60140ull,
 };
 
-static constexpr std::array<U64, 64> rookMagics
-{
+static constexpr std::array<u64, SQUARE_NB> RookMagics = {
 	0xa8002c000108020ull, 0x6c00049b0002001ull, 0x100200010090040ull, 0x2480041000800801ull, 0x280028004000800ull,
 	0x900410008040022ull, 0x280020001001080ull, 0x2880002041000080ull, 0xa000800080400034ull, 0x4808020004000ull,
 	0x2290802004801000ull, 0x411000d00100020ull, 0x402800800040080ull, 0xb000401004208ull, 0x2409000100040200ull,
@@ -65,209 +61,220 @@ static constexpr std::array<U64, 64> rookMagics
  * Rook and bishop sliding attack masks indexed by [square]
  * These do not include edge squares
  */
-static constexpr auto bishopMasks = []
+static constexpr auto BishopMasks = []
 {
-	using namespace Bits;
+	constexpr Bitboard edgeSquares{ FILE_A | FILE_H | RANK_1 | RANK_8 };
+	std::array<Bitboard, SQUARE_NB> masks{};
 
-	const U64 edgeSquares = FILE_A | FILE_H | RANK_1 | RANK_8;
-	std::array<U64, SQUARE_NB> masks{};
-
-	for (byte square = 0u; square < SQUARE_NB; ++square)
+	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (getRay(NORTH_EAST, square)
-						 | getRay(NORTH_WEST, square)
-						 | getRay(SOUTH_WEST, square)
-						 | getRay(SOUTH_EAST, square)) & ~(edgeSquares);
+		masks[square] = (Bitboard::fromDirection(NORTH_EAST, square)
+						 | Bitboard::fromDirection(NORTH_WEST, square)
+						 | Bitboard::fromDirection(SOUTH_WEST, square)
+						 | Bitboard::fromDirection(SOUTH_EAST, square)) & ~(edgeSquares);
 	}
 
 	return masks;
 }();
 
-static constexpr auto rookMasks = []
+static constexpr auto RookMasks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> masks{};
 
-	std::array<U64, SQUARE_NB> masks{};
-
-	for (byte square{}; square < 64u; ++square)
+	for (Square square{}; square < SQUARE_NB; ++square)
 	{
-		masks[square] = (getRay(NORTH, square) & ~RANK_8)
-						| (getRay(SOUTH, square) & ~RANK_1)
-						| (getRay(EAST, square) & ~FILE_H)
-						| (getRay(WEST, square) & ~FILE_A);
+		masks[square] = (Bitboard::fromDirection(NORTH, square) & ~RANK_8)
+						| (Bitboard::fromDirection(SOUTH, square) & ~RANK_1)
+						| (Bitboard::fromDirection(EAST, square) & ~FILE_H)
+						| (Bitboard::fromDirection(WEST, square) & ~FILE_A);
 	}
 
 	return masks;
 }();
 
-U64 getBlockersFromIndex(const int index, U64 mask)
+constexpr u64 getBlockersFromIndex(const int index, Bitboard mask)
 {
-	U64 blockers{};
-	const int bits = Bits::popCount(mask);
+	u64 blockers{};
+	const int bits = mask.count();
 
 	for (int i = 0; i < bits; i++)
 	{
-		const byte bitPos = Bits::popLsb(mask);
+		const u8 bitPos = mask.popLsb();
 		if (index & (1 << i))
-			blockers |= Bits::_SQUARES[bitPos];
+			blockers |= Bits::Squares[bitPos];
 	}
 
 	return blockers;
 }
 
-static constexpr auto _knightAttacks = []
+static constexpr auto KnightAttacks = []
 {
-	std::array<U64, 64> moves{};
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	using namespace Bits;
-
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		const U64 bb = getSquare64(sq);
-		moves[sq] = shift<WEST, WEST, SOUTH>(bb)
-					| shift<WEST, WEST, NORTH>(bb)
-					| shift<WEST, SOUTH, SOUTH>(bb)
-					| shift<WEST, NORTH, NORTH>(bb)
-					| shift<EAST, SOUTH, SOUTH>(bb)
-					| shift<EAST, NORTH, NORTH>(bb)
-					| shift<EAST, EAST, SOUTH>(bb)
-					| shift<EAST, EAST, NORTH>(bb);
+		const auto bb = Bitboard::fromSquare(toSquare(square));
+		moves[square] = bb.shift<WEST, WEST, SOUTH>()
+						| bb.shift<WEST, WEST, NORTH>()
+						| bb.shift<WEST, SOUTH, SOUTH>()
+						| bb.shift<WEST, NORTH, NORTH>()
+						| bb.shift<EAST, SOUTH, SOUTH>()
+						| bb.shift<EAST, NORTH, NORTH>()
+						| bb.shift<EAST, EAST, SOUTH>()
+						| bb.shift<EAST, EAST, NORTH>();
 	}
 
 	return moves;
 }();
 
-static constexpr auto _kingAttacks = []
+static constexpr auto KingAttacks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	std::array<U64, SQUARE_NB> moves{};
-
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		const U64 bb = getSquare64(sq);
+		const auto bb = Bitboard::fromSquare(toSquare(square));
 
 		// Vertical and Horizontal
-		U64 attacks = shift<NORTH>(bb) | shift<SOUTH>(bb) | shift<EAST>(bb) | shift<WEST>(bb);
+		auto attacks = bb.shift<NORTH>() | bb.shift<SOUTH>() | bb.shift<EAST>() | bb.shift<WEST>();
 
 		// Diagonals
-		attacks |= shift<NORTH_EAST>(bb) | shift<NORTH_WEST>(bb) | shift<SOUTH_EAST>(bb) |
-				   shift<SOUTH_WEST>(bb);
+		attacks |= bb.shift<NORTH_EAST>() | bb.shift<NORTH_WEST>() |
+				   bb.shift<SOUTH_EAST>() | bb.shift<SOUTH_WEST>();
 
-		moves[sq] = attacks;
+		moves[square] = attacks;
 	}
 
 	return moves;
 }();
 
-std::array<std::array<U64, 1024>, SQUARE_NB> Attacks::_bishopAttacks{};
+static std::array<std::array<Bitboard, 1024>, SQUARE_NB> BishopAttacks;
 
-std::array<std::array<U64, 4096>, SQUARE_NB> Attacks::_rookAttacks{};
+static std::array<std::array<Bitboard, 4096>, SQUARE_NB> RookAttacks;
 
-static constexpr auto _bishopXRayAttacks = []
+static constexpr auto BishopXRayAttacks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	std::array<U64, SQUARE_NB> moves{};
-
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
-		moves[sq] = getRay(NORTH_WEST, sq)
-				   | getRay(NORTH_EAST, sq)
-				   | getRay(SOUTH_WEST, sq)
-				   | getRay(SOUTH_EAST, sq);
+	for (Square square{}; square < SQUARE_NB; ++square)
+	{
+		moves[square] = Bitboard::fromDirection(NORTH_WEST, square)
+						| Bitboard::fromDirection(NORTH_EAST, square)
+						| Bitboard::fromDirection(SOUTH_WEST, square)
+						| Bitboard::fromDirection(SOUTH_EAST, square);
+	}
 
 	return moves;
 }();
 
-static constexpr auto _rookXRayAttacks = []
+static constexpr auto RookXRayAttacks = []
 {
-	using namespace Bits;
+	std::array<Bitboard, SQUARE_NB> moves{};
 
-	std::array<U64, SQUARE_NB> moves{};
-
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
-		moves[sq] = getRay(NORTH, sq)
-				   | getRay(EAST, sq)
-				   | getRay(SOUTH, sq)
-				   | getRay(WEST, sq);
+	for (Square square{}; square < SQUARE_NB; ++square)
+	{
+		moves[square] = Bitboard::fromDirection(NORTH, square)
+						| Bitboard::fromDirection(EAST, square)
+						| Bitboard::fromDirection(SOUTH, square)
+						| Bitboard::fromDirection(WEST, square);
+	}
 
 	return moves;
 }();
 
-void Attacks::init() noexcept
+void Attacks::init()
 {
 	static bool initialized = false;
 	if (initialized) return;
 	initialized = true;
 
-	// Init Bishop Moves
-	for (byte bb{}; bb < SQUARE_NB; ++bb)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		const int indexBit = bishopIndexBits[bb];
+		const int indexBit = BishopIndexBits[square];
 
 		// For all possible blockers for this square
-		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
+		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
 		{
-			const U64 blockers = getBlockersFromIndex(blockerIndex, bishopMasks[bb]);
-			const U64 attacks = Bits::generateBishopAttacks(bb, blockers);
-			const U64 index = (blockers * bishopMagics[bb]) >> (64 - indexBit);
+			const u64 blockers = getBlockersFromIndex(blockerIndex, BishopMasks[square]);
+			const u64 attacks = Bits::generateBishopAttacks(square, blockers);
+			const u64 index = (blockers * BishopMagics[square]) >> (64 - indexBit);
 
-			_bishopAttacks[bb][index] = attacks;
+			BishopAttacks[square][index] = Bitboard{ attacks };
 		}
 	}
 
-	// Init Rook Moves
-	for (byte bb{}; bb < SQUARE_NB; ++bb)
+	for (u8 square{}; square < SQUARE_NB; ++square)
 	{
-		const int indexBit = rookIndexBits[bb];
+		const int indexBit = RookIndexBits[square];
 
 		// For all possible blockers for this square
-		for (int blockerIndex = 0; blockerIndex < (1 << indexBit); ++blockerIndex)
+		for (int blockerIndex{}; blockerIndex < (1 << indexBit); ++blockerIndex)
 		{
-			const U64 blockers = getBlockersFromIndex(blockerIndex, rookMasks[bb]);
-			const U64 attacks = Bits::generateRookAttacks(bb, blockers);
-			const U64 index = (blockers * rookMagics[bb]) >> (64 - indexBit);
+			const u64 blockers = getBlockersFromIndex(blockerIndex, RookMasks[square]);
+			const u64 attacks = Bits::generateRookAttacks(square, blockers);
+			const u64 index = (blockers * RookMagics[square]) >> (64 - indexBit);
 
-			_rookAttacks[bb][index] = attacks;
+			RookAttacks[square][index] = Bitboard{ attacks };
 		}
 	}
 }
 
-U64 Attacks::knightAttacks(const byte square) noexcept
+Bitboard Attacks::knightAttacks(const Square square) noexcept
 {
-	return _knightAttacks[square];
+	return KnightAttacks[square];
 }
 
-U64 Attacks::bishopAttacks(const byte square, U64 blockers) noexcept
+Bitboard Attacks::bishopAttacks(const Square square, Bitboard blockers) noexcept
 {
-	blockers &= bishopMasks[square];
-	const U64 key = (blockers * bishopMagics[square]) >> (64u - bishopIndexBits[square]);
-	return _bishopAttacks[square][key];
+	blockers &= BishopMasks[square];
+	const u64 key = (blockers.value() * BishopMagics[square]) >> (64u - BishopIndexBits[square]);
+	return BishopAttacks[square][key];
 }
 
-U64 Attacks::rookAttacks(const byte square, U64 blockers) noexcept
+Bitboard Attacks::rookAttacks(const Square square, Bitboard blockers) noexcept
 {
-	blockers &= rookMasks[square];
-	const U64 key = (blockers * rookMagics[square]) >> (64u - rookIndexBits[square]);
-	return _rookAttacks[square][key];
+	blockers &= RookMasks[square];
+	const u64 key = (blockers.value() * RookMagics[square]) >> (64u - RookIndexBits[square]);
+	return RookAttacks[square][key];
 }
 
-U64 Attacks::queenAttacks(const byte square, const U64 blockers) noexcept
+Bitboard Attacks::queenAttacks(const Square square, const Bitboard blockers) noexcept
 {
 	return bishopAttacks(square, blockers) | rookAttacks(square, blockers);
 }
 
-U64 Attacks::kingAttacks(const byte square) noexcept
+Bitboard Attacks::kingAttacks(const Square square) noexcept
 {
-	return _kingAttacks[square];
+	return KingAttacks[u8(square)];
 }
 
-U64 Attacks::bishopXRayAttacks(const byte square) noexcept
+Bitboard Attacks::pieceAttacks(const PieceType pieceType, const Square square, const Bitboard blockers) noexcept
 {
-	return _bishopXRayAttacks[square];
+	switch (pieceType)
+	{
+		case KNIGHT:
+			return knightAttacks(square);
+		case BISHOP:
+			return bishopAttacks(square, blockers);
+		case ROOK:
+			return rookAttacks(square, blockers);
+		case QUEEN:
+			return queenAttacks(square, blockers);
+		case KING:
+			return kingAttacks(square);
+		case PAWN:
+			assert(false);
+		default:
+			return {};
+	}
 }
 
-U64 Attacks::rookXRayAttacks(const byte square) noexcept
+Bitboard Attacks::bishopXRayAttacks(const Square square) noexcept
 {
-	return _rookXRayAttacks[square];
+	return BishopXRayAttacks[u8(square)];
+}
+
+Bitboard Attacks::rookXRayAttacks(const Square square) noexcept
+{
+	return RookXRayAttacks[u8(square)];
 }

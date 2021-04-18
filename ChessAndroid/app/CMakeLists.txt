@@ -1,10 +1,9 @@
-cmake_minimum_required(VERSION 3.6)
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -g -O0 -std=c++17 -Wall -Wextra -pedantic")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -O3 -std=c++17 -Wall -Wextra -pedantic -DNDEBUG")
+cmake_minimum_required(VERSION 3.10)
+set(LIB_NAME "chess")
+project(${LIB_NAME})
 
 add_library(
-        chess
+        ${LIB_NAME}
         SHARED
 
         src/main/cpp/Main.cpp
@@ -14,19 +13,36 @@ add_library(
         src/main/cpp/chess/Board.cpp
         src/main/cpp/chess/algorithm/Attacks.cpp
         src/main/cpp/chess/algorithm/Evaluation.cpp
-        src/main/cpp/chess/algorithm/Hash.cpp
-        src/main/cpp/chess/algorithm/MoveGen.cpp
-        src/main/cpp/chess/algorithm/MoveOrdering.cpp
+        src/main/cpp/chess/MoveGen.cpp
+        src/main/cpp/chess/MoveOrdering.cpp
+        src/main/cpp/chess/PawnStructureTable.cpp
         src/main/cpp/chess/algorithm/Search.cpp
-        src/main/cpp/chess/containers/PawnStructureTable.cpp
-        src/main/cpp/chess/containers/TranspositionTable.cpp
+        src/main/cpp/chess/Tests.cpp
+        src/main/cpp/chess/TranspositionTable.cpp
+        src/main/cpp/chess/Zobrist.cpp
         src/main/cpp/chess/persistence/FenParser.cpp
-        src/main/cpp/chess/persistence/MovesPersistence.cpp)
+        src/main/cpp/chess/polyglot/PolyBook.cpp
+)
+
+# CMake 3.12 is required for std_20
+#target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
+
+target_compile_options(${LIB_NAME} PUBLIC
+        -std=c++20 -stdlib=libc++ -fno-exceptions -fno-rtti
+        -Wall -Wextra -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
+        -Wpedantic -Wnull-dereference
+        )
+
+set(FLAGS_DEBUG "-O1")
+set(FLAGS_RELEASE "-DNDEBUG" "-flto=thin" "-O3")
+target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")
+target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")
+target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE}>")
 
 find_library(
         log-lib
         log)
 
 target_link_libraries(
-        chess
+        ${LIB_NAME}
         ${log-lib})

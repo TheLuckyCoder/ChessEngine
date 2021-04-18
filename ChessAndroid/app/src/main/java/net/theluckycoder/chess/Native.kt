@@ -1,50 +1,60 @@
 package net.theluckycoder.chess
 
-import net.theluckycoder.chess.model.Piece
+import net.theluckycoder.chess.model.IndexedPiece
+import net.theluckycoder.chess.model.Move
+import net.theluckycoder.chess.model.SearchOptions
+import kotlin.time.ExperimentalTime
 
 object Native {
 
-    external fun isWorking(): Boolean
+    external fun initBoard(boardChangeListener: BoardChangeListener, isPlayerWhite: Boolean)
+    external fun initBook(bookPath: String)
 
+    external fun loadFen(playerWhite: Boolean, fen: String): Boolean
+    external fun loadFenMoves(playerWhite: Boolean, fen: String, moves: IntArray)
+
+    external fun isEngineWorking(): Boolean
     external fun isPlayerWhite(): Boolean
+    external fun isPlayersTurn(): Boolean
 
-    // region Stats
+    external fun getPieces(): Array<IndexedPiece>
+    external fun getPossibleMoves(square: Byte): Array<Move>
 
-    external fun getSearchTime(): Double
-
-    external fun getCurrentBoardValue(): Int
-
-    external fun getAdvancedStats(): String
-
-    // endregion Stats
-
-    external fun getPieces(): Array<Piece>
-
-    external fun getPossibleMoves(square: Byte): LongArray
-
-    external fun makeMove(move: Long)
-
-    external fun forceMove()
+    fun makeMove(move: Move) = makeMove(move.content)
+    external fun makeMove(move: Int)
+    external fun makeEngineMove()
 
     external fun stopSearch()
 
-    external fun enableStats(enabled: Boolean)
+    external fun getSearchOptions(): SearchOptions
 
-    external fun setSettings(
-        baseSearchDepth: Int,
-        threadCount: Int,
-        cacheSizeInMb: Int,
-        performQuiescenceSearch: Boolean
+    @OptIn(ExperimentalTime::class)
+    fun setSearchOptions(options: SearchOptions) = setSearchOptions(
+        options.searchDepth,
+        options.quietSearch,
+        options.threadCount,
+        options.hashSize,
+        options.searchTime.toLongMilliseconds(),
     )
 
-    external fun undoMoves(): Boolean
+    private external fun setSearchOptions(
+        searchDepth: Int, quietSearch: Boolean,
+        threadCount: Int, hashSizeMb: Int,
+        searchTime: Long,
+    )
 
-    external fun loadFen(playerWhite: Boolean, position: String): Boolean
-    external fun loadMoves(moves: String)
-    external fun getFen(): String
+    external fun undoMoves()
+    external fun redoMoves()
 
-    external fun saveMoves(): String?
+    external fun getCurrentFen(): String
+    external fun getStartFen(): String
+    external fun getMovesHistory(): Array<Move>
+    external fun getCurrentMoveIndex(): Int
 
-    external fun perftTest()
-    external fun evaluationTest(): String?
+    // region Tests
+
+    external fun perftTests()
+    external fun evaluationTests(): String?
+
+    // endregion Tests
 }

@@ -1,29 +1,50 @@
 #pragma once
 
-#include <array>
-
-#include "../Settings.h"
+#include "../SearchOptions.h"
 #include "../Move.h"
-#include "../containers/TranspositionTable.h"
+#include "../TranspositionTable.h"
 
 class Board;
 
 class Search final
 {
-	struct State
+private:
+	struct SharedState
 	{
 		bool stopped{};
-		bool doQuietSearch = true;
-		bool useTime{};
-		size_t time{};
-		U64 nodes{};
+		std::atomic_uint64_t nodes{};
+
+		mutable std::mutex mutex{};
+		// Stats for the last time the depth was updated
+		std::atomic_int depth{};
+		int bestScore{};
+		i64 time{};
+
+		// This should only be read and written by the main thread
+		int lastReportedDepth{};
+		Move lastReportedBestMove{};
+		bool useBook{};
+
+		void reset() noexcept
+		{
+			stopped = false;
+			nodes = 0;
+			depth = 0;
+			bestScore = VALUE_MIN;
+			time = 0;
+			lastReportedDepth = 0;
+		}
+
+		void fullReset() noexcept
+		{
+			reset();
+			useBook = true;
+		}
 	};
 
-	static TranspositionTable _transpTable;
-	static std::array<std::array<unsigned int, MAX_DEPTH>, 2> _searchKillers;
-	static std::array<std::array<byte, SQUARE_NB>, SQUARE_NB> _searchHistory;
-	static std::array<int, MAX_DEPTH> _evalHistory;
-	static State _state;
+	static SearchOptions _searchOptions;
+	static TranspositionTable _transpositionTable;
+	static SharedState _sharedState;
 
 public:
 	Search() = delete;
@@ -35,25 +56,21 @@ public:
 
 	static void clearAll();
 	static void stopSearch();
-	static bool setTableSize(size_t sizeMb);
+	static bool setTableSize(usize sizeMb);
 
-	static Move findBestMove(Board board, const Settings &settings);
+	static Move findBestMove(Board board, const SearchOptions &searchOptions);
 
-	static auto &getTranspTable() noexcept { return _transpTable; }
-
-	static auto &getSearchKillers() noexcept { return _searchKillers; }
-
-	static auto &getSearchHistory() noexcept { return _searchHistory; }
+	static auto &getTranspTable() noexcept { return _transpositionTable; }
 
 private:
-	static Move iterativeDeepening(Board &board, int depth);
+	static void printUci(Board &board);
+	static void iterativeDeepening(Board board, int targetDepth);
 	static int aspirationWindow(Board &board, int depth, int bestScore);
-	static int
-	search(Board &board, int alpha, int beta, int depth, bool isPvNode, bool doNull, bool doLmr);
+	static int search(Board &board, int alpha, int beta, int depth, bool isPvNode,
+					  bool doNull, bool doLmr);
 	static int searchCaptures(Board &board, int alpha, int beta, int depth);
 
-	inline static void
-	storeTtEntry(const Move &bestMove, U64 key, int alpha, int originalAlpha, int beta, int depth,
-				 bool qSearch);
+	inline static void storeTTEntry(const Move &bestMove, u64 key, int alpha, int originalAlpha,
+									int beta, int depth, bool qSearch);
 	static bool checkTimeAndStop();
 };

@@ -1,51 +1,55 @@
 #pragma once
 
-#include "../Bits.h"
+#include "../Bitboard.h"
 
 class Attacks
 {
-	static std::array<std::array<U64, 1024>, 64> _bishopAttacks;
-	static std::array<std::array<U64, 4096>, 64> _rookAttacks;
-
 public:
 	Attacks() = delete;
-	Attacks(const Attacks&) = delete;
-	Attacks(Attacks&&) = delete;
+	Attacks(const Attacks &) = delete;
+	Attacks(Attacks &&) = delete;
 	~Attacks() = delete;
 
-	Attacks &operator=(const Attacks&) = delete;
-	Attacks &operator=(Attacks&&) = delete;
+	Attacks &operator=(const Attacks &) = delete;
+	Attacks &operator=(Attacks &&) = delete;
 
-	static void init() noexcept;
+	static void init();
 
-	static U64 knightAttacks(byte square) noexcept;
-	static U64 bishopAttacks(byte square, U64 blockers) noexcept;
-	static U64 rookAttacks(byte square, U64 blockers) noexcept;
-	static U64 queenAttacks(byte square, U64 blockers) noexcept;
-	static U64 kingAttacks(byte square) noexcept;
+	static Bitboard knightAttacks(Square square) noexcept;
+	static Bitboard bishopAttacks(Square square, Bitboard blockers) noexcept;
+	static Bitboard rookAttacks(Square square, Bitboard blockers) noexcept;
+	static Bitboard queenAttacks(Square square, Bitboard blockers) noexcept;
+	static Bitboard kingAttacks(Square square) noexcept;
 
-	static U64 bishopXRayAttacks(byte square) noexcept;
-	static U64 rookXRayAttacks(byte square) noexcept;
+	static Bitboard pieceAttacks(PieceType, Square square, Bitboard blockers) noexcept;
+
+	static Bitboard bishopXRayAttacks(Square square) noexcept;
+	static Bitboard rookXRayAttacks(Square square) noexcept;
 
 	template <Color C>
-	static U64 pawnAttacks(const U64 pawns) noexcept
+	static constexpr Bitboard pawnAttacks(const Bitboard pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
 
 		if constexpr (C == WHITE)
-			return Bits::shift<NORTH_WEST>(pawns) | Bits::shift<NORTH_EAST>(pawns);
+			return pawns.shift<NORTH_WEST>() | pawns.shift<NORTH_EAST>();
 		else
-			return Bits::shift<SOUTH_WEST>(pawns) | Bits::shift<SOUTH_EAST>(pawns);
+			return pawns.shift<SOUTH_WEST>() | pawns.shift<SOUTH_EAST>();
+	}
+
+	static constexpr Bitboard pawnAttacks(const Color color, const Bitboard pawns)
+	{
+		return color == WHITE ? pawnAttacks<WHITE>(pawns) : pawnAttacks<BLACK>(pawns);
 	}
 
 	template <Color C>
-	static U64 pawnDoubleAttacks(const U64 pawns) noexcept
+	static constexpr Bitboard pawnDoubleAttacks(const Bitboard pawns) noexcept
 	{
 		static_assert(C == WHITE || C == BLACK);
 
 		if constexpr (C == WHITE)
-			return Bits::shift<NORTH_WEST>(pawns) & Bits::shift<NORTH_EAST>(pawns);
+			return pawns.shift<NORTH_WEST>() & pawns.shift<NORTH_EAST>();
 		else
-			return Bits::shift<SOUTH_WEST>(pawns) & Bits::shift<SOUTH_EAST>(pawns);
+			return pawns.shift<SOUTH_WEST>() & pawns.shift<SOUTH_EAST>();
 	}
 };

@@ -1,12 +1,14 @@
 #pragma once
 
+#include "Defs.h"
+
 #include <atomic>
 #include <chrono>
 #include <string>
 
 class Stats final
 {
-	inline static bool _statsEnabled = false;
+	static std::atomic_bool _statsEnabled;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> _startTime;
 
 	static std::atomic_size_t _boardsEvaluated;
@@ -26,13 +28,13 @@ public:
 	static void resetStats() noexcept;
 
 	static void incBoardsEvaluated() noexcept;
-	static void incNodesSearched(std::size_t amount = 1u) noexcept;
+	static void incNodesSearched(usize amount = 1u) noexcept;
 	static void incNullCuts() noexcept;
 	static void incFutilityCuts() noexcept;
 	static void incLmrCount() noexcept;
 
 	static void restartTimer() noexcept;
-	static double getElapsedMs() noexcept;
+	static i64 getElapsedMs() noexcept;
 
 	static std::string formatStats(char separator);
 };

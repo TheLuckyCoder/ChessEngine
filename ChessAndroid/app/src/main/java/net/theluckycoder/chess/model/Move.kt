@@ -1,19 +1,29 @@
 package net.theluckycoder.chess.model
 
+import androidx.annotation.Keep
 import net.theluckycoder.chess.utils.toBoolean
 import kotlin.experimental.and
 
-@Suppress("unused", "MemberVisibilityCanBePrivate")
-data class Move(val content: Long) {
+@Keep
+data class Move(
+    val content: Int,
+    val from: Byte,
+    val to: Byte,
+    val pieceType: Byte,
+    val capturedPieceType: Byte,
+    val promotedPieceType: Byte,
+    private val internalFlags: Byte
+) {
     companion object {
         const val CAPTURE: Byte = 1
-        const val PROMOTION: Byte = 1 shl 2
-        const val KSIDE_CASTLE: Byte = 1 shl 3
-        const val QSIDE_CASTLE: Byte = 1 shl 4
-        const val DOUBLE_PAWN_PUSH: Byte = 1 shl 5
-        const val EN_PASSANT: Byte = 1 shl 6
+        const val PROMOTION: Byte = 1 shl 1
+        const val KSIDE_CASTLE: Byte = 1 shl 2
+        const val QSIDE_CASTLE: Byte = 1 shl 3
+        const val DOUBLE_PAWN_PUSH: Byte = 1 shl 4
+        const val EN_PASSANT: Byte = 1 shl 5
     }
 
+    @Suppress("unused")
     class Flags(flags: Int) {
         private val flags = (flags and 0x7F).toByte()
 
@@ -29,9 +39,6 @@ data class Move(val content: Long) {
         val qSideCastle: Boolean
             get() = (flags and QSIDE_CASTLE).toBoolean()
 
-        val castle: Boolean
-            get() = kSideCastle || qSideCastle
-
         val doublePawnPush: Boolean
             get() = (flags and DOUBLE_PAWN_PUSH).toBoolean()
 
@@ -39,26 +46,46 @@ data class Move(val content: Long) {
             get() = (flags and EN_PASSANT).toBoolean()
     }
 
-    val from: Byte
-        get() = ((content ushr 9) and 0x3F).toByte()
+    val flags = Flags(internalFlags.toInt())
 
-    val to: Byte
-        get() = ((content ushr 15) and 0x3F).toByte()
+    override fun toString(): String = buildString {
+        when {
+            flags.kSideCastle -> append("0-0")
+            flags.qSideCastle -> append("0-0-0")
+            else -> {
+                val piece = getPieceChar(pieceType)
 
-    val pieceType = (content and 7).toByte()
+                if (piece != ' ')
+                    append(piece)
 
-    val piece: Piece
-        get() = Piece(from.toInt(), pieceType)
+                if (flags.enPassant) {
+                    append('a' + from % 8)
+                    append('x')
+                }
 
-    val capturedPieceType: Byte
-        get() = ((content ushr 3) and 7).toByte()
+                if (flags.capture)
+                    append('x')
 
-    val capturedPiece: Piece
-        get() = Piece(to.toInt(), capturedPieceType)
+                val x = 'a' + to % 8
+                val y = '1' + to / 8
+                append(x)
+                append(y)
 
-    val promotedPieceType: Byte
-        get() = ((content ushr 6) and 7).toByte()
+                if (flags.promotion) {
+                    append('=')
+                    append(getPieceChar(promotedPieceType))
+                    append('+')
+                }
+            }
+        }
+    }
 
-    val flags: Flags
-        get() = Flags((content ushr 22).toInt())
+    private fun getPieceChar(piece: Byte) = when (piece) {
+        Piece.KNIGHT -> 'N'
+        Piece.BISHOP -> 'B'
+        Piece.ROOK -> 'R'
+        Piece.QUEEN -> 'Q'
+        Piece.KING -> 'K'
+        else -> ' '
+    }
 }

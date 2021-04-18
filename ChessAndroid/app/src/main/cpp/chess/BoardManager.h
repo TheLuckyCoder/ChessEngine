@@ -3,12 +3,15 @@
 #include <atomic>
 #include <functional>
 #include <thread>
+#include <mutex>
 #include <vector>
 
-#include "Settings.h"
+#include "SearchOptions.h"
 #include "Board.h"
+#include "MoveGen.h"
+#include "persistence/UndoRedoMoves.h"
 
-enum class GameState : byte
+enum class GameState : u8
 {
 	NONE,
 	WINNER_WHITE,
@@ -19,36 +22,70 @@ enum class GameState : byte
 	INVALID = 10
 };
 
+/**
+ * This is a wrapper for the actual Chess Engine in order to hopefully make it easier to be used with custom UIs
+ */
 class BoardManager final
 {
 public:
-	using PieceChangeListener = std::function<void(GameState state, bool shouldRedraw, const std::vector<std::pair<byte, byte>> &moved)>;
+	using BoardChangedCallback = std::function<void(GameState state)>;
 
 private:
-	static Settings _settings;
-	inline static std::thread _workerThread;
+	static std::recursive_mutex _mutex;
+	static BoardChangedCallback _callback;
+
 	inline static std::atomic_bool _isWorking{ false };
-	inline static bool _isPlayerWhite;
-	static PieceChangeListener _listener;
-	static Board _board;
-	
-public:
-	static void initBoardManager(const PieceChangeListener &listener, bool isPlayerWhite = true);
-	static bool loadGame(bool isPlayerWhite, const std::string &fen);
-	static void loadGame(const std::vector<Move> &moves, bool isPlayerWhite);
-	static std::string exportFen();
-	static bool undoLastMoves();
+	inline static constinit bool _isPlayerWhite{ true };
+	inline static constinit Board _currentBoard{};
+	inline static UndoRedo::MovesStack _movesStack;
+	inline static SearchOptions _searchOptions;
 
-	static const Board &getBoard() { return _board; }
-	static std::vector<Move> getMovesHistory();
-	static bool isWorking() { return _isWorking; }
-	static bool isPlayerWhite() { return _isPlayerWhite; }
-	static std::vector<Move> getPossibleMoves(byte from);
-	static void makeMove(Move move, bool movedByPlayer = true);
-	static void setSettings(const Settings &settings) { _settings = settings; }
-	static void forceMove();
+public:
+	static void initBoardManager(const BoardChangedCallback &callback, bool isPlayerWhite = true);
+	static bool loadGame(bool isPlayerWhite, const std::string &fen);
+	static bool loadGame(bool isPlayerWhite, const std::string &fen, const std::vector<Move> &moves);
+
+	/// Actions
+	static void makeMove(Move move);
+	static void makeEngineMove();
+	static void undoLastMoves();
+	static void redoLastMoves();
+
+	/// Getters and Setters
+	static bool isWorking() noexcept { return _isWorking; }
+
+	static bool isPlayerWhite() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _isPlayerWhite;
+	}
+
+	static void setSearchOptions(const SearchOptions &searchOptions) noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		_searchOptions = searchOptions;
+	}
+
+	static SearchOptions getSearchOptions() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _searchOptions;
+	}
+
+	static const auto &getBoard() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _currentBoard;
+	}
+
+	static const UndoRedo::MovesStack &getMovesStack() noexcept
+	{
+		std::lock_guard lock{ _mutex };
+		return _movesStack;
+	}
+
+	static std::vector<Move> getPossibleMoves(Square from);
 
 private:
-	static void moveComputerPlayer(const Settings &settings);
-	static GameState getBoardState();
+	static GameState getBoardState() noexcept;
 };

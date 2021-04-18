@@ -1,6 +1,6 @@
 #include "Board.h"
 
-#include "algorithm/Hash.h"
+#include "Zobrist.h"
 #include "algorithm/Evaluation.h"
 #include "persistence/FenParser.h"
 
@@ -11,11 +11,11 @@ void Board::setToStartPos()
 
 bool Board::setToFen(const std::string &fen)
 {
-	Board copy = *this;
-	const bool result = FenParser::parseFen(*this, fen);
+	Board temp = *this;
+	const bool result = FenParser::parseFen(temp, fen);
 
-	if (!result)
-		*this = copy;
+	if (result)
+		*this = temp;
 
 	return result;
 }
@@ -25,65 +25,29 @@ std::string Board::getFen() const
 	return FenParser::exportToFen(*this);
 }
 
-bool Board::canCastle(const Color color) const noexcept
-{
-	return color == BLACK ? canCastle<BLACK>() : canCastle<WHITE>();
-}
-
-Piece &Board::getPiece(const byte squareIndex) noexcept
-{
-	return data[squareIndex];
-}
-
-Piece Board::getPiece(const byte squareIndex) const noexcept
-{
-	return data[squareIndex];
-}
-
-U64 &Board::getType(const Piece piece) noexcept
-{
-	return pieces[piece.color()][piece.type()];
-}
-
-U64 &Board::getType(const PieceType type, const Color color) noexcept
-{
-	return pieces[color][type];
-}
-
-U64 Board::getType(const PieceType type, const Color color) const noexcept
-{
-	return pieces[color][type];
-}
-
 bool Board::isDrawn() const noexcept
 {
 	// Fifty Move Rules
-	if (fiftyMoveRule > 99)
+	if (state.fiftyMoveRule > 99)
 		return true;
 
 	// Three-fold repetition
-	byte repetitions = 1;
-	for (byte i = historyPly - fiftyMoveRule; i < historyPly - 1; ++i)
-	{
-		if (zKey == history[i].zKey)
-		{
-			++repetitions;
-			if (repetitions == 3)
-				return true;
-		}
-	}
+	i32 repetitions = 1;
+	for (i32 i = historyPly - state.fiftyMoveRule; i < historyPly - 1; ++i)
+		if (state.zKey == history[i].zKey && ++repetitions == 3)
+			return true;
 
 	// Insufficient Material
 	// KvK, KvN, KvB, KvNN
-	const U64 pawns = pieces[BLACK][PAWN] | pieces[WHITE][PAWN];
-	const U64 knight = pieces[BLACK][KNIGHT] | pieces[WHITE][KNIGHT];
-	const U64 bishop = pieces[BLACK][BISHOP] | pieces[WHITE][BISHOP];
-	const U64 rooks = pieces[BLACK][ROOK] | pieces[WHITE][ROOK];
-	const U64 queens = pieces[BLACK][QUEEN] | pieces[WHITE][QUEEN];
+	const auto pawns = getPieces(PAWN);
+	const auto knight = getPieces(KNIGHT);
+	const auto bishop = getPieces(BISHOP);
+	const auto rooks = getPieces(ROOK);
+	const auto queens = getPieces(QUEEN);
 
-	return !(pawns | rooks | queens)
-		   && (!Bits::several(allPieces[WHITE]) || !Bits::several(allPieces[BLACK]))
-		   && (!Bits::several(knight | bishop) || (!bishop && Bits::popCount(knight) <= 2));
+	return (pawns | rooks | queens).empty()
+		   && (!(getPieces(WHITE).several()) || !(getPieces(BLACK).several()))
+		   && (!((knight | bishop).several()) || (bishop.empty() && knight.count() <= 2));
 }
 
 Phase Board::getPhase() const noexcept
@@ -95,74 +59,63 @@ Phase Board::getPhase() const noexcept
 	return Phase(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
-bool Board::makeMove(const Move move) noexcept
+void Board::makeMove(const Move move) noexcept
+{
+	makeMove(move, doesMoveGiveCheck(move));
+}
+
+void Board::makeMove(const Move move, const bool moveGivesCheck) noexcept
 {
 	assert(!move.empty());
-	const byte from = move.from();
-	const byte to = move.to();
+	const Square from = move.from();
+	const Square to = move.to();
 	const Color side = colorToMove;
 	const auto flags = move.flags();
-	const U64 posKey = zKey;
 	const PieceType movedPiece = move.piece();
 
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
 	assert(Piece::isValid(movedPiece));
-	{
-		const auto p = getPiece(from);
-		assert(p.isValid());
-	}
-
+	assert(getPiece(from).isValid());
 	assert(getPiece(from).type() == movedPiece);
+	assert(move.capturedPiece() != KING);
+
+	// Store the position info in history
+	history[historyPly] = state;
+	history[historyPly].moveContents = move.getContents();
 
 	// Handle en passant capture and castling
+	auto &castlingRights = state.castlingRights;
+	auto &enPassantSq = state.enPassantSq;
+
 	if (flags.enPassant())
 	{
-		const byte capturedSq = to + static_cast<byte>(side ? -8 : 8);
-		removePiece(capturedSq);
+		assert(to == enPassantSq);
+		removePiece(capturedEnPassantSq(side, enPassantSq));
 	} else if (flags.kSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_G1:
-				movePiece(SQ_H1, SQ_F1);
-				break;
-			case SQ_G8:
-				movePiece(SQ_H8, SQ_F8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_H1);
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_F1);
+		movePiece(rookFrom, rookTo);
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
 	} else if (flags.qSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_C1:
-				movePiece(SQ_A1, SQ_D1);
-				break;
-			case SQ_C8:
-				movePiece(SQ_A8, SQ_D8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_A1);
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_D1);
+		movePiece(rookFrom, rookTo);
 
 		castlingRights |= (side ? CASTLED_WHITE : CASTLED_BLACK);
 	}
 
-	Hash::xorEnPassant(zKey, enPassantSq);
-	Hash::xorCastlingRights(zKey, CastlingRights(castlingRights));
-
-	// Store the position info in history
-	history[historyPly] = { posKey, kingAttackers, move.getContents(), castlingRights, enPassantSq, fiftyMoveRule };
+	Zobrist::xorEnPassant(state.zKey, enPassantSq);
+	Zobrist::xorCastlingRights(state.zKey, CastlingRights(castlingRights));
 
 	if (canCastle(side))
 	{
 		if (movedPiece == ROOK)
 		{
-			const U64 rookFile = Bits::getFile(from);
+			const auto rookFile = Bitboard::fromFile(from);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
@@ -172,8 +125,8 @@ bool Board::makeMove(const Move move) noexcept
 			castlingRights &= ~(side ? CASTLE_WHITE_BOTH : CASTLE_BLACK_BOTH);
 	}
 
-	enPassantSq = SQ_NONE;
-	++fiftyMoveRule;
+	enPassantSq = Square::SQ_NONE;
+	++state.fiftyMoveRule;
 
 	if (const PieceType capturedType = move.capturedPiece();
 		capturedType != PieceType::NO_PIECE_TYPE)
@@ -181,14 +134,14 @@ bool Board::makeMove(const Move move) noexcept
 		assert(Piece::isValid(capturedType));
 		if (capturedType == ROOK && canCastle(~side))
 		{
-			const U64 rookFile = Bits::getFile(to);
+			const auto rookFile = Bitboard::fromFile(to);
 			if (rookFile == FILE_A)
 				castlingRights &= ~(~side ? CASTLE_WHITE_QUEEN : CASTLE_BLACK_QUEEN);
 			else if (rookFile == FILE_H)
 				castlingRights &= ~(~side ? CASTLE_WHITE_KING : CASTLE_BLACK_KING);
 		}
 		removePiece(to);
-		fiftyMoveRule = 0;
+		state.fiftyMoveRule = 0;
 	}
 
 	++historyPly;
@@ -196,15 +149,15 @@ bool Board::makeMove(const Move move) noexcept
 
 	if (movedPiece == PAWN)
 	{
-		fiftyMoveRule = 0;
+		state.fiftyMoveRule = 0;
 
 		if (move.flags().doublePawnPush())
 		{
-			enPassantSq = from + static_cast<byte>(side ? 8 : -8);
+			enPassantSq = capturedEnPassantSq(~side, from);
 
-			Hash::xorEnPassant(zKey, enPassantSq);
-			const U64 enPassantRank = Bits::getRank(enPassantSq);
-			assert(enPassantRank == RANK_3 || enPassantRank == RANK_6);
+			Zobrist::xorEnPassant(state.zKey, enPassantSq);
+			assert(Bitboard::fromRank(enPassantSq) == RANK_3
+				   || Bitboard::fromRank(enPassantSq) == RANK_6);
 		}
 	}
 
@@ -221,20 +174,17 @@ bool Board::makeMove(const Move move) noexcept
 	}
 
 	colorToMove = ~colorToMove;
-	Hash::flipSide(zKey);
+	Zobrist::flipSide(state.zKey);
 
 	updateNonPieceBitboards();
 
-	if (move.capturedPiece() == KING
-		|| (side ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>()))
-	{
-		undoMove();
-		return false;
-	}
+	assert((generateAttackers(getKingSq(~colorToMove)) & getPieces(colorToMove)).empty());
 
-	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
+	state.kingAttackers = {};
+	if (moveGivesCheck)
+		state.kingAttackers = generateAttackers(getKingSq(colorToMove)) & getPieces(~colorToMove);
 
-	return true;
+	computeCheckInfo();
 }
 
 void Board::undoMove() noexcept
@@ -242,67 +192,48 @@ void Board::undoMove() noexcept
 	--historyPly;
 	--ply;
 
-	const UndoMove &previousMove = history[historyPly];
-	const Move move = previousMove.getMove();
-	const byte from = move.from();
-	const byte to = move.to();
+	const BoardState &previousState = history[historyPly];
+	const Move move = previousState.getMove();
+	const Square from = move.from();
+	const Square to = move.to();
 	const auto flags = move.flags();
 
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
 
-	kingAttackers = previousMove.kingAttackers;
-	castlingRights = previousMove.castlingRights;
-	fiftyMoveRule = previousMove.fiftyMoveRule;
-	enPassantSq = previousMove.enPassantSq;
+	state = previousState;
 
 	colorToMove = ~colorToMove;
 
 	if (flags.enPassant())
 	{
-		const byte capturesSq = to + static_cast<byte>(colorToMove ? -8 : 8);
-		addPiece(capturesSq, { PAWN, ~colorToMove });
+		const Square capturedSq = capturedEnPassantSq(colorToMove, to);
+		addPiece(capturedSq, { PAWN, ~colorToMove });
 	} else if (flags.kSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_G1:
-				movePiece(SQ_F1, SQ_H1);
-				break;
-			case SQ_G8:
-				movePiece(SQ_F8, SQ_H8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_F1);
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_H1);
+		movePiece(rookTo, rookFrom);
 	} else if (flags.qSideCastle())
 	{
-		switch (to)
-		{
-			case SQ_C1:
-				movePiece(SQ_D1, SQ_A1);
-				break;
-			case SQ_C8:
-				movePiece(SQ_D8, SQ_A8);
-				break;
-			default:
-				assert(false);
-		}
+		const Square rookTo = shiftToKingRank(colorToMove, SQ_D1);
+		const Square rookFrom = shiftToKingRank(colorToMove, SQ_A1);
+		movePiece(rookTo, rookFrom);
 	}
 
 	movePiece(to, from);
 
 	if (const PieceType capturedType = move.capturedPiece();
 		capturedType != NO_PIECE_TYPE)
-		addPiece(to, Piece(capturedType, ~colorToMove));
+		addPiece(to, { capturedType, ~colorToMove });
 
 	if (flags.promotion())
 	{
 		removePiece(from);
-		addPiece(from, Piece(PAWN, colorToMove));
+		addPiece(from, { PAWN, colorToMove });
 	}
 
-	zKey = previousMove.zKey;
+	state.zKey = previousState.zKey;
 	updateNonPieceBitboards();
 }
 
@@ -310,16 +241,18 @@ void Board::makeNullMove() noexcept
 {
 	assert(!isSideInCheck());
 
+	history[historyPly] = state;
+	history[historyPly].moveContents = {};
+	++historyPly;
 	++ply;
-	history[historyPly++] = { zKey, kingAttackers, {}, castlingRights, enPassantSq, fiftyMoveRule };
 
-	Hash::xorEnPassant(zKey, enPassantSq);
-	enPassantSq = SQ_NONE;
+	Zobrist::xorEnPassant(state.zKey, state.enPassantSq);
+	state.enPassantSq = SQ_NONE;
 
 	colorToMove = ~colorToMove;
-	Hash::flipSide(zKey);
+	Zobrist::flipSide(state.zKey);
 
-	kingAttackers = colorToMove ? allKingAttackers<WHITE>() : allKingAttackers<BLACK>();
+	computeCheckInfo();
 }
 
 void Board::undoNullMove() noexcept
@@ -327,37 +260,146 @@ void Board::undoNullMove() noexcept
 	--historyPly;
 	--ply;
 
-	const UndoMove &previousMove = history[historyPly];
-	zKey = previousMove.zKey;
-	kingAttackers = previousMove.kingAttackers;
-	castlingRights = previousMove.castlingRights;
-	fiftyMoveRule = previousMove.fiftyMoveRule;
-	enPassantSq = previousMove.enPassantSq;
+	state = history[historyPly];
 
 	colorToMove = ~colorToMove;
 }
 
-bool Board::isAttackedByAny(const Color attackerColor, const byte targetSquare) const noexcept
+bool Board::doesMoveGiveCheck(const Move move) const noexcept
 {
-	return isAttacked<PAWN>(attackerColor, targetSquare)
-		   || isAttacked<KNIGHT>(attackerColor, targetSquare)
-		   || isAttacked<KING>(attackerColor, targetSquare)
-		   || isAttacked<BISHOP>(attackerColor, targetSquare)
-		   || isAttacked<ROOK>(attackerColor, targetSquare)
-		   || isAttacked<QUEEN>(attackerColor, targetSquare);
+	const Square from = move.from();
+	const Square to = move.to();
+
+	auto &checkSq = state.possibleCheckSquares[move.piece()];
+	if ((checkSq & Bitboard::fromSquare(to)).notEmpty())
+		return true;
+
+	const Square enemyKingSq = getKingSq(~colorToMove);
+
+	if ((getKingBlockers(~colorToMove) & Bitboard::fromSquare(from)).notEmpty()
+		&& !Bitboard::areAligned(enemyKingSq, from, to))
+		return true;
+
+	const auto flags = move.flags();
+
+	if (flags.promotion())
+	{
+		return (Attacks::pieceAttacks(move.promotedPiece(), to, getPieces() ^ Bitboard::fromSquare(from))
+				& Bitboard::fromSquare(enemyKingSq)).notEmpty();
+	}
+
+	if (flags.kSideCastle() | flags.qSideCastle())
+	{
+		Square rookFrom, rookTo;
+
+		if (flags.kSideCastle())
+		{
+			rookTo = shiftToKingRank(colorToMove, SQ_F1);
+			rookFrom = shiftToKingRank(colorToMove, SQ_H1);
+		} else // Must be a Queen Side Castle
+		{
+			rookFrom = shiftToKingRank(colorToMove, SQ_A1);
+			rookTo = shiftToKingRank(colorToMove, SQ_D1);
+		}
+
+		const auto blockers = (getPieces() ^ Bitboard::fromSquare(rookFrom) ^ Bitboard::fromSquare(from))
+							  | Bitboard::fromSquare(rookTo) | Bitboard::fromSquare(to);
+		return (Attacks::rookXRayAttacks(rookTo) & Bitboard::fromSquare(enemyKingSq)).notEmpty()
+			   && (Attacks::rookAttacks(rookTo, blockers) & Bitboard::fromSquare(enemyKingSq)).notEmpty();
+	}
+
+	if (flags.enPassant())
+	{
+		const Square captured = capturedEnPassantSq(colorToMove, getEnPassantSq());
+		const auto occupancy = (getPieces() ^ Bitboard::fromSquare(from) ^ Bitboard::fromSquare(captured))
+							   | Bitboard::fromSquare(to);
+
+		const auto queens = getPieces(QUEEN, colorToMove);
+		return (
+			(Attacks::rookAttacks(enemyKingSq, occupancy) & (getPieces(ROOK, colorToMove) | queens)) |
+			(Attacks::bishopAttacks(enemyKingSq, occupancy) & (getPieces(BISHOP, colorToMove) | queens))
+		).notEmpty();
+	}
+
+	return false;
+}
+
+bool Board::isMoveLegal(const Move move) const noexcept
+{
+	assert(!move.empty());
+	const auto from = move.from();
+	const auto to = move.to();
+	const Square kingSq = getKingSq(colorToMove);
+
+	assert(from < SQUARE_NB);
+	assert(to < SQUARE_NB);
+	assert(Piece::isValid(move.piece()));
+	assert(getPiece(from).isValid());
+	assert(getPiece(from).type() == move.piece());
+	assert(getPiece(to).type() == move.capturedPiece());
+
+	if (move.flags().enPassant())
+	{
+		const Square capturedSquare = capturedEnPassantSq(colorToMove, getEnPassantSq());
+
+		const auto newOccupied = (getPieces() & ~(Bitboard::fromSquare(from) | Bitboard::fromSquare(capturedSquare)))
+								 | Bitboard::fromSquare(to);
+
+		assert(move.piece() == PAWN);
+		assert(getPiece(move.from()).type() == PAWN);
+		assert(getPiece(capturedSquare).type() == PAWN);
+
+		const auto bishops = getPieces(QUEEN, ~colorToMove) | getPieces(BISHOP, ~colorToMove);
+		const auto rooks = getPieces(QUEEN, ~colorToMove) | getPieces(ROOK, ~colorToMove);
+
+		return (Attacks::bishopAttacks(kingSq, newOccupied) & bishops).empty() &&
+			   (Attacks::rookAttacks(kingSq, newOccupied) & rooks).empty();
+	}
+
+	// TODO: Move castling checking here
+
+	if (move.piece() == KING)
+		return generateAttackers(~colorToMove, move.to(), getPieces() ^ Bitboard::fromSquare(from)).empty();
+
+	return (getKingBlockers(colorToMove) & Bitboard::fromSquare(from)).empty()
+		   || Bitboard::areAligned(from, kingSq, to);
+}
+
+Bitboard Board::generateAttackers(Color attackerColor, Square sq, Bitboard blockers) const noexcept
+{
+	return generateAttackers(sq, blockers) & getPieces(attackerColor);
+}
+
+Bitboard Board::generateAttackers(Square sq, Bitboard blockers) const noexcept
+{
+	const auto queens = getPieces(QUEEN);
+	const auto bishops = getPieces(BISHOP) | queens;
+	const auto rooks = getPieces(ROOK) | queens;
+
+	return (getPieces(PAWN, WHITE) & Attacks::pawnAttacks<BLACK>(Bitboard::fromSquare(sq)))
+		   | (getPieces(PAWN, BLACK) & Attacks::pawnAttacks<WHITE>(Bitboard::fromSquare(sq)))
+		   | (getPieces(KNIGHT) & Attacks::knightAttacks(sq))
+		   | (getPieces(KING) & Attacks::kingAttacks(sq))
+		   | (bishops & Attacks::bishopAttacks(sq, blockers))
+		   | (rooks & Attacks::rookAttacks(sq, blockers));
+}
+
+Bitboard Board::generateAttackers(Square sq) const noexcept
+{
+	return generateAttackers(sq, getPieces());
 }
 
 bool Board::isSideInCheck() const noexcept
 {
-	return static_cast<bool>(kingAttackers);
+	return state.kingAttackers.notEmpty();
 }
 
-void Board::addPiece(const byte square, const Piece piece) noexcept
+void Board::addPiece(const Square square, const Piece piece) noexcept
 {
 	assert(piece.isValid());
 
-	Hash::xorPiece(zKey, square, piece);
-	getType(piece) |= Bits::getSquare64(square);
+	Zobrist::xorPiece(state.zKey, square, piece);
+	getPieces(piece).addSquare(square);
 	getPiece(square) = piece;
 	if (piece.type() != PAWN)
 		npm += Evaluation::getPieceValue(piece.type());
@@ -365,7 +407,7 @@ void Board::addPiece(const byte square, const Piece piece) noexcept
 	pieceList[piece][pieceCount[piece]++] = square;
 }
 
-void Board::movePiece(const byte from, const byte to) noexcept
+void Board::movePiece(const Square from, const Square to) noexcept
 {
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
@@ -373,16 +415,17 @@ void Board::movePiece(const byte from, const byte to) noexcept
 	const Piece piece = getPiece(from);
 	assert(piece.isValid());
 
-	Hash::xorPiece(zKey, from, piece);
-	getPiece(from) = Piece();
-	getType(piece) &= ~Bits::getSquare64(from);
+	Zobrist::xorPiece(state.zKey, from, piece);
+	getPiece(from) = EmptyPiece;
+	getPieces(piece).removeSquare(from);
 
-	Hash::xorPiece(zKey, to, piece);
+	assert(!getPiece(to).isValid());
+	Zobrist::xorPiece(state.zKey, to, piece);
 	getPiece(to) = piece;
-	getType(piece) |= Bits::getSquare64(to);
+	getPieces(piece).addSquare(to);
 
-	bool pieceMoved = false;
-	for (byte &sq : pieceList[piece])
+	[[maybe_unused]] bool pieceMoved{};
+	for (u8 &sq : pieceList[piece])
 	{
 		if (sq == from)
 		{
@@ -394,15 +437,15 @@ void Board::movePiece(const byte from, const byte to) noexcept
 	assert(pieceMoved);
 }
 
-void Board::removePiece(const byte square) noexcept
+void Board::removePiece(const Square square) noexcept
 {
 	assert(square < SQUARE_NB);
 
 	const Piece piece = getPiece(square);
 	assert(piece.isValid());
 
-	Hash::xorPiece(zKey, square, piece);
-	getType(piece) &= ~Bits::getSquare64(square);
+	Zobrist::xorPiece(state.zKey, square, piece);
+	getPieces(piece).removeSquare(square);
 	getPiece(square) = Piece();
 
 	if (piece.type() != PAWN)
@@ -410,8 +453,8 @@ void Board::removePiece(const byte square) noexcept
 
 	auto &piecesSquares = pieceList[piece];
 
-	byte pieceIndex = -1;
-	for (byte i = 0; i < pieceCount[piece]; ++i)
+	u8 pieceIndex = -1;
+	for (u8 i = 0; i < pieceCount[piece]; ++i)
 	{
 		if (piecesSquares[i] == square)
 		{
@@ -426,20 +469,60 @@ void Board::removePiece(const byte square) noexcept
 	piecesSquares[pieceIndex] = piecesSquares[--pieceCount[piece]];
 }
 
+Bitboard Board::findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept
+{
+	Bitboard blockers{};
+	pinners = {};
+
+	const auto rooks = Attacks::rookXRayAttacks(sq) & (getPieces(ROOK) | getPieces(QUEEN));
+	const auto bishops = Attacks::bishopXRayAttacks(sq) & (getPieces(BISHOP) | getPieces(QUEEN));
+	Bitboard hiddenPinners = (rooks | bishops) & sliders;
+	const Bitboard occupancy = getPieces() & ~hiddenPinners;
+
+	while (hiddenPinners.notEmpty())
+	{
+		const Square hiddenSq = hiddenPinners.popLsb();
+		const auto bb = Bitboard::fromBetween(sq, hiddenSq) & occupancy;
+
+		if (bb.notEmpty() && !bb.several())
+		{
+			blockers |= bb;
+			if ((getPieces(getPiece(sq).color()) & bb).notEmpty())
+				pinners |= Bitboard::fromSquare(hiddenSq);
+		}
+	}
+
+	return blockers;
+}
+
+void Board::computeCheckInfo() noexcept
+{
+	state.kingBlockers[WHITE] = findBlockers(getPieces(BLACK), getKingSq(WHITE), state.kingPinners[BLACK]);
+	state.kingBlockers[BLACK] = findBlockers(getPieces(WHITE), getKingSq(BLACK), state.kingPinners[WHITE]);
+
+	const Square enemyKingSq = getKingSq(~colorToMove);
+
+	auto &checkSquares = state.possibleCheckSquares;
+	checkSquares[PAWN] = Attacks::pawnAttacks(~colorToMove, Bitboard::fromSquare(enemyKingSq));
+	checkSquares[KNIGHT] = Attacks::knightAttacks(enemyKingSq);
+	checkSquares[BISHOP] = Attacks::bishopAttacks(enemyKingSq, getPieces());
+	checkSquares[ROOK] = Attacks::rookAttacks(enemyKingSq, getPieces());
+	checkSquares[QUEEN] = checkSquares[BISHOP] | checkSquares[ROOK];
+	checkSquares[KING] = {};
+}
+
 void Board::updatePieceList() noexcept
 {
 	pieceCount.fill({});
 
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	for (Square sq{}; sq < SQUARE_NB; ++sq)
 	{
-		const Piece &piece = data[sq];
+		const Piece piece = getPiece(sq);
 		if (piece)
 		{
 			pieceList[piece][pieceCount[piece]++] = sq;
 
-			const U64 bb = Bits::getSquare64(sq);
-
-			getType(piece) |= bb;
+			getPieces(piece).addSquare(sq);
 
 			if (piece.type() != PAWN)
 				npm += Evaluation::getPieceValue(piece.type());
@@ -449,43 +532,42 @@ void Board::updatePieceList() noexcept
 
 void Board::updateNonPieceBitboards() noexcept
 {
-	allPieces[BLACK] = getType(PAWN, BLACK)
-					   | getType(KNIGHT, BLACK)
-					   | getType(BISHOP, BLACK)
-					   | getType(ROOK, BLACK)
-					   | getType(QUEEN, BLACK)
-					   | getType(KING, BLACK);
+	pieces[BLACK][NO_PIECE_TYPE] = getPieces(PAWN, BLACK)
+								   | getPieces(KNIGHT, BLACK)
+								   | getPieces(BISHOP, BLACK)
+								   | getPieces(ROOK, BLACK)
+								   | getPieces(QUEEN, BLACK)
+								   | getPieces(KING, BLACK);
 
-	allPieces[WHITE] = getType(PAWN, WHITE)
-					   | getType(KNIGHT, WHITE)
-					   | getType(BISHOP, WHITE)
-					   | getType(ROOK, WHITE)
-					   | getType(QUEEN, WHITE)
-					   | getType(KING, WHITE);
+	pieces[WHITE][NO_PIECE_TYPE] = getPieces(PAWN, WHITE)
+								   | getPieces(KNIGHT, WHITE)
+								   | getPieces(BISHOP, WHITE)
+								   | getPieces(ROOK, WHITE)
+								   | getPieces(QUEEN, WHITE)
+								   | getPieces(KING, WHITE);
 
-	occupied = allPieces[BLACK] | allPieces[WHITE];
+	occupied = pieces[BLACK][NO_PIECE_TYPE] | pieces[WHITE][NO_PIECE_TYPE];
 }
 
-std::string Board::printBoard() const noexcept
+std::string Board::toString() const noexcept
 {
 	std::ostringstream ss;
 
-	constexpr auto Delimiter = "+---+---+---+---+---+---+---+---+";
+	static constexpr auto Delimiter = "\n+---+---+---+---+---+---+---+---+\n";
 
-	for (byte sq{}; sq < SQUARE_NB; ++sq)
+	for (Square sq{}; sq < SQUARE_NB; ++sq)
 	{
-		if (sq % 8 == 0)
-			ss << '\n' << Delimiter << '\n' << '|';
+		if (fileOf(sq) == 0)
+			ss << Delimiter << '|';
 
-		const Piece piece = data[sq];
+		const Piece piece = getPiece(sq);
 		const auto type = piece.type();
-		const bool color = piece.color();
+		const bool color = piece.color() == WHITE;
 
-		const char c = [&] {
+		const char c = [&]
+		{
 			switch (type)
 			{
-				case NO_PIECE_TYPE:
-					return ' ';
 				case PAWN:
 					return color ? 'P' : 'p';
 				case KNIGHT:
@@ -498,13 +580,17 @@ std::string Board::printBoard() const noexcept
 					return color ? 'Q' : 'q';
 				case KING:
 					return color ? 'K' : 'k';
+				default:
+					return ' ';
 			}
 		}();
 
 		ss << ' ' << c << " |";
 	}
 
-	ss <<'\n' << Delimiter;
+	ss << Delimiter;
+
+	ss << "\nFEN: " << getFen() << '\n';
 
 	return ss.str();
 }
