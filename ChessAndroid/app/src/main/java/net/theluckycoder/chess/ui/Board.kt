@@ -1,4 +1,4 @@
-package net.theluckycoder.chess.ui.home
+package net.theluckycoder.chess.ui
 
 import android.app.Application
 import androidx.compose.animation.core.animateOffsetAsState
@@ -30,7 +30,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.*
-import net.theluckycoder.chess.ui.AlertDialogTitle
 import net.theluckycoder.chess.utils.SettingsDataStore
 import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.math.min
@@ -214,12 +213,13 @@ private fun BoardPieces(
                 val animatedOffset by animateOffsetAsState(targetValue = offset)
                 val (animatedX, animatedY) = with(LocalDensity.current) { animatedOffset.x.toDp() to animatedOffset.y.toDp() }
 
-                var backgroundModifier: Modifier = Modifier
-
-                if (piece.type == Piece.KING) {
-                    if ((whiteInCheck && piece.isWhite) || (blackInCheck && !piece.isWhite))
-                        backgroundModifier = Modifier.background(kingInCheckColor, CircleShape)
-                }
+                val backgroundModifier = if (
+                    (piece.type == Piece.KING)
+                    && ((whiteInCheck && piece.isWhite) || (blackInCheck && !piece.isWhite))
+                )
+                    Modifier.background(kingInCheckColor, CircleShape)
+                else
+                    Modifier
 
                 IconButton(
                     modifier = Modifier

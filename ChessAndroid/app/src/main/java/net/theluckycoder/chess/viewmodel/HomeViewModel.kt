@@ -89,8 +89,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
     fun resetBoard(playerWhite: Boolean = true) {
         if (initialized.get()) {
-            if (isEngineThinking.value)
+            if (isEngineThinking.value) {
                 Native.stopSearch()
+                Thread.sleep(10)
+            }
             Native.initBoard(this, playerWhite)
         } else {
             // First time it is called, load the last game
