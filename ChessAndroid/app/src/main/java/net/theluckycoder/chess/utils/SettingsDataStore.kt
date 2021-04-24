@@ -37,8 +37,8 @@ class SettingsDataStore private constructor(private val application: Application
     fun showMoveHistory(): Flow<Boolean> =
         dataStore().data.map { it[SHOW_MOVES_HISTORY] ?: DEFAULT_MOVES_HISTORY }
 
-    fun showCaptures(): Flow<Boolean> =
-        dataStore().data.map { it[SHOW_CAPTURES] ?: DEFAULT_SHOW_CAPTURES }
+    fun showCapturedPieces(): Flow<Boolean> =
+        dataStore().data.map { it[SHOW_CAPTURED_PIECES] ?: DEFAULT_SHOW_CAPTURED_PIECES }
 
     fun showPieceDestination(): Flow<Boolean> =
         dataStore().data.map { it[PIECE_DESTINATIONS] ?: DEFAULT_PIECE_DESTINATIONS }
@@ -90,7 +90,7 @@ class SettingsDataStore private constructor(private val application: Application
 
         val SHOW_COORDINATES = booleanPreferencesKey("show_coordinates")
         val SHOW_MOVES_HISTORY = booleanPreferencesKey("show_moves_history")
-        val SHOW_CAPTURES = booleanPreferencesKey("show_captures")
+        val SHOW_CAPTURED_PIECES = booleanPreferencesKey("show_captured_pieces")
         val PIECE_DESTINATIONS = booleanPreferencesKey("piece_destinations")
 
         val SEARCH_DEPTH = intPreferencesKey("search_depth")
@@ -104,13 +104,13 @@ class SettingsDataStore private constructor(private val application: Application
 
         const val DEFAULT_SHOW_COORDINATES = true
         const val DEFAULT_MOVES_HISTORY = true
-        const val DEFAULT_SHOW_CAPTURES = true
+        const val DEFAULT_SHOW_CAPTURED_PIECES = true
         const val DEFAULT_PIECE_DESTINATIONS = true
 
         // These will be overridden by the default [SearchOptions] in the Native Code
         const val DEFAULT_SEARCH_DEPTH = 1
         const val DEFAULT_QUIET_SEARCH = true
-        const val DEFAULT_SEARCH_TIME = 10
+        const val DEFAULT_SEARCH_TIME = 30
         const val DEFAULT_THREADS = 1
         const val DEFAULT_HASH_SIZE = 64
     }

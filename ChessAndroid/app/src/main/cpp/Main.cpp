@@ -106,7 +106,7 @@ Java_net_theluckycoder_chess_Native_initBoard(JNIEnv *pEnv, jobject, jobject ins
 external jboolean JNICALL
 Java_net_theluckycoder_chess_Native_isEngineWorking(JNIEnv *, jobject)
 {
-	return static_cast<jboolean>(BoardManager::isWorking());
+	return static_cast<jboolean>(BoardManager::isEngineBusy());
 }
 
 external jboolean JNICALL
@@ -166,34 +166,6 @@ Java_net_theluckycoder_chess_Native_getPossibleMoves(JNIEnv *pEnv, jobject, jbyt
 	return result;
 }
 
-external jobject JNICALL
-Java_net_theluckycoder_chess_Native_getSearchOptions(JNIEnv *pEnv, jobject)
-{
-	const static auto constructorId = pEnv->GetMethodID(JniCache::searchOptionsClass, "<init>", "(IIJIZ)V");
-
-	const auto options = BoardManager::getSearchOptions();
-
-	return pEnv->NewObject(JniCache::searchOptionsClass, constructorId,
-						   options.depth(), options.threadCount(),
-						   static_cast<jlong>(options.searchTime()), options.tableSizeMb(),
-						   options.quietSearch());
-}
-
-external void JNICALL
-Java_net_theluckycoder_chess_Native_setSearchOptions(JNIEnv *, jobject, jint searchDepth,
-													 jboolean quietSearch,
-													 jint threadCount,
-													 jint hashSizeMb,
-													 jlong searchTime)
-{
-	BoardManager::setSearchOptions({ searchDepth,
-												  static_cast<u32>(threadCount),
-												  static_cast<u32>(hashSizeMb),
-												  static_cast<bool>(quietSearch),
-												  static_cast<i64>(searchTime) });
-}
-
-
 external void JNICALL
 Java_net_theluckycoder_chess_Native_makeMove(JNIEnv *, jobject, jint move)
 {
@@ -207,9 +179,13 @@ Java_net_theluckycoder_chess_Native_makeEngineMove(JNIEnv *, jobject)
 }
 
 external void JNICALL
-Java_net_theluckycoder_chess_Native_stopSearch(JNIEnv *, jobject)
+Java_net_theluckycoder_chess_Native_stopSearch(JNIEnv *, jobject, jboolean async)
 {
 	Search::stopSearch();
+	if (!async) {
+		while (BoardManager::isEngineBusy())
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
+	}
 }
 
 
@@ -325,6 +301,37 @@ Java_net_theluckycoder_chess_Native_evaluationTests(JNIEnv *pEnv, jobject)
 
 	return pEnv->NewStringUTF(testResults.c_str());
 }
+
+// region SearchOptions
+
+external jobject JNICALL
+Java_net_theluckycoder_chess_model_SearchOptions_getNativeSearchOptions(JNIEnv *pEnv, jclass)
+{
+	const static auto constructorId = pEnv->GetMethodID(JniCache::searchOptionsClass, "<init>", "(IIJIZ)V");
+
+	const auto options = BoardManager::getSearchOptions();
+
+	return pEnv->NewObject(JniCache::searchOptionsClass, constructorId,
+						   options.depth(), options.threadCount(),
+						   static_cast<jlong>(options.searchTime()), options.tableSizeMb(),
+						   options.quietSearch());
+}
+
+external void JNICALL
+Java_net_theluckycoder_chess_model_SearchOptions_setNativeSearchOptions(JNIEnv *, jclass, jint searchDepth,
+													 jboolean quietSearch,
+													 jint threadCount,
+													 jint hashSizeMb,
+													 jlong searchTime)
+{
+	BoardManager::setSearchOptions({ searchDepth,
+									 static_cast<u32>(threadCount),
+									 static_cast<u32>(hashSizeMb),
+									 static_cast<bool>(quietSearch),
+									 static_cast<i64>(searchTime) });
+}
+
+// endregion SearchOptions
 
 // region DebugStats
 

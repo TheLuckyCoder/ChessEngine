@@ -22,4 +22,26 @@ data class SearchOptions(
         hashSize: Int,
         quietSearch: Boolean,
     ) : this(searchDepth, threadCount, searchTime.milliseconds, hashSize, quietSearch)
+
+    companion object {
+
+        @JvmStatic
+        external fun getNativeSearchOptions(): SearchOptions
+
+        @OptIn(ExperimentalTime::class)
+        fun setNativeSearchOptions(options: SearchOptions) = setNativeSearchOptions(
+            options.searchDepth,
+            options.quietSearch,
+            options.threadCount,
+            options.hashSize,
+            options.searchTime.toLongMilliseconds(),
+        )
+
+        @JvmStatic
+        private external fun setNativeSearchOptions(
+            searchDepth: Int, quietSearch: Boolean,
+            threadCount: Int, hashSizeMb: Int,
+            searchTime: Long,
+        )
+    }
 }

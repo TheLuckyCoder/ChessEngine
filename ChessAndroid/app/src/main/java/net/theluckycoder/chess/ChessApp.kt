@@ -6,12 +6,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import net.theluckycoder.chess.model.SearchOptions
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.io.File
+import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @Suppress("unused")
 class ChessApp : Application() {
 
+    @OptIn(ExperimentalTime::class)
     override fun onCreate() {
         super.onCreate()
 
@@ -27,7 +31,8 @@ class ChessApp : Application() {
             launch {
                 if (dataStore.firstStart().first()) {
                     // Set the default Engine Settings from native code
-                    val engineSettings = Native.getSearchOptions()
+                    val engineSettings = SearchOptions.getNativeSearchOptions()
+                        .copy(searchTime = SettingsDataStore.DEFAULT_SEARCH_TIME.seconds)
                     dataStore.setEngineSettings(engineSettings)
                     dataStore.setFirstStart(false)
                 }

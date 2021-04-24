@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import net.theluckycoder.chess.BoardChangeListener
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.model.*
@@ -66,7 +65,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
             launch {
                 dataStore.getEngineSettings().distinctUntilChanged().collectLatest {
                     ensureActive()
-                    withContext(Dispatchers.Main) { Native.setSearchOptions(it) }
+                    SearchOptions.setNativeSearchOptions(it)
                 }
             }
 
@@ -89,10 +88,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
     fun resetBoard(playerWhite: Boolean = true) {
         if (initialized.get()) {
-            if (isEngineThinking.value) {
-                Native.stopSearch()
-                Thread.sleep(10)
-            }
+            if (isEngineThinking.value)
+                Native.stopSearch(false)
+
             Native.initBoard(this, playerWhite)
         } else {
             // First time it is called, load the last game
@@ -111,7 +109,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
         dataStore.setDifficultyLevel(level)
     }
 
-    fun getPossibleMoves(square: Int) {
+    fun showPossibleMoves(square: Int) {
         val moves = Native.getPossibleMoves(square.toByte()).toList()
 
         tilesFlow.value = tilesFlow.value
@@ -157,7 +155,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
         updatePiecesList()
 
-        if (!Native.isPlayersTurn())
+        if (!Native.isPlayersTurn() && moveIndex == movesHistoryList.lastIndex)
             Native.makeEngineMove()
 
         isEngineThinkingFlow.value = Native.isEngineWorking()

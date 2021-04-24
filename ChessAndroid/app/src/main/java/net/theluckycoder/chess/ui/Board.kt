@@ -26,12 +26,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SettingsDataStore
-import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.math.min
 
 private val PIECES_RESOURCES = intArrayOf(
@@ -54,6 +52,7 @@ fun ChessBoard(
     tiles: List<Tile>,
     pieces: List<IndexedPiece>,
     gameState: GameState,
+    onPieceClick: (piece: Piece) -> Unit,
 ) = BoxWithConstraints(
     modifier = modifier
 ) {
@@ -70,7 +69,7 @@ fun ChessBoard(
 
     BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, showPossibleMoves)
 
-    BoardPieces(tileSize, isPlayerWhite, pieces, gameState)
+    BoardPieces(tileSize, isPlayerWhite, pieces, gameState, onPieceClick)
 
     if (showCoordinates) {
         BoardCoordinates(tileSize)
@@ -196,7 +195,7 @@ private fun BoardPieces(
     isPlayerWhite: Boolean,
     pieces: List<IndexedPiece>,
     gameState: GameState,
-    viewModel: HomeViewModel = viewModel()
+    onPieceClick: (piece: Piece) -> Unit,
 ) {
     val whiteInCheck = gameState == GameState.WHITE_IN_CHECK
     val blackInCheck = gameState == GameState.BLACK_IN_CHECK
@@ -223,11 +222,11 @@ private fun BoardPieces(
 
                 IconButton(
                     modifier = Modifier
-                        .requiredSize(tileDp)
+                        .size(tileDp)
                         .offset(animatedX, animatedY)
                         .then(backgroundModifier),
                     enabled = isPlayerWhite == piece.isWhite,
-                    onClick = { viewModel.getPossibleMoves(piece.square) }
+                    onClick = { onPieceClick(piece) }
                 ) {
                     Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
                 }

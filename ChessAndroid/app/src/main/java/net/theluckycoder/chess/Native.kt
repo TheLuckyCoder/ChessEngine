@@ -2,8 +2,6 @@ package net.theluckycoder.chess
 
 import net.theluckycoder.chess.model.IndexedPiece
 import net.theluckycoder.chess.model.Move
-import net.theluckycoder.chess.model.SearchOptions
-import kotlin.time.ExperimentalTime
 
 object Native {
 
@@ -21,27 +19,10 @@ object Native {
     external fun getPossibleMoves(square: Byte): Array<Move>
 
     fun makeMove(move: Move) = makeMove(move.content)
-    external fun makeMove(move: Int)
+    private external fun makeMove(move: Int)
     external fun makeEngineMove()
 
-    external fun stopSearch()
-
-    external fun getSearchOptions(): SearchOptions
-
-    @OptIn(ExperimentalTime::class)
-    fun setSearchOptions(options: SearchOptions) = setSearchOptions(
-        options.searchDepth,
-        options.quietSearch,
-        options.threadCount,
-        options.hashSize,
-        options.searchTime.toLongMilliseconds(),
-    )
-
-    private external fun setSearchOptions(
-        searchDepth: Int, quietSearch: Boolean,
-        threadCount: Int, hashSizeMb: Int,
-        searchTime: Long,
-    )
+    external fun stopSearch(async: Boolean)
 
     external fun undoMoves()
     external fun redoMoves()

@@ -52,7 +52,7 @@ public:
 	static void redoLastMoves();
 
 	/// Getters and Setters
-	static bool isWorking() noexcept { return _isWorking; }
+	static bool isEngineBusy() noexcept { return _isWorking; }
 
 	static bool isPlayerWhite() noexcept
 	{

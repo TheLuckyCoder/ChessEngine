@@ -34,7 +34,6 @@
     <string name="fen_position_error">FEN Position could not be loaded</string>
     <string name="fen_position_error_empty">FEN Position can not be empty</string>
     <string name="fen_position_copied">FEN Position copied to Clipboard</string>
-    <string name="error_fen_position_invalid">FEN Position might be invalid</string>
 
     <!-- Preferences -->
     <string name="pref_category_appearance">Appearance</string>
@@ -42,6 +41,8 @@
     <string name="pref_coordinates_desc">Display Coordinates alongside the board</string>
     <string name="pref_moves_history">Moves History</string>
     <string name="pref_moves_history_desc">Display all previously made moves</string>
+    <string name="pref_captured_pieces">Captured Pieces</string>
+    <string name="pref_captured_pieces_desc">Display all captured pieces by either side</string>
     <string name="pref_piece_destinations">Piece Destinations</string>
     <string name="pref_piece_destinations_desc">Display legal moves for selected pieces</string>
 

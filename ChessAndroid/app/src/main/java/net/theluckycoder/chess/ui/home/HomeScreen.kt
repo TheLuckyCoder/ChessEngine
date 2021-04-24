@@ -47,7 +47,7 @@ fun HomeScreen(
     val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
     val movesHistory by viewModel.movesHistory.collectAsState()
     val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
-    val showCaptures by viewModel.dataStore.showCaptures().collectAsState(false)
+    val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
 
     HomeDialogs()
 
@@ -70,7 +70,7 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxHeight(),
                             show = showCaptures
                         ) {
-                            ActionsBar(Modifier.weight(1f))
+                            ActionsBar(Modifier.weight(1f).padding(8.dp))
                         }
                     }
                 }
@@ -104,7 +104,6 @@ fun HomeScreen(
 private fun HomeChessBoard(
     viewModel: HomeViewModel = viewModel()
 ) {
-
     val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
     val tiles by viewModel.tiles.collectAsState()
     val pieces by viewModel.pieces.collectAsState()
@@ -114,7 +113,8 @@ private fun HomeChessBoard(
         isPlayerWhite = isPlayerWhite,
         tiles = tiles,
         pieces = pieces,
-        gameState = gameState
+        gameState = gameState,
+        onPieceClick = { viewModel.showPossibleMoves(it.square) }
     )
 }
 
@@ -317,7 +317,7 @@ private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
                     if (isEngineThinking) {
                         DropdownMenuItem(onClick = {
                             showActionsMenu = false
-                            Native.stopSearch()
+                            Native.stopSearch(true)
                         }) { Text(text = stringResource(id = R.string.action_stop_search)) }
                     }
                 }
