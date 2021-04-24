@@ -392,10 +392,17 @@ namespace PolyBook
 
 				if (foundMovesCount == foundMoves.max_size())
 					break;
+			} else if (foundMovesCount != 0)
+			{
+				/*
+				 * If we have found any moves but the current one does not belong to this board,
+				 * we can stop searching since the file is sorted
+				 */
+				break;
 			}
 		}
 
-		// TODO check if these are valid moves
+		// TODO check if these are valid moves?
 
 		if (foundMovesCount == 0)
 			return {};

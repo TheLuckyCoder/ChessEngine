@@ -33,9 +33,7 @@ target_compile_options(${LIB_NAME} PUBLIC
         -Wpedantic -Wnull-dereference
         )
 
-set(FLAGS_DEBUG "-O1")
 set(FLAGS_RELEASE "-DNDEBUG" "-flto=thin" "-O3")
-target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE}>")
 

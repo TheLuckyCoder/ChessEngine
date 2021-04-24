@@ -1,6 +1,7 @@
 package net.theluckycoder.chess
 
 import android.app.Application
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
@@ -35,10 +36,9 @@ class ChessApp : Application() {
     }
 
     private fun copyBook() {
-        val bookName = "Book.bin"
-        val dest = File(filesDir, bookName)
+        val dest = getBookPath(this)
 
-        assets.open(bookName).use { input ->
+        assets.open(BOOK_NAME).use { input ->
             dest.outputStream().use { output ->
                 input.copyTo(output)
             }
@@ -51,5 +51,9 @@ class ChessApp : Application() {
         init {
             System.loadLibrary("chess")
         }
+
+        const val BOOK_NAME = "OpeningBook.bin"
+
+        fun getBookPath(context: Context): File = File(context.filesDir, BOOK_NAME)
     }
 }
