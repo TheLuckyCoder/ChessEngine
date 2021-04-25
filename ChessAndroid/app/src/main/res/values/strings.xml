@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Chess</string>
+    <string name="app_name">Lucky Chess</string>
     <string name="debug_stats">Time Needed: %s\nCurrent Board Evaluation: %d\n%s</string>
     <string name="new_game">New Game</string>
     <string name="side">Side:</string>
@@ -22,18 +22,20 @@
     <string name="action_undo_move">Undo Move</string>
     <string name="action_redo_move">Redo Move</string>
     <string name="action_close">Close</string>
-    <string name="action_copy">Copy</string>
     <string name="action_make_engine_move">Make Engine Move</string>
     <string name="action_stop_search">Force Stop Search</string>
 
-    <!-- FEN -->
-    <string name="fen_position_share">Share FEN Position</string>
+    <!-- FEN/PGN -->
+    <string name="fen_pgn_position_share">Share Game Position</string>
     <string name="fen_position_current">Current\'s game FEN Position:</string>
     <string name="fen_position_load">Load FEN Position</string>
     <string name="fen_position_loaded">FEN Position Loaded</string>
     <string name="fen_position_error">FEN Position could not be loaded</string>
     <string name="fen_position_error_empty">FEN Position can not be empty</string>
-    <string name="fen_position_copied">FEN Position copied to Clipboard</string>
+    <string name="fen_position_copied">FEN copied to Clipboard</string>
+    <string name="pgn_position_copied">PGN copied to Clipboard</string>
+    <string name="action_fen_copy">Copy FEN</string>
+    <string name="action_pgn_copy">Copy PGN</string>
 
     <!-- Preferences -->
     <string name="pref_category_appearance">Appearance</string>
