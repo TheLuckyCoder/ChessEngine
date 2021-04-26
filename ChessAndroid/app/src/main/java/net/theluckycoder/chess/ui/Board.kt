@@ -26,8 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SettingsDataStore
 import kotlin.math.min

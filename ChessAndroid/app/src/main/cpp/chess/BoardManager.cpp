@@ -6,9 +6,6 @@
 #include "MoveGen.h"
 #include "algorithm/Search.h"
 
-std::recursive_mutex BoardManager::_mutex;
-BoardManager::BoardChangedCallback BoardManager::_callback;
-
 void BoardManager::initBoardManager(const BoardChangedCallback &callback, const bool isPlayerWhite)
 {
 	std::lock_guard lock{ _mutex };
@@ -18,9 +15,9 @@ void BoardManager::initBoardManager(const BoardChangedCallback &callback, const 
 	_isPlayerWhite = isPlayerWhite;
 	_currentBoard.setToStartPos();
 	_movesStack = { _currentBoard };
-	_callback = callback;
+	_boardCallback = callback;
 
-	_callback(GameState::NONE);
+	_boardCallback(GameState::NONE);
 }
 
 bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
@@ -33,7 +30,7 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen)
 		_isPlayerWhite = isPlayerWhite;
 		_movesStack = { _currentBoard };
 
-		_callback(getBoardState());
+		_boardCallback(getBoardState());
 
 		return true;
 	}
@@ -57,7 +54,7 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen, co
 		_movesStack.push(_currentBoard, move);
 	}
 
-	_callback(getBoardState());
+	_boardCallback(getBoardState());
 
 	return true;
 }
@@ -65,9 +62,10 @@ bool BoardManager::loadGame(const bool isPlayerWhite, const std::string &fen, co
 void BoardManager::makeMove(const Move move)
 {
 	std::lock_guard lock{ _mutex };
+
 	_currentBoard.makeMove(move);
 	_movesStack.push(_currentBoard, move);
-	_callback(getBoardState());
+	_boardCallback(getBoardState());
 }
 
 void BoardManager::makeEngineMove()
@@ -77,8 +75,8 @@ void BoardManager::makeEngineMove()
 		!(state == GameState::NONE || state == GameState::WHITE_IN_CHECK || state == GameState::BLACK_IN_CHECK))
 		return;
 
-	if (_isWorking) return;
-	_isWorking = true;
+	if (_isBusy) return;
+	_isBusy = true;
 
 	const auto startZKey = _currentBoard.zKey();
 
@@ -91,35 +89,44 @@ void BoardManager::makeEngineMove()
 					// This will should start executing exactly after makeEngineMove()
 					// if the key is not as the specified one, cancel the search
 
-					if (startZKey != _currentBoard.zKey()) return;
+					if (startZKey != _currentBoard.zKey())
+					{
+						_searchCallback(false);
+						return;
+					}
 					lock.unlock();
 
 					const Move bestMove = Search::findBestMove(tempBoard, options);
-					_isWorking = false;
+					_isBusy = false;
 
 					lock.lock();
 					// Make sure the board has not changed in the time we were searching
+					if (_searchCallback)
+						_searchCallback(startZKey == _currentBoard.zKey());
+
 					if (startZKey == _currentBoard.zKey())
 						makeMove(bestMove);
 					else
-						std::cout << "Board was changed while searching, cannot make found move\n";
+						std::cout << "Board was changed while searching, cannot make found move\n" << std::flush;
 				}).detach();
 }
 
 void BoardManager::undoLastMoves()
 {
 	std::lock_guard lock{ _mutex };
+
 	if (!_movesStack.undo().empty())
 		_currentBoard.undoMove();
 	if (_movesStack.peek().colorToMove() != isPlayerWhite() && !_movesStack.undo().empty())
 		_currentBoard.undoMove();
 
-	_callback(getBoardState());
+	_boardCallback(getBoardState());
 }
 
 void BoardManager::redoLastMoves()
 {
 	std::lock_guard lock{ _mutex };
+
 	if (const Move move = _movesStack.redo(); !move.empty())
 		_currentBoard.makeMove(move);
 	if (_movesStack.peek().colorToMove() != isPlayerWhite())
@@ -131,7 +138,7 @@ void BoardManager::redoLastMoves()
 			makeEngineMove(); // If there was no move to redo, try to make one
 	}
 
-	_callback(getBoardState());
+	_boardCallback(getBoardState());
 }
 
 std::vector<Move> BoardManager::getPossibleMoves(const Square from)

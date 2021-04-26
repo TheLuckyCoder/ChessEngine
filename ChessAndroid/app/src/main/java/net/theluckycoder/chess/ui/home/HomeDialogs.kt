@@ -13,7 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.ui.AlertDialogTitle

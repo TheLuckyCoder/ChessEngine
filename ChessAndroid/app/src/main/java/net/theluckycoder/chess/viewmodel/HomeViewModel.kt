@@ -11,14 +11,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import net.theluckycoder.chess.BoardChangeListener
-import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.cpp.BoardChangeListener
+import net.theluckycoder.chess.cpp.Native
+import net.theluckycoder.chess.cpp.SearchListener
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SaveManager
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.util.concurrent.atomic.AtomicBoolean
 
-class HomeViewModel(application: Application) : AndroidViewModel(application), BoardChangeListener {
+class HomeViewModel(application: Application) : AndroidViewModel(application), BoardChangeListener,
+    SearchListener {
 
     private val initialized = AtomicBoolean(false)
     val dataStore = SettingsDataStore.get(application)
@@ -26,7 +28,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
     /*
      * Chess Game Data
      */
-    private val isEngineThinkingFlow = MutableStateFlow(false)
+    private val isEngineBusyFlow = MutableStateFlow(false)
     private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val tilesFlow = MutableStateFlow(getEmptyTiles())
     private val piecesFlow = MutableStateFlow(emptyList<IndexedPiece>())
@@ -36,7 +38,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
     private val debugStatsFlow = MutableStateFlow(DebugStats())
 
     val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
-    val isEngineThinking: StateFlow<Boolean> = isEngineThinkingFlow
+    val isEngineBusy: StateFlow<Boolean> = isEngineBusyFlow
     val tiles: StateFlow<List<Tile>> = tilesFlow
     val pieces: StateFlow<List<IndexedPiece>> = piecesFlow
     val gameState: StateFlow<GameState> = gameStateFlow
@@ -53,6 +55,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
     init {
         resetBoard()
+        Native.setSearchListener(this)
 
         viewModelScope.launch(Dispatchers.IO) {
             launch {
@@ -88,8 +91,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
     fun resetBoard(playerWhite: Boolean = true) {
         if (initialized.get()) {
-            if (isEngineThinking.value)
-                Native.stopSearch(false)
+            if (isEngineBusy.value)
+                Native.stopSearch()
 
             Native.initBoard(this, playerWhite)
         } else {
@@ -158,12 +161,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
         if (!Native.isPlayersTurn() && moveIndex == movesHistoryList.lastIndex)
             Native.makeEngineMove()
 
-        isEngineThinkingFlow.value = Native.isEngineWorking()
+        isEngineBusyFlow.value = Native.isEngineBusy()
+    }
+
+    override fun onFinish(success: Boolean) {
+        if (!success && !Native.isPlayersTurn()) {
+            Native.makeEngineMove()
+        }
+
+        isEngineBusyFlow.value = Native.isEngineBusy()
     }
 
     private companion object {
         private val emptyTiles = Array(64) { Tile(it, Tile.State.None) }
-
         fun getEmptyTiles() = emptyTiles.toList()
     }
 }

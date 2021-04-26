@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.model.SearchOptions
 import net.theluckycoder.chess.utils.SettingsDataStore
 import java.io.File

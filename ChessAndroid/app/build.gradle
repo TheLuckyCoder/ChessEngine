@@ -9,7 +9,7 @@ android {
         applicationId "net.theluckycoder.chess"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1201
+        versionCode 1202
         versionName "1.2.0"
         resConfigs "en"
     }
@@ -19,12 +19,6 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-
-            externalNativeBuild {
-                cmake {
-                    abiFilters "arm64-v8a", "armeabi-v7a"
-                }
-            }
 
             packagingOptions {
                 resources {

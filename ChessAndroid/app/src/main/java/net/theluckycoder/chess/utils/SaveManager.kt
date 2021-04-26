@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.model.Move
 import java.io.File
 import java.io.FileNotFoundException

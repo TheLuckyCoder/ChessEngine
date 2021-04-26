@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.model.Move
 import net.theluckycoder.chess.model.Piece
 import net.theluckycoder.chess.ui.ChessBoard
@@ -190,7 +190,7 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
             modifier = Modifier.padding(end = 16.dp)
         )
 
-        val isEngineThinking by viewModel.isEngineThinking.collectAsState()
+        val isEngineThinking by viewModel.isEngineBusy.collectAsState()
 
         AnimatedVisibility(
             visible = isEngineThinking,
@@ -305,7 +305,7 @@ private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
                     viewModel.showImportDialog.value = true
                 }) { Text(text = stringResource(id = R.string.fen_position_load)) }
 
-                val isEngineThinking by viewModel.isEngineThinking.collectAsState()
+                val isEngineThinking by viewModel.isEngineBusy.collectAsState()
                 val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
 
                 if (basicDebug) {
@@ -317,7 +317,7 @@ private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
                     if (isEngineThinking) {
                         DropdownMenuItem(onClick = {
                             showActionsMenu = false
-                            Native.stopSearch(true)
+                            Native.stopSearch()
                         }) { Text(text = stringResource(id = R.string.action_stop_search)) }
                     }
                 }
