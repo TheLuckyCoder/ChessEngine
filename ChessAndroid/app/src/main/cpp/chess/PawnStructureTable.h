@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Bitboard.h"
-#include "Score.h"
 
 struct PawnStructureEntry
 {

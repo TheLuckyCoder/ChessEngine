@@ -7,7 +7,6 @@
 #include "../Stats.h"
 #include "../Psqt.h"
 #include "../PawnStructureTable.h"
-#include "../Score.h"
 
 namespace
 {
@@ -358,13 +357,9 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		// Don't use the Pawn Structure Table if we are Tracing the Eval
 		if (Trace || pawnsEntry.pawns != pawns)
 		{
-			constexpr Piece piece{ PAWN, Us };
-
-			for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
-			{
-				const auto square = toSquare(board.pieceList[piece][pieceNumber]);
-				pawnScore += evaluatePawn<Us>(square);
-			}
+			Bitboard bb = board.getPieces(PAWN, Us);
+			while (bb.notEmpty())
+				pawnScore += evaluatePawn<Us>(bb.popLsb());
 
 			PawnTable.insert({ pawns, pawnScore });
 		} else
@@ -387,10 +382,10 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	_mobilityArea[Us] =
 		~board.getPieces(Us) & ~Attacks::pawnAttacks<Them>(board.getPieces(PAWN, Them));
 
-	Piece piece{ KNIGHT, Us };
-	for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
+	Bitboard pieces = board.getPieces(KNIGHT, Us);
+	while (pieces.notEmpty())
 	{
-		const Square square = toSquare(board.pieceList[piece][pieceNumber]);
+		const Square square = pieces.popLsb();
 		const auto knightScore = evaluateKnight<Us>(square);
 		knightBishopBonus(square);
 
@@ -403,10 +398,10 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		updateKingAttacks(KNIGHT, attacks);
 	}
 
-	piece = { BISHOP, Us };
-	for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
+	pieces = board.getPieces(BISHOP, Us);
+	while (pieces.notEmpty())
 	{
-		const auto square = toSquare(board.pieceList[piece][pieceNumber]);
+		const Square square = pieces.popLsb();
 		const auto bishopScore = evaluateBishop<Us>(square);
 		knightBishopBonus(square);
 
@@ -419,13 +414,13 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		updateKingAttacks(BISHOP, attacks);
 	}
 
-	if (board.pieceCount[piece] >= 2)
+	if (board.pieceCount[Piece{ BISHOP, Us }] >= 2)
 		score += 40;
 
-	piece = { ROOK, Us };
-	for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
+	pieces = board.getPieces(ROOK, Us);
+	while (pieces.notEmpty())
 	{
-		const auto square = toSquare(board.pieceList[piece][pieceNumber]);
+		const Square square = pieces.popLsb();
 		const auto rookScore = evaluateRook<Us>(square);
 
 		if constexpr (Trace)
@@ -437,10 +432,10 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		updateKingAttacks(ROOK, attacks);
 	}
 
-	piece = { QUEEN, Us };
-	for (u8 pieceNumber{}; pieceNumber < board.pieceCount[piece]; ++pieceNumber)
+	pieces = board.getPieces(QUEEN, Us);
+	while (pieces.notEmpty())
 	{
-		const auto square = toSquare(board.pieceList[piece][pieceNumber]);
+		const Square square = pieces.popLsb();
 		const auto queenScore = evaluateQueen<Us>(square);
 
 		if constexpr (Trace)
@@ -531,7 +526,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 			(board.pieceCount[Piece{ QUEEN, Them }] + board.pieceCount[Piece{ QUEEN, Us }]) ==
 			1;
 
-		const auto sq = toSquare(board.pieceList[Piece{ QUEEN, Them }][0]);
+		const auto sq = board.getPieces(QUEEN, Them).bitScanForward();
 		const auto safeSpots =
 			_mobilityArea[Us] & ~stronglyProtected & ~board.getPieces(PAWN, Them);
 
@@ -544,7 +539,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 			QUEEN_THREAT_BY_KNIGHT * (knightAttacks & safeSpots).count();
 		const auto sliderAttacksScore =
 			QUEEN_THREAT_BY_SLIDER *
-				(sliderAttacks & safeSpots & _attacksMultiple[Us]).count() *
+			(sliderAttacks & safeSpots & _attacksMultiple[Us]).count() *
 			(1 + imbalance);
 
 		totalValue += knightAttacksScore + sliderAttacksScore;
@@ -557,7 +552,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 	const auto safe = ~_allAttacks[Them] | _allAttacks[Us];
 	const auto safePawnsAttacks =
-        Attacks::pawnAttacks<Us>(board.getPieces(PAWN, Us) & safe) & nonPawnEnemies;
+		Attacks::pawnAttacks<Us>(board.getPieces(PAWN, Us) & safe) & nonPawnEnemies;
 	const auto safePawnThreatScore = THREAT_BY_SAFE_PAWN * safePawnsAttacks.count();
 	totalValue += safePawnThreatScore;
 
@@ -651,7 +646,7 @@ Score Eval<Trace>::evaluateKnight(const Square square) const noexcept
 			&& (attacks & targets).empty()        // no relevant attacks
 			&& (!(targets & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).several()))
 			value += UNCONTESTED_OUTPOST *
-				(pawns & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).count();
+					 (pawns & ((bb & QUEEN_SIDE).notEmpty() ? QUEEN_SIDE : KING_SIDE)).count();
 	}
 
 	const int mobility = (attacks & _mobilityArea[Us]).count();
@@ -695,11 +690,11 @@ Score Eval<Trace>::evaluateBishop(const Square square) const noexcept
 
 	// Enemy pawns x-rayed
 	value -= BISHOP_XRAY_PAWNS *
-		(Attacks::bishopXRayAttacks(square) & board.getPieces(PAWN, Them)).count();
+			 (Attacks::bishopXRayAttacks(square) & board.getPieces(PAWN, Them)).count();
 
 	// Long Diagonal Bishop
 	const auto centerAttacks =
-        Attacks::bishopAttacks(square, board.getPieces(PAWN, Them)) & CENTER_SQUARES;
+		Attacks::bishopAttacks(square, board.getPieces(PAWN, Them)) & CENTER_SQUARES;
 	if (centerAttacks.several())
 		value.mg += 45;
 
@@ -784,7 +779,7 @@ Score Eval<Trace>::evaluateKing() const noexcept
 	}
 
 	value += KING_PAWN_SHIELD *
-		(MASK_PAWN_SHIELD[Us][square] & board.getPieces(PAWN, Us)).count();
+			 (MASK_PAWN_SHIELD[Us][square] & board.getPieces(PAWN, Us)).count();
 
 	return value;
 }

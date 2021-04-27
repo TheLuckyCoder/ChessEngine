@@ -3,6 +3,10 @@
 #include <cstring>
 #include <iostream>
 
+#ifdef _MSC_VER
+#include <xmmintrin.h>
+#endif
+
 static constexpr u64 MB = 1ull << 20;
 
 TranspositionTable::TranspositionTable(const usize sizeMb)

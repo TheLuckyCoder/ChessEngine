@@ -1,5 +1,6 @@
 #include "Board.h"
 
+#include "Psqt.h"
 #include "Zobrist.h"
 #include "algorithm/Evaluation.h"
 #include "persistence/FenParser.h"
@@ -404,7 +405,8 @@ void Board::addPiece(const Square square, const Piece piece) noexcept
 	if (piece.type() != PAWN)
 		npm += Evaluation::getPieceValue(piece.type());
 
-	pieceList[piece][pieceCount[piece]++] = square;
+	++pieceCount[piece];
+	psq += PSQT[piece.type()][square];
 }
 
 void Board::movePiece(const Square from, const Square to) noexcept
@@ -424,17 +426,8 @@ void Board::movePiece(const Square from, const Square to) noexcept
 	getPiece(to) = piece;
 	getPieces(piece).addSquare(to);
 
-	[[maybe_unused]] bool pieceMoved{};
-	for (u8 &sq : pieceList[piece])
-	{
-		if (sq == from)
-		{
-			sq = to;
-			pieceMoved = true;
-			break;
-		}
-	}
-	assert(pieceMoved);
+	psq -= PSQT[piece.type()][from];
+	psq += PSQT[piece.type()][to];
 }
 
 void Board::removePiece(const Square square) noexcept
@@ -451,22 +444,8 @@ void Board::removePiece(const Square square) noexcept
 	if (piece.type() != PAWN)
 		npm -= Evaluation::getPieceValue(piece.type());
 
-	auto &piecesSquares = pieceList[piece];
-
-	u8 pieceIndex = -1;
-	for (u8 i = 0; i < pieceCount[piece]; ++i)
-	{
-		if (piecesSquares[i] == square)
-		{
-			pieceIndex = i;
-			break;
-		}
-	}
-
-	assert(pieceIndex < SQUARE_NB);
-
-	// Move the last square in this unused index
-	piecesSquares[pieceIndex] = piecesSquares[--pieceCount[piece]];
+	--pieceCount[piece];
+	psq -= PSQT[piece.type()][square];
 }
 
 Bitboard Board::findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept
@@ -520,12 +499,13 @@ void Board::updatePieceList() noexcept
 		const Piece piece = getPiece(sq);
 		if (piece)
 		{
-			pieceList[piece][pieceCount[piece]++] = sq;
-
 			getPieces(piece).addSquare(sq);
 
 			if (piece.type() != PAWN)
 				npm += Evaluation::getPieceValue(piece.type());
+
+			++pieceCount[piece];
+			psq += PSQT[piece.type()][sq];
 		}
 	}
 }

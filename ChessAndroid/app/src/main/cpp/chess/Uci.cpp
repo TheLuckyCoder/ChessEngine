@@ -56,7 +56,8 @@ void Uci::loop()
 		else if (token == "stop")
 		{
 			Search::stopSearch();
-			_searchThread.join();
+			if (_searchThread.joinable())
+				_searchThread.join();
 			std::cout << "Joined Thread\n";
 		} else if (token == "quit")
 			quit = true;
@@ -111,8 +112,6 @@ void Uci::loop()
 				std::cout << results;
 		} else if (token == "perft")
 			Tests::runPerftTests();
-		else
-			std::cout << "Unknown command\n";
 
 		std::cout.flush();
 
