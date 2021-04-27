@@ -2,21 +2,16 @@ package net.theluckycoder.chess.ui.home
 
 import android.content.Intent
 import android.content.res.Configuration
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.animatedVectorResource
@@ -32,11 +27,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.cpp.Native
-import net.theluckycoder.chess.model.Move
-import net.theluckycoder.chess.model.Piece
+import net.theluckycoder.chess.ui.CapturedPiecesLists
 import net.theluckycoder.chess.ui.ChessBoard
+import net.theluckycoder.chess.ui.MovesHistory
 import net.theluckycoder.chess.ui.preferences.PreferencesActivity
-import net.theluckycoder.chess.utils.CapturedPieces
 import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.time.ExperimentalTime
 
@@ -118,64 +112,6 @@ private fun HomeChessBoard(
     )
 }
 
-@Composable
-private fun CapturedPiecesLists(
-    modifier: Modifier = Modifier,
-    show: Boolean,
-    content: @Composable ColumnScope.() -> Unit
-) = Column(modifier) {
-    val viewModel = viewModel<HomeViewModel>()
-
-    val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
-    val pieces by viewModel.pieces.collectAsState()
-
-    val capturedPieces = remember(pieces.size) { CapturedPieces.from(pieces.map { it.toPiece() }) }
-
-    // Top
-    if (show) {
-        CapturedPieceList(
-            if (isPlayerWhite) capturedPieces.capturedByWhite else capturedPieces.capturedByBlack,
-            if (isPlayerWhite) capturedPieces.blackScore else capturedPieces.whiteScore,
-        )
-    }
-
-    content()
-
-    // Bottom
-    if (show) {
-        CapturedPieceList(
-            if (isPlayerWhite) capturedPieces.capturedByBlack else capturedPieces.capturedByWhite,
-            if (isPlayerWhite) capturedPieces.whiteScore else capturedPieces.blackScore
-        )
-    }
-}
-
-@Composable
-private fun CapturedPieceList(pieces: List<Byte>, score: Int) {
-    LazyRow(modifier = Modifier.fillMaxWidth().padding(4.dp).height(24.dp)) {
-        items(pieces) { piece ->
-            val id = when (piece) {
-                Piece.PAWN -> R.drawable.ic_pawn
-                Piece.KNIGHT -> R.drawable.ic_knight
-                Piece.BISHOP -> R.drawable.ic_bishop
-                Piece.ROOK -> R.drawable.ic_rook
-                Piece.QUEEN -> R.drawable.ic_queen
-                Piece.KING -> R.drawable.ic_king
-                else -> throw IllegalStateException("Unknown Piece")
-            }
-
-            Icon(
-                painter = painterResource(id = id),
-                contentDescription = null
-            )
-        }
-
-        if (score != 0) {
-            item { Text(text = "+$score") }
-        }
-    }
-}
-
 @OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
 @Preview
 @Composable
@@ -217,73 +153,6 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
         AppBarActions()
     }
 )
-
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-private fun MovesHistory(
-    show: Boolean,
-    movesHistory: List<Move>,
-    currentMoveIndex: Int,
-) = AnimatedVisibility(
-    visible = show,
-    enter = fadeIn() + expandIn(Alignment.TopCenter),
-    exit = shrinkOut(Alignment.TopCenter) + fadeOut(),
-    initiallyVisible = false,
-) {
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-
-    remember(movesHistory, currentMoveIndex) {
-        coroutineScope.launch {
-            if (movesHistory.isNotEmpty() && currentMoveIndex in movesHistory.indices)
-                listState.animateScrollToItem(currentMoveIndex)
-        }
-    }
-
-    LazyRow(
-        state = listState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF222222))
-            .padding(4.dp),
-        content = {
-            if (movesHistory.isNotEmpty()) {
-                itemsIndexed(movesHistory) { index, item ->
-                    val padding = if (index % 2 == 0)
-                        Modifier.padding(start = 6.dp, end = 2.dp)
-                    else
-                        Modifier.padding(start = 2.dp, end = 6.dp)
-
-                    Row(
-                        modifier = padding
-                    ) {
-                        if (index % 2 == 0) {
-                            Text(
-                                text = "${index / 2 + 1}. ",
-                                color = Color.Gray,
-                                fontSize = 13.sp,
-                            )
-                        }
-
-                        val modifier = Modifier.padding(1.dp).then(
-                            if (currentMoveIndex == index)
-                                Modifier
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(Color.Gray)
-                            else Modifier
-                        )
-                        Text(
-                            modifier = modifier,
-                            text = item.toString(),
-                            fontSize = 13.sp,
-                        )
-                    }
-                }
-            } else
-                item { Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp) }
-        }
-    )
-}
 
 @Composable
 private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {

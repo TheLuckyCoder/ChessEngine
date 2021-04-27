@@ -93,7 +93,7 @@ private fun BoardTiles(
     val movedTileColor = colorResource(id = R.color.tile_last_moved)
 
     val possibleTileCircleSize = with(currentDensity) { 8.dp.toPx() }
-    val tilePx = with(currentDensity) { tileDp.toPx() }
+    val tilePx = with(LocalDensity.current) { tileDp.toPx() }
     val tileSize = Size(tilePx, tilePx)
 
     val possibleCapturePath = remember(tilePx) {

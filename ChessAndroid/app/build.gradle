@@ -9,7 +9,7 @@ android {
         applicationId "net.theluckycoder.chess"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1202
+        versionCode 1203
         versionName "1.2.0"
         resConfigs "en"
     }

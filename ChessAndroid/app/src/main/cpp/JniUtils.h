@@ -9,6 +9,13 @@
 #define LOGW(LOG_TAG, ...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(LOG_TAG, ...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
+/**
+ * This class automatically attaches this thread to the JVM if necessary,
+ * and detaches it upon destruction.
+ * And it provides a valid pointer to the JNIEnv.
+ *
+ * In this way it works similarly to the std::lock_guard class.
+ */
 class NativeThreadAttach
 {
 public:
@@ -35,3 +42,36 @@ private:
 	JNIEnv *_env = nullptr;
 	int _jvmEnvState{};
 };
+
+namespace JniCache
+{
+	jclass boardChangeListenerClass;
+	jclass searchListenerClass;
+	jclass indexedPieceClass;
+	jclass moveClass;
+	jclass searchOptionsClass;
+
+	static jclass cacheClass(JNIEnv *env, const char *name)
+	{
+		return static_cast<jclass>(env->NewGlobalRef(env->FindClass(name)));
+	}
+
+	void createCaches(JNIEnv *env)
+	{
+		boardChangeListenerClass = cacheClass(env, "net/theluckycoder/chess/cpp/BoardChangeListener");
+		searchListenerClass = cacheClass(env, "net/theluckycoder/chess/cpp/SearchListener");
+		indexedPieceClass = cacheClass(env, "net/theluckycoder/chess/model/IndexedPiece");
+		moveClass = cacheClass(env, "net/theluckycoder/chess/model/Move");
+		searchOptionsClass = cacheClass(env, "net/theluckycoder/chess/model/SearchOptions");
+	}
+
+	void cleanCaches(JNIEnv *env)
+	{
+		env->DeleteGlobalRef(boardChangeListenerClass);
+		env->DeleteGlobalRef(searchListenerClass);
+		env->DeleteGlobalRef(indexedPieceClass);
+		env->DeleteGlobalRef(moveClass);
+		env->DeleteGlobalRef(searchOptionsClass);
+	}
+}
+

@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "JniUtils.h"
-#include "JniCache.h"
 #include "AndroidBuffer.h"
 
 #include "chess/BoardManager.h"
