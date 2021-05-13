@@ -5,7 +5,9 @@
 namespace PolyBook
 {
 	void initBook(const std::string &bookPath);
-	bool initialized() noexcept;
+	bool isInitialized() noexcept;
+	void enable(bool enable) noexcept;
+	bool isEnabled() noexcept;
 	void clearBook();
 
 	u64 getKeyFromBoard(const Board &board) noexcept;

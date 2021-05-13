@@ -243,7 +243,8 @@ namespace PolyBook
 	}
 
 	static std::optional<std::string> bookPath;
-	static std::vector<BookMove> vecBook;
+	static std::vector<BookMove> bookVector;
+	static bool enabled = false;
 
 	void initBook(const std::string &path)
 	{
@@ -263,28 +264,32 @@ namespace PolyBook
 		const auto streamSize = static_cast<long>(bookFile.tellg());
 		const auto entriesCount = streamSize / sizeof(BookMove);
 
-		vecBook = std::vector<BookMove>(entriesCount);
+        bookVector = std::vector<BookMove>(entriesCount);
 		std::cout << "Opening Book contains " << entriesCount << " entries\n";
 
 		bookFile.seekg(0, std::ios::beg);
-		if (!bookFile.read(reinterpret_cast<char *>(vecBook.data()),
+		if (!bookFile.read(reinterpret_cast<char *>(bookVector.data()),
 						   entriesCount * sizeof(BookMove)))
 		{
 			std::cout << "Error: Failed to Read File!\n";
 		}
 	}
 
-	bool initialized() noexcept { return bookPath.has_value(); }
+    bool isInitialized() noexcept { return bookPath.has_value(); }
+
+    void enable(const bool enable) noexcept { enabled = enable; }
+
+    bool isEnabled() noexcept { return isInitialized() && enabled; }
 
 	void clearBook()
 	{
 		if (bookPath.has_value())
 			bookPath = std::nullopt;
 
-		if (!vecBook.empty())
+		if (!bookVector.empty())
 		{
-			vecBook.clear();
-			vecBook.shrink_to_fit();
+            bookVector.clear();
+            bookVector.shrink_to_fit();
 		}
 	}
 
@@ -377,7 +382,7 @@ namespace PolyBook
 		std::array<Move, 64> foundMoves{};
 		usize foundMovesCount{};
 
-		for (const BookMove &bookMove : vecBook)
+		for (const BookMove &bookMove : bookVector)
 		{
 			if (bookMove.key == polyKey)
 			{

@@ -62,7 +62,7 @@ Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 
 	Stats::restartTimer();
 
-	if (PolyBook::initialized() && _sharedState.useBook)
+	if (PolyBook::isEnabled() && _sharedState.useBook)
 	{
 		const Move move = PolyBook::getBookMove(board);
 		if (!move.empty())

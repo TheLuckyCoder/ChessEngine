@@ -4,7 +4,7 @@
 #include <iostream>
 
 #ifdef _MSC_VER
-#include <xmmintrin.h>
+#	include <xmmintrin.h>
 #endif
 
 static constexpr u64 MB = 1ull << 20;
@@ -25,7 +25,7 @@ void TranspositionTable::prefetch(const u64 zKey) const noexcept
 
 	const auto address = &_clusters[(zKey >> 48u) & _hashMask];
 #ifdef _MSC_VER
-	_mm_prefetch((char*)address, _MM_HINT_T0);
+	_mm_prefetch(reinterpret_cast<char*>(address), _MM_HINT_T0);
 #else
 	__builtin_prefetch(address);
 #endif
@@ -41,7 +41,6 @@ std::optional<SearchEntry> TranspositionTable::probe(const u64 zKey) const noexc
 	assert(index < _size);
 	auto &clusterEntries = _clusters[index].entries;
 
-	std::shared_lock lock{ _mutexes[index % MUTEX_COUNT] };
 	for (usize i = 0; i < CLUSTER_SIZE; ++i)
 	{
 		auto &entry = clusterEntries[i];
@@ -64,13 +63,11 @@ void TranspositionTable::insert(const u64 zKey, SearchEntry entry) noexcept
 	auto &clusterEntries = _clusters[index].entries;
 	auto *toReplace = &clusterEntries.front();
 
-	std::lock_guard lock{ _mutexes[index % MUTEX_COUNT] };
-
 	usize i{};
 	for (; i < CLUSTER_SIZE && key != clusterEntries[i].key(); ++i)
 	{
 		if (toReplace->depth() - (tableAge - toReplace->age())
-			>= clusterEntries[i].depth() - (tableAge - clusterEntries[i].generation))
+			>= clusterEntries[i].depth() - (tableAge - clusterEntries[i].age()))
 			toReplace = &clusterEntries[i];
 	}
 
@@ -123,12 +120,12 @@ bool TranspositionTable::setSize(usize sizeMb)
 
 void TranspositionTable::update() noexcept
 {
-	if (_currentAge == SearchEntry::AGE_BITS)
+	if (_currentAge == SearchEntry::AGE_MASK)
 	{
 		clear();
 	} else
 	{
-		(++_currentAge) &= SearchEntry::AGE_BITS;
+		(++_currentAge) &= SearchEntry::AGE_MASK;
 	}
 }
 

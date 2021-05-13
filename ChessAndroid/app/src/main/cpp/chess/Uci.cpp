@@ -111,7 +111,15 @@ void Uci::loop()
 			else
 				std::cout << results;
 		} else if (token == "perft")
-			Tests::runPerftTests();
+		{
+			i32 depth{};
+			is >> depth;
+			if (depth > 0)
+				Tests::runPerftForPosition(_board.getFen(), depth);
+			else
+				Tests::runPerftTests();
+
+		}
 
 		std::cout.flush();
 
@@ -138,7 +146,7 @@ void Uci::setOption(std::istringstream &is)
 	{
 		usize hashSize{};
 		is >> hashSize;
-		_hashSizeMb = std::clamp<usize>(hashSize, 4u, 2048u);
+		_hashSizeMb = std::clamp<usize>(hashSize, 4u, 4096u);
 
 		std::cout << "Hash Size has been set to " << _hashSizeMb << "MB" << std::endl;
 	} else if (token == "bookpath")
