@@ -114,6 +114,12 @@ Java_net_theluckycoder_chess_cpp_Native_initBook(JNIEnv *pEnv, jobject, jstring 
 }
 
 ExportFunction void JNICALL
+Java_net_theluckycoder_chess_cpp_Native_enableBook(JNIEnv *, jobject, jboolean enable)
+{
+	PolyBook::enable(static_cast<bool>(enable));
+}
+
+ExportFunction void JNICALL
 Java_net_theluckycoder_chess_cpp_Native_setSearchListener(JNIEnv *pEnv, jobject, jobject instance)
 {
 	if (!pEnv->IsSameObject(searchListener, instance))

@@ -17,12 +17,11 @@ import net.theluckycoder.chess.cpp.SearchListener
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SaveManager
 import net.theluckycoder.chess.utils.SettingsDataStore
-import java.util.concurrent.atomic.AtomicBoolean
 
-class HomeViewModel(application: Application) : AndroidViewModel(application), BoardChangeListener,
-    SearchListener {
+class HomeViewModel(application: Application) : AndroidViewModel(application),
+    BoardChangeListener, SearchListener {
 
-    private val initialized = AtomicBoolean(false)
+    private var initialized = false
     val dataStore = SettingsDataStore.get(application)
 
     /*
@@ -73,6 +72,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
             }
 
             launch {
+                dataStore.allowBook().distinctUntilChanged().collectLatest {
+                    ensureActive()
+                    Native.enableBook(it)
+                }
+            }
+
+            launch {
                 movesHistoryFlow.collectLatest {
                     ensureActive()
                     val state = gameState.value
@@ -90,17 +96,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
     }
 
     fun resetBoard(playerWhite: Boolean = true) {
-        if (initialized.get()) {
+        if (initialized) {
             if (isEngineBusy.value)
                 Native.stopSearch()
 
             Native.initBoard(this, playerWhite)
         } else {
             // First time it is called, load the last game
-            initialized.set(true)
-
             Native.initBoard(this, true)
             SaveManager.loadFromFile(getApplication())
+
+            initialized = true
+
+            makeEngineMove()
         }
     }
 
@@ -157,19 +165,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
             getEmptyTiles()
 
         updatePiecesList()
+        makeEngineMove()
+    }
 
-        if (!Native.isPlayersTurn() && moveIndex == movesHistoryList.lastIndex)
+    private fun makeEngineMove() {
+        if (initialized && !Native.isPlayersTurn() && currentMoveIndex.value == movesHistory.value.lastIndex)
             Native.makeEngineMove()
 
         isEngineBusyFlow.value = Native.isEngineBusy()
     }
 
     override fun onFinish(success: Boolean) {
-        if (!success && !Native.isPlayersTurn()) {
-            Native.makeEngineMove()
-        }
-
-        isEngineBusyFlow.value = Native.isEngineBusy()
+        if (!success)
+            makeEngineMove()
     }
 
     private companion object {

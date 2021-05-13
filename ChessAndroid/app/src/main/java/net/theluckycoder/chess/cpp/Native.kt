@@ -7,6 +7,7 @@ object Native {
 
     external fun initBoard(boardChangeListener: BoardChangeListener, isPlayerWhite: Boolean)
     external fun initBook(bookPath: String)
+    external fun enableBook(enable: Boolean)
     external fun setSearchListener(searchListener: SearchListener)
 
     external fun loadFen(playerWhite: Boolean, fen: String): Boolean

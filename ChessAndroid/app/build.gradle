@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 30
-    ndkVersion "23.0.7272597-beta3"
+    ndkVersion "22.1.7171670"
 
     defaultConfig {
         applicationId "net.theluckycoder.chess"

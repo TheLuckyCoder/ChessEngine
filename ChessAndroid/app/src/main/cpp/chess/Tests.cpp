@@ -264,14 +264,12 @@ namespace Tests
 		return info;
 	}
 
-	static void perftWrapper(std::string_view tag, std::string_view fen, const std::initializer_list<u64> perftResults)
+	static void perftWrapper(std::string_view tag, std::string_view fen, const std::vector<u64> perftVector)
 	{
 		using std::setw;
 
 		Board board;
 		board.setToFen(std::string(fen));
-
-		const std::vector<u64> perftVector(perftResults);
 
 		constexpr auto DepthW = 5;
 		constexpr auto ColumnW = 12;
@@ -365,6 +363,11 @@ namespace Tests
 		});
 
 		std::cout << "Perft tests execution finished" << std::endl;
+	}
+
+	void runPerftForPosition(const std::string &fen, const i32 depth)
+	{
+		perftWrapper("Perft", fen, std::vector<u64>(depth));
 	}
 
 	// endregion Perft

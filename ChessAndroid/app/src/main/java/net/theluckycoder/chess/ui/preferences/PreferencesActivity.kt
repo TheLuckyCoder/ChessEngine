@@ -132,6 +132,13 @@ private fun getPreferenceItems(
                 valueRange = 1..Runtime.getRuntime().availableProcessors(),
                 defaultValue = SettingsDataStore.DEFAULT_THREADS
             ),
+            SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_allow_opening_book),
+                summary = stringResource(id = R.string.pref_allow_opening_book_desc),
+                prefKey = SettingsDataStore.ALLOW_BOOK,
+                icon = painterResource(id = R.drawable.ic_pref_book),
+                defaultValue = true
+            ),
             SeekbarIntPreferenceItem(
                 title = stringResource(id = R.string.pref_cache_size),
                 summary = stringResource(id = R.string.pref_cache_size_desc),

@@ -68,6 +68,9 @@ class SettingsDataStore private constructor(private val application: Application
             preferences[HASH_SIZE] = searchOptions.hashSize
         }
 
+    fun allowBook(): Flow<Boolean> =
+        dataStore().data.map { it[ALLOW_BOOK] ?: true }
+
     fun showBasicDebug(): Flow<Boolean> =
         dataStore().data.map { it[SHOW_DEBUG_BASIC] ?: false }
 
@@ -98,6 +101,7 @@ class SettingsDataStore private constructor(private val application: Application
         val SEARCH_TIME = intPreferencesKey("search_time")
         val THREADS = intPreferencesKey("threads")
         val HASH_SIZE = intPreferencesKey("hash_size")
+        val ALLOW_BOOK = booleanPreferencesKey("allow_book")
 
         val SHOW_DEBUG_BASIC = booleanPreferencesKey("show_debug_basic")
         val SHOW_DEBUG_ADVANCED = booleanPreferencesKey("show_debug_advanced")
