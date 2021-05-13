@@ -1,10 +1,9 @@
-package net.theluckycoder.chess
+package net.theluckycoder.chess.cpp
 
 import androidx.annotation.Keep
 
 interface BoardChangeListener {
 
-    @Suppress("unused")
     @Keep // Called by native code
     fun boardChanged(gameStateInt: Int)
 }

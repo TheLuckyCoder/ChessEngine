@@ -29,12 +29,14 @@ class BoardManager final
 {
 public:
 	using BoardChangedCallback = std::function<void(GameState state)>;
+	using SearchFinishedCallback = std::function<void(bool success)>;
 
 private:
-	static std::recursive_mutex _mutex;
-	static BoardChangedCallback _callback;
+	inline static std::recursive_mutex _mutex;
+	inline static BoardChangedCallback _boardCallback;
+	inline static SearchFinishedCallback _searchCallback;
 
-	inline static std::atomic_bool _isWorking{ false };
+	inline static std::atomic_bool _isBusy{ false };
 	inline static constinit bool _isPlayerWhite{ true };
 	inline static constinit Board _currentBoard{};
 	inline static UndoRedo::MovesStack _movesStack;
@@ -52,7 +54,13 @@ public:
 	static void redoLastMoves();
 
 	/// Getters and Setters
-	static bool isWorking() noexcept { return _isWorking; }
+	static void setSearchFinishedCallback(const SearchFinishedCallback &callback)
+	{
+		std::lock_guard lock{ _mutex };
+		_searchCallback = callback;
+	}
+
+	static bool isEngineBusy() noexcept { return _isBusy; }
 
 	static bool isPlayerWhite() noexcept
 	{

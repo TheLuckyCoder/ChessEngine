@@ -2,20 +2,16 @@ package net.theluckycoder.chess.ui.home
 
 import android.content.Intent
 import android.content.res.Configuration
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.animatedVectorResource
@@ -29,9 +25,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.model.Move
+import net.theluckycoder.chess.cpp.Native
+import net.theluckycoder.chess.ui.CapturedPiecesLists
+import net.theluckycoder.chess.ui.ChessBoard
+import net.theluckycoder.chess.ui.MovesHistory
 import net.theluckycoder.chess.ui.preferences.PreferencesActivity
 import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.time.ExperimentalTime
@@ -43,27 +41,32 @@ fun HomeScreen(
     val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
     val movesHistory by viewModel.movesHistory.collectAsState()
     val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
+    val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
+
+    HomeDialogs()
 
     when (LocalConfiguration.current.orientation) {
         Configuration.ORIENTATION_LANDSCAPE -> {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
-                topBar = {
-                    MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
-                },
             ) { padding ->
                 Row(
                     Modifier
                         .padding(padding)
                         .fillMaxSize()
                 ) {
-                    BottomBar(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                    )
-                    HomeChessBoard()
-                    HomeDialogs()
+                    HomeChessBoard(viewModel)
+
+                    Column(modifier = Modifier.fillMaxHeight().weight(1f)) {
+                        MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
+
+                        CapturedPiecesLists(
+                            modifier = Modifier.fillMaxHeight(),
+                            show = showCaptures
+                        ) {
+                            ActionsBar(Modifier.weight(1f).padding(8.dp))
+                        }
+                    }
                 }
             }
         }
@@ -76,11 +79,15 @@ fun HomeScreen(
                         MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
                     }
                 },
-                bottomBar = { BottomBar() }
+                bottomBar = { ActionsBar() }
             ) { padding ->
                 Box(Modifier.fillMaxSize().padding(padding)) {
-                    HomeChessBoard(Modifier.align(Alignment.TopCenter))
-                    HomeDialogs()
+                    CapturedPiecesLists(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        showCaptures
+                    ) {
+                        HomeChessBoard(viewModel)
+                    }
                 }
             }
         }
@@ -89,7 +96,6 @@ fun HomeScreen(
 
 @Composable
 private fun HomeChessBoard(
-    modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
     val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
@@ -98,11 +104,11 @@ private fun HomeChessBoard(
     val gameState by viewModel.gameState.collectAsState()
 
     ChessBoard(
-        modifier = modifier,
         isPlayerWhite = isPlayerWhite,
         tiles = tiles,
         pieces = pieces,
-        gameState = gameState
+        gameState = gameState,
+        onPieceClick = { viewModel.showPossibleMoves(it.square) }
     )
 }
 
@@ -120,7 +126,7 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
             modifier = Modifier.padding(end = 16.dp)
         )
 
-        val isEngineThinking by viewModel.isEngineThinking.collectAsState()
+        val isEngineThinking by viewModel.isEngineBusy.collectAsState()
 
         AnimatedVisibility(
             visible = isEngineThinking,
@@ -148,73 +154,6 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
     }
 )
 
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-private fun MovesHistory(
-    show: Boolean,
-    movesHistory: List<Move>,
-    currentMoveIndex: Int,
-) = AnimatedVisibility(
-    visible = show,
-    enter = fadeIn() + expandIn(Alignment.TopCenter),
-    exit = shrinkOut(Alignment.TopCenter) + fadeOut(),
-    initiallyVisible = false,
-) {
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-
-    remember(movesHistory, currentMoveIndex) {
-        coroutineScope.launch {
-            if (movesHistory.isNotEmpty() && currentMoveIndex in movesHistory.indices)
-                listState.animateScrollToItem(currentMoveIndex)
-        }
-    }
-
-    LazyRow(
-        state = listState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF222222))
-            .padding(4.dp),
-        content = {
-            if (movesHistory.isNotEmpty()) {
-                itemsIndexed(movesHistory) { index, item ->
-                    val padding = if (index % 2 == 0)
-                        Modifier.padding(start = 6.dp, end = 2.dp)
-                    else
-                        Modifier.padding(start = 2.dp, end = 6.dp)
-
-                    Row(
-                        modifier = padding
-                    ) {
-                        if (index % 2 == 0) {
-                            Text(
-                                text = "${index / 2 + 1}. ",
-                                color = Color.Gray,
-                                fontSize = 13.sp,
-                            )
-                        }
-
-                        val modifier = Modifier.padding(1.dp).then(
-                            if (currentMoveIndex == index)
-                                Modifier
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(Color.Gray)
-                            else Modifier
-                        )
-                        Text(
-                            modifier = modifier,
-                            text = item.toString(),
-                            fontSize = 13.sp,
-                        )
-                    }
-                }
-            } else
-                item { Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp) }
-        }
-    )
-}
-
 @Composable
 private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
     var showActionsMenu by remember { mutableStateOf(false) }
@@ -235,7 +174,7 @@ private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
                     viewModel.showImportDialog.value = true
                 }) { Text(text = stringResource(id = R.string.fen_position_load)) }
 
-                val isEngineThinking by viewModel.isEngineThinking.collectAsState()
+                val isEngineThinking by viewModel.isEngineBusy.collectAsState()
                 val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
 
                 if (basicDebug) {
@@ -258,7 +197,7 @@ private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun BottomBar(
+private fun ActionsBar(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) = Column(

@@ -1,4 +1,4 @@
-package net.theluckycoder.chess.ui.home
+package net.theluckycoder.chess.ui
 
 import android.app.Application
 import androidx.compose.animation.core.animateOffsetAsState
@@ -26,13 +26,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.model.*
-import net.theluckycoder.chess.ui.AlertDialogTitle
 import net.theluckycoder.chess.utils.SettingsDataStore
-import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.math.min
 
 private val PIECES_RESOURCES = intArrayOf(
@@ -55,6 +52,7 @@ fun ChessBoard(
     tiles: List<Tile>,
     pieces: List<IndexedPiece>,
     gameState: GameState,
+    onPieceClick: (piece: Piece) -> Unit,
 ) = BoxWithConstraints(
     modifier = modifier
 ) {
@@ -71,7 +69,7 @@ fun ChessBoard(
 
     BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, showPossibleMoves)
 
-    BoardPieces(tileSize, isPlayerWhite, pieces, gameState)
+    BoardPieces(tileSize, isPlayerWhite, pieces, gameState, onPieceClick)
 
     if (showCoordinates) {
         BoardCoordinates(tileSize)
@@ -95,7 +93,7 @@ private fun BoardTiles(
     val movedTileColor = colorResource(id = R.color.tile_last_moved)
 
     val possibleTileCircleSize = with(currentDensity) { 8.dp.toPx() }
-    val tilePx = with(currentDensity) { tileDp.toPx() }
+    val tilePx = with(LocalDensity.current) { tileDp.toPx() }
     val tileSize = Size(tilePx, tilePx)
 
     val possibleCapturePath = remember(tilePx) {
@@ -197,7 +195,7 @@ private fun BoardPieces(
     isPlayerWhite: Boolean,
     pieces: List<IndexedPiece>,
     gameState: GameState,
-    viewModel: HomeViewModel = viewModel()
+    onPieceClick: (piece: Piece) -> Unit,
 ) {
     val whiteInCheck = gameState == GameState.WHITE_IN_CHECK
     val blackInCheck = gameState == GameState.BLACK_IN_CHECK
@@ -214,20 +212,21 @@ private fun BoardPieces(
                 val animatedOffset by animateOffsetAsState(targetValue = offset)
                 val (animatedX, animatedY) = with(LocalDensity.current) { animatedOffset.x.toDp() to animatedOffset.y.toDp() }
 
-                var backgroundModifier: Modifier = Modifier
-
-                if (piece.type == Piece.KING) {
-                    if ((whiteInCheck && piece.isWhite) || (blackInCheck && !piece.isWhite))
-                        backgroundModifier = Modifier.background(kingInCheckColor, CircleShape)
-                }
+                val backgroundModifier = if (
+                    (piece.type == Piece.KING)
+                    && ((whiteInCheck && piece.isWhite) || (blackInCheck && !piece.isWhite))
+                )
+                    Modifier.background(kingInCheckColor, CircleShape)
+                else
+                    Modifier
 
                 IconButton(
                     modifier = Modifier
-                        .requiredSize(tileDp)
+                        .size(tileDp)
                         .offset(animatedX, animatedY)
                         .then(backgroundModifier),
                     enabled = isPlayerWhite == piece.isWhite,
-                    onClick = { viewModel.getPossibleMoves(piece.square) }
+                    onClick = { onPieceClick(piece) }
                 ) {
                     Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
                 }

@@ -19,7 +19,7 @@ public:
 
 	u32 moveContents{};
 	u8 castlingRights{};
-	Square enPassantSq{};
+	Square enPassantSq = SQ_NONE;
 	u8 fiftyMoveRule{};
 
 	Move getMove() const noexcept { return Move{ moveContents }; }
@@ -108,15 +108,15 @@ public:
 public:
     Bitboard occupied{};
     std::array<std::array<Bitboard, PIECE_TYPE_NB>, COLOR_NB> pieces{};
-    std::array<std::array<u8, 16>, 15> pieceList{};
     std::array<u8, 15> pieceCount{};
 
     std::array<Piece, SQUARE_NB> data{};
 
     BoardState state{};
 
-    short ply{};
-    short npm{};
+    i16 ply{};
+	i16 npm{};
+    Score psq{};
     Color colorToMove{};
 
 private:
@@ -190,7 +190,7 @@ inline Bitboard Board::getPieces(const Color color) const noexcept
 
 inline Square Board::getKingSq(const Color color) const noexcept
 {
-    return toSquare(pieceList[Piece{ KING, color }][0]);
+    return getPieces(KING, color).bitScanForward();
 }
 
 inline u64 Board::zKey() const noexcept

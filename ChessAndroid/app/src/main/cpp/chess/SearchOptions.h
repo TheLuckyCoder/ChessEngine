@@ -13,7 +13,7 @@ public:
 	{
 	}
 
-	SearchOptions(const int depth,
+	SearchOptions(const i32 depth,
 				  const usize threadCount,
 				  const usize tableSizeMb,
 				  const bool quietSearch,

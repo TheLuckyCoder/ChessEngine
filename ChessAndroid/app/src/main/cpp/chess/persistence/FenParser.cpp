@@ -43,7 +43,7 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	std::string ep = "-";
 	stream >> ep;
 	auto &enPassantSq = board.state.enPassantSq;
-	enPassantSq = SQUARE_NB;
+	enPassantSq = SQ_NONE;
 	if (ep != "-")
 	{
 		if (ep.length() != 2)
@@ -52,7 +52,7 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 			return false;
 
 		const Square sq = ::toSquare(int(ep[0] - 'a'), int(ep[1] - '1'));
-		enPassantSq = sq < SQUARE_NB ? sq : SQUARE_NB;
+		enPassantSq = sq < SQ_NONE ? sq : SQ_NONE;
 	}
 
 	// HalfMove Clock

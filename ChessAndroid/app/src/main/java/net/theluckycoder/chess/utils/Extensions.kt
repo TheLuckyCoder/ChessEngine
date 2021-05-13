@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.lazy.LazyListState
 
 fun Byte.toBoolean() = this != 0.toByte()
 
@@ -20,4 +21,9 @@ fun Context.browseUrl(url: String): Boolean {
         e.printStackTrace()
         false
     }
+}
+
+fun LazyListState.isIndexVisible(index: Int): Boolean {
+    val end = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: layoutInfo.totalItemsCount) - 1
+    return index in firstVisibleItemIndex..end
 }

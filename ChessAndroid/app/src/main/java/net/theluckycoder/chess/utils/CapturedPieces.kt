@@ -3,32 +3,41 @@ package net.theluckycoder.chess.utils
 import net.theluckycoder.chess.model.Piece
 
 class CapturedPieces(
-    pieces: List<Piece>,
+    val whiteScore: Int,
+    val blackScore: Int,
+    val capturedByWhite: List<Byte>,
+    val capturedByBlack: List<Byte>,
 ) {
 
-    private val piecesPartition = pieces.partition { it.isWhite }
-    private val whitePieces = piecesPartition.first
-    private val blackPieces = piecesPartition.second
+    companion object {
+        fun from(pieces: List<Piece>): CapturedPieces {
+            val (whitePieces, blackPieces) = pieces.partition { it.isWhite }
 
-    private val absoluteWhiteScore = whitePieces.sumBy { it.score }
-    private val absoluteBlackScore = blackPieces.sumBy { it.score }
+            val totalWhiteScore = whitePieces.sumBy { it.score }
+            val totalBlackScore = blackPieces.sumBy { it.score }
 
-    fun getDifference(): Pair<List<Piece>, List<Piece>> {
-        val white = whitePieces.toMutableList()
-        val black = blackPieces.toMutableList()
+            val whiteScore = (totalWhiteScore - totalBlackScore).coerceAtLeast(0)
+            val blackScore = (totalBlackScore - totalWhiteScore).coerceAtLeast(0)
 
-        for (element in whitePieces) {
-            val index = black.indexOf(element)
+            val remainingWhite = whitePieces.map { it.type }.toMutableList()
+            val remainingBlack = blackPieces.map { it.type }.toMutableList()
 
-            if (index != -1) {
-                white.remove(element)
-                black.removeAt(index)
+            for (whitePiece in whitePieces) {
+                if (remainingBlack.contains(whitePiece.type)) {
+                    remainingWhite.remove(whitePiece.type)
+                    remainingBlack.remove(whitePiece.type)
+                }
             }
+
+            remainingWhite.sortByDescending { it }
+            remainingBlack.sortByDescending { it }
+
+            return CapturedPieces(
+                whiteScore = whiteScore,
+                blackScore = blackScore,
+                capturedByWhite = remainingBlack,
+                capturedByBlack = remainingWhite,
+            )
         }
-
-        white.sortByDescending { it.type }
-        black.sortByDescending { it.type }
-
-        return white to black
     }
 }

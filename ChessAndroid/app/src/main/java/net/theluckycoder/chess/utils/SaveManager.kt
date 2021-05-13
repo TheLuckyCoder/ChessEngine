@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.model.Move
 import java.io.File
 import java.io.FileNotFoundException
@@ -44,23 +44,21 @@ object SaveManager {
         }
     }
 
-    fun loadFromFile(context: Context): Boolean {
-        try {
-            context.openFileInput(SAVE_FILE_NAME).bufferedReader().use { reader ->
-                val lines = reader.readLines().toMutableList()
+    fun loadFromFile(context: Context): Boolean = try {
+        context.openFileInput(SAVE_FILE_NAME).bufferedReader().use { reader ->
+            val lines = reader.readLines().toMutableList()
 
-                val fen = lines.removeFirst()
-                val playerWhite = lines.removeFirst().toInt() == 1
+            val fen = lines.removeFirst()
+            val playerWhite = lines.removeFirst().toInt() == 1
 
-                val moves = lines.map { it.toInt() }
+            val moves = lines.map { it.toInt() }
 
-                return if (fen.isNotBlank() && moves.isNotEmpty()) {
-                    Native.loadFenMoves(playerWhite, fen, moves.toIntArray())
-                    true
-                } else false
-            }
-        } catch (e: FileNotFoundException) {
-            return false
+            return if (fen.isNotBlank() && moves.isNotEmpty()) {
+                Native.loadFenMoves(playerWhite, fen, moves.toIntArray())
+                true
+            } else false
         }
+    } catch (e: FileNotFoundException) {
+        false
     }
 }

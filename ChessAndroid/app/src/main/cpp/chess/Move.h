@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Defs.h"
+#include "Bitfield.h"
 
 class Move final
 {
@@ -14,15 +15,15 @@ public:
 		{
 			CAPTURE = 1, // The move is a capture
 			PROMOTION = 1 << 1, // The move is a promotion
-			KSIDE_CASTLE = 1 << 2, // The move is a king SideKey castle
-			QSIDE_CASTLE = 1 << 3, // The move is a queen SideKey castle
+			KSIDE_CASTLE = 1 << 2, // The move is a king side castle
+			QSIDE_CASTLE = 1 << 3, // The move is a queen side castle
 			DOUBLE_PAWN_PUSH = 1 << 4, // The move is a double pawn push
 			EN_PASSANT = 1 << 5, // The move is an en passant capture (Do not set the CAPTURE flag too)
 			PV_MOVE = 1 << 6, // The move is a PV Move
 		};
 
 	public:
-		explicit constexpr Flags(const u8 flags) noexcept: _flags(flags & 0x7F) {}
+		explicit constexpr Flags(const u8 flags) noexcept: _flags(flags) {}
 
 		constexpr u8 getContents() const noexcept { return _flags; }
 
@@ -44,24 +45,29 @@ public:
 		u8 _flags;
 	};
 
-	Move() = default;
+	constexpr Move() = default;
 
-	explicit constexpr Move(const unsigned int move, const int score = 0) noexcept
+	explicit constexpr Move(const u32 move, const i32 score = 0) noexcept
 		: _move(move), _score(score)
 	{
 	}
 
-	constexpr Move(const u8 from, const u8 to, const PieceType piece, const u8 flags = {}) noexcept
-		: _move(((from & FROM_MASK) << FROM_SHIFT)
-				| ((to & TO_MASK) << TO_SHIFT)
-				| ((piece & MOVED_MASK) << MOVED_SHIFT)
-				| ((flags & FLAGS_MASK) << FLAGS_SHIFT))
+	constexpr Move(const u8 from, const u8 to, const PieceType piece) noexcept
 	{
+		_move.set<0>(from);
+		_move.set<1>(to);
+		_move.setAs<2>(piece);
 	}
 
-	constexpr bool empty() const noexcept { return !static_cast<bool>(_move); }
+	constexpr Move(const u8 from, const u8 to, const PieceType piece, const u8 flags) noexcept
+		: Move(from, to, piece)
+	{
+		setFlags(flags);
+	}
 
-	constexpr u32 getContents() const noexcept { return _move; }
+	constexpr bool empty() const noexcept { return !static_cast<bool>(_move.value()); }
+
+	constexpr u32 getContents() const noexcept { return _move.value(); }
 
 	constexpr i32 getScore() const noexcept { return _score; }
 
@@ -70,52 +76,49 @@ public:
 		_score = score;
 	}
 
-	constexpr PieceType piece() const noexcept
-	{
-		return static_cast<PieceType>((_move >> MOVED_SHIFT) & MOVED_MASK);
-	}
-
-	constexpr PieceType capturedPiece() const noexcept
-	{
-		return static_cast<PieceType>((_move >> CAPTURED_SHIFT) & CAPTURED_MASK);
-	}
-
-	constexpr void setCapturedPiece(const PieceType type) noexcept
-	{
-		constexpr u32 ShiftedMask = CAPTURED_MASK << CAPTURED_SHIFT;
-		_move = (_move & ~ShiftedMask) | ((type << CAPTURED_SHIFT) & ShiftedMask);
-	}
-
-	constexpr PieceType promotedPiece() const noexcept
-	{
-		return static_cast<PieceType>((_move >> PROMOTED_SHIFT) & PROMOTED_MASK);
-	}
-
-	constexpr void setPromotedPiece(const PieceType type) noexcept
-	{
-		constexpr u32 ShiftedMask = PROMOTED_MASK << PROMOTED_SHIFT;
-		_move = (_move & ~ShiftedMask) | ((type << PROMOTED_SHIFT) & ShiftedMask);
-	}
-
 	constexpr Square from() const noexcept
 	{
-		return toSquare((_move >> FROM_SHIFT) & FROM_MASK);
+		return toSquare(_move.get<0>());
 	}
 
 	constexpr Square to() const noexcept
 	{
-		return toSquare((_move >> TO_SHIFT) & TO_MASK);
+		return toSquare(_move.get<1>());
+	}
+
+	constexpr PieceType piece() const noexcept
+	{
+		return _move.getAs<2, PieceType>();
+	}
+
+	constexpr PieceType capturedPiece() const noexcept
+	{
+		return _move.getAs<3, PieceType>();
+	}
+
+	constexpr void setCapturedPiece(const PieceType type) noexcept
+	{
+		_move.setAs<3>(type);
+	}
+
+	constexpr PieceType promotedPiece() const noexcept
+	{
+		return _move.getAs<4, PieceType>();
+	}
+
+	constexpr void setPromotedPiece(const PieceType type) noexcept
+	{
+		_move.setAs<4>(type);
 	}
 
 	constexpr Flags flags() const noexcept
 	{
-		return Flags(u8(_move >> FLAGS_SHIFT) & FLAGS_MASK);
+		return _move.getAs<5, Flags>();
 	}
 
 	constexpr void setFlags(const u8 flags) noexcept
 	{
-		constexpr u32 ShiftedMask = FLAGS_MASK << FLAGS_SHIFT;
-		_move = (_move & ~ShiftedMask) | ((flags << FLAGS_SHIFT) & ShiftedMask);
+		_move.set<5>(flags);
 	}
 
 	constexpr bool isTactical() const noexcept
@@ -126,18 +129,18 @@ public:
 
 	constexpr u16 getFromToBits() const noexcept
 	{
-		constexpr u16 Mask = (FROM_MASK | (TO_MASK << TO_SHIFT));
-		return _move & Mask;
+		constexpr u16 Mask = (0x3Fu | (0x3Fu << 6u));
+		return _move.value() & Mask;
 	}
 
 	constexpr bool operator==(const Move &rhs) const noexcept
 	{
-		return _move == rhs._move;
+		return _move.value() == rhs._move.value();
 	}
 
 	constexpr bool operator!=(const Move &rhs) const noexcept
 	{
-		return _move != rhs._move;
+		return _move.value() != rhs._move.value();
 	}
 
 	std::string toString(const bool showPiece = false) const
@@ -193,27 +196,13 @@ public:
 
 private:
 	/*
-	 * Bits 0 to 5 (6 bits) store the 'from' square
-	 * Bits 6 to 11 (6 bits) store the 'to' square
-	 * Bits 12 to 14 (3 bits) store the 'moved' piece type
-	 * Bits 15 to 17 (3 bits) store the 'captured' piece type
-	 * Bits 18 to 20 (3 bits) store the 'promoted' piece type
-	 * Bits 21 to 27 (7 bits) store the 'flags'
+	 * Bits 0 to 5 (6 bits) - 'from' square
+	 * Bits 6 to 11 (6 bits) - 'to' square
+	 * Bits 12 to 14 (3 bits) - 'moved' piece type
+	 * Bits 15 to 17 (3 bits) - 'captured' piece type
+	 * Bits 18 to 20 (3 bits) - 'promoted' piece type
+	 * Bits 21 to 27 (7 bits) - 'flags'
 	 */
-	u32 _move{};
+	Bitfield<u32, 6, 6, 3, 3, 3, 7> _move{};
 	i32 _score{};
-
-	static constexpr u32 FROM_SHIFT = 0;
-	static constexpr u32 TO_SHIFT = 6u;
-	static constexpr u32 MOVED_SHIFT = 12u;
-	static constexpr u32 CAPTURED_SHIFT = 16u;
-	static constexpr u32 PROMOTED_SHIFT = 20u;
-	static constexpr u32 FLAGS_SHIFT = 23u;
-
-	static constexpr u32 FROM_MASK = 0b11'1111;
-	static constexpr u32 TO_MASK = 0b11'1111;
-	static constexpr u32 MOVED_MASK = 0b111;
-	static constexpr u32 CAPTURED_MASK = 0b111;
-	static constexpr u32 PROMOTED_MASK = 0b111;
-	static constexpr u32 FLAGS_MASK = 0b1111'1111;
 };

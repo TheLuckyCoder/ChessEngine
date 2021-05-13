@@ -22,8 +22,11 @@ public:
 	SearchEntry() = default;
 
 	constexpr SearchEntry(const u64 key, const int depth, const Move move, const bool qSearch, const Bound bound)
-		: _key16(key >> 48u), _moveFromTo(move.getFromToBits()), _value(move.getScore()), _depth8(depth),
-		  generation((qSearch << 7u) | (u8(bound) << 5u)) {}
+		: _key16(key >> 48u), _moveFromTo(move.getFromToBits()), _value(move.getScore()), _depth8(depth)
+	{
+		_field.setAs<1>(bound);
+		_field.setAs<2>(qSearch);
+	}
 
 	constexpr u16 key() const noexcept { return _key16; }
 
@@ -31,18 +34,15 @@ public:
 
 	constexpr i32 depth() const noexcept { return i32(_depth8); }
 
-	constexpr bool qSearch() const noexcept { return generation & QSEARCH_BITS; }
+	constexpr u8 age() const noexcept { return _field.get<0>(); }
 
-	constexpr Bound bound() const noexcept
-	{
-		return static_cast<Bound>((generation & BOUND_BITS) >> 5u);
-	}
+	constexpr Bound bound() const noexcept { return _field.getAs<1, Bound>(); }
 
-	constexpr u8 age() const noexcept { return generation & AGE_BITS; }
+	constexpr bool qSearch() const noexcept { return _field.getAs<2, bool>(); }
 
 	constexpr void setAge(const u8 newAge) noexcept
 	{
-		generation = (generation & ~AGE_BITS) | (newAge & AGE_BITS);
+		_field.set<0>(newAge);
 	}
 
 private:
@@ -52,20 +52,17 @@ private:
 	i8 _depth8{};
 
 	/**
-	 * 0b0001'1111 - age
-	 * 0b0110'0000 - Bound
-	 * 0b1000'0000 - qSearch
+	 * 0 - age
+	 * 1 - Bound
+	 * 2 - qSearch
 	 */
-	u8 generation{};
+	Bitfield<u8, 5, 2, 1> _field{};
 
-	static constexpr u8 AGE_BITS = 0b0001'1111;
-	static constexpr u8 BOUND_BITS = 0b0110'0000;
-	static constexpr u8 QSEARCH_BITS = 0b1000'0000;
+	static constexpr auto AGE_MASK = (1u << 5u) - 1u;
 };
 
 class TranspositionTable
 {
-	static constexpr usize MUTEX_COUNT = 512;
 	static constexpr usize CLUSTER_SIZE = 4;
 
 	struct Cluster
@@ -99,5 +96,4 @@ private:
 	u64 _hashMask{};
 	u8 _currentAge{};
 	Cluster *_clusters = nullptr;
-	mutable std::array<std::shared_mutex, MUTEX_COUNT> _mutexes{};
 };

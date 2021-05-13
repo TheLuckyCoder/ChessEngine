@@ -11,23 +11,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import net.theluckycoder.chess.BoardChangeListener
-import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.cpp.BoardChangeListener
+import net.theluckycoder.chess.cpp.Native
+import net.theluckycoder.chess.cpp.SearchListener
 import net.theluckycoder.chess.model.*
 import net.theluckycoder.chess.utils.SaveManager
 import net.theluckycoder.chess.utils.SettingsDataStore
-import java.util.concurrent.atomic.AtomicBoolean
 
-class HomeViewModel(application: Application) : AndroidViewModel(application), BoardChangeListener {
+class HomeViewModel(application: Application) : AndroidViewModel(application),
+    BoardChangeListener, SearchListener {
 
-    private val initialized = AtomicBoolean(false)
+    private var initialized = false
     val dataStore = SettingsDataStore.get(application)
 
     /*
      * Chess Game Data
      */
-    private val isEngineThinkingFlow = MutableStateFlow(false)
+    private val isEngineBusyFlow = MutableStateFlow(false)
     private val playerPlayingWhiteFlow = MutableStateFlow(true)
     private val tilesFlow = MutableStateFlow(getEmptyTiles())
     private val piecesFlow = MutableStateFlow(emptyList<IndexedPiece>())
@@ -37,7 +37,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
     private val debugStatsFlow = MutableStateFlow(DebugStats())
 
     val playerPlayingWhite: StateFlow<Boolean> = playerPlayingWhiteFlow
-    val isEngineThinking: StateFlow<Boolean> = isEngineThinkingFlow
+    val isEngineBusy: StateFlow<Boolean> = isEngineBusyFlow
     val tiles: StateFlow<List<Tile>> = tilesFlow
     val pieces: StateFlow<List<IndexedPiece>> = piecesFlow
     val gameState: StateFlow<GameState> = gameStateFlow
@@ -54,6 +54,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
 
     init {
         resetBoard()
+        Native.setSearchListener(this)
 
         viewModelScope.launch(Dispatchers.IO) {
             launch {
@@ -66,7 +67,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
             launch {
                 dataStore.getEngineSettings().distinctUntilChanged().collectLatest {
                     ensureActive()
-                    withContext(Dispatchers.Main) { Native.setSearchOptions(it) }
+                    SearchOptions.setNativeSearchOptions(it)
+                }
+            }
+
+            launch {
+                dataStore.allowBook().distinctUntilChanged().collectLatest {
+                    ensureActive()
+                    Native.enableBook(it)
                 }
             }
 
@@ -88,16 +96,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
     }
 
     fun resetBoard(playerWhite: Boolean = true) {
-        if (initialized.get()) {
-            if (isEngineThinking.value)
+        if (initialized) {
+            if (isEngineBusy.value)
                 Native.stopSearch()
+
             Native.initBoard(this, playerWhite)
         } else {
             // First time it is called, load the last game
-            initialized.set(true)
-
             Native.initBoard(this, true)
             SaveManager.loadFromFile(getApplication())
+
+            initialized = true
+
+            makeEngineMove()
         }
     }
 
@@ -109,7 +120,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
         dataStore.setDifficultyLevel(level)
     }
 
-    fun getPossibleMoves(square: Int) {
+    fun showPossibleMoves(square: Int) {
         val moves = Native.getPossibleMoves(square.toByte()).toList()
 
         tilesFlow.value = tilesFlow.value
@@ -154,16 +165,23 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), B
             getEmptyTiles()
 
         updatePiecesList()
+        makeEngineMove()
+    }
 
-        if (!Native.isPlayersTurn())
+    private fun makeEngineMove() {
+        if (initialized && !Native.isPlayersTurn() && currentMoveIndex.value == movesHistory.value.lastIndex)
             Native.makeEngineMove()
 
-        isEngineThinkingFlow.value = Native.isEngineWorking()
+        isEngineBusyFlow.value = Native.isEngineBusy()
+    }
+
+    override fun onFinish(success: Boolean) {
+        if (!success)
+            makeEngineMove()
     }
 
     private companion object {
         private val emptyTiles = Array(64) { Tile(it, Tile.State.None) }
-
         fun getEmptyTiles() = emptyTiles.toList()
     }
 }

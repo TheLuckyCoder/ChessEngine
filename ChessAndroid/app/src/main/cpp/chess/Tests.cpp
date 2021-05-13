@@ -264,12 +264,12 @@ namespace Tests
 		return info;
 	}
 
-	static void perftWrapper(std::string_view tag, std::string_view fen, const std::initializer_list<u64> perftResults)
+	static void perftWrapper(std::string_view tag, std::string_view fen, const std::vector<u64> perftVector)
 	{
+		using std::setw;
+
 		Board board;
 		board.setToFen(std::string(fen));
-
-		std::vector<u64> perftVector(perftResults);
 
 		constexpr auto DepthW = 5;
 		constexpr auto ColumnW = 12;
@@ -277,10 +277,10 @@ namespace Tests
 
 		const auto displayRow = [&](const i32 depth, const double time, const PerftInfo &info)
 		{
-			using std::setw;
+
 			const auto expectedNodes = perftVector[depth];
 			const auto wrongResult = expectedNodes != info.nodes;
-			const auto nodes = (wrongResult ? (std::string("!!!") + std::to_string(expectedNodes)) : std::to_string(expectedNodes));
+			const auto nodes = (wrongResult ? (std::string("!!!") + std::to_string(info.nodes)) : std::to_string(info.nodes));
 
 			std::cout << "| " << std::setfill(' ') << std::fixed << std::setprecision(1)
 					  << setw(DepthW) << depth << Pipe
@@ -297,16 +297,16 @@ namespace Tests
 
 		std::cout << tag << ':' << '\n';
 		std::cout << "| " << std::setfill(' ')
-				  << std::setw(DepthW) << "Depth" << Pipe
-				  << std::setw(ColumnW) << "Seconds" << Pipe
-				  << std::setw(ColumnW) << "Expected" << Pipe
-				  << std::setw(ColumnW) << "Nodes" << Pipe
-				  << std::setw(ColumnW) << "E.P." << Pipe
-				  << std::setw(ColumnW) << "Captures" << Pipe
-				  << std::setw(ColumnW) << "Castles" << Pipe
-				  << std::setw(ColumnW) << "Promotions" << Pipe
-				  << std::setw(ColumnW) << "Checks" << Pipe
-				  << std::setw(ColumnW) << "DoubleChecks" << Pipe << '\n';
+				  << setw(DepthW) << "Depth" << Pipe
+				  << setw(ColumnW) << "Seconds" << Pipe
+				  << setw(ColumnW) << "Expected" << Pipe
+				  << setw(ColumnW) << "Nodes" << Pipe
+				  << setw(ColumnW) << "E.P." << Pipe
+				  << setw(ColumnW) << "Captures" << Pipe
+				  << setw(ColumnW) << "Castles" << Pipe
+				  << setw(ColumnW) << "Promotions" << Pipe
+				  << setw(ColumnW) << "Checks" << Pipe
+				  << setw(ColumnW) << "DoubleChecks" << Pipe << '\n';
 
 		for (unsigned depth = 1; depth < perftVector.size(); ++depth)
 		{
@@ -320,11 +320,11 @@ namespace Tests
 
 			displayRow(depth, timeNeeded, info);
 
-			/*if (depth == perftVector.size() - 1 || info.nodes != expectedNodeCount)
+			if (depth == perftVector.size() - 1 || info.nodes != perftVector[depth])
 			{
 				std::cout << '\n' << out.str();
-				break;
-			}*/
+//				break;
+			}
 
 			std::cout << std::endl;
 		}
@@ -346,8 +346,12 @@ namespace Tests
 			1, 14, 191, 2812, 43238, 674624, 11030083, 178633661
 		});
 
+		/*perftWrapper("Position 4", "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/P2P2PP/r2Q1R1K w kq - 0 2", {
+			1, 6, 264, 9467, 422333, 15833292, 706045033
+		});*/
+
 		perftWrapper("Position 4", "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", {
-			1, 6, 264, 9467, 422333, 15833292
+			1, 6, 264, 9467, 422333, 15833292, 706045033
 		});
 
 		perftWrapper("Position 5", "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", {
@@ -359,6 +363,11 @@ namespace Tests
 		});
 
 		std::cout << "Perft tests execution finished" << std::endl;
+	}
+
+	void runPerftForPosition(const std::string &fen, const i32 depth)
+	{
+		perftWrapper("Perft", fen, std::vector<u64>(depth));
 	}
 
 	// endregion Perft

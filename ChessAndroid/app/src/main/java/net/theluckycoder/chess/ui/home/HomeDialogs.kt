@@ -13,11 +13,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.Native
+import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.model.GameState
 import net.theluckycoder.chess.ui.AlertDialogTitle
 import net.theluckycoder.chess.ui.ChooseSidesToggle
+import net.theluckycoder.chess.utils.Pgn
 import net.theluckycoder.chess.viewmodel.HomeViewModel
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -108,10 +109,18 @@ private fun NewGameDialog(viewModel: HomeViewModel = viewModel()) {
 @Composable
 private fun SharePositionDialog(viewModel: HomeViewModel = viewModel()) {
     val currentFen = remember { Native.getCurrentFen() }
+    val pgn = remember {
+        Pgn.export(
+            viewModel.playerPlayingWhite.value,
+            Native.getStartFen(),
+            viewModel.movesHistory.value,
+            viewModel.gameState.value
+        )
+    }
 
     AlertDialog(
         onDismissRequest = { viewModel.showShareDialog.value = false },
-        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_position_share)) },
+        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_pgn_position_share)) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
@@ -135,16 +144,31 @@ private fun SharePositionDialog(viewModel: HomeViewModel = viewModel()) {
         confirmButton = {
             val context = LocalContext.current
             val clipboardManager = LocalClipboardManager.current
-            TextButton(
-                onClick = {
-                    clipboardManager.setText(AnnotatedString(currentFen))
-                    Toast.makeText(context, R.string.fen_position_copied, Toast.LENGTH_SHORT)
-                        .show()
-                    viewModel.showShareDialog.value = false
+
+            Row {
+                TextButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(currentFen))
+                        Toast.makeText(context, R.string.fen_position_copied, Toast.LENGTH_SHORT)
+                            .show()
+                        viewModel.showShareDialog.value = false
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.action_fen_copy))
                 }
-            ) {
-                Text(text = stringResource(id = R.string.action_copy))
+
+                TextButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(pgn))
+                        Toast.makeText(context, R.string.pgn_position_copied, Toast.LENGTH_SHORT)
+                            .show()
+                        viewModel.showShareDialog.value = false
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.action_pgn_copy))
+                }
             }
+
         }
     )
 }

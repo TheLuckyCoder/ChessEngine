@@ -207,12 +207,9 @@ namespace PolyKeys
 		u64(0xF8D626AAAF278509),
 	};
 
-	enum
-	{
-		CASTLE_OFFSET = 768,
-		EN_PASSANT_OFFSET = 772,
-		TURN_OFFSET = 780,
-	};
+	static constexpr usize CastleOffset = 768;
+	static constexpr usize EnPassantOffset = 772;
+	static constexpr usize TurnOffset = 780;
 }
 
 namespace PolyBook
@@ -240,13 +237,14 @@ namespace PolyBook
 		const auto enPass = Bitboard::fromSquare(board.getEnPassantSq());
 
 		if (board.colorToMove == WHITE)
-			return !(Attacks::pawnAttacks<WHITE>(board.getPieces(PAWN, WHITE)) & enPass).empty();
+			return (Attacks::pawnAttacks<WHITE>(board.getPieces(PAWN, WHITE)) & enPass).notEmpty();
 		else
-			return !(Attacks::pawnAttacks<BLACK>(board.getPieces(PAWN, BLACK)) & enPass).empty();
+			return (Attacks::pawnAttacks<BLACK>(board.getPieces(PAWN, BLACK)) & enPass).notEmpty();
 	}
 
 	static std::optional<std::string> bookPath;
-	static std::vector<BookMove> vecBook;
+	static std::vector<BookMove> bookVector;
+	static bool enabled = false;
 
 	void initBook(const std::string &path)
 	{
@@ -266,28 +264,32 @@ namespace PolyBook
 		const auto streamSize = static_cast<long>(bookFile.tellg());
 		const auto entriesCount = streamSize / sizeof(BookMove);
 
-		vecBook = std::vector<BookMove>(entriesCount);
+        bookVector = std::vector<BookMove>(entriesCount);
 		std::cout << "Opening Book contains " << entriesCount << " entries\n";
 
 		bookFile.seekg(0, std::ios::beg);
-		if (!bookFile.read(reinterpret_cast<char *>(vecBook.data()),
+		if (!bookFile.read(reinterpret_cast<char *>(bookVector.data()),
 						   entriesCount * sizeof(BookMove)))
 		{
 			std::cout << "Error: Failed to Read File!\n";
 		}
 	}
 
-	bool initialized() noexcept { return bookPath.has_value(); }
+    bool isInitialized() noexcept { return bookPath.has_value(); }
+
+    void enable(const bool enable) noexcept { enabled = enable; }
+
+    bool isEnabled() noexcept { return isInitialized() && enabled; }
 
 	void clearBook()
 	{
 		if (bookPath.has_value())
 			bookPath = std::nullopt;
 
-		if (!vecBook.empty())
+		if (!bookVector.empty())
 		{
-			vecBook.clear();
-			vecBook.shrink_to_fit();
+            bookVector.clear();
+            bookVector.shrink_to_fit();
 		}
 	}
 
@@ -310,24 +312,24 @@ namespace PolyBook
 
 		// Castling
 		if (board.canCastleKs<WHITE>())
-			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 0];
+			result ^= PolyKeys::Random64[PolyKeys::CastleOffset + 0];
 		if (board.canCastleQs<WHITE>())
-			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 1];
+			result ^= PolyKeys::Random64[PolyKeys::CastleOffset + 1];
 		if (board.canCastleKs<BLACK>())
-			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 2];
+			result ^= PolyKeys::Random64[PolyKeys::CastleOffset + 2];
 		if (board.canCastleQs<BLACK>())
-			result ^= PolyKeys::Random64[PolyKeys::CASTLE_OFFSET + 3];
+			result ^= PolyKeys::Random64[PolyKeys::CastleOffset + 3];
 
 		// En Passant
 		if (board.getEnPassantSq() != SQ_NONE && hasEnPassPawnForCapture(board))
 		{
-			result ^= PolyKeys::Random64[PolyKeys::EN_PASSANT_OFFSET + fileOf(board.getEnPassantSq())];
+			result ^= PolyKeys::Random64[PolyKeys::EnPassantOffset + fileOf(board.getEnPassantSq())];
 		}
 
 		// SideKey
 		if (board.colorToMove == WHITE)
 		{
-			result ^= PolyKeys::Random64[PolyKeys::TURN_OFFSET];
+			result ^= PolyKeys::Random64[PolyKeys::TurnOffset];
 		}
 
 		// Generate the key and swap it to big endian using flipVertical
@@ -380,7 +382,7 @@ namespace PolyBook
 		std::array<Move, 64> foundMoves{};
 		usize foundMovesCount{};
 
-		for (const BookMove &bookMove : vecBook)
+		for (const BookMove &bookMove : bookVector)
 		{
 			if (bookMove.key == polyKey)
 			{
@@ -392,10 +394,17 @@ namespace PolyBook
 
 				if (foundMovesCount == foundMoves.max_size())
 					break;
+			} else if (foundMovesCount != 0)
+			{
+				/*
+				 * If we have found any moves but the current one does not belong to this board,
+				 * we can stop searching since the file is sorted
+				 */
+				break;
 			}
 		}
 
-		// TODO check if these are valid moves
+		// TODO check if these are valid moves?
 
 		if (foundMovesCount == 0)
 			return {};

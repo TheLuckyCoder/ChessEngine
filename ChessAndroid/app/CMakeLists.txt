@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 set(LIB_NAME "chess")
 project(${LIB_NAME})
 
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_library(
         ${LIB_NAME}
         SHARED
@@ -33,9 +35,7 @@ target_compile_options(${LIB_NAME} PUBLIC
         -Wpedantic -Wnull-dereference
         )
 
-set(FLAGS_DEBUG "-O1")
 set(FLAGS_RELEASE "-DNDEBUG" "-flto=thin" "-O3")
-target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE}>")
 

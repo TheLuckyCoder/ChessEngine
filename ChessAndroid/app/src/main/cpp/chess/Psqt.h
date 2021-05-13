@@ -3,7 +3,6 @@
 #include <array>
 
 #include "Defs.h"
-#include "Score.h"
 
 constexpr auto PSQT = []
 {

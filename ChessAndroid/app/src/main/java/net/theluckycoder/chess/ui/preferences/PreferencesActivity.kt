@@ -19,7 +19,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import net.theluckycoder.chess.Native
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.ui.ChessMaterialTheme
 import net.theluckycoder.chess.utils.SettingsDataStore
@@ -78,6 +77,13 @@ private fun getPreferenceItems(
                 defaultValue = SettingsDataStore.DEFAULT_SHOW_COORDINATES,
             ),
             SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_captured_pieces),
+                summary = stringResource(id = R.string.pref_captured_pieces_desc),
+                prefKey = SettingsDataStore.SHOW_CAPTURED_PIECES,
+                icon = painterResource(id = R.drawable.ic_pawn),
+                defaultValue = SettingsDataStore.DEFAULT_SHOW_CAPTURED_PIECES,
+            ),
+            SwitchPreferenceItem(
                 title = stringResource(id = R.string.pref_piece_destinations),
                 summary = stringResource(id = R.string.pref_piece_destinations_desc),
                 prefKey = SettingsDataStore.PIECE_DESTINATIONS,
@@ -126,6 +132,13 @@ private fun getPreferenceItems(
                 valueRange = 1..Runtime.getRuntime().availableProcessors(),
                 defaultValue = SettingsDataStore.DEFAULT_THREADS
             ),
+            SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_allow_opening_book),
+                summary = stringResource(id = R.string.pref_allow_opening_book_desc),
+                prefKey = SettingsDataStore.ALLOW_BOOK,
+                icon = painterResource(id = R.drawable.ic_pref_book),
+                defaultValue = true
+            ),
             SeekbarIntPreferenceItem(
                 title = stringResource(id = R.string.pref_cache_size),
                 summary = stringResource(id = R.string.pref_cache_size_desc),
@@ -172,19 +185,7 @@ private fun getPreferenceItems(
                 dependencyKey = SettingsDataStore.SHOW_DEBUG_BASIC,
                 icon = painterResource(id = R.drawable.ic_pref_stats),
                 defaultValue = false,
-            ),
-            EmptyPreferenceItem(
-                title = "Run Perft Test",
-                summary = "This is only meant for debugging",
-                dependencyKey = SettingsDataStore.SHOW_DEBUG_BASIC,
-                onClick = { Native.perftTests() }
-            ),
-            EmptyPreferenceItem(
-                title = "Run Evaluation Test",
-                summary = "This is only meant for debugging",
-                dependencyKey = SettingsDataStore.SHOW_DEBUG_BASIC,
-                onClick = { Native.evaluationTests() }
-            ),
+            )
         ),
     ),
 )
