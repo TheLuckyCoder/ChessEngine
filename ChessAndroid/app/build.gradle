@@ -9,7 +9,7 @@ android {
         applicationId "net.theluckycoder.chess"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1203
+        versionCode 1204
         versionName "1.2.0"
         resConfigs "en"
     }
@@ -26,11 +26,6 @@ android {
                 }
             }
         }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     buildFeatures.compose = true
