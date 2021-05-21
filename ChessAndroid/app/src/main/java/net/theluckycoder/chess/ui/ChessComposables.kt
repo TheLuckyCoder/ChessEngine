@@ -1,6 +1,7 @@
 package net.theluckycoder.chess.ui
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -81,67 +82,72 @@ fun MovesHistory(
     show: Boolean,
     movesHistory: List<Move>,
     currentMoveIndex: Int,
-) = AnimatedVisibility(
-    visible = show,
-    enter = fadeIn() + expandIn(Alignment.TopCenter),
-    exit = shrinkOut(Alignment.TopCenter) + fadeOut(),
-    initiallyVisible = false,
 ) {
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
+    val transition =
+        remember { MutableTransitionState(initialState = false) }.apply { targetState = show }
 
-    remember(movesHistory, currentMoveIndex) {
-        coroutineScope.launch {
-            if (movesHistory.isNotEmpty()
-                && currentMoveIndex in movesHistory.indices
-                && !listState.isIndexVisible(currentMoveIndex)
-            ) listState.animateScrollToItem(currentMoveIndex)
+    AnimatedVisibility(
+        visibleState = transition,
+        modifier = Modifier,
+        enter = fadeIn() + expandIn(Alignment.TopCenter),
+        exit = shrinkOut(Alignment.TopCenter) + fadeOut()
+    ) {
+        val listState = rememberLazyListState()
+        val coroutineScope = rememberCoroutineScope()
+
+        remember(movesHistory, currentMoveIndex) {
+            coroutineScope.launch {
+                if (movesHistory.isNotEmpty()
+                    && currentMoveIndex in movesHistory.indices
+                    && !listState.isIndexVisible(currentMoveIndex)
+                ) listState.animateScrollToItem(currentMoveIndex)
+            }
         }
-    }
 
-    LazyRow(
-        state = listState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF222222))
-            .padding(4.dp),
-        content = {
-            if (movesHistory.isNotEmpty()) {
-                itemsIndexed(movesHistory) { index, item ->
-                    val padding = if (index % 2 == 0)
-                        Modifier.padding(start = 6.dp, end = 2.dp)
-                    else
-                        Modifier.padding(start = 2.dp, end = 6.dp)
+        LazyRow(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF222222))
+                .padding(4.dp),
+            content = {
+                if (movesHistory.isNotEmpty()) {
+                    itemsIndexed(movesHistory) { index, item ->
+                        val padding = if (index % 2 == 0)
+                            Modifier.padding(start = 6.dp, end = 2.dp)
+                        else
+                            Modifier.padding(start = 2.dp, end = 6.dp)
 
-                    Row(
-                        modifier = padding
-                    ) {
-                        if (index % 2 == 0) {
+                        Row(
+                            modifier = padding
+                        ) {
+                            if (index % 2 == 0) {
+                                Text(
+                                    text = "${index / 2 + 1}. ",
+                                    color = Color.Gray,
+                                    fontSize = 13.sp,
+                                )
+                            }
+
+                            val modifier = Modifier.padding(1.dp).then(
+                                if (currentMoveIndex == index)
+                                    Modifier
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(Color.Gray)
+                                else Modifier
+                            )
                             Text(
-                                text = "${index / 2 + 1}. ",
-                                color = Color.Gray,
+                                modifier = modifier,
+                                text = item.toString(),
                                 fontSize = 13.sp,
                             )
                         }
-
-                        val modifier = Modifier.padding(1.dp).then(
-                            if (currentMoveIndex == index)
-                                Modifier
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(Color.Gray)
-                            else Modifier
-                        )
-                        Text(
-                            modifier = modifier,
-                            text = item.toString(),
-                            fontSize = 13.sp,
-                        )
                     }
-                }
-            } else
-                item { Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp) }
-        }
-    )
+                } else
+                    item { Text(modifier = Modifier.padding(1.dp), text = "", fontSize = 13.sp) }
+            }
+        )
+    }
 }
 
 @Composable

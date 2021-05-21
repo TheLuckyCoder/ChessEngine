@@ -63,6 +63,8 @@
     <string name="pref_thread_count_desc">Number of Search Threads to be used</string>
     <string name="pref_cache_size">Cache Size</string>
     <string name="pref_cache_size_desc">Specify the size of the Transposition Table in Megabytes</string>
+
+    <!-- About -->
     <string name="pref_category_about">About</string>
     <string name="about_author">Author</string>
     <string name="about_source_code">Source Code</string>
@@ -72,7 +74,4 @@
     <string name="pref_debug_basic_desc">Displays Board Evaluation, Search Time and enables some debug options</string>
     <string name="pref_debug_advanced">Enable Advanced Debug Info</string>
     <string name="pref_debug_advanced_desc">Displays various statistics helpful for debugging</string>
-
-    <!-- About -->
-
 </resources>
