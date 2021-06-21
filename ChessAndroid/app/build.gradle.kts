@@ -13,7 +13,7 @@ android {
         applicationId = "net.theluckycoder.chess"
         minSdk = 21
         targetSdk = 30
-        versionCode = 1204
+        versionCode = 1205
         versionName = "1.2.0"
         resourceConfigurations += listOf("en")
     }
@@ -48,8 +48,6 @@ android {
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configureEach {
     kotlinOptions {
-        jvmTarget = "1.8"
-        useIR = true
         freeCompilerArgs = freeCompilerArgs + listOf("-Xopt-in=kotlin.RequiresOptIn")
     }
 }
@@ -59,19 +57,19 @@ dependencies {
     val composeVersion: String by rootProject.extra
 
     // Kotlin
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+    kotlin("stdlib-jdk8", kotlinVersion)
     debugImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
 
     // AndroidX
-    implementation("androidx.activity:activity-ktx:1.2.3")
+    implementation("androidx.activity:activity-ktx:1.3.0-beta02")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1")
-    implementation("androidx.datastore:datastore-preferences:1.0.0-beta01")
+    implementation("androidx.datastore:datastore-preferences:1.0.0-beta02")
 
     // Compose
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.foundation:foundation:$composeVersion")
     implementation("androidx.compose.material:material:$composeVersion")
     implementation("androidx.compose.ui:ui-tooling:$composeVersion")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha05")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07")
 }

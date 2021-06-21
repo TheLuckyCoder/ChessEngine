@@ -10,4 +10,3 @@
 }
 
 -keepattributes SourceFile,LineNumberTable
--keepattributes *Annotation*

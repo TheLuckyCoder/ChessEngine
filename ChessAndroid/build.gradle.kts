@@ -1,13 +1,13 @@
 buildscript {
-    val kotlinVersion: String by rootProject.extra("1.4.32")
-    val composeVersion: String by rootProject.extra("1.0.0-beta07")
+    val kotlinVersion: String by rootProject.extra("1.5.10")
+    val composeVersion: String by rootProject.extra("1.0.0-beta09")
 
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.0.0-beta02")
+        classpath("com.android.tools.build:gradle:7.0.0-beta04")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
     }
 }
@@ -32,7 +32,7 @@ subprojects {
 }
 
 plugins {
-    id("com.github.ben-manes.versions") version "0.38.0"
+    id("com.github.ben-manes.versions") version "0.39.0"
 }
 
 tasks.named("dependencyUpdates", com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask::class.java).configure {
