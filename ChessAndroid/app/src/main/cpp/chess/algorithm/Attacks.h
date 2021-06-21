@@ -21,6 +21,9 @@ public:
 	static Bitboard queenAttacks(Square square, Bitboard blockers) noexcept;
 	static Bitboard kingAttacks(Square square) noexcept;
 
+	/**
+	 * This does not support Pawn Attacks
+	 */
 	static Bitboard pieceAttacks(PieceType, Square square, Bitboard blockers) noexcept;
 
 	static Bitboard bishopXRayAttacks(Square square) noexcept;

@@ -262,8 +262,6 @@ Bitboard Attacks::pieceAttacks(const PieceType pieceType, const Square square, c
 			return queenAttacks(square, blockers);
 		case KING:
 			return kingAttacks(square);
-		case PAWN:
-			assert(false);
 		default:
 			return {};
 	}

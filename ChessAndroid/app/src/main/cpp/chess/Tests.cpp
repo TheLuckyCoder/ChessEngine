@@ -277,16 +277,15 @@ namespace Tests
 
 		const auto displayRow = [&](const i32 depth, const double time, const PerftInfo &info)
 		{
-
 			const auto expectedNodes = perftVector[depth];
 			const auto wrongResult = expectedNodes != info.nodes;
-			const auto nodes = (wrongResult ? (std::string("!!!") + std::to_string(info.nodes)) : std::to_string(info.nodes));
+			const auto nodes = std::to_string(info.nodes);
 
 			std::cout << "| " << std::setfill(' ') << std::fixed << std::setprecision(1)
 					  << setw(DepthW) << depth << Pipe
 					  << setw(ColumnW) << time << Pipe
 					  << setw(ColumnW) << expectedNodes << Pipe
-					  << setw(ColumnW) << nodes << Pipe
+					  << setw(ColumnW) << (wrongResult ? (std::string("!!!") + nodes) : nodes) << Pipe
 					  << setw(ColumnW) << info.captures << Pipe
 					  << setw(ColumnW) << info.enPassant << Pipe
 					  << setw(ColumnW) << info.castles << Pipe

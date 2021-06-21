@@ -25,15 +25,21 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	stream >> castling;
 	auto &castlingRights = board.state.castlingRights;
 	castlingRights = CastlingRights::CASTLE_NONE;
-	for (char currChar : castling) {
-		switch (currChar) {
-			case 'K': castlingRights |= CastlingRights::CASTLE_WHITE_KING;
+	for (char currChar : castling)
+	{
+		switch (currChar)
+		{
+			case 'K':
+				castlingRights |= CastlingRights::CASTLE_WHITE_KING;
 				break;
-			case 'Q': castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
+			case 'Q':
+				castlingRights |= CastlingRights::CASTLE_WHITE_QUEEN;
 				break;
-			case 'k': castlingRights |= CastlingRights::CASTLE_BLACK_KING;
+			case 'k':
+				castlingRights |= CastlingRights::CASTLE_BLACK_KING;
 				break;
-			case 'q': castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
+			case 'q':
+				castlingRights |= CastlingRights::CASTLE_BLACK_QUEEN;
 				break;
 			default:
 				break;
@@ -86,7 +92,8 @@ std::string FenParser::exportToFen(const Board &board)
 			if (emptyCount)
 				out << emptyCount;
 
-			if (file <= 7) {
+			if (file <= 7)
+			{
 				const Piece piece = board.data[toSquare(file, rank)];
 				const PieceType type = piece.type();
 				char pChar = 'K';
@@ -183,7 +190,8 @@ void FenParser::parsePieces(Board &board, std::istringstream &stream)
 			case 'K':
 				board.data[boardPos++] = { KING, WHITE };
 				break;
-			case '/': boardPos -= 16u; // Go down one rank
+			case '/':
+				boardPos -= 16u; // Go down one rank
 				break;
 			default:
 				boardPos += static_cast<u64>(currChar - '0');

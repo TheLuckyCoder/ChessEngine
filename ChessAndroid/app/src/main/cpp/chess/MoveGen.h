@@ -58,7 +58,8 @@ public:
 		auto it = begin();
 		while (it != end())
 		{
-			if (!_board.isMoveLegal(*it)) {
+			if (!_board.isMoveLegal(*it))
+			{
 				*it = back();
 				popBack();
 			} else

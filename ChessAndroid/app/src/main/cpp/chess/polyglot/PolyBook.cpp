@@ -264,7 +264,7 @@ namespace PolyBook
 		const auto streamSize = static_cast<long>(bookFile.tellg());
 		const auto entriesCount = streamSize / sizeof(BookMove);
 
-        bookVector = std::vector<BookMove>(entriesCount);
+		bookVector = std::vector<BookMove>(entriesCount);
 		std::cout << "Opening Book contains " << entriesCount << " entries\n";
 
 		bookFile.seekg(0, std::ios::beg);
@@ -275,11 +275,11 @@ namespace PolyBook
 		}
 	}
 
-    bool isInitialized() noexcept { return bookPath.has_value(); }
+	bool isInitialized() noexcept { return bookPath.has_value(); }
 
-    void enable(const bool enable) noexcept { enabled = enable; }
+	void enable(const bool enable) noexcept { enabled = enable; }
 
-    bool isEnabled() noexcept { return isInitialized() && enabled; }
+	bool isEnabled() noexcept { return isInitialized() && enabled; }
 
 	void clearBook()
 	{
@@ -288,8 +288,8 @@ namespace PolyBook
 
 		if (!bookVector.empty())
 		{
-            bookVector.clear();
-            bookVector.shrink_to_fit();
+			bookVector.clear();
+			bookVector.shrink_to_fit();
 		}
 	}
 
@@ -359,7 +359,7 @@ namespace PolyBook
 
 		if (move.piece() == PAWN && Bits::getDistanceBetween(fromSquare, toSquare) == 2)
 			flags |= Move::Flags::DOUBLE_PAWN_PUSH;
-		
+
 		move.setFlags(flags);
 
 		return move;

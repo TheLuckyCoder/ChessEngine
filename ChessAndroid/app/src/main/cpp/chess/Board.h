@@ -49,11 +49,11 @@ public:
 	// region Pieces
 private:
 	Piece &getPiece(Square square) noexcept;
-    Bitboard &getPieces(Piece piece) noexcept;
+	Bitboard &getPieces(Piece piece) noexcept;
 
 public:
-    Piece getPiece(Square square) const noexcept;
-    Bitboard getPieces() const noexcept;
+	Piece getPiece(Square square) const noexcept;
+	Bitboard getPieces() const noexcept;
 	Bitboard getPieces(PieceType type, Color color) const noexcept;
 	Bitboard getPieces(PieceType type) const noexcept;
 	Bitboard getPieces(Color color) const noexcept;
@@ -94,11 +94,11 @@ private:
 	void addPiece(Square square, Piece piece) noexcept;
 	void movePiece(Square from, Square to) noexcept;
 	void removePiece(Square square) noexcept;
-    Bitboard findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept;
+	Bitboard findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept;
 
 public:
-    void computeCheckInfo() noexcept;
-    void updatePieceList() noexcept;
+	void computeCheckInfo() noexcept;
+	void updatePieceList() noexcept;
 	void updateNonPieceBitboards() noexcept;
 	Bitboard getKingAttackers() const noexcept;
 	Bitboard getKingBlockers(Color color) const noexcept;
@@ -106,22 +106,22 @@ public:
 	std::string toString() const noexcept;
 
 public:
-    Bitboard occupied{};
-    std::array<std::array<Bitboard, PIECE_TYPE_NB>, COLOR_NB> pieces{};
-    std::array<u8, 15> pieceCount{};
+	Bitboard occupied{};
+	std::array<std::array<Bitboard, PIECE_TYPE_NB>, COLOR_NB> pieces{};
+	std::array<u8, 15> pieceCount{};
 
-    std::array<Piece, SQUARE_NB> data{};
+	std::array<Piece, SQUARE_NB> data{};
 
-    BoardState state{};
+	BoardState state{};
 
-    i16 ply{};
+	i16 ply{};
 	i16 npm{};
-    Score psq{};
-    Color colorToMove{};
+	Score psq{};
+	Color colorToMove{};
 
 private:
-    short historyPly{};
-    std::array<BoardState, MAX_MOVES> history{};
+	short historyPly{};
+	std::array<BoardState, MAX_MOVES> history{};
 };
 
 template <Color C>
@@ -190,7 +190,7 @@ inline Bitboard Board::getPieces(const Color color) const noexcept
 
 inline Square Board::getKingSq(const Color color) const noexcept
 {
-    return getPieces(KING, color).bitScanForward();
+	return getPieces(KING, color).bitScanForward();
 }
 
 inline u64 Board::zKey() const noexcept

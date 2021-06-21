@@ -6,15 +6,15 @@ class Piece final
 {
 public:
 	Piece() noexcept = default;
-	
+
 	constexpr Piece(const PieceType type, const Color color) noexcept
 		: _piece((color << 3u) | type) {}
 
 	explicit constexpr Piece(const u8 type) noexcept
 		: _piece(type) {}
-	
-	Piece(Piece&&) noexcept = default;
-	Piece(const Piece&) noexcept = default;
+
+	Piece(Piece &&) noexcept = default;
+	Piece(const Piece &) noexcept = default;
 	~Piece() noexcept = default;
 
 	Piece &operator=(const Piece &other) = default;
@@ -70,7 +70,6 @@ private:
 	 * The 4-th bit is use to indicate the color of this piece
 	 */
 	u8 _piece{};
-	
 };
 
 constexpr Piece EmptyPiece{};

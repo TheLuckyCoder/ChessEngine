@@ -118,38 +118,37 @@ inline constexpr Square toSquare(const u8 square) noexcept
 
 inline constexpr Square &operator++(Square &square) noexcept
 {
-	square = static_cast<Square>(square + 1u);
-	return square;
+	return square = static_cast<Square>(square + 1u);
 }
 
 inline constexpr Square toSquare(const u8 x, const u8 y) noexcept
 {
-    return static_cast<Square>((y << 3u) + x);
+	return static_cast<Square>((y << 3u) + x);
 }
 
 template <Dir D>
 constexpr Square shift(const Square square) noexcept
 {
-    i8 s{};
-    if constexpr (D == NORTH)
-        s = 8;
-    else if constexpr (D == SOUTH)
-        s = -8;
-    else if constexpr (D == EAST)
-        s = 1;
-    else if constexpr (D == WEST)
-        s = -1;
+	i8 s{};
+	if constexpr (D == NORTH)
+		s = 8;
+	else if constexpr (D == SOUTH)
+		s = -8;
+	else if constexpr (D == EAST)
+		s = 1;
+	else if constexpr (D == WEST)
+		s = -1;
 
-    else if constexpr (D == NORTH_EAST)
-        s = 8 + 1;
-    else if constexpr (D == NORTH_WEST)
-        s = 8 - 1;
-    else if constexpr (D == SOUTH_EAST)
-        s = -8 + 1;
-    else if constexpr (D == SOUTH_WEST)
-        s = -8 - 1;
+	else if constexpr (D == NORTH_EAST)
+		s = 8 + 1;
+	else if constexpr (D == NORTH_WEST)
+		s = 8 - 1;
+	else if constexpr (D == SOUTH_EAST)
+		s = -8 + 1;
+	else if constexpr (D == SOUTH_WEST)
+		s = -8 - 1;
 
-    return toSquare(square + s);
+	return toSquare(square + s);
 }
 
 inline constexpr Square capturedEnPassantSq(const Color colorToMove, const Square enPassantSq) noexcept

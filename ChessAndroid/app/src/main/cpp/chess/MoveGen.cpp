@@ -42,10 +42,10 @@ namespace
 					flags |= Move::Flags::CAPTURE;
 
 				Move move(from, to, PAWN, flags);
+				move.setCapturedPiece(captured);
 				for (u8 promotionType = QUEEN; promotionType >= KNIGHT; --promotionType)
 				{
 					move.setPromotedPiece(PieceType(promotionType));
-					move.setCapturedPiece(captured);
 					moveList.emplace_back(move);
 				}
 			};
