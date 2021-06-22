@@ -4,26 +4,14 @@ project(${LIB_NAME})
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_subdirectory(src/main/cpp/chess)
+
 add_library(
         ${LIB_NAME}
         SHARED
 
         src/main/cpp/Main.cpp
-        src/main/cpp/chess/BoardManager.cpp
-        src/main/cpp/chess/Stats.cpp
-        src/main/cpp/chess/Uci.cpp
-        src/main/cpp/chess/Board.cpp
-        src/main/cpp/chess/algorithm/Attacks.cpp
-        src/main/cpp/chess/algorithm/Evaluation.cpp
-        src/main/cpp/chess/MoveGen.cpp
-        src/main/cpp/chess/MoveOrdering.cpp
-        src/main/cpp/chess/PawnStructureTable.cpp
-        src/main/cpp/chess/algorithm/Search.cpp
-        src/main/cpp/chess/Tests.cpp
-        src/main/cpp/chess/TranspositionTable.cpp
-        src/main/cpp/chess/Zobrist.cpp
-        src/main/cpp/chess/persistence/FenParser.cpp
-        src/main/cpp/chess/polyglot/PolyBook.cpp
+        ${SOURCE_FILES}
 )
 
 # CMake 3.12 is required for std_20
@@ -35,7 +23,7 @@ target_compile_options(${LIB_NAME} PUBLIC
         -Wpedantic -Wnull-dereference
         )
 
-set(FLAGS_RELEASE "-DNDEBUG" "-flto" "-O3")
+set(FLAGS_RELEASE "-DNDEBUG" "-O3" "-flto")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")
 target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE}>")
 

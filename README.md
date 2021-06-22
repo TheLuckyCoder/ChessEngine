@@ -39,6 +39,13 @@ This project uses the evaluation function values (in the file Evaluation.cpp) fr
   - Transposition Table
   - Pawn Structure Table
 
+## Building
+
+### Android
+To build the for project for Android you will need at least:
+ - Android Studio Arctic Fox
+ - Android SDK Version 30 (Android 12)
+ - NDK 22.1.7171670
 ## License
 
 Copyright (C) 2019-2021 Filea Răzvan Gheorghe
