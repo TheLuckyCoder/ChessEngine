@@ -325,7 +325,7 @@ Java_net_theluckycoder_chess_cpp_Tests_evaluationTests(JNIEnv *pEnv, jobject)
 ExportFunction jobject JNICALL
 Java_net_theluckycoder_chess_model_SearchOptions_getNativeSearchOptions(JNIEnv *pEnv, jclass)
 {
-	const static auto constructorId = pEnv->GetMethodID(JniCache::searchOptionsClass, "<init>", "(IIJIZ)V");
+	const static auto constructorId = pEnv->GetMethodID(JniCache::searchOptionsClass, "<init>", "(IZIJI)V");
 
 	const auto options = BoardManager::getSearchOptions();
 

@@ -13,8 +13,8 @@ class CapturedPieces(
         fun from(pieces: List<Piece>): CapturedPieces {
             val (whitePieces, blackPieces) = pieces.partition { it.isWhite }
 
-            val totalWhiteScore = whitePieces.sumBy { it.score }
-            val totalBlackScore = blackPieces.sumBy { it.score }
+            val totalWhiteScore = whitePieces.sumOf { it.score }
+            val totalBlackScore = blackPieces.sumOf { it.score }
 
             val whiteScore = (totalWhiteScore - totalBlackScore).coerceAtLeast(0)
             val blackScore = (totalBlackScore - totalWhiteScore).coerceAtLeast(0)

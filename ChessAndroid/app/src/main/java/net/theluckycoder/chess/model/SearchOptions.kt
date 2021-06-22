@@ -3,7 +3,6 @@ package net.theluckycoder.chess.model
 import androidx.annotation.Keep
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.milliseconds
 
 @OptIn(ExperimentalTime::class)
 @Keep
@@ -17,11 +16,11 @@ data class SearchOptions(
     @Keep
     constructor(
         searchDepth: Int,
+        quietSearch: Boolean,
         threadCount: Int,
         searchTime: Long,
         hashSize: Int,
-        quietSearch: Boolean,
-    ) : this(searchDepth, threadCount, searchTime.milliseconds, hashSize, quietSearch)
+    ) : this(searchDepth, threadCount, Duration.milliseconds(searchTime), hashSize, quietSearch)
 
     companion object {
 
@@ -34,7 +33,7 @@ data class SearchOptions(
             options.quietSearch,
             options.threadCount,
             options.hashSize,
-            options.searchTime.toLongMilliseconds(),
+            options.searchTime.inWholeMilliseconds,
         )
 
         @JvmStatic
