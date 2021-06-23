@@ -1,6 +1,6 @@
 # ChessEngine
 
-[![Build Status](https://circleci.com/gh/TheLuckyCoder/ChessEngine.svg?style=svg)](<LINK>)
+[![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/Android%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
 
 An UCI-compatible Chess Engine written in C++17 with an Android UI written in Kotlin.
 
