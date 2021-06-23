@@ -1,6 +1,7 @@
 # ChessEngine
 
 [![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/Android%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
+[![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/C++%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
 
 An UCI-compatible Chess Engine written in C++20 with an Android UI written in Jetpack Compose.
 
@@ -54,7 +55,7 @@ Please note that the Linux version of the engine has no UI but can be used with 
 To build the for project for Linux you will need at least:
  - CMake 3.18
  - C++20 Compiler:
-    * GCC 11
+    * GCC 10
     * Clang 12
 
 ## Compatible Interfaces

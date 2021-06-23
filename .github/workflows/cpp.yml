@@ -1,0 +1,25 @@
+
+name: C++ CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        compiler: [clang++-12]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2.0.0
+    - name: Build project
+      env:
+          CXX: ${{ matrix.compiler }}
+      uses: nicledomaS/cmake_build_action@v1.4
+      with:
+        create_package: ON
+    - uses: actions/upload-artifact@v2
+      with:
+        path: build/*.tar.gz
+        name: artifact_${{ matrix.os }}_${{ matrix.compiler }}.tar.gz 
