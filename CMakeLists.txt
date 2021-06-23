@@ -1,6 +1,7 @@
 # TODO This whole CMake file is a big WIP since there should be a way to merge this one and the Android one
 
 cmake_minimum_required(VERSION 3.18)
+set(PROJECT_NAME chess)
 project(${PROJECT_NAME} LANGUAGES CXX)
 
 find_package(Threads REQUIRED)
