@@ -1,36 +1,36 @@
-cmake_minimum_required(VERSION 3.10)
-set(LIB_NAME "chess")
-project(${LIB_NAME})
-
-set(CMAKE_CXX_EXTENSIONS OFF)
+cmake_minimum_required(VERSION 3.18)
+set(PROJECT_NAME "chess")
+project(${PROJECT_NAME})
 
 add_subdirectory(src/main/cpp/chess)
 
 add_library(
-        ${LIB_NAME}
+        ${PROJECT_NAME}
         SHARED
 
         src/main/cpp/Main.cpp
         ${SOURCE_FILES}
 )
 
-# CMake 3.12 is required for std_20
-#target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
+target_compile_features(${PROJECT_NAME} PUBLIC ${COMPILE_FEATURES})
 
-target_compile_options(${LIB_NAME} PUBLIC
-        -std=c++20 -stdlib=libc++ -fno-exceptions -fno-rtti
-        -Wall -Wextra -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
-        -Wpedantic -Wnull-dereference
+target_compile_options(${PROJECT_NAME} PUBLIC
+        -stdlib=libc++
+        ${FLAGS_COMPILE}
         )
 
-set(FLAGS_RELEASE "-DNDEBUG" "-O3" "-flto")
-target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELEASE}>")
-target_compile_options(${LIB_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE}>")
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG_COMPILE}>")
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELWITHDEBINFO_COMPILE}>")
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE_COMPILE}>")
 
 find_library(
         log-lib
         log)
 
 target_link_libraries(
-        ${LIB_NAME}
+        ${PROJECT_NAME}
         ${log-lib})
+
+target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG_LINK}>")
+target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_DEBUG_LINK}>")
+target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE_LINK}>")

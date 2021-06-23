@@ -1,10 +1,11 @@
 # ChessEngine
 
 [![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/Android%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
+[![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/C++%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
 
-An UCI-compatible Chess Engine written in C++17 with an Android UI written in Kotlin.
+An UCI-compatible Chess Engine written in C++20 with an Android UI written in Jetpack Compose.
 
-This project uses the evaluation function values (in the file Evaluation.cpp) from the Stockfish Chess Engine, licensed under GNU GPL 3.0.
+This project uses the evaluation values (in the file Evaluation.cpp) from the Stockfish Chess Engine, licensed under GNU GPL 3.0.
 
 ## Features
 
@@ -42,10 +43,26 @@ This project uses the evaluation function values (in the file Evaluation.cpp) fr
 ## Building
 
 ### Android
+
 To build the for project for Android you will need at least:
  - Android Studio Arctic Fox
  - Android SDK Version 30 (Android 12)
  - NDK 22.1.7171670
+
+### Linux
+
+Please note that the Linux version of the engine has no UI but can be used with any UCI-compatible chess interfaces.<br>
+To build the for project for Linux you will need at least:
+ - CMake 3.18
+ - C++20 Compiler:
+    * GCC 10
+    * Clang 12
+
+## Compatible Interfaces
+
+- [Arena](http://www.playwitharena.com)
+- [Cutechess](https://github.com/cutechess/cutechess)
+
 ## License
 
 Copyright (C) 2019-2021 Filea Răzvan Gheorghe

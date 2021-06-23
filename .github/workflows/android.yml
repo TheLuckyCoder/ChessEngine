@@ -4,8 +4,7 @@ name: Android CI
 on: [push, pull_request]
 
 jobs:
-  build-test:
-    name: Build
+  build:
     runs-on: ubuntu-latest
     defaults:
       run:

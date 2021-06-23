@@ -232,7 +232,7 @@ namespace PolyBook
 		return (piece.type() - 1) * 2 + piece.color();
 	}
 
-	static constexpr bool hasEnPassPawnForCapture(const Board &board) noexcept
+	static bool hasEnPassPawnForCapture(const Board &board) noexcept
 	{
 		const auto enPass = Bitboard::fromSquare(board.getEnPassantSq());
 
