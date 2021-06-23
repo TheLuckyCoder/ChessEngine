@@ -1,4 +1,4 @@
-#include "chess/Uci.h"
+#include "../../ChessAndroid/app/src/main/cpp/chess/Uci.h"
 
 int main()
 {
