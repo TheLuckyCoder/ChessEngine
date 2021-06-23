@@ -16,6 +16,7 @@ jobs:
           java-version: 11
       - name: Cache
         uses: actions/cache@v2
+        working-directory: ./ChessAndroid
         with:
           path: |
             ~/.gradle/caches
@@ -24,4 +25,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle
       - name: Build
+        working-directory: ./ChessAndroid
         run: bash ./gradlew assembleDebug --stacktrace
