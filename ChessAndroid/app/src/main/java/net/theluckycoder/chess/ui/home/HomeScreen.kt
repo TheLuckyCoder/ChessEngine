@@ -5,16 +5,39 @@ import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandIn
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.shrinkOut
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.animatedVectorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -24,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.ui.CapturedPiecesLists
@@ -57,14 +79,19 @@ fun HomeScreen(
                 ) {
                     HomeChessBoard(viewModel)
 
-                    Column(modifier = Modifier.fillMaxHeight().weight(1f)) {
+                    Column(modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(1f)) {
                         MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
 
                         CapturedPiecesLists(
                             modifier = Modifier.fillMaxHeight(),
                             show = showCaptures
                         ) {
-                            ActionsBar(Modifier.weight(1f).padding(8.dp))
+                            ActionsBar(
+                                Modifier
+                                    .weight(1f)
+                                    .padding(8.dp))
                         }
                     }
                 }
@@ -81,7 +108,10 @@ fun HomeScreen(
                 },
                 bottomBar = { ActionsBar() }
             ) { padding ->
-                Box(Modifier.fillMaxSize().padding(padding)) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding)) {
                     CapturedPiecesLists(
                         modifier = Modifier.align(Alignment.TopCenter),
                         showCaptures
@@ -112,11 +142,13 @@ private fun HomeChessBoard(
     )
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalAnimationGraphicsApi::class)
 @Preview
 @Composable
 private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
-    modifier = Modifier.fillMaxWidth().height(dimensionResource(id = R.dimen.toolbar_height)),
+    modifier = Modifier
+        .fillMaxWidth()
+        .height(dimensionResource(id = R.dimen.toolbar_height)),
     backgroundColor = MaterialTheme.colors.primary,
     title = {
         Text(
@@ -133,7 +165,6 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
             enter = expandIn(Alignment.CenterStart),
             exit = shrinkOut(Alignment.CenterStart),
         ) {
-            val scope = rememberCoroutineScope()
             val icon = animatedVectorResource(R.drawable.ic_animated_hourglass)
             var atEnd by remember { mutableStateOf(false) }
 
@@ -143,7 +174,7 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
                 contentDescription = null,
             )
 
-            scope.launch {
+            LaunchedEffect(atEnd) {
                 delay(250)
                 atEnd = true
             }

@@ -28,6 +28,7 @@
 
         <activity
             android:name=".ui.preferences.PreferencesActivity"
+            android:exported="false"
             android:label="@string/title_settings" />
 
     </application>

@@ -1,13 +1,13 @@
 buildscript {
-    val kotlinVersion: String by rootProject.extra("1.5.10")
-    val composeVersion: String by rootProject.extra("1.0.0-beta09")
+    val kotlinVersion: String by rootProject.extra("1.5.21")
+    val composeVersion: String by rootProject.extra("1.1.0-alpha02")
 
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.0.0-beta04")
+        classpath("com.android.tools.build:gradle:7.0.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
     }
 }
@@ -26,7 +26,6 @@ subprojects {
         // We forcefully exclude AppCompat + MDC from any transitive dependencies.
         // This is a Compose app, so there's no need for these.
         exclude(group = "androidx.appcompat", module = "appcompat")
-        exclude(group = "com.google.android.material", module = "material")
         exclude(group = "com.google.android.material", module = "material")
     }
 }

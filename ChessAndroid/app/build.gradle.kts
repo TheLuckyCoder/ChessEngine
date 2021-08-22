@@ -2,12 +2,11 @@ plugins {
     id("com.android.application")
 
     kotlin("android")
-    kotlin("kapt")
 }
 
 android {
-    compileSdk = 30
-    ndkVersion = "22.1.7171670"
+    compileSdk = 31
+    ndkVersion = "23.0.7599858"
 
     defaultConfig {
         applicationId = "net.theluckycoder.chess"
@@ -48,7 +47,9 @@ android {
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configureEach {
     kotlinOptions {
-        freeCompilerArgs = freeCompilerArgs + listOf("-Xopt-in=kotlin.RequiresOptIn")
+        freeCompilerArgs = listOf(
+            "-Xopt-in=kotlin.RequiresOptIn",
+        )
     }
 }
 
@@ -59,17 +60,19 @@ dependencies {
     // Kotlin
     kotlin("stdlib-jdk8", kotlinVersion)
     debugImplementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1")
 
     // AndroidX
-    implementation("androidx.activity:activity-ktx:1.3.0-beta02")
+    implementation("androidx.activity:activity-ktx:1.3.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1")
-    implementation("androidx.datastore:datastore-preferences:1.0.0-beta02")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Compose
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.foundation:foundation:$composeVersion")
     implementation("androidx.compose.material:material:$composeVersion")
-    implementation("androidx.compose.ui:ui-tooling:$composeVersion")
+    implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+    debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
+    implementation("androidx.compose.animation:animation-graphics:$composeVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07")
 }
