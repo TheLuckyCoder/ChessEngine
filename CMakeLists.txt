@@ -4,7 +4,7 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 
 find_package(Threads REQUIRED)
 
-add_subdirectory(ChessAndroid/app/src/main/cpp/chess)
+add_subdirectory(ChessAndroid/app/src/common/cpp/chess)
 
 add_executable(${PROJECT_NAME}
         ChessLinux/src/Main.cpp
