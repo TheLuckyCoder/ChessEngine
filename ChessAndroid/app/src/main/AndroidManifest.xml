@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="net.theluckycoder.chess">
 
+    <uses-feature android:name="android.hardware.type.watch" />
+
     <application
         android:name=".ChessApp"
         android:allowBackup="true"

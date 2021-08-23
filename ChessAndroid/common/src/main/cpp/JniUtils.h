@@ -58,11 +58,11 @@ namespace JniCache
 
 	void createCaches(JNIEnv *env)
 	{
-		boardChangeListenerClass = cacheClass(env, "net/theluckycoder/chess/cpp/BoardChangeListener");
-		searchListenerClass = cacheClass(env, "net/theluckycoder/chess/cpp/SearchListener");
-		indexedPieceClass = cacheClass(env, "net/theluckycoder/chess/model/IndexedPiece");
-		moveClass = cacheClass(env, "net/theluckycoder/chess/model/Move");
-		searchOptionsClass = cacheClass(env, "net/theluckycoder/chess/model/SearchOptions");
+		boardChangeListenerClass = cacheClass(env, "net/theluckycoder/chess/common/cpp/BoardChangeListener");
+		searchListenerClass = cacheClass(env, "net/theluckycoder/chess/common/cpp/SearchListener");
+		indexedPieceClass = cacheClass(env, "net/theluckycoder/chess/common/model/IndexedPiece");
+		moveClass = cacheClass(env, "net/theluckycoder/chess/common/model/Move");
+		searchOptionsClass = cacheClass(env, "net/theluckycoder/chess/common/model/SearchOptions");
 	}
 
 	void cleanCaches(JNIEnv *env)
