@@ -81,6 +81,7 @@ class SettingsDataStore private constructor(private val application: Application
         dataStore().data.map { it[SHOW_DEBUG_ADVANCED] ?: false }
 
     companion object {
+        @Volatile
         private var instance: SettingsDataStore? = null
 
         fun get(application: Application): SettingsDataStore {
