@@ -27,7 +27,6 @@ data class SearchOptions(
         @JvmStatic
         external fun getNativeSearchOptions(): SearchOptions
 
-        @OptIn(ExperimentalTime::class)
         fun setNativeSearchOptions(options: SearchOptions) = setNativeSearchOptions(
             options.searchDepth,
             options.quietSearch,

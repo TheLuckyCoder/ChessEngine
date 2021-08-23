@@ -43,6 +43,9 @@ class SettingsDataStore private constructor(private val application: Application
     fun showPieceDestination(): Flow<Boolean> =
         dataStore().data.map { it[PIECE_DESTINATIONS] ?: DEFAULT_PIECE_DESTINATIONS }
 
+    fun centerBoard(): Flow<Boolean> =
+        dataStore().data.map { it[CENTER_BOARD] ?: DEFAULT_CENTER_BOARD }
+
     suspend fun setDifficultyLevel(value: Int) = dataStore().edit { preferences ->
         preferences[SEARCH_DEPTH] = if (value == 0 || value == 1) value + 2 else value + 3
         preferences[QUIET_SEARCH] = value != 0
@@ -95,6 +98,7 @@ class SettingsDataStore private constructor(private val application: Application
         val SHOW_MOVES_HISTORY = booleanPreferencesKey("show_moves_history")
         val SHOW_CAPTURED_PIECES = booleanPreferencesKey("show_captured_pieces")
         val PIECE_DESTINATIONS = booleanPreferencesKey("piece_destinations")
+        val CENTER_BOARD = booleanPreferencesKey("center_board")
 
         val SEARCH_DEPTH = intPreferencesKey("search_depth")
         val QUIET_SEARCH = booleanPreferencesKey("quiet_search")
@@ -110,6 +114,7 @@ class SettingsDataStore private constructor(private val application: Application
         const val DEFAULT_MOVES_HISTORY = true
         const val DEFAULT_SHOW_CAPTURED_PIECES = true
         const val DEFAULT_PIECE_DESTINATIONS = true
+        const val DEFAULT_CENTER_BOARD = false
 
         // These will be overridden by the default [SearchOptions] in the Native Code
         const val DEFAULT_SEARCH_DEPTH = 1

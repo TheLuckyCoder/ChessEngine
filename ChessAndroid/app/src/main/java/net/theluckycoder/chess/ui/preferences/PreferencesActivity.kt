@@ -8,7 +8,13 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.*
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -87,7 +93,15 @@ private fun getPreferenceItems(
                 title = stringResource(id = R.string.pref_piece_destinations),
                 summary = stringResource(id = R.string.pref_piece_destinations_desc),
                 prefKey = SettingsDataStore.PIECE_DESTINATIONS,
+                icon = painterResource(id = R.drawable.ic_pref_piece_destinations),
                 defaultValue = SettingsDataStore.DEFAULT_PIECE_DESTINATIONS,
+            ),
+            SwitchPreferenceItem(
+                title = stringResource(id = R.string.pref_center_board),
+                summary = stringResource(id = R.string.pref_center_board_desc),
+                prefKey = SettingsDataStore.CENTER_BOARD,
+                icon = painterResource(id = R.drawable.ic_pref_center_board),
+                defaultValue = SettingsDataStore.DEFAULT_CENTER_BOARD,
             ),
         ),
     ),

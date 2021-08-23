@@ -323,16 +323,15 @@ Java_net_theluckycoder_chess_cpp_Tests_evaluationTests(JNIEnv *pEnv, jobject)
 // region SearchOptions
 
 ExportFunction jobject JNICALL
-Java_net_theluckycoder_chess_model_SearchOptions_getNativeSearchOptions(JNIEnv *pEnv, jclass)
+Java_net_theluckycoder_chess_model_SearchOptions_getNativeSearchOptions(JNIEnv *pEnv, jclass searchOptionsClass)
 {
 	const static auto constructorId = pEnv->GetMethodID(JniCache::searchOptionsClass, "<init>", "(IZIJI)V");
 
 	const auto options = BoardManager::getSearchOptions();
 
 	return pEnv->NewObject(JniCache::searchOptionsClass, constructorId,
-						   options.depth(), options.threadCount(),
-						   static_cast<jlong>(options.searchTime()), options.tableSizeMb(),
-						   options.quietSearch());
+						   options.depth(), options.quietSearch(), options.threadCount(),
+						   static_cast<jlong>(options.searchTime()), options.tableSizeMb());
 }
 
 ExportFunction void JNICALL

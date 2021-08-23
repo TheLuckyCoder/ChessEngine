@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:isGame="true"
         android:theme="@style/AppTheme.NoActionBar"
-        tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
+        tools:ignore="UnusedAttribute">
 
         <activity
             android:name=".ui.home.HomeActivity"

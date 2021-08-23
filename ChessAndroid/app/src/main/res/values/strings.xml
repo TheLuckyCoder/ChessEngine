@@ -47,6 +47,8 @@
     <string name="pref_captured_pieces_desc">Display all captured pieces by either side</string>
     <string name="pref_piece_destinations">Piece Destinations</string>
     <string name="pref_piece_destinations_desc">Display legal moves for selected pieces</string>
+    <string name="pref_center_board">Center Board</string>
+    <string name="pref_center_board_desc">Places the board in the middle on the screen when in portrait orientation</string>
 
     <string name="pref_category_difficulty">Difficulty</string>
     <string name="pref_search_depth">Search Depth</string>

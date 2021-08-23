@@ -36,7 +36,7 @@ plugins {
 
 tasks.named("dependencyUpdates", com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask::class.java).configure {
     rejectVersionIf {
-        candidate.version.contains("alpha") && !this@rejectVersionIf.currentVersion.contains("alpha")
+        candidate.version.contains("alpha") && !currentVersion.contains("alpha")
     }
 }
 

@@ -6,13 +6,24 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -23,12 +34,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.cpp.Native
-import net.theluckycoder.chess.model.*
+import net.theluckycoder.chess.model.GameState
+import net.theluckycoder.chess.model.IndexedPiece
+import net.theluckycoder.chess.model.Move
+import net.theluckycoder.chess.model.Piece
+import net.theluckycoder.chess.model.Tile
 import net.theluckycoder.chess.utils.SettingsDataStore
 import kotlin.math.min
 
@@ -147,7 +163,7 @@ private fun BoardTiles(
                 modifier = Modifier
                     .size(tileDp)
                     .offset(x, y)
-                    .clickable {
+                    .clickable(role = Role.Button) {
                         val moves = state.moves
                         when {
                             moves.size > 1 -> showPromotionDialog.value = moves
@@ -220,15 +236,23 @@ private fun BoardPieces(
                 else
                     Modifier
 
-                IconButton(
-                    modifier = Modifier
-                        .size(tileDp)
-                        .offset(animatedX, animatedY)
-                        .then(backgroundModifier),
-                    enabled = isPlayerWhite == piece.isWhite,
-                    onClick = { onPieceClick(piece) }
-                ) {
-                    Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
+                val modifier = Modifier
+                    .size(tileDp)
+                    .offset(animatedX, animatedY)
+                    .then(backgroundModifier)
+
+                if (isPlayerWhite == piece.isWhite) {
+                    IconButton(
+                        modifier = modifier,
+                        onClick = { onPieceClick(piece) }
+                    ) {
+                        Image(painter = getPieceDrawable(piece = piece), contentDescription = null)
+                    }
+                } else {
+                    Image(
+                        modifier = modifier,
+                        painter = getPieceDrawable(piece = piece), contentDescription = null
+                    )
                 }
             }
         }

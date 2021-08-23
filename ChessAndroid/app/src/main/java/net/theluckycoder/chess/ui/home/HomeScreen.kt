@@ -32,7 +32,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +63,7 @@ fun HomeScreen(
     val movesHistory by viewModel.movesHistory.collectAsState()
     val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
     val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
+    val centerBoard by viewModel.dataStore.centerBoard().collectAsState(false)
 
     HomeDialogs()
 
@@ -79,9 +79,11 @@ fun HomeScreen(
                 ) {
                     HomeChessBoard(viewModel)
 
-                    Column(modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(1f)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                    ) {
                         MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
 
                         CapturedPiecesLists(
@@ -91,7 +93,8 @@ fun HomeScreen(
                             ActionsBar(
                                 Modifier
                                     .weight(1f)
-                                    .padding(8.dp))
+                                    .padding(8.dp)
+                            )
                         }
                     }
                 }
@@ -111,9 +114,12 @@ fun HomeScreen(
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .padding(padding)) {
+                        .padding(padding)
+                ) {
+                    val alignment = if (centerBoard) Alignment.Center else Alignment.TopCenter
+
                     CapturedPiecesLists(
-                        modifier = Modifier.align(Alignment.TopCenter),
+                        modifier = Modifier.align(alignment),
                         showCaptures
                     ) {
                         HomeChessBoard(viewModel)

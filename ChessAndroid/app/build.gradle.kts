@@ -12,8 +12,8 @@ android {
         applicationId = "net.theluckycoder.chess"
         minSdk = 21
         targetSdk = 30
-        versionCode = 1205
-        versionName = "1.2.0"
+        versionCode = 1210
+        versionName = "1.2.1"
         resourceConfigurations += listOf("en")
     }
 
