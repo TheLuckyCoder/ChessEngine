@@ -3,8 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="net.theluckycoder.chess">
 
-    <uses-feature android:name="android.hardware.type.watch" />
-
     <application
         android:name=".ChessApp"
         android:allowBackup="true"
@@ -17,10 +15,6 @@
         android:isGame="true"
         android:theme="@style/AppTheme.NoActionBar"
         tools:ignore="UnusedAttribute">
-
-        <meta-data
-            android:name="com.google.android.wearable.standalone"
-            android:value="true" />
 
         <activity
             android:name=".ui.home.HomeActivity"

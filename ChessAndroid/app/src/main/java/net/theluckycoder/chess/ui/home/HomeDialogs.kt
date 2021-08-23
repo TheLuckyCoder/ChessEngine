@@ -13,13 +13,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.model.GameState
-import net.theluckycoder.chess.ui.AlertDialogTitle
-import net.theluckycoder.chess.ui.ChooseSidesToggle
-import net.theluckycoder.chess.utils.Pgn
-import net.theluckycoder.chess.viewmodel.HomeViewModel
+import net.theluckycoder.chess.common.Pgn
+import net.theluckycoder.chess.common.cpp.Native
+import net.theluckycoder.chess.common.model.GameState
+import net.theluckycoder.chess.common.ui.AlertDialogTitle
+import net.theluckycoder.chess.common.ui.ChooseSidesToggle
+import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 import kotlin.math.roundToInt
 import kotlin.random.Random
 

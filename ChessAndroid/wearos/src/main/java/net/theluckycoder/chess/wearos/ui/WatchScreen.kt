@@ -1,58 +1,27 @@
-package net.theluckycoder.chess.ui.home
+package net.theluckycoder.chess.wearos.ui
 
-import android.content.Intent
-import android.content.res.Configuration
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.delay
-import net.theluckycoder.chess.R
 import net.theluckycoder.chess.common.cpp.Native
-import net.theluckycoder.chess.common.ui.CapturedPiecesLists
 import net.theluckycoder.chess.common.ui.ChessBoard
-import net.theluckycoder.chess.common.ui.MovesHistory
 import net.theluckycoder.chess.common.viewmodel.HomeViewModel
-import net.theluckycoder.chess.ui.preferences.PreferencesActivity
+import net.theluckycoder.chess.wearos.R
 import kotlin.time.ExperimentalTime
 
 @Composable
@@ -65,8 +34,8 @@ fun HomeScreen(
     val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
     val centerBoard by viewModel.dataStore.centerBoard().collectAsState(false)
 
-    HomeDialogs()
-
+    HomeChessBoard(viewModel)
+    /*
     when (LocalConfiguration.current.orientation) {
         Configuration.ORIENTATION_LANDSCAPE -> {
             Scaffold(
@@ -127,11 +96,11 @@ fun HomeScreen(
                 }
             }
         }
-    }
+    }*/
 }
 
 @Composable
-private fun HomeChessBoard(
+fun HomeChessBoard(
     viewModel: HomeViewModel = viewModel()
 ) {
     val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
@@ -146,90 +115,6 @@ private fun HomeChessBoard(
         gameState = gameState,
         onPieceClick = { viewModel.showPossibleMoves(it.square) }
     )
-}
-
-@OptIn(ExperimentalAnimationApi::class, ExperimentalAnimationGraphicsApi::class)
-@Preview
-@Composable
-private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
-    modifier = Modifier
-        .fillMaxWidth()
-        .height(dimensionResource(id = R.dimen.toolbar_height)),
-    backgroundColor = MaterialTheme.colors.primary,
-    title = {
-        Text(
-            text = stringResource(id = R.string.app_name),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(end = 16.dp)
-        )
-
-        val isEngineThinking by viewModel.isEngineBusy.collectAsState()
-
-        AnimatedVisibility(
-            visible = isEngineThinking,
-            enter = expandIn(Alignment.CenterStart),
-            exit = shrinkOut(Alignment.CenterStart),
-        ) {
-            val icon = animatedVectorResource(R.drawable.ic_animated_hourglass)
-            var atEnd by remember { mutableStateOf(false) }
-
-            Icon(
-                painter = icon.painterFor(atEnd = atEnd),
-                modifier = Modifier.size(18.dp),
-                contentDescription = null,
-            )
-
-            LaunchedEffect(atEnd) {
-                delay(250)
-                atEnd = true
-            }
-        }
-    },
-    actions = {
-        AppBarActions()
-    }
-)
-
-@Composable
-private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
-    var showActionsMenu by remember { mutableStateOf(false) }
-
-    IconButton(onClick = { showActionsMenu = true }) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_more_options_vertical),
-            contentDescription = stringResource(id = R.string.action_more_options)
-        )
-
-        if (showActionsMenu) {
-            DropdownMenu(
-                expanded = showActionsMenu,
-                onDismissRequest = { showActionsMenu = false }
-            ) {
-                DropdownMenuItem(onClick = {
-                    showActionsMenu = false
-                    viewModel.showImportDialog.value = true
-                }) { Text(text = stringResource(id = R.string.fen_position_load)) }
-
-                val isEngineThinking by viewModel.isEngineBusy.collectAsState()
-                val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
-
-                if (basicDebug) {
-                    DropdownMenuItem(onClick = {
-                        showActionsMenu = false
-                        Native.makeEngineMove()
-                    }) { Text(text = stringResource(id = R.string.action_make_engine_move)) }
-
-                    if (isEngineThinking) {
-                        DropdownMenuItem(onClick = {
-                            showActionsMenu = false
-                            Native.stopSearch()
-                        }) { Text(text = stringResource(id = R.string.action_stop_search)) }
-                    }
-                }
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalTime::class)
@@ -293,25 +178,6 @@ private fun ActionsBar(
             Icon(
                 painter = painterResource(id = R.drawable.ic_new_circle),
                 contentDescription = stringResource(id = R.string.new_game)
-            )
-        }
-
-        IconButton(
-            onClick = { viewModel.showShareDialog.value = true }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_share),
-                contentDescription = null
-            )
-        }
-
-        val context = LocalContext.current
-        IconButton(
-            onClick = { context.startActivity(Intent(context, PreferencesActivity::class.java)) }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = stringResource(id = R.string.title_settings)
             )
         }
     }
