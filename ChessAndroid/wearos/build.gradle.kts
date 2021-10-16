@@ -48,8 +48,8 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configure
 dependencies {
     implementation(project(path = ":common"))
 
-    implementation("androidx.wear:wear:1.1.0")
+    implementation("androidx.wear:wear:1.2.0")
 
-    implementation("androidx.wear.compose:compose-foundation:1.0.0-alpha04")
-    implementation("androidx.wear.compose:compose-material:1.0.0-alpha04")
+    implementation("androidx.wear.compose:compose-foundation:1.0.0-alpha08")
+    implementation("androidx.wear.compose:compose-material:1.0.0-alpha08")
 }

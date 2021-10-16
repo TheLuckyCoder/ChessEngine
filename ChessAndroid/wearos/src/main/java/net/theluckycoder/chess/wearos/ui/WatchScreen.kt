@@ -1,6 +1,9 @@
 package net.theluckycoder.chess.wearos.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -12,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.wear.compose.material.MaterialTheme
 import kotlinx.coroutines.launch
 import net.theluckycoder.chess.common.cpp.Native
 import net.theluckycoder.chess.common.ui.ChessBoard
@@ -24,15 +28,11 @@ import kotlin.time.ExperimentalTime
 fun WatchScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
-//    val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
-//    val movesHistory by viewModel.movesHistory.collectAsState()
-//    val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
-//    val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
-
     val dismissState = rememberDismissState()
     val scope = rememberCoroutineScope()
 
     SwipeToDismiss(
+        modifier = Modifier.fillMaxSize(),
         state = dismissState,
         directions = setOf(DismissDirection.EndToStart),
         background = {
@@ -57,6 +57,10 @@ private fun WatchChessBoard(
     val gameState by viewModel.gameState.collectAsState()
 
     ChessBoard(
+        modifier = Modifier
+            .background(MaterialTheme.colors.background)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 6.dp, vertical = 72.dp),
         isPlayerWhite = isPlayerWhite,
         tiles = tiles,
         pieces = pieces,
@@ -75,16 +79,7 @@ private fun ActionsScreen(
     modifier = Modifier.fillMaxSize(),
     verticalArrangement = Arrangement.SpaceEvenly,
 ) {
-    val movesHistory by viewModel.movesHistory.collectAsState()
     val movesIndex by viewModel.currentMoveIndex.collectAsState()
-
-    /*MovesHistory(
-        show = true,
-        movesHistory = movesHistory,
-        currentMoveIndex = movesIndex,
-        backgroundColor = Color.Unspecified,
-        textColor = Color.White
-    )*/
 
     Row(
         modifier = Modifier

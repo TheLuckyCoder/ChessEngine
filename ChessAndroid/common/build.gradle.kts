@@ -58,5 +58,5 @@ dependencies {
     api("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     debugApi("androidx.compose.ui:ui-tooling:$composeVersion")
     api("androidx.compose.animation:animation-graphics:$composeVersion")
-    api("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07")
+    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0-rc01")
 }

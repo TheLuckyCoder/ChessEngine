@@ -15,12 +15,12 @@ data class Move(
     private val internalFlags: Byte
 ) {
     companion object {
-        const val CAPTURE: Byte = 1
-        const val PROMOTION: Byte = 1 shl 1
-        const val KSIDE_CASTLE: Byte = 1 shl 2
-        const val QSIDE_CASTLE: Byte = 1 shl 3
-        const val DOUBLE_PAWN_PUSH: Byte = 1 shl 4
-        const val EN_PASSANT: Byte = 1 shl 5
+        const val CAPTURE: Byte = 1.toByte()
+        const val PROMOTION: Byte = (1 shl 1).toByte()
+        const val KSIDE_CASTLE: Byte = (1 shl 2).toByte()
+        const val QSIDE_CASTLE: Byte = (1 shl 3).toByte()
+        const val DOUBLE_PAWN_PUSH: Byte = (1 shl 4).toByte()
+        const val EN_PASSANT: Byte = (1 shl 5).toByte()
     }
 
     @Suppress("unused")
