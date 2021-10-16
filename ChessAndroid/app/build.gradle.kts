@@ -5,15 +5,14 @@ plugins {
 }
 
 android {
-    compileSdk = 31
-    ndkVersion = "23.0.7599858"
+    compileSdk = Versions.Sdk.compile
 
     defaultConfig {
         applicationId = "net.theluckycoder.chess"
-        minSdk = 21
-        targetSdk = 30
-        versionCode = 1210
-        versionName = "1.2.1"
+        minSdk = Versions.Sdk.min
+        targetSdk = Versions.Sdk.target
+        versionCode = Versions.App.code
+        versionName = Versions.App.name
         resourceConfigurations += listOf("en")
     }
 
@@ -34,7 +33,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = rootProject.extra["composeVersion"] as String
+        kotlinCompilerExtensionVersion = Versions.compose
     }
 }
 
@@ -47,11 +46,5 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configure
 }
 
 dependencies {
-    val kotlinVersion: String by rootProject.extra
-    val composeVersion: String by rootProject.extra
-
     implementation(project(path = ":common"))
-
-    // Kotlin
-    kotlin("stdlib-jdk8", kotlinVersion)
 }

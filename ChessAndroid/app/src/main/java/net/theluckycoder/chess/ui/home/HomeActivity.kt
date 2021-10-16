@@ -3,7 +3,7 @@ package net.theluckycoder.chess.ui.home
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
-import net.theluckycoder.chess.common.ui.ChessMaterialTheme
+import net.theluckycoder.chess.ui.ChessMaterialTheme
 
 class HomeActivity : ComponentActivity() {
 

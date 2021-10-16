@@ -3,7 +3,6 @@ package net.theluckycoder.chess.wearos.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
-import net.theluckycoder.chess.common.ui.ChessMaterialTheme
 
 class WatchActivity : ComponentActivity() {
 
@@ -13,12 +12,11 @@ class WatchActivity : ComponentActivity() {
         val view = ComposeView(this).apply {
             setContent {
                 ChessMaterialTheme {
-                    HomeChessBoard()
+                    WatchScreen()
                 }
             }
         }
 
         setContentView(view)
-
     }
 }

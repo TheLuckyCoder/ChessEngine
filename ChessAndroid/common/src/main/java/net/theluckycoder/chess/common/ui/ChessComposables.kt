@@ -25,11 +25,11 @@ import androidx.compose.material.IconToggleButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +40,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
 import net.theluckycoder.chess.common.CapturedPieces
 import net.theluckycoder.chess.common.R
 import net.theluckycoder.chess.common.isIndexVisible
@@ -98,6 +97,8 @@ fun MovesHistory(
     show: Boolean,
     movesHistory: List<Move>,
     currentMoveIndex: Int,
+    textColor: Color = Color.Unspecified,
+    backgroundColor: Color = Color(0xFF222222),
 ) {
     val transition =
         remember { MutableTransitionState(initialState = false) }.apply { targetState = show }
@@ -109,22 +110,19 @@ fun MovesHistory(
         exit = shrinkOut(Alignment.TopCenter) + fadeOut()
     ) {
         val listState = rememberLazyListState()
-        val coroutineScope = rememberCoroutineScope()
 
-        remember(movesHistory, currentMoveIndex) {
-            coroutineScope.launch {
-                if (movesHistory.isNotEmpty()
-                    && currentMoveIndex in movesHistory.indices
-                    && !listState.isIndexVisible(currentMoveIndex)
-                ) listState.animateScrollToItem(currentMoveIndex)
-            }
+        LaunchedEffect(movesHistory, currentMoveIndex) {
+            if (movesHistory.isNotEmpty()
+                && currentMoveIndex in movesHistory.indices
+                && !listState.isIndexVisible(currentMoveIndex)
+            ) listState.animateScrollToItem(currentMoveIndex)
         }
 
         LazyRow(
             state = listState,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF222222))
+                .background(backgroundColor)
                 .padding(4.dp),
             content = {
                 if (movesHistory.isNotEmpty()) {
@@ -145,16 +143,19 @@ fun MovesHistory(
                                 )
                             }
 
-                            val modifier = Modifier.padding(1.dp).then(
-                                if (currentMoveIndex == index)
-                                    Modifier
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(Color.Gray)
-                                else Modifier
-                            )
+                            val modifier = Modifier
+                                .padding(1.dp)
+                                .then(
+                                    if (currentMoveIndex == index)
+                                        Modifier
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(Color.Gray)
+                                    else Modifier
+                                )
                             Text(
                                 modifier = modifier,
                                 text = item.toString(),
+                                color = textColor,
                                 fontSize = 13.sp,
                             )
                         }
@@ -200,7 +201,10 @@ fun CapturedPiecesLists(
 
 @Composable
 private fun CapturedPieceList(pieces: List<Byte>, score: Int) {
-    LazyRow(modifier = Modifier.fillMaxWidth().padding(4.dp).height(24.dp)) {
+    LazyRow(modifier = Modifier
+        .fillMaxWidth()
+        .padding(4.dp)
+        .height(24.dp)) {
         items(pieces) { piece ->
             val id = when (piece) {
                 Piece.PAWN -> R.drawable.ic_pawn

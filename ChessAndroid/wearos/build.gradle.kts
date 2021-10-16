@@ -5,15 +5,14 @@ plugins {
 }
 
 android {
-    compileSdk = 31
-    ndkVersion = "23.0.7599858"
+    compileSdk = Versions.Sdk.compile
 
     defaultConfig {
-        applicationId = "net.theluckycoder.chess.wearos"
-        minSdk = 28
-        targetSdk = 31
-        versionCode = 1
-        versionName = "1.0"
+        applicationId = "net.theluckycoder.chess"
+        minSdk = Versions.Sdk.wearOsMin
+        targetSdk = Versions.Sdk.target
+        versionCode = Versions.App.code
+        versionName = Versions.App.name
         resourceConfigurations += listOf("en")
     }
 
@@ -34,7 +33,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = rootProject.extra["composeVersion"] as String
+        kotlinCompilerExtensionVersion = Versions.compose
     }
 }
 
@@ -51,11 +50,6 @@ dependencies {
 
     implementation("androidx.wear:wear:1.1.0")
 
-//    implementation("com.google.android.support:wearable:2.8.1")
-//    compileOnly("com.google.android.wearable:wearable:2.8.1")
-
     implementation("androidx.wear.compose:compose-foundation:1.0.0-alpha04")
-
-    // For Wear Material Design UX guidelines and specifications
     implementation("androidx.wear.compose:compose-material:1.0.0-alpha04")
 }

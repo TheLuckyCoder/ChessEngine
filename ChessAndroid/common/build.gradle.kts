@@ -5,12 +5,12 @@ plugins {
 }
 
 android {
-    compileSdk = 31
+    compileSdk = Versions.Sdk.compile
     ndkVersion = "23.0.7599858"
 
     defaultConfig {
-        minSdk = 21
-        targetSdk = 30
+        minSdk = Versions.Sdk.min
+        targetSdk = Versions.Sdk.target
         resourceConfigurations += listOf("en")
 
         consumerProguardFiles("consumer-rules.pro")
@@ -19,7 +19,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = rootProject.extra["composeVersion"] as String
+        kotlinCompilerExtensionVersion = Versions.compose
     }
 
     externalNativeBuild {
@@ -39,13 +39,12 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configure
 }
 
 dependencies {
-    val kotlinVersion: String by rootProject.extra
-    val composeVersion: String by rootProject.extra
+    val composeVersion = Versions.compose
 
     // Kotlin
-    kotlin("stdlib-jdk8", kotlinVersion)
-    debugApi("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1")
+    kotlin("stdlib-jdk8", Versions.kotlin)
+    debugApi("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.kotlinCoroutines}")
 
     // AndroidX
     api("androidx.activity:activity-ktx:1.3.1")

@@ -1,106 +1,54 @@
 package net.theluckycoder.chess.wearos.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import net.theluckycoder.chess.common.cpp.Native
 import net.theluckycoder.chess.common.ui.ChessBoard
 import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 import net.theluckycoder.chess.wearos.R
 import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun HomeScreen(
+fun WatchScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
-    val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
-    val movesHistory by viewModel.movesHistory.collectAsState()
-    val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
-    val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
-    val centerBoard by viewModel.dataStore.centerBoard().collectAsState(false)
+//    val showMovesHistory by viewModel.dataStore.showMoveHistory().collectAsState(false)
+//    val movesHistory by viewModel.movesHistory.collectAsState()
+//    val currentMoveIndex by viewModel.currentMoveIndex.collectAsState()
+//    val showCaptures by viewModel.dataStore.showCapturedPieces().collectAsState(false)
 
-    HomeChessBoard(viewModel)
-    /*
-    when (LocalConfiguration.current.orientation) {
-        Configuration.ORIENTATION_LANDSCAPE -> {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-            ) { padding ->
-                Row(
-                    Modifier
-                        .padding(padding)
-                        .fillMaxSize()
-                ) {
-                    HomeChessBoard(viewModel)
+    val dismissState = rememberDismissState()
+    val scope = rememberCoroutineScope()
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                    ) {
-                        MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
-
-                        CapturedPiecesLists(
-                            modifier = Modifier.fillMaxHeight(),
-                            show = showCaptures
-                        ) {
-                            ActionsBar(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(8.dp)
-                            )
-                        }
-                    }
+    SwipeToDismiss(
+        state = dismissState,
+        directions = setOf(DismissDirection.EndToStart),
+        background = {
+            ActionsScreen(onResume = {
+                scope.launch {
+                    dismissState.reset()
                 }
-            }
+            })
         }
-        else -> {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                topBar = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        TopBar()
-                        MovesHistory(showMovesHistory, movesHistory, currentMoveIndex)
-                    }
-                },
-                bottomBar = { ActionsBar() }
-            ) { padding ->
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                ) {
-                    val alignment = if (centerBoard) Alignment.Center else Alignment.TopCenter
-
-                    CapturedPiecesLists(
-                        modifier = Modifier.align(alignment),
-                        showCaptures
-                    ) {
-                        HomeChessBoard(viewModel)
-                    }
-                }
-            }
-        }
-    }*/
+    ) {
+        WatchChessBoard(viewModel)
+    }
 }
 
 @Composable
-fun HomeChessBoard(
+private fun WatchChessBoard(
     viewModel: HomeViewModel = viewModel()
 ) {
     val isPlayerWhite by viewModel.playerPlayingWhite.collectAsState()
@@ -118,66 +66,81 @@ fun HomeChessBoard(
 }
 
 @OptIn(ExperimentalTime::class)
+//@Preview(widthDp = 200, heightDp = 200, showBackground = true, uiMode = UI_MODE_TYPE_WATCH)
 @Composable
-private fun ActionsBar(
-    modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel()
+private fun ActionsScreen(
+    viewModel: HomeViewModel = viewModel(),
+    onResume: () -> Unit
 ) = Column(
-    modifier = modifier,
-    verticalArrangement = Arrangement.Bottom,
-    horizontalAlignment = Alignment.CenterHorizontally,
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.SpaceEvenly,
 ) {
-    val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
-
-    if (basicDebug) {
-        val debugStats by viewModel.debugStats.collectAsState()
-
-        Text(
-            text = stringResource(
-                id = R.string.debug_stats,
-                debugStats.searchTimeNeeded.toString(),
-                debugStats.boardEvaluation,
-                debugStats.advancedStats
-            ),
-            fontSize = 13.5.sp,
-        )
-    }
-
     val movesHistory by viewModel.movesHistory.collectAsState()
     val movesIndex by viewModel.currentMoveIndex.collectAsState()
+
+    /*MovesHistory(
+        show = true,
+        movesHistory = movesHistory,
+        currentMoveIndex = movesIndex,
+        backgroundColor = Color.Unspecified,
+        textColor = Color.White
+    )*/
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        IconButton(
+        TextIconButton(
+            onClick = onResume,
+            text = stringResource(R.string.action_resume)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_play),
+                tint = Color.White,
+                contentDescription = stringResource(R.string.action_resume)
+            )
+        }
+
+        TextIconButton(
+            onClick = { viewModel.showNewGameDialog.value = true },
+            text = stringResource(R.string.new_game)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_new_circle),
+                tint = Color.White,
+                contentDescription = stringResource(R.string.new_game)
+            )
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        TextIconButton(
             onClick = { Native.undoMoves() },
             enabled = movesIndex >= 0,
+            text = stringResource(R.string.action_undo_move),
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_undo),
-                contentDescription = stringResource(id = R.string.action_undo_move)
+                painter = painterResource(R.drawable.ic_undo),
+                tint = Color.White,
+                contentDescription = stringResource(R.string.action_undo_move)
             )
         }
 
-        IconButton(
-            onClick = { Native.redoMoves() },
-            enabled = movesIndex != movesHistory.lastIndex,
+        TextIconButton(
+            onClick = { },
+            text = stringResource(R.string.title_settings),
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_redo),
-                contentDescription = stringResource(id = R.string.action_redo_move)
-            )
-        }
-
-        IconButton(
-            onClick = { viewModel.showNewGameDialog.value = true }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_new_circle),
-                contentDescription = stringResource(id = R.string.new_game)
+                painter = painterResource(R.drawable.ic_settings),
+                tint = Color.White,
+                contentDescription = stringResource(R.string.title_settings)
             )
         }
     }
