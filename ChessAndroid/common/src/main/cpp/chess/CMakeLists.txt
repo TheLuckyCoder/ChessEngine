@@ -4,14 +4,14 @@ set(CMAKE_CXX_EXTENSIONS OFF PARENT_SCOPE)
 set(COMPILE_FEATURES "cxx_std_20" PARENT_SCOPE)
 
 set(FLAGS_COMPILE
-        -fno-exceptions -fno-rtti
+        -fno-exceptions -fno-rtti -stdlib=libc++
         -Wall -Wextra -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wunused -Woverloaded-virtual
         -Wpedantic -Wnull-dereference
         PARENT_SCOPE
         )
 
 set(FLAGS_DEBUG_COMPILE PARENT_SCOPE)
-set(FLAGS_RELWITHDEBINFO_COMPILE "-UNDEBUG" "-O1" PARENT_SCOPE)
+set(FLAGS_RELWITHDEBINFO_COMPILE "-UNDEBUG" "-O2" PARENT_SCOPE)
 set(FLAGS_RELEASE_COMPILE "-DNDEBUG" "-O3" "-flto" PARENT_SCOPE)
 
 set(FLAGS_DEBUG_LINK "-fsanitize=undefined" PARENT_SCOPE)

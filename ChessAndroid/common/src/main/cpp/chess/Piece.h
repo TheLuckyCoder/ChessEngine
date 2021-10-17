@@ -30,17 +30,17 @@ public:
 		return type() == pieceType;
 	}
 
-	constexpr Color color() const noexcept
+	[[nodiscard]] constexpr Color color() const noexcept
 	{
 		return static_cast<Color>(_piece >> 3u);
 	}
 
-	constexpr PieceType type() const noexcept
+	[[nodiscard]] constexpr PieceType type() const noexcept
 	{
 		return static_cast<PieceType>(_piece & 7u);
 	}
 
-	constexpr bool isValid() const noexcept
+	[[nodiscard]] constexpr bool isValid() const noexcept
 	{
 		return isValid(type());
 	}
@@ -66,8 +66,8 @@ public:
 
 private:
 	/*
-	 * The first 3 bits are use to store the specific Piece Type, eg. PAWN, KNIGHT, BISHOP
-	 * The 4-th bit is use to indicate the color of this piece
+	 * The first 3 bits are used to store the specific Piece Type, eg. PAWN, KNIGHT, BISHOP
+	 * The 4-th bit is used to indicate the color of this piece
 	 */
 	u8 _piece{};
 };

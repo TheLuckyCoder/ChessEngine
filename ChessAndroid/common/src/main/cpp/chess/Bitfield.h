@@ -77,8 +77,6 @@ public:
 
 	constexpr T value() const { return _t; }
 
-	constexpr T &ref() { return _t; }
-
 private:
 	T _t{};
 };

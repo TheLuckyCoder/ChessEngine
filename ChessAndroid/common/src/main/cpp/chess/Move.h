@@ -25,21 +25,21 @@ public:
 	public:
 		explicit constexpr Flags(const u8 flags) noexcept: _flags(flags) {}
 
-		constexpr u8 getContents() const noexcept { return _flags; }
+		[[nodiscard]] constexpr u8 getContents() const noexcept { return _flags; }
 
-		constexpr bool capture() const noexcept { return _flags & Internal::CAPTURE; }
+		[[nodiscard]] constexpr bool capture() const noexcept { return _flags & Internal::CAPTURE; }
 
-		constexpr bool promotion() const noexcept { return _flags & Internal::PROMOTION; }
+		[[nodiscard]] constexpr bool promotion() const noexcept { return _flags & Internal::PROMOTION; }
 
-		constexpr bool kSideCastle() const noexcept { return _flags & Internal::KSIDE_CASTLE; }
+		[[nodiscard]] constexpr bool kSideCastle() const noexcept { return _flags & Internal::KSIDE_CASTLE; }
 
-		constexpr bool qSideCastle() const noexcept { return _flags & Internal::QSIDE_CASTLE; }
+		[[nodiscard]] constexpr bool qSideCastle() const noexcept { return _flags & Internal::QSIDE_CASTLE; }
 
-		constexpr bool doublePawnPush() const noexcept { return _flags & Internal::DOUBLE_PAWN_PUSH; }
+		[[nodiscard]] constexpr bool doublePawnPush() const noexcept { return _flags & Internal::DOUBLE_PAWN_PUSH; }
 
-		constexpr bool enPassant() const noexcept { return _flags & Internal::EN_PASSANT; }
+		[[nodiscard]] constexpr bool enPassant() const noexcept { return _flags & Internal::EN_PASSANT; }
 
-		constexpr bool pvMove() const noexcept { return _flags & Internal::PV_MOVE; }
+		[[nodiscard]] constexpr bool pvMove() const noexcept { return _flags & Internal::PV_MOVE; }
 
 	private:
 		u8 _flags;
@@ -65,33 +65,33 @@ public:
 		setFlags(flags);
 	}
 
-	constexpr bool empty() const noexcept { return !static_cast<bool>(_move.value()); }
+	[[nodiscard]] constexpr bool empty() const noexcept { return !static_cast<bool>(_move.value()); }
 
-	constexpr u32 getContents() const noexcept { return _move.value(); }
+	[[nodiscard]] constexpr u32 getContents() const noexcept { return _move.value(); }
 
-	constexpr i32 getScore() const noexcept { return _score; }
+	[[nodiscard]] constexpr i32 getScore() const noexcept { return _score; }
 
 	constexpr void setScore(const int score) noexcept
 	{
 		_score = score;
 	}
 
-	constexpr Square from() const noexcept
+	[[nodiscard]] constexpr Square from() const noexcept
 	{
 		return toSquare(_move.get<0>());
 	}
 
-	constexpr Square to() const noexcept
+	[[nodiscard]] constexpr Square to() const noexcept
 	{
 		return toSquare(_move.get<1>());
 	}
 
-	constexpr PieceType piece() const noexcept
+	[[nodiscard]] constexpr PieceType piece() const noexcept
 	{
 		return _move.getAs<2, PieceType>();
 	}
 
-	constexpr PieceType capturedPiece() const noexcept
+	[[nodiscard]] constexpr PieceType capturedPiece() const noexcept
 	{
 		return _move.getAs<3, PieceType>();
 	}
@@ -101,7 +101,7 @@ public:
 		_move.setAs<3>(type);
 	}
 
-	constexpr PieceType promotedPiece() const noexcept
+	[[nodiscard]] constexpr PieceType promotedPiece() const noexcept
 	{
 		return _move.getAs<4, PieceType>();
 	}
@@ -111,7 +111,7 @@ public:
 		_move.setAs<4>(type);
 	}
 
-	constexpr Flags flags() const noexcept
+	[[nodiscard]] constexpr Flags flags() const noexcept
 	{
 		return _move.getAs<5, Flags>();
 	}
@@ -121,13 +121,13 @@ public:
 		_move.set<5>(flags);
 	}
 
-	constexpr bool isTactical() const noexcept
+	[[nodiscard]] constexpr bool isTactical() const noexcept
 	{
 		const auto f = flags();
 		return f.capture() | f.promotion();
 	}
 
-	constexpr u16 getFromToBits() const noexcept
+	[[nodiscard]] constexpr u16 getFromToBits() const noexcept
 	{
 		constexpr u16 Mask = (0x3Fu | (0x3Fu << 6u));
 		return _move.value() & Mask;
@@ -143,7 +143,7 @@ public:
 		return _move.value() != rhs._move.value();
 	}
 
-	std::string toString(const bool showPiece = false) const
+	[[nodiscard]] std::string toString(const bool showPiece = false) const
 	{
 		std::string str;
 		str.reserve(5);
@@ -169,11 +169,11 @@ public:
 			str += pChar;
 		}
 
-		str += 'a' + i8(fileOf(fromSq));
-		str += '1' + i8(rankOf(fromSq));
+		str += static_cast<char>('a' + i8(fileOf(fromSq)));
+		str += static_cast<char>('1' + i8(rankOf(fromSq)));
 
-		str += 'a' + i8(fileOf(toSq));
-		str += '1' + i8(rankOf(toSq));
+		str += static_cast<char>('a' + i8(fileOf(toSq)));
+		str += static_cast<char>('1' + i8(rankOf(toSq)));
 
 		if (flags().promotion())
 		{

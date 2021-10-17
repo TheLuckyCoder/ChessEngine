@@ -21,9 +21,9 @@ static constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
 static constexpr int FUTILITY_MARGIN = 160;
 static constexpr int FUTILITY_MAX_DEPTH = 6;
 
-static thread_local Thread *_thread = nullptr;
+static thread_local Thread *localThreadInfo = nullptr;
 
-auto &threadInfo() { return *_thread; }
+auto &threadInfo() { return *localThreadInfo; }
 
 SearchOptions Search::_searchOptions;
 TranspositionTable Search::_transpositionTable{ _searchOptions.tableSizeMb() };
@@ -80,7 +80,7 @@ Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 	{
 		assert(threadId >= 1);
 		assert(threadId <= i32(threadCount));
-		_thread = new Thread(threadId, threadId == 1);
+		localThreadInfo = new Thread(threadId, threadId == 1);
 
 		while (!_sharedState.stopped)
 		{
@@ -90,8 +90,8 @@ Move Search::findBestMove(Board board, const SearchOptions &searchOptions)
 			iterativeDeepening(board, std::min<i32>(depth, _searchOptions.depth()));
 		}
 
-		delete _thread;
-		_thread = nullptr;
+		delete localThreadInfo;
+		localThreadInfo = nullptr;
 	};
 
 	std::vector<std::thread> threads;

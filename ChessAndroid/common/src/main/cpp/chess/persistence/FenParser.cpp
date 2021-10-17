@@ -67,8 +67,6 @@ bool FenParser::parseFen(Board &board, const std::string &fen)
 	board.state.fiftyMoveRule = static_cast<u8>(halfMove);
 
 	board.state.zKey = Zobrist::compute(board);
-	board.updatePieceList();
-	board.updateNonPieceBitboards();
 
 	if (board.getPieces().count() < 2 || board.getPieces(KING).count() != 2) return false;
 
@@ -86,7 +84,7 @@ std::string FenParser::exportToFen(const Board &board)
 		for (int file = 0; file <= 7; ++file)
 		{
 			int emptyCount = 0;
-			for (; file <= 7 && board.data[toSquare(file, rank)] == EmptyPiece; ++file)
+			for (; file <= 7 && board.getSquare(toSquare(file, rank)) == EmptyPiece; ++file)
 				++emptyCount;
 
 			if (emptyCount)
@@ -94,7 +92,7 @@ std::string FenParser::exportToFen(const Board &board)
 
 			if (file <= 7)
 			{
-				const Piece piece = board.data[toSquare(file, rank)];
+				const Piece piece = board.getSquare(toSquare(file, rank));
 				const PieceType type = piece.type();
 				char pChar = 'K';
 
@@ -155,40 +153,40 @@ void FenParser::parsePieces(Board &board, std::istringstream &stream)
 		switch (currChar)
 		{
 			case 'p':
-				board.data[boardPos++] = { PAWN, BLACK };
+				board.addPiece(toSquare(boardPos++), { PAWN, BLACK });
 				break;
 			case 'r':
-				board.data[boardPos++] = { ROOK, BLACK };
+				board.addPiece(toSquare(boardPos++), { ROOK, BLACK });
 				break;
 			case 'n':
-				board.data[boardPos++] = { KNIGHT, BLACK };
+				board.addPiece(toSquare(boardPos++), { KNIGHT, BLACK });
 				break;
 			case 'b':
-				board.data[boardPos++] = { BISHOP, BLACK };
+				board.addPiece(toSquare(boardPos++), { BISHOP, BLACK });
 				break;
 			case 'q':
-				board.data[boardPos++] = { QUEEN, BLACK };
+				board.addPiece(toSquare(boardPos++), { QUEEN, BLACK });
 				break;
 			case 'k':
-				board.data[boardPos++] = { KING, BLACK };
+				board.addPiece(toSquare(boardPos++), { KING, BLACK });
 				break;
 			case 'P':
-				board.data[boardPos++] = { PAWN, WHITE };
+				board.addPiece(toSquare(boardPos++),  { PAWN, WHITE });
 				break;
 			case 'R':
-				board.data[boardPos++] = { ROOK, WHITE };
+				board.addPiece(toSquare(boardPos++), { ROOK, WHITE });
 				break;
 			case 'N':
-				board.data[boardPos++] = { KNIGHT, WHITE };
+				board.addPiece(toSquare(boardPos++),  { KNIGHT, WHITE });
 				break;
 			case 'B':
-				board.data[boardPos++] = { BISHOP, WHITE };
+				board.addPiece(toSquare(boardPos++), { BISHOP, WHITE });
 				break;
 			case 'Q':
-				board.data[boardPos++] = { QUEEN, WHITE };
+				board.addPiece(toSquare(boardPos++), { QUEEN, WHITE });
 				break;
 			case 'K':
-				board.data[boardPos++] = { KING, WHITE };
+				board.addPiece(toSquare(boardPos++), { KING, WHITE });
 				break;
 			case '/':
 				boardPos -= 16u; // Go down one rank

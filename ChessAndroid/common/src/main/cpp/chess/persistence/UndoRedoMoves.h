@@ -76,7 +76,7 @@ namespace UndoRedo
 
 		for (Square square{}; square < SQUARE_NB; ++square)
 		{
-			const auto piece = board.getPiece(square);
+			const auto piece = board.getSquare(square);
 			if (piece.isValid())
 				pieces.emplace_back(square, square, piece.color(), piece.type());
 		}

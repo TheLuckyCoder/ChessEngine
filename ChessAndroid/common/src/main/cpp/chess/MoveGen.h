@@ -18,27 +18,27 @@ public:
 
 	constexpr Move *begin() noexcept { return _moveList; }
 
-	constexpr const Move *begin() const noexcept { return _moveList; }
+	[[nodiscard]] constexpr const Move *begin() const noexcept { return _moveList; }
 
 	constexpr Move *end() noexcept { return _end; }
 
-	constexpr const Move *end() const noexcept { return _end; }
+	[[nodiscard]] constexpr const Move *end() const noexcept { return _end; }
 
 	constexpr Move &front() noexcept { return *begin(); }
 
-	constexpr const Move &front() const noexcept { return *begin(); }
+	[[nodiscard]] constexpr const Move &front() const noexcept { return *begin(); }
 
 	constexpr Move &back() noexcept { return *std::prev(end()); }
 
-	constexpr const Move &back() const noexcept { return *std::prev(end()); }
+	[[nodiscard]] constexpr const Move &back() const noexcept { return *std::prev(end()); }
 
 	constexpr void popBack() noexcept { --_end; }
 
-	constexpr usize size() const noexcept { return _end - _moveList; }
+	[[nodiscard]] constexpr usize size() const noexcept { return _end - _moveList; }
 
-	constexpr bool empty() const noexcept { return size() == 0u; }
+	[[nodiscard]] constexpr bool empty() const noexcept { return size() == 0u; }
 
-	constexpr bool contains(const Move &move) const noexcept
+	[[nodiscard]] constexpr bool contains(const Move &move) const noexcept
 	{
 		for (auto &&m : *this)
 			if (m == move)

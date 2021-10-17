@@ -22,7 +22,7 @@ public:
 	Square enPassantSq = SQ_NONE;
 	u8 fiftyMoveRule{};
 
-	Move getMove() const noexcept { return Move{ moveContents }; }
+	[[nodiscard]] Move getMove() const noexcept { return Move{ moveContents }; }
 };
 
 class Board final
@@ -30,46 +30,43 @@ class Board final
 public:
 	void setToStartPos();
 	bool setToFen(const std::string &fen);
-	std::string getFen() const;
+	[[nodiscard]] std::string getFen() const;
 
 	// region Castling
 
-	bool canCastle(Color color) const noexcept;
+	[[nodiscard]] bool canCastle(Color color) const noexcept;
 	template <Color C>
-	bool canCastle() const noexcept;
+	[[nodiscard]] bool canCastle() const noexcept;
 	template <Color C>
-	bool canCastleKs() const noexcept;
+	[[nodiscard]] bool canCastleKs() const noexcept;
 	template <Color C>
-	bool canCastleQs() const noexcept;
+	[[nodiscard]] bool canCastleQs() const noexcept;
 	template <Color C>
-	bool isCastled() const noexcept;
+	[[nodiscard]] bool isCastled() const noexcept;
 
 	// endregion Castling
 
 	// region Pieces
-private:
-	Piece &getPiece(Square square) noexcept;
-	Bitboard &getPieces(Piece piece) noexcept;
+	[[nodiscard]] Piece getSquare(Square square) const noexcept;
+	[[nodiscard]] Bitboard getPieces() const noexcept;
+	[[nodiscard]] Bitboard getPieces(PieceType type, Color color) const noexcept;
+	[[nodiscard]] Bitboard getPieces(PieceType type) const noexcept;
+	[[nodiscard]] Bitboard getPieces(Color color) const noexcept;
+	template <PieceType P, Color C>
+	[[nodiscard]] u8 getPieceCount() const noexcept;
 
-public:
-	Piece getPiece(Square square) const noexcept;
-	Bitboard getPieces() const noexcept;
-	Bitboard getPieces(PieceType type, Color color) const noexcept;
-	Bitboard getPieces(PieceType type) const noexcept;
-	Bitboard getPieces(Color color) const noexcept;
-
-	Square getKingSq(Color color) const noexcept;
+	[[nodiscard]] Square getKingSq(Color color) const noexcept;
 
 	// endregion Pieces
 
 	// region State
 
-	u64 zKey() const noexcept;
-	Square getEnPassantSq() const noexcept;
-	CastlingRights getCastlingRights() const noexcept;
+	[[nodiscard]] u64 zKey() const noexcept;
+	[[nodiscard]] Square getEnPassantSq() const noexcept;
+	[[nodiscard]] CastlingRights getCastlingRights() const noexcept;
 
-	bool isDrawn() const noexcept;
-	Phase getPhase() const noexcept;
+	[[nodiscard]] bool isDrawn() const noexcept;
+	[[nodiscard]] Phase getPhase() const noexcept;
 
 	// endregion State
 
@@ -80,47 +77,44 @@ public:
 	void undoMove() noexcept;
 	void makeNullMove() noexcept;
 	void undoNullMove() noexcept;
-	bool doesMoveGiveCheck(Move move) const noexcept;
-	bool isMoveLegal(const Move move) const noexcept;
+	[[nodiscard]] bool doesMoveGiveCheck(Move move) const noexcept;
+	[[nodiscard]] bool isMoveLegal(Move move) const noexcept;
 
 	// endregion
 
-	Bitboard generateAttackers(Color attackerColor, Square sq, Bitboard blockers) const noexcept;
-	Bitboard generateAttackers(Square sq, Bitboard blockers) const noexcept;
-	Bitboard generateAttackers(Square sq) const noexcept;
-	bool isSideInCheck() const noexcept;
+	[[nodiscard]] Bitboard generateAttackers(Color attackerColor, Square sq, Bitboard blockers) const noexcept;
+	[[nodiscard]] Bitboard generateAttackers(Square sq, Bitboard blockers) const noexcept;
+	[[nodiscard]] Bitboard generateAttackers(Square sq) const noexcept;
+	[[nodiscard]] bool isSideInCheck() const noexcept;
+
+	void addPiece(Square square, Piece piece) noexcept;
 
 private:
-	void addPiece(Square square, Piece piece) noexcept;
 	void movePiece(Square from, Square to) noexcept;
 	void removePiece(Square square) noexcept;
-	Bitboard findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept;
+	Bitboard findBlockers(Bitboard sliders, Color color, Bitboard &pinners) const noexcept;
 
 public:
 	void computeCheckInfo() noexcept;
-	void updatePieceList() noexcept;
-	void updateNonPieceBitboards() noexcept;
-	Bitboard getKingAttackers() const noexcept;
-	Bitboard getKingBlockers(Color color) const noexcept;
+	[[nodiscard]] Bitboard getKingAttackers() const noexcept;
+	[[nodiscard]] Bitboard getKingBlockers(Color color) const noexcept;
 
-	std::string toString() const noexcept;
+	[[nodiscard]] std::string toString() const noexcept;
+
+private:
+	std::array<Bitboard, COLOR_NB> piecesByColor{};
+	std::array<Bitboard, PIECE_TYPE_NB> piecesByType{};
+	std::array<u8, 15> pieceCount{};
+	std::array<Piece, SQUARE_NB> squares{};
 
 public:
-	Bitboard occupied{};
-	std::array<std::array<Bitboard, PIECE_TYPE_NB>, COLOR_NB> pieces{};
-	std::array<u8, 15> pieceCount{};
-
-	std::array<Piece, SQUARE_NB> data{};
-
 	BoardState state{};
-
+	i32 npm{};
 	i16 ply{};
-	i16 npm{};
-	Score psq{};
 	Color colorToMove{};
 
 private:
-	short historyPly{};
+	i16 historyPly{};
 	std::array<BoardState, MAX_MOVES> history{};
 };
 
@@ -153,39 +147,36 @@ inline bool Board::canCastle(const Color color) const noexcept
 	return color == BLACK ? canCastle<BLACK>() : canCastle<WHITE>();
 }
 
-inline Piece &Board::getPiece(const Square square) noexcept
+inline Piece Board::getSquare(const Square square) const noexcept
 {
-	return data[square];
-}
-
-inline Bitboard &Board::getPieces(const Piece piece) noexcept
-{
-	return pieces[piece.color()][piece.type()];
-}
-
-inline Piece Board::getPiece(const Square square) const noexcept
-{
-	return data[square];
+	return squares[square];
 }
 
 inline Bitboard Board::getPieces() const noexcept
 {
-	return occupied;
+	return piecesByType[NO_PIECE_TYPE];
 }
 
 inline Bitboard Board::getPieces(const PieceType type, const Color color) const noexcept
 {
-	return pieces[color][type];
+	return piecesByColor[color] & piecesByType[type];
 }
 
 inline Bitboard Board::getPieces(const PieceType type) const noexcept
 {
-	return pieces[BLACK][type] | pieces[WHITE][type];
+	return piecesByType[type];
 }
 
 inline Bitboard Board::getPieces(const Color color) const noexcept
 {
-	return pieces[color][PieceType::NO_PIECE_TYPE];
+	return piecesByColor[color];
+}
+
+template <PieceType P, Color C>
+inline u8 Board::getPieceCount() const noexcept
+{
+	constexpr u8 p = static_cast<u8>(Piece{ P, C });
+	return pieceCount[p];
 }
 
 inline Square Board::getKingSq(const Color color) const noexcept

@@ -80,7 +80,7 @@ std::string Stats::formatStats(const char separator)
 		const auto nullCuts = static_cast<usize>(_nullCuts);
 		const auto futilityCuts = static_cast<usize>(_futilityCuts);
 		const auto lmrCount = static_cast<usize>(_lmrCount);
-		const usize nps = timeMs ? (nodesSearched / (timeMs / 1000.0)) : 0;
+		const usize nps = timeMs ? static_cast<usize>(nodesSearched / (timeMs / 1000.0)) : 0ul;
 
 		stream << "Boards Evaluated: " << boardsEvaluated << separator
 			   << "Nodes Searched: " << nodesSearched << separator

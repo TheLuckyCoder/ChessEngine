@@ -300,7 +300,7 @@ namespace PolyBook
 		// PiecesKeys
 		for (Square square{}; square < SQUARE_NB; ++square)
 		{
-			const Piece piece = board.getPiece(square);
+			const Piece piece = board.getSquare(square);
 			if (piece == EmptyPiece)
 				continue;
 
@@ -343,9 +343,9 @@ namespace PolyBook
 		const Square toSquare = ::toSquare(bookMove & 7u, (bookMove >> 3u) & 7u);
 		const auto promotedPiece = (bookMove >> 12u) & 7u;
 
-		Move move(fromSquare, toSquare, board.getPiece(fromSquare).type());
+		Move move(fromSquare, toSquare, board.getSquare(fromSquare).type());
 		u8 flags{};
-		if (const PieceType capturedPieceType = board.getPiece(toSquare).type();
+		if (const PieceType capturedPieceType = board.getSquare(toSquare).type();
 			capturedPieceType != NO_PIECE_TYPE)
 		{
 			flags |= Move::Flags::CAPTURE;

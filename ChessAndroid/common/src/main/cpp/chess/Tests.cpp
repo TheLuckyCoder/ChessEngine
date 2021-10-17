@@ -34,9 +34,9 @@ namespace Tests
 		result.colorToMove = ~board.colorToMove;
 		for (u8 sq{}; sq < SQUARE_NB; ++sq)
 		{
-			const auto &piece = board.data[sq];
+			const auto piece = board.getSquare(toSquare(sq));
 			if (piece)
-				result.data[MirrorSquare[sq]] = ~piece;
+				result.addPiece(toSquare(MirrorSquare[sq]), ~piece);
 		}
 
 		// Castling
@@ -48,8 +48,6 @@ namespace Tests
 		if (board.getEnPassantSq() != SQ_NONE)
 			result.state.enPassantSq = toSquare(MirrorSquare.at(u8(board.getEnPassantSq())));
 
-		result.updatePieceList();
-		result.updateNonPieceBitboards();
 		result.state.fiftyMoveRule = board.state.fiftyMoveRule;
 		result.state.kingAttackers = result.generateAttackers(result.getKingSq(result.colorToMove))
 									 & result.getPieces(~result.colorToMove);
@@ -136,7 +134,6 @@ namespace Tests
 			"8/6k1/p4p2/P3q2p/7P/5Q2/5PK1/8 w",
 			"8/8/6p1/3Pkp2/4P3/2K5/6P1/n7 w",
 			"1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b",
-			"r1k2/4npp1/1ppr3p/p6P/P2PPPP1/1NR5/5K2/2R5 w",
 			"q1rr1k/3bbnnp/p2p1pp1/2pPp3/PpP1P1P1/1P2BNNP/2BQ1PRK/7R b",
 			"r1b2rk1/2q1b1pp/p2ppn2/1p6/3QP3/1BN1B3/PPP3PP/R4RK1 w",
 			"2r3k1/pppR1pp1/4p3/4P1P1/5P2/1P4K1/P1P5/8 w",
@@ -275,7 +272,7 @@ namespace Tests
 		constexpr auto ColumnW = 12;
 		constexpr std::string_view Pipe = " | ";
 
-		const auto displayRow = [&](const i32 depth, const double time, const PerftInfo &info)
+		const auto displayRow = [&](const u32 depth, const double time, const PerftInfo &info)
 		{
 			const auto expectedNodes = perftVector[depth];
 			const auto wrongResult = expectedNodes != info.nodes;

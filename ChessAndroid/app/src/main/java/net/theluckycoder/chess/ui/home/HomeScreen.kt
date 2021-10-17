@@ -168,8 +168,8 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
 
         AnimatedVisibility(
             visible = isEngineThinking,
-            enter = expandIn(Alignment.CenterStart),
-            exit = shrinkOut(Alignment.CenterStart),
+            enter = expandIn(expandFrom = Alignment.CenterStart),
+            exit = shrinkOut(shrinkTowards = Alignment.CenterStart),
         ) {
             val icon = animatedVectorResource(R.drawable.ic_animated_hourglass)
             var atEnd by remember { mutableStateOf(false) }

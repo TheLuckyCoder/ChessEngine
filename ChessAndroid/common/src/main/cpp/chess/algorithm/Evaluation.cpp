@@ -306,7 +306,9 @@ Score Eval<Trace>::evaluatePieces() noexcept
 	const auto knightBishopBonus = [&](const Square square)
 	{
 		constexpr Dir Behind = Us ? Dir::SOUTH : Dir::NORTH;
-		const bool isBishop = board.getPiece(square).type() == BISHOP;
+		const auto bb = Bitboard::fromSquare(square);
+
+		const bool isBishop = (board.getPieces(BISHOP) & bb).notEmpty();
 
 		const auto kingProtectorScore =
 			KING_PROTECTOR[isBishop] * Bits::getDistanceBetween(square, board.getKingSq(Us));
@@ -314,7 +316,6 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		if constexpr (Trace)
 			_trace->kingProtector[Us] -= kingProtectorScore;
 
-		const auto bb = Bitboard::fromSquare(square);
 		const auto pawns = board.getPieces(PAWN, Us).shift<Behind>();
 
 		if ((bb & pawns).notEmpty())
@@ -414,7 +415,7 @@ Score Eval<Trace>::evaluatePieces() noexcept
 		updateKingAttacks(BISHOP, attacks);
 	}
 
-	if (board.pieceCount[Piece{ BISHOP, Us }] >= 2)
+	if (board.getPieceCount<BISHOP, Us>() >= 2)
 		score += 40;
 
 	pieces = board.getPieces(ROOK, Us);
@@ -481,7 +482,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 		while (minorThreats.notEmpty())
 		{
-			const auto value = THREATS_BY_MINOR[board.getPiece(minorThreats.popLsb()).type()];
+			const auto value = THREATS_BY_MINOR[board.getSquare(minorThreats.popLsb()).type()];
 			totalValue += value;
 			if constexpr (Trace)
 				_trace->threatsByMinor[Us] += value;
@@ -490,7 +491,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		Bitboard rookThreats = poorlyDefended & _pieceAttacks[Us][ROOK] & board.getPieces(Them);
 		while (rookThreats.notEmpty())
 		{
-			const auto value = THREAT_BY_ROOK[board.getPiece(rookThreats.popLsb()).type()];
+			const auto value = THREAT_BY_ROOK[board.getSquare(rookThreats.popLsb()).type()];
 			totalValue += value;
 			if constexpr (Trace)
 				_trace->threatsByRook[Us] += value;
@@ -504,7 +505,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 		}
 
 		const auto hangingPieces = ~_allAttacks[Them] | (nonPawnEnemies & _attacksMultiple[Us]);
-		const auto hangingScore = HANGING * (poorlyDefended & hangingPieces).count();
+		const auto hangingScore = HANGING * i16((poorlyDefended & hangingPieces).count());
 
 		totalValue += hangingScore;
 
@@ -520,11 +521,10 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 	}
 
 	// Bonus for threats on the next moves against enemy queen
-	if (board.pieceCount[Piece{ QUEEN, Them }] == 1)
+	if (board.getPieceCount<QUEEN, Them>() == 1)
 	{
 		const bool imbalance =
-			(board.pieceCount[Piece{ QUEEN, Them }] + board.pieceCount[Piece{ QUEEN, Us }]) ==
-			1;
+			(board.getPieceCount<QUEEN, Them>() + board.getPieceCount<QUEEN, Us>()) == 1;
 
 		const auto sq = board.getPieces(QUEEN, Them).bitScanForward();
 		const auto safeSpots =
@@ -558,7 +558,7 @@ Score Eval<Trace>::evaluateAttacks() const noexcept
 
 	const auto restrictedMovement = _allAttacks[Them] & _allAttacks[Us] & ~stronglyProtected;
 	const Score restrictedMovementScore =
-		RESTRICTED_PIECE_MOVEMENT * restrictedMovement.count();
+		RESTRICTED_PIECE_MOVEMENT * i16(restrictedMovement.count());
 	totalValue += restrictedMovementScore;
 
 	if constexpr (Trace)

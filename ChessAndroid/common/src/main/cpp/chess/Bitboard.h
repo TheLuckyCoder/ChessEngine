@@ -264,16 +264,6 @@ public:
 
 	// region Functions
 
-	constexpr Bitboard &addSquare(const Square square) noexcept
-	{
-		return (*this) |= Bitboard::fromSquare(square);
-	}
-
-	constexpr Bitboard &removeSquare(const Square square) noexcept
-	{
-		return (*this) &= ~Bitboard::fromSquare(square);
-	}
-
 	constexpr Square popLsb() noexcept
 	{
 		const Square lsbIndex = bitScanForward();
@@ -345,6 +335,12 @@ public:
 
 	// endregion Operators
 
+private:
+	static const std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> BetweenSquares;
+	static const std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> SquaresLine;
+
+public:
+
 	// region Static Functions
 
 	static constexpr Bitboard fromSquare(const Square square) noexcept
@@ -359,35 +355,6 @@ public:
 
 	static constexpr Bitboard fromBetween(const Square sq1, const Square sq2) noexcept
 	{
-		constexpr auto BetweenSquares = []
-		{
-			std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> array{};
-
-			for (Square sq1{}; sq1 < SQUARE_NB; ++sq1)
-			{
-				const auto bb1 = Bitboard::fromSquare(sq1).value();
-				Bitboard rookAttacks{ Bits::generateRookAttacks(sq1, {}) };
-				while (rookAttacks.notEmpty())
-				{
-					const Square sq2 = rookAttacks.popLsb();
-					const auto bb2 = Bitboard::fromSquare(sq2).value();
-					array[sq1][sq2] = Bitboard{
-						Bits::generateRookAttacks(sq1, bb2) & Bits::generateRookAttacks(sq2, bb1) };
-				}
-
-				Bitboard bishopAttacks{ Bits::generateBishopAttacks(sq1, {}) };
-				while (bishopAttacks.notEmpty())
-				{
-					const Square sq2 = bishopAttacks.popLsb();
-					const auto bb2 = Bitboard::fromSquare(sq2).value();
-					array[sq1][sq2] = Bitboard{
-						Bits::generateBishopAttacks(sq1, bb2) & Bits::generateBishopAttacks(sq2, bb1) };
-				}
-			}
-
-			return array;
-		}();
-
 		return BetweenSquares[u8(sq1)][u8(sq2)];
 	}
 
@@ -430,40 +397,6 @@ public:
 
 	static constexpr bool areAligned(const Square sq1, const Square sq2, const Square sq3) noexcept
 	{
-		/**
-		 *  The rank, file or diagonal with the two squares or an empty Bitboard if they are not aligned.
-		 */
-		constexpr auto SquaresLine = []
-		{
-			std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> array{};
-
-			for (Square sq1{}; sq1 < SQUARE_NB; ++sq1)
-			{
-				const auto bb1 = Bitboard::fromSquare(sq1);
-				Bitboard rookAttacks{ Bits::generateRookAttacks(sq1, {}) };
-				while (rookAttacks.notEmpty())
-				{
-					const Square sq2 = rookAttacks.popLsb();
-					const auto bb2 = Bitboard::fromSquare(sq2);
-					array[sq1][sq2] =
-						Bitboard{ Bits::generateRookAttacks(sq1, {}) & Bits::generateRookAttacks(sq2, {}) }
-						| bb1 | bb2;
-				}
-
-				Bitboard bishopAttacks{ Bits::generateBishopAttacks(sq1, {}) };
-				while (bishopAttacks.notEmpty())
-				{
-					const Square sq2 = bishopAttacks.popLsb();
-					const auto bb2 = Bitboard::fromSquare(sq2);
-					array[sq1][sq2] =
-						Bitboard{ Bits::generateBishopAttacks(sq1, {}) & Bits::generateBishopAttacks(sq2, {}) }
-						| bb1 | bb2;
-				}
-			}
-
-			return array;
-		}();
-
 		return (SquaresLine[sq1][sq2] & fromSquare(sq3)).notEmpty();
 	}
 
@@ -498,3 +431,66 @@ constexpr Bitboard KING_SIDE{ FILE_E | FILE_F | FILE_G | FILE_H };
 constexpr Bitboard QUEEN_SIDE{ FILE_A | FILE_B | FILE_C | FILE_D };
 constexpr Bitboard CENTER_FILES{ FILE_C | FILE_D | FILE_E | FILE_F };
 constexpr Bitboard CENTER_SQUARES{ (FILE_D | FILE_E) & (RANK_4 | RANK_5) };
+
+constexpr auto Bitboard::BetweenSquares = []
+{
+	std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> array{};
+
+	for (Square sq1{}; sq1 < SQUARE_NB; ++sq1)
+	{
+		const auto bb1 = fromSquare(sq1).value();
+		Bitboard rookAttacks{ Bits::generateRookAttacks(sq1, {}) };
+		while (rookAttacks.notEmpty())
+		{
+			const Square sq2 = rookAttacks.popLsb();
+			const auto bb2 = fromSquare(sq2).value();
+			array[sq1][sq2] = Bitboard{
+				Bits::generateRookAttacks(sq1, bb2) & Bits::generateRookAttacks(sq2, bb1) };
+		}
+
+		Bitboard bishopAttacks{ Bits::generateBishopAttacks(sq1, {}) };
+		while (bishopAttacks.notEmpty())
+		{
+			const Square sq2 = bishopAttacks.popLsb();
+			const auto bb2 = fromSquare(sq2).value();
+			array[sq1][sq2] = Bitboard{
+				Bits::generateBishopAttacks(sq1, bb2) & Bits::generateBishopAttacks(sq2, bb1) };
+		}
+	}
+
+	return array;
+}();
+
+/**
+ *  The rank, file or diagonal with the two squares or an empty Bitboard if they are not aligned.
+ */
+constexpr auto Bitboard::SquaresLine = []
+{
+	std::array<std::array<Bitboard, SQUARE_NB>, SQUARE_NB> array{};
+
+	for (Square sq1{}; sq1 < SQUARE_NB; ++sq1)
+	{
+		const auto bb1 = Bitboard::fromSquare(sq1);
+		Bitboard rookAttacks{ Bits::generateRookAttacks(sq1, {}) };
+		while (rookAttacks.notEmpty())
+		{
+			const Square sq2 = rookAttacks.popLsb();
+			const auto bb2 = Bitboard::fromSquare(sq2);
+			array[sq1][sq2] =
+				Bitboard{ Bits::generateRookAttacks(sq1, {}) & Bits::generateRookAttacks(sq2, {}) }
+				| bb1 | bb2;
+		}
+
+		Bitboard bishopAttacks{ Bits::generateBishopAttacks(sq1, {}) };
+		while (bishopAttacks.notEmpty())
+		{
+			const Square sq2 = bishopAttacks.popLsb();
+			const auto bb2 = Bitboard::fromSquare(sq2);
+			array[sq1][sq2] =
+				Bitboard{ Bits::generateBishopAttacks(sq1, {}) & Bits::generateBishopAttacks(sq2, {}) }
+				| bb1 | bb2;
+		}
+	}
+
+	return array;
+}();

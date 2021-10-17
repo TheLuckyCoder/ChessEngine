@@ -36,7 +36,7 @@ namespace
 
 			const auto makePromotions = [&](Square from, Square to)
 			{
-				const auto captured = board.getPiece(to).type();
+				const auto captured = board.getSquare(to).type();
 				u8 flags = Move::Flags::PROMOTION;
 				if (captured != PIECE_TYPE_NB)
 					flags |= Move::Flags::CAPTURE;
@@ -101,7 +101,7 @@ namespace
 			const auto makeCapture = [&](Square from, Square to)
 			{
 				Move move(from, to, PAWN, Move::Flags::CAPTURE);
-				move.setCapturedPiece(board.getPiece(to).type());
+				move.setCapturedPiece(board.getSquare(to).type());
 				moveList.emplace_back(move);
 			};
 
@@ -170,7 +170,7 @@ namespace
 				const Square to = attacks.popLsb();
 
 				Move move{ from, to, P };
-				if (const PieceType capturedPiece = board.getPiece(to).type();
+				if (const PieceType capturedPiece = board.getSquare(to).type();
 					capturedPiece != NO_PIECE_TYPE)
 				{
 					move.setFlags(Move::Flags::CAPTURE);
@@ -196,7 +196,7 @@ namespace
 			const Square to = moves.popLsb();
 
 			Move move{ kingSq, to, KING };
-			if (const PieceType capturedPiece = board.getPiece(to).type();
+			if (const PieceType capturedPiece = board.getSquare(to).type();
 				capturedPiece != NO_PIECE_TYPE)
 			{
 				move.setFlags(Move::Flags::CAPTURE);
@@ -279,7 +279,7 @@ namespace
 				const Square to = moves.popLsb();
 
 				Move move{ kingSq, to, KING };
-				if (const PieceType capturedPiece = board.getPiece(to).type();
+				if (const PieceType capturedPiece = board.getSquare(to).type();
 					capturedPiece != NO_PIECE_TYPE)
 				{
 					move.setFlags(Move::Flags::CAPTURE);

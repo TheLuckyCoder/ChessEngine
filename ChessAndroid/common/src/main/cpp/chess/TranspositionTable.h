@@ -13,7 +13,7 @@ class SearchEntry
 public:
 	enum class Bound : u8
 	{
-		NONE = 0,
+		NONE [[maybe_unused]] = 0,
 		EXACT = 0b01,
 		ALPHA = 0b10,
 		BETA = 0b11
@@ -22,23 +22,23 @@ public:
 	SearchEntry() = default;
 
 	constexpr SearchEntry(const u64 key, const int depth, const Move move, const bool qSearch, const Bound bound)
-		: _key16(key >> 48u), _moveFromTo(move.getFromToBits()), _value(move.getScore()), _depth8(depth)
+		: _key16(key >> 48u), _moveFromTo(move.getFromToBits()), _value(move.getScore()), _depth8(i8(depth))
 	{
 		_field.setAs<1>(bound);
 		_field.setAs<2>(qSearch);
 	}
 
-	constexpr u16 key() const noexcept { return _key16; }
+	[[nodiscard]] constexpr u16 key() const noexcept { return _key16; }
 
-	constexpr Move move() const noexcept { return Move{ _moveFromTo, i32(_value) }; }
+	[[nodiscard]] constexpr Move move() const noexcept { return Move{ _moveFromTo, i32(_value) }; }
 
-	constexpr i32 depth() const noexcept { return i32(_depth8); }
+	[[nodiscard]] constexpr i32 depth() const noexcept { return i32(_depth8); }
 
-	constexpr u8 age() const noexcept { return _field.get<0>(); }
+	[[nodiscard]] constexpr u8 age() const noexcept { return _field.get<0>(); }
 
-	constexpr Bound bound() const noexcept { return _field.getAs<1, Bound>(); }
+	[[nodiscard]] constexpr Bound bound() const noexcept { return _field.getAs<1, Bound>(); }
 
-	constexpr bool qSearch() const noexcept { return _field.getAs<2, bool>(); }
+	[[nodiscard]] constexpr bool qSearch() const noexcept { return _field.getAs<2, bool>(); }
 
 	constexpr void setAge(const u8 newAge) noexcept
 	{
@@ -83,12 +83,12 @@ public:
 	TranspositionTable &operator=(TranspositionTable &&) = delete;
 
 	void prefetch(u64 zKey) const noexcept;
-	std::optional<SearchEntry> probe(u64 zKey) const noexcept;
+	[[nodiscard]] std::optional<SearchEntry> probe(u64 zKey) const noexcept;
 
 	void insert(u64 zKey, SearchEntry entry) noexcept;
 	bool setSize(usize sizeMb);
 	void update() noexcept;
-	u8 currentAge() const noexcept;
+	[[nodiscard]] u8 currentAge() const noexcept;
 	void clear() noexcept;
 
 private:

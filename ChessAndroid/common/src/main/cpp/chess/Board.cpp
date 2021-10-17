@@ -1,6 +1,5 @@
 #include "Board.h"
 
-#include "Psqt.h"
 #include "Zobrist.h"
 #include "algorithm/Evaluation.h"
 #include "persistence/FenParser.h"
@@ -53,10 +52,10 @@ bool Board::isDrawn() const noexcept
 
 Phase Board::getPhase() const noexcept
 {
-	constexpr short midGameLimit = 15258;
-	constexpr short endGameLimit = 3915;
+	constexpr auto midGameLimit = 15258;
+	constexpr auto endGameLimit = 3915;
 
-	const short limit = std::max(endGameLimit, std::min(npm, midGameLimit));
+	const auto limit = std::max<i32>(endGameLimit, std::min<i32>(npm, midGameLimit));
 	return Phase(((limit - endGameLimit) * 128) / (midGameLimit - endGameLimit));
 }
 
@@ -77,8 +76,8 @@ void Board::makeMove(const Move move, const bool moveGivesCheck) noexcept
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
 	assert(Piece::isValid(movedPiece));
-	assert(getPiece(from).isValid());
-	assert(getPiece(from).type() == movedPiece);
+	assert(getSquare(from).isValid());
+	assert(getSquare(from).type() == movedPiece);
 	assert(move.capturedPiece() != KING);
 
 	// Store the position info in history
@@ -177,8 +176,6 @@ void Board::makeMove(const Move move, const bool moveGivesCheck) noexcept
 	colorToMove = ~colorToMove;
 	Zobrist::flipSide(state.zKey);
 
-	updateNonPieceBitboards();
-
 	assert((generateAttackers(getKingSq(~colorToMove)) & getPieces(colorToMove)).empty());
 
 	state.kingAttackers = {};
@@ -235,7 +232,6 @@ void Board::undoMove() noexcept
 	}
 
 	state.zKey = previousState.zKey;
-	updateNonPieceBitboards();
 }
 
 void Board::makeNullMove() noexcept
@@ -335,9 +331,10 @@ bool Board::isMoveLegal(const Move move) const noexcept
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
 	assert(Piece::isValid(move.piece()));
-	assert(getPiece(from).isValid());
-	assert(getPiece(from).type() == move.piece());
-	assert(getPiece(to).type() == move.capturedPiece());
+	assert(getSquare(from).isValid());
+	assert((Bitboard::fromSquare(from) & getPieces()).notEmpty());
+	assert(getSquare(from).type() == move.piece());
+	assert(getSquare(to).type() == move.capturedPiece());
 
 	if (move.flags().enPassant())
 	{
@@ -347,8 +344,10 @@ bool Board::isMoveLegal(const Move move) const noexcept
 								 | Bitboard::fromSquare(to);
 
 		assert(move.piece() == PAWN);
-		assert(getPiece(move.from()).type() == PAWN);
-		assert(getPiece(capturedSquare).type() == PAWN);
+		assert(getSquare(move.from()).type() == PAWN);
+		assert(getSquare(capturedSquare).type() == PAWN);
+		assert((Bitboard::fromSquare(from) & getPieces(PAWN)).notEmpty());
+		assert((Bitboard::fromSquare(capturedSquare) & getPieces(PAWN)).notEmpty());
 
 		const auto bishops = getPieces(QUEEN, ~colorToMove) | getPieces(BISHOP, ~colorToMove);
 		const auto rooks = getPieces(QUEEN, ~colorToMove) | getPieces(ROOK, ~colorToMove);
@@ -397,76 +396,81 @@ bool Board::isSideInCheck() const noexcept
 
 void Board::addPiece(const Square square, const Piece piece) noexcept
 {
+	const auto type = piece.type();
+	const auto bb = Bitboard::fromSquare(square);
+
+	assert(square < SQUARE_NB);
 	assert(piece.isValid());
 
-	Zobrist::xorPiece(state.zKey, square, piece);
-	getPieces(piece).addSquare(square);
-	getPiece(square) = piece;
-	if (piece.type() != PAWN)
-		npm += Evaluation::getPieceValue(piece.type());
+	squares[square] = piece;
+	piecesByColor[piece.color()] |= bb;
+	piecesByType[NO_PIECE_TYPE] |= bb;
+	piecesByType[type] |= bb;
+	++pieceCount[static_cast<u8>(piece)];
 
-	++pieceCount[piece];
-	psq += PSQT[piece.type()][square];
+	Zobrist::xorPiece(state.zKey, square, piece);
+	npm += Evaluation::getNpmValue(piece.type());
 }
 
 void Board::movePiece(const Square from, const Square to) noexcept
 {
+	const auto piece = getSquare(from);
+	const auto type = piece.type();
+	const auto fromTo = Bitboard::fromSquare(from) | Bitboard::fromSquare(to);
+
 	assert(from < SQUARE_NB);
 	assert(to < SQUARE_NB);
-
-	const Piece piece = getPiece(from);
 	assert(piece.isValid());
 
+	squares[from] = EmptyPiece;
+	squares[to] = piece;
+	piecesByColor[piece.color()] ^= fromTo;
+	piecesByType[NO_PIECE_TYPE] ^= fromTo;
+	piecesByType[type] ^= fromTo;
+
 	Zobrist::xorPiece(state.zKey, from, piece);
-	getPiece(from) = EmptyPiece;
-	getPieces(piece).removeSquare(from);
-
-	assert(!getPiece(to).isValid());
 	Zobrist::xorPiece(state.zKey, to, piece);
-	getPiece(to) = piece;
-	getPieces(piece).addSquare(to);
-
-	psq -= PSQT[piece.type()][from];
-	psq += PSQT[piece.type()][to];
 }
 
 void Board::removePiece(const Square square) noexcept
 {
-	assert(square < SQUARE_NB);
+	const auto piece = getSquare(square);
+	const auto type = piece.type();
+	const auto bb = Bitboard::fromSquare(square);
 
-	const Piece piece = getPiece(square);
+	assert(square < SQUARE_NB);
 	assert(piece.isValid());
 
+	squares[square] = EmptyPiece;
+	piecesByColor[piece.color()] ^= bb;
+	piecesByType[NO_PIECE_TYPE] ^= bb;
+	piecesByType[type] ^= bb;
+	--pieceCount[static_cast<u8>(piece)];
+
 	Zobrist::xorPiece(state.zKey, square, piece);
-	getPieces(piece).removeSquare(square);
-	getPiece(square) = Piece();
-
-	if (piece.type() != PAWN)
-		npm -= Evaluation::getPieceValue(piece.type());
-
-	--pieceCount[piece];
-	psq -= PSQT[piece.type()][square];
+	npm -= Evaluation::getNpmValue(type);
 }
 
-Bitboard Board::findBlockers(const Bitboard sliders, const Square sq, Bitboard &pinners) const noexcept
+Bitboard Board::findBlockers(const Bitboard sliders, const Color color, Bitboard &pinners) const noexcept
 {
 	Bitboard blockers{};
 	pinners = {};
 
-	const auto rooks = Attacks::rookXRayAttacks(sq) & (getPieces(ROOK) | getPieces(QUEEN));
-	const auto bishops = Attacks::bishopXRayAttacks(sq) & (getPieces(BISHOP) | getPieces(QUEEN));
+	const Square kingSq = getKingSq(color);
+	const auto rooks = Attacks::rookXRayAttacks(kingSq) & (getPieces(ROOK) | getPieces(QUEEN));
+	const auto bishops = Attacks::bishopXRayAttacks(kingSq) & (getPieces(BISHOP) | getPieces(QUEEN));
 	Bitboard hiddenPinners = (rooks | bishops) & sliders;
 	const Bitboard occupancy = getPieces() & ~hiddenPinners;
 
 	while (hiddenPinners.notEmpty())
 	{
 		const Square hiddenSq = hiddenPinners.popLsb();
-		const auto bb = Bitboard::fromBetween(sq, hiddenSq) & occupancy;
+		const auto ray = Bitboard::fromBetween(kingSq, hiddenSq) & occupancy;
 
-		if (bb.notEmpty() && !bb.several())
+		if (ray.notEmpty() && !ray.several())
 		{
-			blockers |= bb;
-			if ((getPieces(getPiece(sq).color()) & bb).notEmpty())
+			blockers |= ray;
+			if ((getPieces(color) & ray).notEmpty())
 				pinners |= Bitboard::fromSquare(hiddenSq);
 		}
 	}
@@ -476,8 +480,8 @@ Bitboard Board::findBlockers(const Bitboard sliders, const Square sq, Bitboard &
 
 void Board::computeCheckInfo() noexcept
 {
-	state.kingBlockers[WHITE] = findBlockers(getPieces(BLACK), getKingSq(WHITE), state.kingPinners[BLACK]);
-	state.kingBlockers[BLACK] = findBlockers(getPieces(WHITE), getKingSq(BLACK), state.kingPinners[WHITE]);
+	state.kingBlockers[WHITE] = findBlockers(getPieces(BLACK), WHITE, state.kingPinners[BLACK]);
+	state.kingBlockers[BLACK] = findBlockers(getPieces(WHITE), BLACK, state.kingPinners[WHITE]);
 
 	const Square enemyKingSq = getKingSq(~colorToMove);
 
@@ -488,45 +492,6 @@ void Board::computeCheckInfo() noexcept
 	checkSquares[ROOK] = Attacks::rookAttacks(enemyKingSq, getPieces());
 	checkSquares[QUEEN] = checkSquares[BISHOP] | checkSquares[ROOK];
 	checkSquares[KING] = {};
-}
-
-void Board::updatePieceList() noexcept
-{
-	pieceCount.fill({});
-
-	for (Square sq{}; sq < SQUARE_NB; ++sq)
-	{
-		const Piece piece = getPiece(sq);
-		if (piece)
-		{
-			getPieces(piece).addSquare(sq);
-
-			if (piece.type() != PAWN)
-				npm += Evaluation::getPieceValue(piece.type());
-
-			++pieceCount[piece];
-			psq += PSQT[piece.type()][sq];
-		}
-	}
-}
-
-void Board::updateNonPieceBitboards() noexcept
-{
-	pieces[BLACK][NO_PIECE_TYPE] = getPieces(PAWN, BLACK)
-								   | getPieces(KNIGHT, BLACK)
-								   | getPieces(BISHOP, BLACK)
-								   | getPieces(ROOK, BLACK)
-								   | getPieces(QUEEN, BLACK)
-								   | getPieces(KING, BLACK);
-
-	pieces[WHITE][NO_PIECE_TYPE] = getPieces(PAWN, WHITE)
-								   | getPieces(KNIGHT, WHITE)
-								   | getPieces(BISHOP, WHITE)
-								   | getPieces(ROOK, WHITE)
-								   | getPieces(QUEEN, WHITE)
-								   | getPieces(KING, WHITE);
-
-	occupied = pieces[BLACK][NO_PIECE_TYPE] | pieces[WHITE][NO_PIECE_TYPE];
 }
 
 std::string Board::toString() const noexcept
@@ -540,7 +505,7 @@ std::string Board::toString() const noexcept
 		if (fileOf(sq) == 0)
 			ss << Delimiter << '|';
 
-		const Piece piece = getPiece(sq);
+		const Piece piece = getSquare(sq);
 		const auto type = piece.type();
 		const bool color = piece.color() == WHITE;
 

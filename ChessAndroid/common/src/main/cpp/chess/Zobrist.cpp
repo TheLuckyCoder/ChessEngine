@@ -57,7 +57,7 @@ namespace Zobrist
 		u64 hash{};
 
 		for (u8 sq{}; sq < SQUARE_NB; ++sq)
-			if (const Piece &piece = board.getPiece(toSquare(sq)); piece)
+			if (const Piece &piece = board.getSquare(toSquare(sq)); piece)
 				hash ^= PiecesKeys[sq][piece.type()][piece.color()];
 
 		xorCastlingRights(hash, static_cast<CastlingRights>(board.state.castlingRights));

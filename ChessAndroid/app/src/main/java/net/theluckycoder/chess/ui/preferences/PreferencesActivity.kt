@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.common.SettingsDataStore
 import net.theluckycoder.chess.common.browseUrl
-import net.theluckycoder.chess.common.ui.ChessMaterialTheme
+import net.theluckycoder.chess.ui.ChessMaterialTheme
 
 class PreferencesActivity : ComponentActivity() {
 
