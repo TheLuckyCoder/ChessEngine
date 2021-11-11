@@ -8,21 +8,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -33,7 +27,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -69,6 +62,7 @@ fun ChessBoard(
     pieces: List<IndexedPiece>,
     gameState: GameState,
     onPieceClick: (piece: Piece) -> Unit,
+    onShowPromotion: (List<Move>) -> Unit,
 ) = BoxWithConstraints(
     modifier = modifier
 ) {
@@ -83,7 +77,7 @@ fun ChessBoard(
     val showCoordinates by dataStore.showCoordinates().collectAsState(false)
     val showPossibleMoves by dataStore.showPieceDestination().collectAsState(false)
 
-    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, showPossibleMoves)
+    BoardTiles(boardSize, tileSize, isPlayerWhite, tiles, showPossibleMoves, onShowPromotion)
 
     BoardPieces(tileSize, isPlayerWhite, pieces, gameState, onPieceClick)
 
@@ -99,8 +93,8 @@ private fun BoardTiles(
     isPlayerWhite: Boolean,
     tiles: List<Tile>,
     showPossibleMoves: Boolean,
+    onShowPromotion: (List<Move>) -> Unit
 ) {
-    val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
     val currentDensity = LocalDensity.current
 
     val whiteTileColor = colorResource(id = R.color.tile_white)
@@ -166,15 +160,12 @@ private fun BoardTiles(
                     .clickable(role = Role.Button) {
                         val moves = state.moves
                         when {
-                            moves.size > 1 -> showPromotionDialog.value = moves
+                            moves.size > 1 -> onShowPromotion(moves)
                             else -> Native.makeMove(moves.first())
                         }
                     }
             )
         }
-
-    if (showPromotionDialog.value.isNotEmpty())
-        PromotionDialog(showPromotionDialog)
 }
 
 @Composable
@@ -188,11 +179,11 @@ private fun BoardCoordinates(tileDp: Dp) {
         Text(
             text = i.toString(),
             fontSize = textSize,
-            modifier = Modifier.offset(0.dp, tileDp * (i - 1)),
+            modifier = Modifier.offset(y = tileDp * (i - 1)),
             color = textColor,
         )
     }
-
+    // TODO
     val textSizeDp = with(LocalDensity.current) { 15.5.sp.toDp() }
     for (i in 0..7) {
         val textColor = if (i % 2 == 0) whiteTileColor else blackTileColor
@@ -257,51 +248,6 @@ private fun BoardPieces(
             }
         }
     }
-}
-
-@Composable
-private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
-    val promotionResources = intArrayOf(
-        R.drawable.w_queen, R.drawable.w_rook,
-        R.drawable.w_knight, R.drawable.w_bishop
-    )
-    val piecesPainters = promotionResources.map { painterResource(id = it) }
-
-    AlertDialog(onDismissRequest = { showPromotionDialog.value = emptyList() },
-        title = {
-            AlertDialogTitle(text = stringResource(id = R.string.promotion_choose_piece))
-        },
-        text = {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                piecesPainters.forEachIndexed { index, painter ->
-                    IconButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            Native.makeMove(showPromotionDialog.value[index])
-                            showPromotionDialog.value = emptyList()
-                        }
-                    ) {
-                        Image(
-                            modifier = Modifier,
-                            painter = painter, contentDescription = null
-                        )
-                    }
-                }
-            }
-        },
-        buttons = {
-            IconButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { showPromotionDialog.value = emptyList() }
-            ) {
-                Icon(
-                    modifier = Modifier.fillMaxWidth(),
-                    painter = painterResource(id = R.drawable.ic_close),
-                    contentDescription = stringResource(id = android.R.string.cancel)
-                )
-            }
-        }
-    )
 }
 
 private fun invertIf(invert: Boolean, i: Int) = if (invert) 7 - i else i

@@ -34,6 +34,9 @@ class SettingsDataStore private constructor(private val application: Application
     fun showCoordinates(): Flow<Boolean> =
         dataStore().data.map { it[SHOW_COORDINATES] ?: DEFAULT_SHOW_COORDINATES }
 
+    suspend fun setShowCoordinates(value: Boolean) =
+        dataStore().edit { it[SHOW_COORDINATES] = value }
+
     fun showMoveHistory(): Flow<Boolean> =
         dataStore().data.map { it[SHOW_MOVES_HISTORY] ?: DEFAULT_MOVES_HISTORY }
 

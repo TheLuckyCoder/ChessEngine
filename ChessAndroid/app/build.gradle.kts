@@ -47,4 +47,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configure
 
 dependencies {
     implementation(project(path = ":common"))
+
+    implementation("androidx.compose.material:material:${Versions.compose}")
 }

@@ -8,6 +8,7 @@ import androidx.compose.animation.expandIn
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.shrinkOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
@@ -28,6 +30,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import net.theluckycoder.chess.R
 import net.theluckycoder.chess.common.cpp.Native
+import net.theluckycoder.chess.common.model.Move
 import net.theluckycoder.chess.common.ui.CapturedPiecesLists
 import net.theluckycoder.chess.common.ui.ChessBoard
 import net.theluckycoder.chess.common.ui.MovesHistory
@@ -139,12 +143,63 @@ private fun HomeChessBoard(
     val pieces by viewModel.pieces.collectAsState()
     val gameState by viewModel.gameState.collectAsState()
 
+    val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
+
     ChessBoard(
         isPlayerWhite = isPlayerWhite,
         tiles = tiles,
         pieces = pieces,
         gameState = gameState,
-        onPieceClick = { viewModel.showPossibleMoves(it.square) }
+        onPieceClick = { viewModel.showPossibleMoves(it.square) },
+        onShowPromotion = { showPromotionDialog.value = it },
+    )
+
+    if (showPromotionDialog.value.isNotEmpty())
+        PromotionDialog(showPromotionDialog)
+}
+
+@Composable
+private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
+    val promotionResources = remember {
+        intArrayOf(
+            R.drawable.w_queen, R.drawable.w_rook,
+            R.drawable.w_knight, R.drawable.w_bishop,
+        )
+    }
+    val piecesPainters = promotionResources.map { painterResource(id = it) }
+
+    AlertDialog(onDismissRequest = { showPromotionDialog.value = emptyList() },
+        title = { Text(stringResource(id = net.theluckycoder.chess.common.R.string.promotion_choose_piece)) },
+        text = {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                piecesPainters.forEachIndexed { index, painter ->
+                    IconButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            Native.makeMove(showPromotionDialog.value[index])
+                            showPromotionDialog.value = emptyList()
+                        }
+                    ) {
+                        Image(
+                            modifier = Modifier,
+                            painter = painter, contentDescription = null
+                        )
+                    }
+                }
+            }
+        },
+        buttons = {
+            IconButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showPromotionDialog.value = emptyList() }
+            ) {
+                Icon(
+                    modifier = Modifier.fillMaxWidth(),
+                    painter = painterResource(id = net.theluckycoder.chess.common.R.drawable.ic_close),
+                    contentDescription = stringResource(id = android.R.string.cancel)
+                )
+            }
+        }
     )
 }
 

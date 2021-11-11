@@ -24,9 +24,15 @@ class WearChessApp : Application() {
                 if (dataStore.firstStart().first()) {
                     // Set the default Engine Settings from native code
                     val engineSettings = SearchOptions.getNativeSearchOptions()
-                        .copy(searchTime = Duration.seconds(SettingsDataStore.DEFAULT_SEARCH_TIME))
+                        .copy(
+                            searchTime = Duration.seconds(SettingsDataStore.DEFAULT_SEARCH_TIME),
+                            hashSize = 16
+                        )
                     dataStore.setEngineSettings(engineSettings)
                     dataStore.setFirstStart(false)
+
+                    // Screen is too small for coordinates
+                    dataStore.setShowCoordinates(false)
                 }
             }
         }

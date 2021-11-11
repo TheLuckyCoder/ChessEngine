@@ -47,16 +47,21 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.kotlinCoroutines}")
 
     // AndroidX
-    api("androidx.activity:activity-ktx:1.3.1")
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1")
+    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
     api("androidx.datastore:datastore-preferences:1.0.0")
+    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
     // Compose
+    api("androidx.activity:activity-compose:1.4.0")
     api("androidx.compose.ui:ui:$composeVersion")
     api("androidx.compose.foundation:foundation:$composeVersion")
-    api("androidx.compose.material:material:$composeVersion")
+    implementation("androidx.compose.material:material:$composeVersion")
     api("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     debugApi("androidx.compose.ui:ui-tooling:$composeVersion")
     api("androidx.compose.animation:animation-graphics:$composeVersion")
-    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0-rc01")
+
+
+    // Voyager Navigation
+    api("cafe.adriel.voyager:voyager-navigator:${Versions.voyager}")
+    api("cafe.adriel.voyager:voyager-transitions:${Versions.voyager}")
 }

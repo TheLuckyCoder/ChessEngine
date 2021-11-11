@@ -75,7 +75,7 @@ public:
 	template <std::size_t Index, class A>
 	constexpr void setAs(const A &value) { set<Index>(static_cast<T>(value)); }
 
-	constexpr T value() const { return _t; }
+	[[nodiscard]] constexpr T value() const { return _t; }
 
 private:
 	T _t{};

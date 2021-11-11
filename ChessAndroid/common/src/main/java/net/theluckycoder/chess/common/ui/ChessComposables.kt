@@ -1,9 +1,20 @@
 package net.theluckycoder.chess.common.ui
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -13,7 +24,12 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconToggleButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +51,7 @@ import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 fun ChooseSidesToggle(
     modifier: Modifier = Modifier,
     sidesToggleIndex: MutableState<Int>,
+    primaryColor: Color = MaterialTheme.colors.primary,
 ) {
     class Side(val painterRes: Int, val backgroundColorRes: Int, val contentDescriptionRes: Int)
 
@@ -52,7 +69,7 @@ fun ChooseSidesToggle(
     ) {
         sides.forEachIndexed { index, side ->
             val backgroundColor = if (sidesToggleIndex.value == index)
-                MaterialTheme.colors.primary.copy(alpha = 0.5f)
+                primaryColor.copy(alpha = 0.5f)
             else
                 colorResource(id = side.backgroundColorRes)
 
@@ -185,10 +202,12 @@ fun CapturedPiecesLists(
 
 @Composable
 private fun CapturedPieceList(pieces: List<Byte>, score: Int) {
-    LazyRow(modifier = Modifier
-        .fillMaxWidth()
-        .padding(4.dp)
-        .height(24.dp)) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp)
+            .height(24.dp)
+    ) {
         items(pieces) { piece ->
             val id = when (piece) {
                 Piece.PAWN -> R.drawable.ic_pawn
