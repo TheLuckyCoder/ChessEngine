@@ -21,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -208,7 +210,15 @@ private fun BoardPieces(
     val blackInCheck = gameState == GameState.BLACK_IN_CHECK
 
     val kingInCheckColor = colorResource(id = R.color.king_in_check)
-
+    val kingInCheckBrush = remember {
+        Brush.radialGradient(
+            listOf(
+                kingInCheckColor,
+                kingInCheckColor.copy(alpha = 0.55f),
+                Color.Transparent
+            )
+        )
+    }
     val tilePx = with(LocalDensity.current) { tileDp.toPx() }
 
     for (indexedPiece in pieces) {
@@ -223,7 +233,7 @@ private fun BoardPieces(
                     (piece.type == Piece.KING)
                     && ((whiteInCheck && piece.isWhite) || (blackInCheck && !piece.isWhite))
                 )
-                    Modifier.background(kingInCheckColor, CircleShape)
+                    Modifier.background(kingInCheckBrush, CircleShape)
                 else
                     Modifier
 

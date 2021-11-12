@@ -1,4 +1,4 @@
-package net.theluckycoder.chess.wearos.ui.activity
+package net.theluckycoder.chess.wearos.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,6 +26,7 @@ import androidx.wear.compose.material.ExperimentalWearMaterialApi
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.InlineSlider
 import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.Text
@@ -55,6 +56,9 @@ class NewGameScreen : Screen {
                 CurvedRow {
                     CurvedText(stringResource(R.string.new_game))
                 }
+            },
+            positionIndicator = {
+                PositionIndicator(listState)
             },
             vignette = {
                 Vignette(vignettePosition = VignettePosition.TopAndBottom)

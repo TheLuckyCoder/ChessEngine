@@ -1,12 +1,14 @@
-package net.theluckycoder.chess.wearos.ui
+package net.theluckycoder.chess.wearos.ui.screen
 
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -38,8 +41,8 @@ import net.theluckycoder.chess.common.cpp.Native
 import net.theluckycoder.chess.common.ui.ChessBoard
 import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 import net.theluckycoder.chess.wearos.R
-import net.theluckycoder.chess.wearos.ui.activity.NewGameScreen
-import net.theluckycoder.chess.wearos.ui.activity.SettingsScreen
+import net.theluckycoder.chess.wearos.ui.TextIconButton
+import net.theluckycoder.chess.wearos.ui.isScreenRound
 
 object WatchScreen : Screen {
 
@@ -73,6 +76,27 @@ object WatchScreen : Screen {
                 state = listState,
             ) {
                 item {
+                    Spacer(Modifier.height(32.dp))
+                }
+
+                item {
+                    val navigator = LocalNavigator.currentOrThrow
+
+                    Box(Modifier.fillMaxWidth()) {
+                        TextIconButton(
+                            modifier = Modifier.align(Alignment.Center),
+                            onClick = { navigator.push(NewGameScreen()) },
+                            text = stringResource(R.string.new_game)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_new_circle),
+                                contentDescription = null
+                            )
+                        }
+                    }
+                }
+
+                item {
                     WatchChessBoard(viewModel)
                 }
 
@@ -80,8 +104,11 @@ object WatchScreen : Screen {
                     UndoRedoActions(viewModel)
                 }
 
-                item {
+                /*item {
                     SettingsActions()
+                }*/
+
+                item {
                     Spacer(Modifier.padding(16.dp))
                 }
             }
@@ -119,7 +146,7 @@ private fun WatchChessBoard(
 
     ChessBoard(
         modifier = Modifier
-            .padding(top = 72.dp, bottom = if (isScreenRound()) 8.dp else 2.dp),
+            .padding(top = 8.dp, bottom = if (isScreenRound()) 8.dp else 2.dp),
         isPlayerWhite = isPlayerWhite,
         tiles = tiles,
         pieces = pieces,
@@ -164,7 +191,7 @@ private fun UndoRedoActions(
     }
 }
 
-@Composable
+/*@Composable
 private fun SettingsActions() = Row(
     modifier = Modifier
         .fillMaxWidth()
@@ -192,4 +219,4 @@ private fun SettingsActions() = Row(
             contentDescription = stringResource(R.string.title_settings)
         )
     }
-}
+}*/

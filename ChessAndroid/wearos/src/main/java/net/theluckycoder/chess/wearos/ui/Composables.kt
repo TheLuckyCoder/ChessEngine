@@ -1,5 +1,6 @@
 package net.theluckycoder.chess.wearos.ui
 
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ fun TextIconButton(
     }
 }
 
+@ExperimentalAnimationApi
 @OptIn(ExperimentalWearMaterialApi::class)
 @Composable
 fun SwipeDismissableNavigator(
@@ -71,8 +73,9 @@ fun SwipeDismissableNavigator(
         content = { isBackground ->
             if (isBackground && previous != null)
                 previous.Content()
-            else
+            else {
                 CurrentScreen()
+            }
         }
     )
 }
