@@ -2,6 +2,7 @@ package net.theluckycoder.chess.common.model
 
 import androidx.annotation.Keep
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -20,7 +21,7 @@ data class SearchOptions(
         threadCount: Int,
         searchTime: Long,
         hashSize: Int,
-    ) : this(searchDepth, threadCount, Duration.milliseconds(searchTime), hashSize, quietSearch)
+    ) : this(searchDepth, threadCount, searchTime.milliseconds, hashSize, quietSearch)
 
     companion object {
 

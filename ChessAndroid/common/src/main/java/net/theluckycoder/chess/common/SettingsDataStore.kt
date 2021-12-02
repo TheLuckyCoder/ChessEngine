@@ -11,8 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import net.theluckycoder.chess.common.model.SearchOptions
-import java.util.concurrent.TimeUnit
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -59,7 +58,7 @@ class SettingsDataStore private constructor(private val application: Application
             SearchOptions(
                 searchDepth = it[SEARCH_DEPTH] ?: DEFAULT_SEARCH_DEPTH,
                 quietSearch = it[QUIET_SEARCH] ?: DEFAULT_QUIET_SEARCH,
-                searchTime = Duration.seconds((it[SEARCH_TIME] ?: DEFAULT_SEARCH_TIME)),
+                searchTime = (it[SEARCH_TIME] ?: DEFAULT_SEARCH_TIME).seconds,
                 threadCount = it[THREADS] ?: DEFAULT_THREADS,
                 hashSize = it[HASH_SIZE] ?: DEFAULT_HASH_SIZE,
             )
@@ -69,7 +68,7 @@ class SettingsDataStore private constructor(private val application: Application
         dataStore().edit { preferences ->
             preferences[SEARCH_DEPTH] = searchOptions.searchDepth
             preferences[QUIET_SEARCH] = searchOptions.quietSearch
-            preferences[SEARCH_TIME] = searchOptions.searchTime.toInt(TimeUnit.SECONDS)
+            preferences[SEARCH_TIME] = searchOptions.searchTime.inWholeSeconds.toInt()
             preferences[THREADS] = searchOptions.threadCount
             preferences[HASH_SIZE] = searchOptions.hashSize
         }

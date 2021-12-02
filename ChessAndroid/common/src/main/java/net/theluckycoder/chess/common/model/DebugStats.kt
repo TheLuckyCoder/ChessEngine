@@ -1,6 +1,7 @@
 package net.theluckycoder.chess.common.model
 
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
@@ -14,7 +15,7 @@ data class DebugStats(
 
     companion object {
         fun get() = DebugStats(
-            Duration.milliseconds(getNativeSearchTime()),
+            getNativeSearchTime().milliseconds,
             getNativeBoardEvaluation(),
             getNativeAdvancedStats(),
         )

@@ -16,8 +16,8 @@ object Versions {
         const val target = 31
     }
 
-    const val kotlin = "1.5.31"
+    const val kotlin = "1.6.0"
     const val kotlinCoroutines = "1.5.2"
-    const val compose = "1.1.0-beta02"
+    const val compose = "1.1.0-beta04"
     const val voyager = "1.0.0-beta13"
 }

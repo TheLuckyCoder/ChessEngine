@@ -6,7 +6,7 @@ plugins {
 
 android {
     compileSdk = Versions.Sdk.compile
-    ndkVersion = "23.0.7599858"
+    ndkVersion = "23.1.7779620"
 
     defaultConfig {
         minSdk = Versions.Sdk.min
@@ -20,6 +20,16 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = Versions.compose
+    }
+
+    buildTypes {
+        release {
+            externalNativeBuild {
+                cmake {
+                    arguments += listOf("-DCMAKE_BUILD_TYPE=Release")
+                }
+            }
+        }
     }
 
     externalNativeBuild {
@@ -59,6 +69,7 @@ dependencies {
     api("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     debugApi("androidx.compose.ui:ui-tooling:$composeVersion")
     api("androidx.compose.animation:animation-graphics:$composeVersion")
+    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
 
 
     // Voyager Navigation
