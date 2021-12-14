@@ -2,8 +2,8 @@ object Versions {
     object App {
         private const val major = 1
         private const val minor = 2
-        private const val patch = 1
-        private const val build = 0
+        private const val patch = 2
+        private const val build = 1
 
         const val code = major * 1000 + minor * 100 + patch * 10 + build
         const val name = "$major.$minor.$patch"

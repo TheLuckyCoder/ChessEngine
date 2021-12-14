@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.theluckycoder.chess.common.SettingsDataStore
 import net.theluckycoder.chess.common.model.SearchOptions
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 class WearChessApp : Application() {
@@ -25,7 +25,7 @@ class WearChessApp : Application() {
                     // Set the default Engine Settings from native code
                     val engineSettings = SearchOptions.getNativeSearchOptions()
                         .copy(
-                            searchTime = Duration.seconds(SettingsDataStore.DEFAULT_SEARCH_TIME),
+                            searchTime = SettingsDataStore.DEFAULT_SEARCH_TIME.seconds,
                             hashSize = 16
                         )
                     dataStore.setEngineSettings(engineSettings)
