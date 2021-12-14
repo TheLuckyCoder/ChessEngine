@@ -219,9 +219,9 @@ namespace Tests
 		{
 			const auto flags = board.state.getMove().flags();
 			++info.nodes;
-			info.captures += flags.capture() | flags.enPassant();
+			info.captures += flags.capture() || flags.enPassant();
 			info.enPassant += flags.enPassant();
-			info.castles += flags.kSideCastle() | flags.qSideCastle();
+			info.castles += flags.kSideCastle() || flags.qSideCastle();
 			info.promotions += flags.promotion();
 			const auto kingAttackers = board.getKingAttackers();
 			info.checks += kingAttackers.notEmpty();

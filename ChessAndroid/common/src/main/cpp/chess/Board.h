@@ -50,7 +50,8 @@ public:
 	[[nodiscard]] Piece getSquare(Square square) const noexcept;
 	[[nodiscard]] Bitboard getPieces() const noexcept;
 	[[nodiscard]] Bitboard getPieces(PieceType type, Color color) const noexcept;
-	[[nodiscard]] Bitboard getPieces(PieceType type) const noexcept;
+    template <typename... Pieces>
+	[[nodiscard]] Bitboard getPieces(PieceType type, Pieces... p) const noexcept;
 	[[nodiscard]] Bitboard getPieces(Color color) const noexcept;
 	template <PieceType P, Color C>
 	[[nodiscard]] u8 getPieceCount() const noexcept;
@@ -147,64 +148,71 @@ inline bool Board::canCastle(const Color color) const noexcept
 	return color == BLACK ? canCastle<BLACK>() : canCastle<WHITE>();
 }
 
-inline Piece Board::getSquare(const Square square) const noexcept
+force_inline Piece Board::getSquare(const Square square) const noexcept
 {
 	return squares[square];
 }
 
-inline Bitboard Board::getPieces() const noexcept
+force_inline Bitboard Board::getPieces() const noexcept
 {
 	return piecesByType[NO_PIECE_TYPE];
 }
 
-inline Bitboard Board::getPieces(const PieceType type, const Color color) const noexcept
+force_inline Bitboard Board::getPieces(const PieceType type, const Color color) const noexcept
 {
 	return piecesByColor[color] & piecesByType[type];
 }
 
-inline Bitboard Board::getPieces(const PieceType type) const noexcept
+template <typename ... Pieces>
+inline Bitboard Board::getPieces(const PieceType type, Pieces... p) const noexcept
 {
+    if constexpr (sizeof...(Pieces) > 0)
+    {
+        auto b = piecesByType[type];
+        ((b |= piecesByType[p]), ...);
+        return b;
+    }
 	return piecesByType[type];
 }
 
-inline Bitboard Board::getPieces(const Color color) const noexcept
+force_inline Bitboard Board::getPieces(const Color color) const noexcept
 {
 	return piecesByColor[color];
 }
 
 template <PieceType P, Color C>
-inline u8 Board::getPieceCount() const noexcept
+force_inline u8 Board::getPieceCount() const noexcept
 {
 	constexpr u8 p = static_cast<u8>(Piece{ P, C });
 	return pieceCount[p];
 }
 
-inline Square Board::getKingSq(const Color color) const noexcept
+force_inline Square Board::getKingSq(const Color color) const noexcept
 {
 	return getPieces(KING, color).bitScanForward();
 }
 
-inline u64 Board::zKey() const noexcept
+force_inline u64 Board::zKey() const noexcept
 {
 	return state.zKey;
 }
 
-inline Square Board::getEnPassantSq() const noexcept
+force_inline Square Board::getEnPassantSq() const noexcept
 {
 	return state.enPassantSq;
 }
 
-inline CastlingRights Board::getCastlingRights() const noexcept
+force_inline CastlingRights Board::getCastlingRights() const noexcept
 {
 	return CastlingRights(state.castlingRights);
 }
 
-inline Bitboard Board::getKingAttackers() const noexcept
+force_inline Bitboard Board::getKingAttackers() const noexcept
 {
 	return state.kingAttackers;
 }
 
-inline Bitboard Board::getKingBlockers(const Color color) const noexcept
+force_inline Bitboard Board::getKingBlockers(const Color color) const noexcept
 {
 	return state.kingBlockers[color];
 }

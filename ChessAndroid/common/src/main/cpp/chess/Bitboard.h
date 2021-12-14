@@ -226,11 +226,11 @@ public:
 
 	// region Const Functions
 
-	[[nodiscard]] constexpr auto value() const noexcept { return _value; }
+	[[nodiscard]] force_inline constexpr auto value() const noexcept { return _value; }
 
-	[[nodiscard]] constexpr bool empty() const noexcept { return _value == 0ull; }
+	[[nodiscard]] force_inline constexpr bool empty() const noexcept { return _value == 0ull; }
 
-	[[nodiscard]] constexpr bool notEmpty() const noexcept { return static_cast<bool>(_value); }
+	[[nodiscard]] force_inline constexpr bool notEmpty() const noexcept { return static_cast<bool>(_value); }
 
 	[[nodiscard]] constexpr Square bitScanForward() const noexcept
 	{
@@ -260,6 +260,11 @@ public:
 		return static_cast<bool>(_value & (_value - 1));
 	}
 
+    [[nodiscard]] constexpr bool onlyOne() const noexcept
+    {
+        return notEmpty() && !several();
+    }
+
 	// endregion Const Functions
 
 	// region Functions
@@ -275,60 +280,60 @@ public:
 
 	// region Operators
 
-	constexpr bool operator==(const Bitboard &rhs) const noexcept
+	force_inline constexpr bool operator==(const Bitboard &rhs) const noexcept
 	{
 		return _value == rhs._value;
 	}
 
-	constexpr bool operator!=(const Bitboard &rhs) const noexcept
+	force_inline constexpr bool operator!=(const Bitboard &rhs) const noexcept
 	{
 		return _value != rhs._value;
 	}
 
-	constexpr Bitboard &operator|=(const Bitboard &rhs) noexcept
+	force_inline constexpr Bitboard &operator|=(const Bitboard &rhs) noexcept
 	{
 		_value |= rhs._value;
 		return *this;
 	}
 
-	constexpr Bitboard &operator&=(const Bitboard &rhs) noexcept
+	force_inline constexpr Bitboard &operator&=(const Bitboard &rhs) noexcept
 	{
 		_value &= rhs._value;
 		return *this;
 	}
 
-	constexpr Bitboard &operator^=(const Bitboard &rhs) noexcept
+	force_inline constexpr Bitboard &operator^=(const Bitboard &rhs) noexcept
 	{
 		_value ^= rhs._value;
 		return *this;
 	}
 
-	constexpr Bitboard operator|(const Bitboard &rhs) const noexcept
+	force_inline constexpr Bitboard operator|(const Bitboard &rhs) const noexcept
 	{
 		return Bitboard{ _value | rhs._value };
 	}
 
-	constexpr Bitboard operator&(const Bitboard &rhs) const noexcept
+	force_inline constexpr Bitboard operator&(const Bitboard &rhs) const noexcept
 	{
 		return Bitboard{ _value & rhs._value };
 	}
 
-	constexpr Bitboard operator^(const Bitboard &rhs) const noexcept
+	force_inline constexpr Bitboard operator^(const Bitboard &rhs) const noexcept
 	{
 		return Bitboard{ _value ^ rhs._value };
 	}
 
-	constexpr Bitboard operator~() const noexcept
+	force_inline constexpr Bitboard operator~() const noexcept
 	{
 		return Bitboard{ ~_value };
 	}
 
-	constexpr Bitboard operator<<(const u64 rhs) const noexcept
+	force_inline constexpr Bitboard operator<<(const u64 rhs) const noexcept
 	{
 		return Bitboard{ _value << rhs };
 	}
 
-	constexpr Bitboard operator>>(const u64 rhs) const noexcept
+	force_inline constexpr Bitboard operator>>(const u64 rhs) const noexcept
 	{
 		return Bitboard{ _value >> rhs };
 	}
@@ -343,27 +348,27 @@ public:
 
 	// region Static Functions
 
-	static constexpr Bitboard fromSquare(const Square square) noexcept
+	static force_inline constexpr Bitboard fromSquare(const Square square) noexcept
 	{
 		return Bitboard{ Bits::Squares[u8(square)] };
 	}
 
-	static constexpr Bitboard fromDirection(const Dir direction, const Square square) noexcept
+	static force_inline constexpr Bitboard fromDirection(const Dir direction, const Square square) noexcept
 	{
 		return Bitboard{ Bits::Direction[direction][u8(square)] };
 	}
 
-	static constexpr Bitboard fromBetween(const Square sq1, const Square sq2) noexcept
+	static force_inline constexpr Bitboard fromBetween(const Square sq1, const Square sq2) noexcept
 	{
 		return BetweenSquares[u8(sq1)][u8(sq2)];
 	}
 
-	static constexpr Bitboard fromLine(const Square sq1, const Square sq2) noexcept
+	static force_inline constexpr Bitboard fromLine(const Square sq1, const Square sq2) noexcept
 	{
 		return fromBetween(sq1, sq2) | fromSquare(sq1) | fromSquare(sq2);
 	}
 
-	static constexpr Bitboard fromRank(const Square square) noexcept
+	static force_inline constexpr Bitboard fromRank(const Square square) noexcept
 	{
 		constexpr auto Ranks = []
 		{
@@ -376,7 +381,7 @@ public:
 		return Ranks[rankOf(square)];
 	}
 
-	static constexpr Bitboard fromFile(const Square square) noexcept
+	static force_inline constexpr Bitboard fromFile(const Square square) noexcept
 	{
 		constexpr auto Files = []
 		{
@@ -389,13 +394,13 @@ public:
 		return Files[fileOf(square)];
 	}
 
-	static constexpr Bitboard fromAdjacentFiles(const Square square) noexcept
+	static force_inline constexpr Bitboard fromAdjacentFiles(const Square square) noexcept
 	{
 		const auto file = fromFile(square);
 		return file.shift<WEST>() | file.shift<EAST>();
 	}
 
-	static constexpr bool areAligned(const Square sq1, const Square sq2, const Square sq3) noexcept
+	static force_inline constexpr bool areAligned(const Square sq1, const Square sq2, const Square sq3) noexcept
 	{
 		return (SquaresLine[sq1][sq2] & fromSquare(sq3)).notEmpty();
 	}

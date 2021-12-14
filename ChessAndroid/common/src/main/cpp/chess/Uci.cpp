@@ -135,21 +135,21 @@ void Uci::setOption(std::istringstream &is)
 	std::string token;
 	is >> token;
 
-	if (token == "threads")
+	if (token == "Threads")
 	{
 		usize threadCount{};
 		is >> threadCount;
-		_threadCount = std::clamp<usize>(threadCount, 1u, 64u);
+		_threadCount = std::clamp<usize>(threadCount, 1u, 128u);
 
 		std::cout << "Thread Count has been set to " << _threadCount << std::endl;
-	} else if (token == "hash")
+	} else if (token == "Hash")
 	{
 		usize hashSize{};
 		is >> hashSize;
-		_hashSizeMb = std::clamp<usize>(hashSize, 4u, 4096u);
+		_hashSizeMb = std::clamp<usize>(hashSize, 2u, 8192u);
 
 		std::cout << "Hash Size has been set to " << _hashSizeMb << "MB" << std::endl;
-	} else if (token == "bookpath")
+	} else if (token == "BookPath")
 	{
 		is >> token;
 		if (token == "null")
@@ -276,6 +276,9 @@ void Uci::parsePosition(std::istringstream &is)
 void Uci::printEngineInfo()
 {
 	std::cout << "id name LuckyEngine\n"
-			  << "id author Filea (TheLuckyCoder) Razvan\n"
+			  << "id author Filea (TheLuckyCoder) Filea Razvan\n\n"
+              << "option name Threads type spin default 1 min 1 max 128\n"
+              << "option name Hash type spin default 64 min 2 max 8192\n"
+              << "option name BookPath type string\n"
 			  << "uciok" << std::endl;
 }

@@ -5,6 +5,16 @@
 #include <cassert>
 #include <algorithm>
 
+#ifdef NDEBUG
+    #ifdef _MSC_VER
+        #define force_inline inline __forceinline
+    #else
+        #define force_inline inline __attribute__((always_inline))
+    #endif
+#else
+    #define force_inline inline
+#endif
+
 using i8 = std::int8_t;
 using i16 = std::int16_t;
 using i32 = std::int32_t;
@@ -27,7 +37,7 @@ enum
 	COLOR_NB = 2
 };
 
-constexpr Color operator~(const Color c) noexcept
+force_inline constexpr Color operator~(const Color c) noexcept
 {
 	return Color(c ^ WHITE); // Toggle color
 }
@@ -111,17 +121,17 @@ enum Square : u8
 	SQUARE_NB = 64
 };
 
-inline constexpr Square toSquare(const u8 square) noexcept
+force_inline constexpr Square toSquare(const u8 square) noexcept
 {
 	return static_cast<Square>(square);
 }
 
-inline constexpr Square &operator++(Square &square) noexcept
+force_inline constexpr Square &operator++(Square &square) noexcept
 {
 	return square = static_cast<Square>(square + 1u);
 }
 
-inline constexpr Square toSquare(const u8 x, const u8 y) noexcept
+force_inline constexpr Square toSquare(const u8 x, const u8 y) noexcept
 {
 	return static_cast<Square>((y << 3u) + x);
 }
@@ -151,12 +161,12 @@ constexpr Square shift(const Square square) noexcept
 	return toSquare(square + s);
 }
 
-inline constexpr Square capturedEnPassantSq(const Color colorToMove, const Square enPassantSq) noexcept
+force_inline constexpr Square capturedEnPassantSq(const Color colorToMove, const Square enPassantSq) noexcept
 {
 	return (colorToMove == WHITE) ? shift<SOUTH>(enPassantSq) : shift<NORTH>(enPassantSq);
 }
 
-inline constexpr Square shiftToKingRank(const Color colorToMove, const Square square) noexcept
+force_inline constexpr Square shiftToKingRank(const Color colorToMove, const Square square) noexcept
 {
 	if (colorToMove == BLACK)
 		return toSquare(square + 56u);

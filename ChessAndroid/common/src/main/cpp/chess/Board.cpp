@@ -285,7 +285,7 @@ bool Board::doesMoveGiveCheck(const Move move) const noexcept
 				& Bitboard::fromSquare(enemyKingSq)).notEmpty();
 	}
 
-	if (flags.kSideCastle() | flags.qSideCastle())
+	if (flags.kSideCastle() || flags.qSideCastle())
 	{
 		Square rookFrom, rookTo;
 
@@ -457,17 +457,17 @@ Bitboard Board::findBlockers(const Bitboard sliders, const Color color, Bitboard
 	pinners = {};
 
 	const Square kingSq = getKingSq(color);
-	const auto rooks = Attacks::rookXRayAttacks(kingSq) & (getPieces(ROOK) | getPieces(QUEEN));
-	const auto bishops = Attacks::bishopXRayAttacks(kingSq) & (getPieces(BISHOP) | getPieces(QUEEN));
+	const auto rooks = Attacks::rookXRayAttacks(kingSq) & getPieces(ROOK, QUEEN);
+	const auto bishops = Attacks::bishopXRayAttacks(kingSq) & getPieces(BISHOP, QUEEN);
 	Bitboard hiddenPinners = (rooks | bishops) & sliders;
-	const Bitboard occupancy = getPieces() & ~hiddenPinners;
+	const Bitboard occupancy = getPieces() ^ hiddenPinners;
 
 	while (hiddenPinners.notEmpty())
 	{
 		const Square hiddenSq = hiddenPinners.popLsb();
 		const auto ray = Bitboard::fromBetween(kingSq, hiddenSq) & occupancy;
 
-		if (ray.notEmpty() && !ray.several())
+		if (ray.onlyOne())
 		{
 			blockers |= ray;
 			if ((getPieces(color) & ray).notEmpty())

@@ -20,27 +20,27 @@ public:
 	Piece &operator=(const Piece &other) = default;
 	Piece &operator=(Piece &&other) = default;
 
-	constexpr bool operator==(const Piece &other) const noexcept
+	force_inline constexpr bool operator==(const Piece &other) const noexcept
 	{
 		return _piece == other._piece;
 	}
 
-	constexpr bool operator==(const PieceType pieceType) const noexcept
+    force_inline constexpr bool operator==(const PieceType pieceType) const noexcept
 	{
 		return type() == pieceType;
 	}
 
-	[[nodiscard]] constexpr Color color() const noexcept
+	[[nodiscard]] force_inline constexpr Color color() const noexcept
 	{
 		return static_cast<Color>(_piece >> 3u);
 	}
 
-	[[nodiscard]] constexpr PieceType type() const noexcept
+	[[nodiscard]] force_inline constexpr PieceType type() const noexcept
 	{
 		return static_cast<PieceType>(_piece & 7u);
 	}
 
-	[[nodiscard]] constexpr bool isValid() const noexcept
+	[[nodiscard]] force_inline constexpr bool isValid() const noexcept
 	{
 		return isValid(type());
 	}
@@ -48,18 +48,18 @@ public:
 	/*
 	 * Flip the color of the piece
 	 */
-	constexpr Piece operator~() const noexcept
+    force_inline  constexpr Piece operator~() const noexcept
 	{
 		// Flip the 4-th bit
 		return Piece(_piece ^ 8u);
 	}
 
-	constexpr operator u8() const noexcept
+    force_inline  constexpr operator u8() const noexcept
 	{
 		return static_cast<u8>(_piece);
 	}
 
-	static constexpr bool isValid(const PieceType type) noexcept
+	static force_inline  constexpr bool isValid(const PieceType type) noexcept
 	{
 		return PAWN <= type && type <= KING;
 	}

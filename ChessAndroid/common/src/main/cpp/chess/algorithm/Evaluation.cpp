@@ -161,21 +161,21 @@ struct Eval
 
 private:
 	template <Color Us>
-	Score evaluatePieces() noexcept;
+    [[nodiscard]] Score evaluatePieces() noexcept;
 	template <Color Us>
-	Score evaluateAttacks() const noexcept;
+	[[nodiscard]] Score evaluateAttacks() const noexcept;
 	template <Color Us>
-	Score evaluatePawn(Square square) const noexcept;
+	[[nodiscard]] Score evaluatePawn(Square square) const noexcept;
 	template <Color Us>
-	Score evaluateKnight(Square square) const noexcept;
+	[[nodiscard]] Score evaluateKnight(Square square) const noexcept;
 	template <Color Us>
-	Score evaluateBishop(Square square) const noexcept;
+	[[nodiscard]] Score evaluateBishop(Square square) const noexcept;
 	template <Color Us>
-	Score evaluateRook(Square square) const noexcept;
+	[[nodiscard]] Score evaluateRook(Square square) const noexcept;
 	template <Color Us>
-	Score evaluateQueen(Square square) const noexcept;
+	[[nodiscard]] Score evaluateQueen(Square square) const noexcept;
 	template <Color Us>
-	Score evaluateKing() const noexcept;
+	[[nodiscard]] Score evaluateKing() const noexcept;
 
 	const Board &board;
 	Traces *_trace = nullptr;
