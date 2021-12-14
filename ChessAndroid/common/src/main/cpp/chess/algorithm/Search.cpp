@@ -12,14 +12,14 @@
 #include "../polyglot/PolyBook.h"
 
 static constexpr int WINDOW_MIN_DEPTH = 5;
-static constexpr int WINDOW_SIZE = 15;
+static constexpr int WINDOW_SIZE = 12;
 
 static constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
 static constexpr int REVERSE_FUTILITY_MARGIN = 220;
 
 static constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
 static constexpr int FUTILITY_MARGIN = 160;
-static constexpr int FUTILITY_MAX_DEPTH = 6;
+static constexpr int FUTILITY_MAX_DEPTH = 8;
 
 static thread_local Thread *localThreadInfo = nullptr;
 
@@ -308,7 +308,7 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	// Probe the Transposition Table
 	{
 		const auto probeResult = _transpositionTable.probe(board.zKey());
-		// Only cut with a with a greater depth and if this is not a PvNode
+		// Only cut with a greater depth and if this is not a PvNode
 		if (probeResult.has_value()
 			&& !probeResult->qSearch()
 			&& probeResult->depth() >= depth

@@ -3,7 +3,7 @@
 [![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/Android%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
 [![Actions Status](https://github.com/TheLuckyCoder/ChessEngine/workflows/C++%20CI/badge.svg)](https://github.com/TheLuckyCoder/ChessEngine/actions)
 
-An UCI-compatible Chess Engine written in C++20 with an Android UI written in Jetpack Compose.
+An UCI-compatible Chess Engine written in C++20 with an Android and WearOS UI written in Jetpack Compose.
 
 This project uses the evaluation values (in the file Evaluation.cpp) from the Stockfish Chess Engine, licensed under GNU GPL 3.0.
 
@@ -42,12 +42,12 @@ This project uses the evaluation values (in the file Evaluation.cpp) from the St
 
 ## Building
 
-### Android
+### Android and WearOS
 
 To build the for project for Android you will need at least:
  - Android Studio Arctic Fox
- - Android SDK Version 30 (Android 12)
- - NDK 22.1.7171670
+ - Android SDK Version 31 (Android 12)
+ - NDK 23.1.7779620
 
 ### Linux
 
@@ -56,7 +56,7 @@ To build the for project for Linux you will need at least:
  - CMake 3.18
  - C++20 Compiler:
     * GCC 10
-    * Clang 12
+    * Clang 13
 
 ## Compatible Interfaces
 

@@ -21,7 +21,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG_C
 target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_RELWITHDEBINFO_COMPILE}>")
 target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE_COMPILE}>")
 
-target_link_options(${PROJECT_NAME} PUBLIC -fuse-ld=lld -stdlib=libc++ -lc++abi)
+target_link_options(${PROJECT_NAME} PUBLIC -fuse-ld=lld) # -stdlib=libc++ -lc++abi
 target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG_LINK}>")
 target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_DEBUG_LINK}>")
 target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE_LINK}>")
