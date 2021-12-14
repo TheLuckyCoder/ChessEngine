@@ -13,13 +13,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import net.theluckycoder.chess.cpp.Native
 import net.theluckycoder.chess.R
-import net.theluckycoder.chess.model.GameState
-import net.theluckycoder.chess.ui.AlertDialogTitle
-import net.theluckycoder.chess.ui.ChooseSidesToggle
-import net.theluckycoder.chess.utils.Pgn
-import net.theluckycoder.chess.viewmodel.HomeViewModel
+import net.theluckycoder.chess.common.Pgn
+import net.theluckycoder.chess.common.cpp.Native
+import net.theluckycoder.chess.common.model.GameState
+import net.theluckycoder.chess.common.ui.ChooseSidesToggle
+import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -52,7 +51,7 @@ private fun NewGameDialog(viewModel: HomeViewModel = viewModel()) {
 
     AlertDialog(
         onDismissRequest = { viewModel.showNewGameDialog.value = false },
-        title = { AlertDialogTitle(text = stringResource(id = R.string.new_game)) },
+        title = { Text(stringResource(id = R.string.new_game)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -120,7 +119,7 @@ private fun SharePositionDialog(viewModel: HomeViewModel = viewModel()) {
 
     AlertDialog(
         onDismissRequest = { viewModel.showShareDialog.value = false },
-        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_pgn_position_share)) },
+        title = { Text(stringResource(id = R.string.fen_pgn_position_share)) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
@@ -181,7 +180,7 @@ private fun ImportPositionDialog(viewModel: HomeViewModel = viewModel()) {
 
     AlertDialog(
         onDismissRequest = { viewModel.showImportDialog.value = false },
-        title = { AlertDialogTitle(text = stringResource(id = R.string.fen_position_load)) },
+        title = { Text(stringResource(id = R.string.fen_position_load)) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 TextField(
@@ -271,7 +270,7 @@ private fun GameFinishedDialog(gameState: GameState) {
 
     AlertDialog(
         onDismissRequest = { showDialog = false },
-        title = { AlertDialogTitle(text = stringResource(id = messageRes)) },
+        title = { Text(stringResource(id = messageRes)) },
         confirmButton = {
             TextButton(onClick = { showDialog = false }) {
                 Text(text = stringResource(id = android.R.string.ok))

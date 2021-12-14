@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lucky Chess</string>
+    <string name="debug_stats">Time Needed: %s\nCurrent Board Evaluation: %d\n%s</string>
+    <string name="new_game">New Game</string>
+    <string name="side">Side:</string>
+    <string name="side_white">White Side</string>
+    <string name="side_black">Black Side</string>
+    <string name="side_random">Random Side</string>
+    <string name="difficulty_level">Difficulty Level: %d</string>
+    <string name="promotion_choose_piece">Choose a Piece to promote</string>
+    <string name="title_settings">Settings</string>
+    <string name="victory_white">White has won!</string>
+    <string name="victory_black">Black has won!</string>
+    <string name="draw">Draw</string>
+    <string name="invalid_game">Oops! The position is invalid</string>
+
+    <!-- Actions -->
+    <string name="action_start">Start</string>
+    <string name="action_load">Load</string>
+    <string name="action_more_options">More Options</string>
+    <string name="action_undo_move">Undo Move</string>
+    <string name="action_redo_move">Redo Move</string>
+    <string name="action_close">Close</string>
+    <string name="action_make_engine_move">Make Engine Move</string>
+    <string name="action_stop_search">Force Stop Search</string>
+    <string name="action_resume">Resume</string>
+
+    <!-- FEN/PGN -->
+    <string name="fen_pgn_position_share">Share Game Position</string>
+    <string name="fen_position_current">Current\'s game FEN Position:</string>
+    <string name="fen_position_load">Load FEN Position</string>
+    <string name="fen_position_loaded">FEN Position Loaded</string>
+    <string name="fen_position_error">FEN Position could not be loaded</string>
+    <string name="fen_position_error_empty">FEN Position can not be empty</string>
+    <string name="fen_position_copied">FEN copied to Clipboard</string>
+    <string name="pgn_position_copied">PGN copied to Clipboard</string>
+    <string name="action_fen_copy">Copy FEN</string>
+    <string name="action_pgn_copy">Copy PGN</string>
+
+    <!-- Preferences -->
+    <string name="pref_category_appearance">Appearance</string>
+    <string name="pref_coordinates">Coordinates</string>
+    <string name="pref_coordinates_desc">Display Coordinates alongside the board</string>
+    <string name="pref_moves_history">Moves History</string>
+    <string name="pref_moves_history_desc">Display all previously made moves</string>
+    <string name="pref_captured_pieces">Captured Pieces</string>
+    <string name="pref_captured_pieces_desc">Display all captured pieces by either side</string>
+    <string name="pref_piece_destinations">Piece Destinations</string>
+    <string name="pref_piece_destinations_desc">Display legal moves for selected pieces</string>
+    <string name="pref_center_board">Center Board</string>
+    <string name="pref_center_board_desc">Places the board in the middle on the screen when in portrait orientation</string>
+
+    <string name="pref_category_difficulty">Difficulty</string>
+    <string name="pref_search_depth">Search Depth</string>
+    <string name="pref_search_depth_desc">The maximum amount of moves that the engine may look ahead. (This is set by the difficulty)</string>
+    <string name="pref_quiet_search">Quiet Search (Recommended)</string>
+    <string name="pref_quiet_search_desc">Perform a Quiescence Search at the end of each normal search. (This is set by the difficulty)</string>
+    <string name="pref_search_time">Search Time</string>
+    <string name="pref_search_time_desc">The maximum time the engine is allowed to think in seconds</string>
+
+    <string name="pref_category_other">Other Algorithm Settings</string>
+    <string name="pref_allow_opening_book">Allow Opening Book</string>
+    <string name="pref_allow_opening_book_desc">Allow the engine to use an Opening Book in the beginning of the game in order to make random moves</string>
+    <string name="pref_thread_count">Thread Count</string>
+    <string name="pref_thread_count_desc">Number of Search Threads to be used</string>
+    <string name="pref_cache_size">Cache Size</string>
+    <string name="pref_cache_size_desc">Specify the size of the Transposition Table in Megabytes</string>
+
+    <!-- About -->
+    <string name="pref_category_about">About</string>
+    <string name="about_author">Author</string>
+    <string name="about_source_code">Source Code</string>
+
+    <string name="pref_category_debug">Debugging</string>
+    <string name="pref_debug_basic">Enable Debug Info</string>
+    <string name="pref_debug_basic_desc">Displays Board Evaluation, Search Time and enables some debug options</string>
+    <string name="pref_debug_advanced">Enable Advanced Debug Info</string>
+    <string name="pref_debug_advanced_desc">Displays various statistics helpful for debugging</string>
+</resources>

@@ -1,1 +1,3 @@
 include ':app'
+include ':wearos'
+include ':common'

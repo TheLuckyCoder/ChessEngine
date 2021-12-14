@@ -7,11 +7,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import net.theluckycoder.chess.cpp.Native
-import net.theluckycoder.chess.model.SearchOptions
-import net.theluckycoder.chess.utils.SettingsDataStore
+import net.theluckycoder.chess.common.SettingsDataStore
+import net.theluckycoder.chess.common.cpp.Native
+import net.theluckycoder.chess.common.model.SearchOptions
 import java.io.File
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 @Suppress("unused")
@@ -34,7 +35,7 @@ class ChessApp : Application() {
                 if (dataStore.firstStart().first()) {
                     // Set the default Engine Settings from native code
                     val engineSettings = SearchOptions.getNativeSearchOptions()
-                        .copy(searchTime = Duration.seconds(SettingsDataStore.DEFAULT_SEARCH_TIME))
+                        .copy(searchTime = SettingsDataStore.DEFAULT_SEARCH_TIME.seconds)
                     dataStore.setEngineSettings(engineSettings)
                     dataStore.setFirstStart(false)
                 }

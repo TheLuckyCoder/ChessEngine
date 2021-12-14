@@ -1,14 +1,11 @@
 buildscript {
-    val kotlinVersion: String by rootProject.extra("1.5.21")
-    val composeVersion: String by rootProject.extra("1.1.0-alpha02")
-
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.0.1")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+        classpath("com.android.tools.build:gradle:7.0.4")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
     }
 }
 
