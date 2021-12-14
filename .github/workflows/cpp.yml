@@ -9,10 +9,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        compiler: [clang++-12]
+        compiler: [clang++-13]
     steps:
     - name: Checkout
       uses: actions/checkout@v2.0.0
+    - name: Set up Clang
+      uses: egor-tensin/setup-clang@v1
     - name: Build project
       env:
           CXX: ${{ matrix.compiler }}
