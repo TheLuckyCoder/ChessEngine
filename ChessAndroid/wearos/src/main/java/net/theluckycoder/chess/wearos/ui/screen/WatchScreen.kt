@@ -2,37 +2,20 @@ package net.theluckycoder.chess.wearos.ui.screen
 
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.material.ExperimentalWearMaterialApi
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material.*
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -55,16 +38,16 @@ object WatchScreen : Screen {
         val isThinking by viewModel.isEngineBusy.collectAsState()
 
         Scaffold(
-            timeText = {
+            /*timeText = {
                 TimeText(
                     leadingCurvedContent = if (isThinking) {
-                        { AnimatedHourGlass() }
+                        {  }
                     } else null,
                     leadingLinearContent = if (isThinking) {
                         { AnimatedHourGlass() }
                     } else null,
                 )
-            },
+            },*/
             vignette = {
                 Vignette(vignettePosition = VignettePosition.Top)
             }
@@ -97,6 +80,20 @@ object WatchScreen : Screen {
                 }
 
                 item {
+                    if (isThinking) {
+                        Box(Modifier.fillMaxWidth()) {
+                            Box(Modifier.align(Alignment.TopCenter)) {
+                                AnimatedHourGlass()
+                            }
+                        }
+
+                        Spacer(Modifier.height(2.dp))
+                    } else {
+                        Spacer(Modifier.height(20.dp))
+                    }
+                }
+
+                item {
                     WatchChessBoard(viewModel)
                 }
 
@@ -118,11 +115,13 @@ object WatchScreen : Screen {
     @OptIn(ExperimentalAnimationGraphicsApi::class)
     @Composable
     private fun AnimatedHourGlass() {
-        val icon = animatedVectorResource(R.drawable.ic_animated_hourglass)
         var atEnd by remember { mutableStateOf(false) }
 
+        val animatedVector =
+            AnimatedImageVector.animatedVectorResource(R.drawable.ic_animated_hourglass)
+
         Icon(
-            painter = icon.painterFor(atEnd = atEnd),
+            painter = rememberAnimatedVectorPainter(animatedVector, atEnd),
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colors.onSurface,
             contentDescription = null,

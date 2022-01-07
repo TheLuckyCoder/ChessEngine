@@ -17,7 +17,8 @@ object Versions {
     }
 
     const val kotlin = "1.6.0"
-    const val kotlinCoroutines = "1.5.2"
-    const val compose = "1.1.0-beta04"
-    const val voyager = "1.0.0-beta13"
+    const val kotlinCoroutines = "1.6.0"
+    const val compose = "1.1.0-rc01"
+    const val composeCompiler = "1.1.0-rc01"
+    const val voyager = "1.0.0-beta14"
 }
