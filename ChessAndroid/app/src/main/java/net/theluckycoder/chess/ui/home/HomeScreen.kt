@@ -7,35 +7,13 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -226,11 +204,11 @@ private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
             enter = expandIn(expandFrom = Alignment.CenterStart),
             exit = shrinkOut(shrinkTowards = Alignment.CenterStart),
         ) {
-            val icon = animatedVectorResource(R.drawable.ic_animated_hourglass)
             var atEnd by remember { mutableStateOf(false) }
+            val icon = AnimatedImageVector.animatedVectorResource(R.drawable.ic_animated_hourglass)
 
             Icon(
-                painter = icon.painterFor(atEnd = atEnd),
+                painter = rememberAnimatedVectorPainter(icon, atEnd),
                 modifier = Modifier.size(18.dp),
                 contentDescription = null,
             )

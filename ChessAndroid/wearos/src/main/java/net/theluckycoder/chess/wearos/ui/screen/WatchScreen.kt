@@ -38,16 +38,6 @@ object WatchScreen : Screen {
         val isThinking by viewModel.isEngineBusy.collectAsState()
 
         Scaffold(
-            /*timeText = {
-                TimeText(
-                    leadingCurvedContent = if (isThinking) {
-                        {  }
-                    } else null,
-                    leadingLinearContent = if (isThinking) {
-                        { AnimatedHourGlass() }
-                    } else null,
-                )
-            },*/
             vignette = {
                 Vignette(vignettePosition = VignettePosition.Top)
             }
@@ -117,11 +107,10 @@ object WatchScreen : Screen {
     private fun AnimatedHourGlass() {
         var atEnd by remember { mutableStateOf(false) }
 
-        val animatedVector =
-            AnimatedImageVector.animatedVectorResource(R.drawable.ic_animated_hourglass)
+        val icon = AnimatedImageVector.animatedVectorResource(R.drawable.ic_animated_hourglass)
 
         Icon(
-            painter = rememberAnimatedVectorPainter(animatedVector, atEnd),
+            painter = rememberAnimatedVectorPainter(icon, atEnd),
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colors.onSurface,
             contentDescription = null,
