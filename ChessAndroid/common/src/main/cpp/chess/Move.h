@@ -5,7 +5,7 @@
 #include "Defs.h"
 #include "Bitfield.h"
 
-class Move final
+class SimpleMove
 {
 public:
 	class Flags final
@@ -45,78 +45,71 @@ public:
 		u8 _flags;
 	};
 
-	constexpr Move() = default;
+	constexpr SimpleMove() = default;
 
-	explicit constexpr Move(const u32 move, const i32 score = 0) noexcept
-		: _move(move), _score(score)
+	explicit constexpr SimpleMove(const u32 move) noexcept
+		: _move(move)
 	{
 	}
 
-	constexpr Move(const u8 from, const u8 to, const PieceType piece) noexcept
+	constexpr SimpleMove(const u8 from, const u8 to, const PieceType piece) noexcept
 	{
 		_move.set<0>(from);
 		_move.set<1>(to);
 		_move.setAs<2>(piece);
 	}
 
-	constexpr Move(const u8 from, const u8 to, const PieceType piece, const u8 flags) noexcept
-		: Move(from, to, piece)
+	constexpr SimpleMove(const u8 from, const u8 to, const PieceType piece, const u8 flags) noexcept
+		: SimpleMove(from, to, piece)
 	{
 		setFlags(flags);
 	}
 
-	[[nodiscard]] constexpr bool empty() const noexcept { return !static_cast<bool>(_move.value()); }
+	[[nodiscard]] force_inline constexpr bool empty() const noexcept { return !static_cast<bool>(_move.value()); }
 
-	[[nodiscard]] constexpr u32 getContents() const noexcept { return _move.value(); }
+	[[nodiscard]] force_inline constexpr u32 getContents() const noexcept { return _move.value(); }
 
-	[[nodiscard]] constexpr i32 getScore() const noexcept { return _score; }
-
-	constexpr void setScore(const int score) noexcept
-	{
-		_score = score;
-	}
-
-	[[nodiscard]] constexpr Square from() const noexcept
+	[[nodiscard]] force_inline constexpr Square from() const noexcept
 	{
 		return toSquare(_move.get<0>());
 	}
 
-	[[nodiscard]] constexpr Square to() const noexcept
+	[[nodiscard]] force_inline constexpr Square to() const noexcept
 	{
 		return toSquare(_move.get<1>());
 	}
 
-	[[nodiscard]] constexpr PieceType piece() const noexcept
+	[[nodiscard]] force_inline constexpr PieceType piece() const noexcept
 	{
 		return _move.getAs<2, PieceType>();
 	}
 
-	[[nodiscard]] constexpr PieceType capturedPiece() const noexcept
+	[[nodiscard]] force_inline constexpr PieceType capturedPiece() const noexcept
 	{
 		return _move.getAs<3, PieceType>();
 	}
 
-	constexpr void setCapturedPiece(const PieceType type) noexcept
+	force_inline constexpr void setCapturedPiece(const PieceType type) noexcept
 	{
 		_move.setAs<3>(type);
 	}
 
-	[[nodiscard]] constexpr PieceType promotedPiece() const noexcept
+	[[nodiscard]] force_inline constexpr PieceType promotedPiece() const noexcept
 	{
 		return _move.getAs<4, PieceType>();
 	}
 
-	constexpr void setPromotedPiece(const PieceType type) noexcept
+	force_inline constexpr void setPromotedPiece(const PieceType type) noexcept
 	{
 		_move.setAs<4>(type);
 	}
 
-	[[nodiscard]] constexpr Flags flags() const noexcept
+	[[nodiscard]] force_inline constexpr Flags flags() const noexcept
 	{
 		return _move.getAs<5, Flags>();
 	}
 
-	constexpr void setFlags(const u8 flags) noexcept
+	force_inline constexpr void setFlags(const u8 flags) noexcept
 	{
 		_move.set<5>(flags);
 	}
@@ -133,12 +126,12 @@ public:
 		return _move.value() & Mask;
 	}
 
-	constexpr bool operator==(const Move &rhs) const noexcept
+	constexpr bool operator==(const SimpleMove &rhs) const noexcept
 	{
 		return _move.value() == rhs._move.value();
 	}
 
-	constexpr bool operator!=(const Move &rhs) const noexcept
+	constexpr bool operator!=(const SimpleMove &rhs) const noexcept
 	{
 		return _move.value() != rhs._move.value();
 	}
@@ -204,5 +197,37 @@ private:
 	 * Bits 21 to 27 (7 bits) - 'flags'
 	 */
 	Bitfield<u32, 6, 6, 3, 3, 3, 7> _move{};
+};
+
+class Move : public SimpleMove
+{
+public:
+	constexpr Move() = default;
+
+	explicit constexpr Move(const SimpleMove &move) noexcept
+		: SimpleMove(move)
+	{
+	}
+
+	explicit constexpr Move(const u32 move, const i32 score = 0) noexcept
+		: SimpleMove(move), _score(score)
+	{
+	}
+
+	constexpr Move(const u8 from, const u8 to, const PieceType piece, const u8 flags = 0u) noexcept
+		: SimpleMove(from, to, piece, flags)
+	{
+	}
+
+	[[nodiscard]] force_inline constexpr SimpleMove move() const noexcept { return SimpleMove(getContents()); }
+
+	[[nodiscard]] force_inline constexpr i32 getScore() const noexcept { return _score; }
+
+	force_inline constexpr void setScore(const int score) noexcept
+	{
+		_score = score;
+	}
+
+private:
 	i32 _score{};
 };

@@ -14,7 +14,7 @@
 static constexpr int WINDOW_MIN_DEPTH = 5;
 static constexpr int WINDOW_SIZE = 12;
 
-static constexpr int REVERSE_FUTILITY_MAX_DEPTH = 6;
+static constexpr int REVERSE_FUTILITY_MAX_DEPTH = 8;
 static constexpr int REVERSE_FUTILITY_MARGIN = 220;
 
 static constexpr int FUTILITY_QUIESCENCE_MARGIN = 100;
@@ -305,8 +305,21 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 	const int startPly = board.ply;
 	auto &&thread = threadInfo();
 
-	// Probe the Transposition Table
+	const bool nodeInCheck = board.isSideInCheck();
+	int eval = thread.evalStack[startPly] = VALUE_NONE;
+	int improvement{};
+
+	if (!nodeInCheck)
 	{
+		auto &&evalStack = thread.evalStack;
+		evalStack[startPly] = eval = Evaluation::invertedValue(board);
+		improvement =
+			(startPly > 2 && evalStack[startPly - 2] != VALUE_NONE) ? (eval - evalStack[startPly - 2])
+																	: (startPly > 4 &&
+																	   evalStack[startPly - 4] != VALUE_NONE)
+																	  ? (eval - evalStack[startPly - 4]) : 200;
+
+		// Probe the Transposition Table
 		const auto probeResult = _transpositionTable.probe(board.zKey());
 		// Only cut with a greater depth and if this is not a PvNode
 		if (probeResult.has_value()
@@ -324,27 +337,24 @@ int Search::search(Board &board, int alpha, int beta, const int depth, const boo
 		}
 	}
 
-	const int eval = Evaluation::invertedValue(board);
-	const bool nodeInCheck = board.isSideInCheck();
-	thread.evalStack[startPly] = eval;
-
 	// We are improving if our static eval increased in the last move
-	const bool improving = startPly > 1 && (eval > thread.evalStack[startPly - 2]);
+	const bool improving = startPly > 1 && improvement > 0;
 	const int futilityMarginEval = eval + FUTILITY_MARGIN * depth;
 
 	// Reverse Futility Pruning
 	if (!isPvNode
 		&& !nodeInCheck
-		&& depth <= REVERSE_FUTILITY_MAX_DEPTH
-		&& (eval - REVERSE_FUTILITY_MARGIN * std::max(1, depth - improving)) >= beta)
+		&& depth < REVERSE_FUTILITY_MAX_DEPTH
+		&& (eval - REVERSE_FUTILITY_MARGIN * std::max(1, depth - improving)) >= beta
+		&& eval < VALUE_MATE / 2)
 		return eval;
 
 	// Null Move Pruning
 	if (!isPvNode
 		&& doNull
-		&& depth >= 4
-		&& eval >= beta
 		&& !nodeInCheck
+		&& depth >= 4
+		&& eval >= beta - 20 * depth - improvement / 15 + 204
 		&& (board.getPieces(QUEEN, board.colorToMove) | board.getPieces(ROOK, board.colorToMove)).notEmpty())
 	{
 		board.makeNullMove();

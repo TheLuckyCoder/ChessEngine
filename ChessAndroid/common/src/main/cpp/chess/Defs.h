@@ -75,8 +75,9 @@ enum Phase : u8
 	MIDDLE_GAME_PHASE = 128
 };
 
-enum Value : short
+enum Value : i16
 {
+	VALUE_NONE = 32700,
 	VALUE_MAX = 32001,
 	VALUE_MIN = -VALUE_MAX,
 	VALUE_MATE = VALUE_MAX - 1,

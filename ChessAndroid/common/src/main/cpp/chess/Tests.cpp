@@ -297,8 +297,8 @@ namespace Tests
 				  << setw(ColumnW) << "Seconds" << Pipe
 				  << setw(ColumnW) << "Expected" << Pipe
 				  << setw(ColumnW) << "Nodes" << Pipe
-				  << setw(ColumnW) << "E.P." << Pipe
 				  << setw(ColumnW) << "Captures" << Pipe
+				  << setw(ColumnW) << "E.P." << Pipe
 				  << setw(ColumnW) << "Castles" << Pipe
 				  << setw(ColumnW) << "Promotions" << Pipe
 				  << setw(ColumnW) << "Checks" << Pipe
