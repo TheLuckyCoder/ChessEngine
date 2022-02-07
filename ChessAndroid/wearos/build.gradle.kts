@@ -33,7 +33,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Versions.composeCompiler
+        kotlinCompilerExtensionVersion = Versions.compose
     }
 }
 
@@ -48,6 +48,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configure
 dependencies {
     implementation(project(path = ":common"))
 
-    implementation("androidx.wear.compose:compose-foundation:1.0.0-alpha14")
-    implementation("androidx.wear.compose:compose-material:1.0.0-alpha14")
+    implementation("androidx.wear.compose:compose-foundation:1.0.0-alpha15")
+    implementation("androidx.wear.compose:compose-material:1.0.0-alpha15")
 }

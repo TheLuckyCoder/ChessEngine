@@ -4,36 +4,68 @@ import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.material.*
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
+import androidx.wear.compose.material.ExperimentalWearMaterialApi
+import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.Vignette
+import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material.dialog.Alert
+import androidx.wear.compose.material.dialog.Dialog
 import kotlinx.coroutines.delay
 import net.theluckycoder.chess.common.cpp.Native
+import net.theluckycoder.chess.common.model.Move
 import net.theluckycoder.chess.common.ui.ChessBoard
 import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 import net.theluckycoder.chess.wearos.R
 import net.theluckycoder.chess.wearos.ui.TextIconButton
 import net.theluckycoder.chess.wearos.ui.isScreenRound
 
-object WatchScreen : Screen {
+object WatchScreen {
 
     @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
-    override fun Content() {
+    fun Content() {
         val viewModel: HomeViewModel = viewModel()
         val listState = rememberLazyListState()
+
+        var showNewGameDialog by remember { mutableStateOf(false) }
+
+        if (showNewGameDialog) {
+            Dialog(onDismissRequest = { showNewGameDialog = false }) {
+                NewGameScreen.Content(onDismissRequest = { showNewGameDialog = false })
+            }
+        }
 
         val isThinking by viewModel.isEngineBusy.collectAsState()
 
@@ -53,12 +85,10 @@ object WatchScreen : Screen {
                 }
 
                 item {
-                    val navigator = LocalNavigator.currentOrThrow
-
                     Box(Modifier.fillMaxWidth()) {
                         TextIconButton(
                             modifier = Modifier.align(Alignment.Center),
-                            onClick = { navigator.push(NewGameScreen()) },
+                            onClick = { showNewGameDialog = true },
                             text = stringResource(R.string.new_game)
                         ) {
                             Icon(
@@ -132,6 +162,8 @@ private fun WatchChessBoard(
     val pieces by viewModel.pieces.collectAsState()
     val gameState by viewModel.gameState.collectAsState()
 
+    val showPromotionDialog = remember { mutableStateOf(emptyList<Move>()) }
+
     ChessBoard(
         modifier = Modifier
             .padding(top = 8.dp, bottom = if (isScreenRound()) 8.dp else 2.dp),
@@ -140,8 +172,56 @@ private fun WatchChessBoard(
         pieces = pieces,
         gameState = gameState,
         onPieceClick = { viewModel.showPossibleMoves(it.square) },
-        onShowPromotion = { TODO() }
+        onShowPromotion = { showPromotionDialog.value = it }
     )
+
+    if (showPromotionDialog.value.isNotEmpty())
+        PromotionDialog(showPromotionDialog)
+}
+
+@PreviewParameter
+@Composable
+private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
+    val promotionResources = remember {
+        intArrayOf(
+            R.drawable.w_queen, R.drawable.w_rook,
+            R.drawable.w_knight, R.drawable.w_bishop,
+        )
+    }
+    val piecesPainters = promotionResources.map { painterResource(id = it) }
+
+    Alert(
+        title = {
+            Text(stringResource(id = R.string.promotion_choose_piece))
+        },
+    ) {
+        TODO()
+        piecesPainters.forEachIndexed { index, painter ->
+            Button(
+                colors = ButtonDefaults.secondaryButtonColors(),
+                onClick = {
+                    Native.makeMove(showPromotionDialog.value[index])
+                    showPromotionDialog.value = emptyList()
+                }
+            ) {
+                Image(
+                    modifier = Modifier,
+                    painter = painter, contentDescription = null
+                )
+            }
+        }
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { showPromotionDialog.value = emptyList() }
+        ) {
+            Icon(
+                modifier = Modifier.fillMaxWidth(),
+                painter = painterResource(id = net.theluckycoder.chess.common.R.drawable.ic_close),
+                contentDescription = stringResource(id = android.R.string.cancel)
+            )
+        }
+    }
 }
 
 @Composable

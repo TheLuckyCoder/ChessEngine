@@ -3,10 +3,8 @@ package net.theluckycoder.chess.wearos.ui.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,28 +31,30 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.rememberScalingLazyListState
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import net.theluckycoder.chess.common.ui.ChooseSidesToggle
 import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 import net.theluckycoder.chess.wearos.R
+import net.theluckycoder.chess.wearos.ui.isScreenRound
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-class NewGameScreen : Screen {
+object NewGameScreen {
 
     @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
-    override fun Content() {
+    fun Content(onDismissRequest: () -> Unit) {
         val viewModel: HomeViewModel = viewModel()
 
         val listState = rememberScalingLazyListState()
 
         Scaffold(
             timeText = {
-                CurvedRow {
-                    CurvedText(stringResource(R.string.new_game))
+                if (isScreenRound()) {
+                    CurvedRow {
+                        CurvedText(stringResource(R.string.new_game))
+                    }
+                } else {
+                    Text(stringResource(R.string.new_game))
                 }
             },
             positionIndicator = {
@@ -64,20 +64,14 @@ class NewGameScreen : Screen {
                 Vignette(vignettePosition = VignettePosition.TopAndBottom)
             }
         ) {
-            val navigator = LocalNavigator.currentOrThrow
-
             val sidesToggleIndex = remember { mutableStateOf(0) }
             var difficultyLevel by remember { mutableStateOf(1f) }
 
             ScalingLazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = PaddingValues(vertical = 12.dp, horizontal = 6.dp)
+                contentPadding = PaddingValues(horizontal = 6.dp)
             ) {
-                item {
-                    Spacer(modifier = Modifier.height(48.dp))
-                }
-
                 item {
                     Text(
                         text = stringResource(id = R.string.side),
@@ -122,9 +116,7 @@ class NewGameScreen : Screen {
                     ) {
                         Button(
                             colors = ButtonDefaults.secondaryButtonColors(),
-                            onClick = {
-                                navigator.pop()
-                            }
+                            onClick = onDismissRequest
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_close),
@@ -142,7 +134,7 @@ class NewGameScreen : Screen {
                             viewModel.updateDifficulty(difficultyLevel.roundToInt())
 
                             viewModel.resetBoard(playerWhite)
-                            navigator.pop()
+                            onDismissRequest()
                         }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_done),

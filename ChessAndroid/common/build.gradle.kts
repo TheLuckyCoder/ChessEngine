@@ -69,11 +69,6 @@ dependencies {
     api("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     debugApi("androidx.compose.ui:ui-tooling:$composeVersion")
     api("androidx.compose.animation:animation-graphics:$composeVersion")
-    api("androidx.compose.compiler:compiler:${Versions.composeCompiler}")
+    api("androidx.compose.compiler:compiler:$composeVersion")
     api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
-
-
-    // Voyager Navigation
-    api("cafe.adriel.voyager:voyager-navigator:${Versions.voyager}")
-    api("cafe.adriel.voyager:voyager-transitions:${Versions.voyager}")
 }

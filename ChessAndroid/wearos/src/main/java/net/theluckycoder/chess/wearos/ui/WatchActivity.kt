@@ -14,10 +14,7 @@ class WatchActivity : ComponentActivity() {
 
         setContent {
             ChessMaterialTheme {
-                SwipeDismissableNavigator(WatchScreen)
-//                Navigator(WatchScreen) {
-//                    SlideTransition(it)
-//                }
+                WatchScreen.Content()
             }
         }
     }
