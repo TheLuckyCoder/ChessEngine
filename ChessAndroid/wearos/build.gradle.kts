@@ -5,6 +5,7 @@ plugins {
 }
 
 android {
+    namespace = "net.theluckycoder.chess.wearos"
     compileSdk = Versions.Sdk.compile
 
     defaultConfig {
@@ -33,7 +34,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Versions.compose
+        kotlinCompilerExtensionVersion = Versions.composeCompiler
     }
 }
 
@@ -48,6 +49,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configure
 dependencies {
     implementation(project(path = ":common"))
 
-    implementation("androidx.wear.compose:compose-foundation:1.0.0-alpha15")
-    implementation("androidx.wear.compose:compose-material:1.0.0-alpha15")
+    implementation("androidx.wear.compose:compose-foundation:1.1.0-rc01")
+    implementation("androidx.wear.compose:compose-material:1.1.0-rc01")
 }

@@ -5,8 +5,9 @@ plugins {
 }
 
 android {
+    namespace = "net.theluckycoder.chess.common"
     compileSdk = Versions.Sdk.compile
-    ndkVersion = "23.1.7779620"
+    ndkVersion = "25.1.8937393"
 
     defaultConfig {
         minSdk = Versions.Sdk.min
@@ -19,7 +20,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Versions.compose
+        kotlinCompilerExtensionVersion = Versions.composeCompiler
     }
 
     buildTypes {
@@ -34,7 +35,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            version = "3.18.1"
+            version = "3.22.1"
             path("CMakeLists.txt")
         }
     }
@@ -57,18 +58,17 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.kotlinCoroutines}")
 
     // AndroidX
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
+    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1")
     api("androidx.datastore:datastore-preferences:1.0.0")
-    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
+    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1")
 
     // Compose
-    api("androidx.activity:activity-compose:1.4.0")
+    api("androidx.activity:activity-compose:1.6.1")
     api("androidx.compose.ui:ui:$composeVersion")
     api("androidx.compose.foundation:foundation:$composeVersion")
     implementation("androidx.compose.material:material:$composeVersion")
     api("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     debugApi("androidx.compose.ui:ui-tooling:$composeVersion")
     api("androidx.compose.animation:animation-graphics:$composeVersion")
-    api("androidx.compose.compiler:compiler:$composeVersion")
-    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.0")
+    api("androidx.lifecycle:lifecycle-viewmodel-compose:2.5.1")
 }

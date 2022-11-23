@@ -117,7 +117,7 @@ public:
 	[[nodiscard]] constexpr bool isTactical() const noexcept
 	{
 		const auto f = flags();
-		return f.capture() | f.promotion();
+		return f.capture() || f.promotion();
 	}
 
 	[[nodiscard]] constexpr u16 getFromToBits() const noexcept

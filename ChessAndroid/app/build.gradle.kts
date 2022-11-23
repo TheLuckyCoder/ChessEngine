@@ -5,6 +5,7 @@ plugins {
 }
 
 android {
+    namespace = "net.theluckycoder.chess"
     compileSdk = Versions.Sdk.compile
 
     defaultConfig {
@@ -33,7 +34,7 @@ android {
     buildFeatures.compose = true
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Versions.compose
+        kotlinCompilerExtensionVersion = Versions.composeCompiler
     }
 }
 

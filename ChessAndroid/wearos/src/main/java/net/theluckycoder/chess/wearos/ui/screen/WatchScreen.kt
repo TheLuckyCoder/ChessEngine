@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.ExperimentalWearMaterialApi
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
@@ -41,6 +40,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.dialog.Alert
 import androidx.wear.compose.material.dialog.Dialog
+import androidx.wear.compose.material.itemsIndexed
 import kotlinx.coroutines.delay
 import net.theluckycoder.chess.common.cpp.Native
 import net.theluckycoder.chess.common.model.Move
@@ -52,7 +52,6 @@ import net.theluckycoder.chess.wearos.ui.isScreenRound
 
 object WatchScreen {
 
-    @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
     fun Content() {
         val viewModel: HomeViewModel = viewModel()
@@ -60,10 +59,8 @@ object WatchScreen {
 
         var showNewGameDialog by remember { mutableStateOf(false) }
 
-        if (showNewGameDialog) {
-            Dialog(onDismissRequest = { showNewGameDialog = false }) {
-                NewGameScreen.Content(onDismissRequest = { showNewGameDialog = false })
-            }
+        Dialog(onDismissRequest = { showNewGameDialog = false }, showDialog = showNewGameDialog) {
+            NewGameScreen.Content(onDismissRequest = { showNewGameDialog = false })
         }
 
         val isThinking by viewModel.isEngineBusy.collectAsState()
@@ -194,7 +191,7 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
         },
     ) {
 //        TODO()
-        piecesPainters.forEachIndexed { index, painter ->
+        itemsIndexed(piecesPainters) { index, painter ->
             Button(
                 colors = ButtonDefaults.secondaryButtonColors(),
                 onClick = {
@@ -209,15 +206,17 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
             }
         }
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { showPromotionDialog.value = emptyList() }
-        ) {
-            Icon(
+        item {
+            Button(
                 modifier = Modifier.fillMaxWidth(),
-                painter = painterResource(id = net.theluckycoder.chess.common.R.drawable.ic_close),
-                contentDescription = stringResource(id = android.R.string.cancel)
-            )
+                onClick = { showPromotionDialog.value = emptyList() }
+            ) {
+                Icon(
+                    modifier = Modifier.fillMaxWidth(),
+                    painter = painterResource(id = net.theluckycoder.chess.common.R.drawable.ic_close),
+                    contentDescription = stringResource(id = android.R.string.cancel)
+                )
+            }
         }
     }
 }

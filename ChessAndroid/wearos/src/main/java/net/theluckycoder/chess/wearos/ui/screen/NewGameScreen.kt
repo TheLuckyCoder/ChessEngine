@@ -16,11 +16,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.foundation.CurvedRow
+import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.CurvedText
-import androidx.wear.compose.material.ExperimentalWearMaterialApi
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.InlineSlider
 import androidx.wear.compose.material.MaterialTheme
@@ -30,6 +28,7 @@ import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import androidx.wear.compose.material.curvedText
 import androidx.wear.compose.material.rememberScalingLazyListState
 import net.theluckycoder.chess.common.ui.ChooseSidesToggle
 import net.theluckycoder.chess.common.viewmodel.HomeViewModel
@@ -40,7 +39,6 @@ import kotlin.random.Random
 
 object NewGameScreen {
 
-    @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
     fun Content(onDismissRequest: () -> Unit) {
         val viewModel: HomeViewModel = viewModel()
@@ -49,12 +47,13 @@ object NewGameScreen {
 
         Scaffold(
             timeText = {
+                val newGameString = stringResource(R.string.new_game)
                 if (isScreenRound()) {
-                    CurvedRow {
-                        CurvedText(stringResource(R.string.new_game))
+                    CurvedLayout {
+                        curvedText(newGameString)
                     }
                 } else {
-                    Text(stringResource(R.string.new_game))
+                    Text(newGameString)
                 }
             },
             positionIndicator = {
@@ -104,6 +103,12 @@ object NewGameScreen {
                         onValueChange = { difficultyLevel = it },
                         valueRange = 1f..5f,
                         steps = 3,
+                        decreaseIcon = {
+                            Icon(painterResource(R.drawable.ic_remove), null)
+                        },
+                        increaseIcon = {
+                            Icon(painterResource(R.drawable.ic_add), null)
+                        }
                     )
                 }
 
