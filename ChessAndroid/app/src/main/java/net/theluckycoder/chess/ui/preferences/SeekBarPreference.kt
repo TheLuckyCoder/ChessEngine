@@ -1,10 +1,9 @@
 package net.theluckycoder.chess.ui.preferences
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Slider
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -13,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
-@ExperimentalMaterialApi
 @Composable
 fun SeekBarFloatPreference(
     item: SeekbarFloatPreferenceItem,
@@ -34,7 +32,6 @@ fun SeekBarFloatPreference(
     )
 }
 
-@ExperimentalMaterialApi
 @Composable
 fun SeekBarIntPreference(
     item: SeekbarIntPreferenceItem,
@@ -71,12 +68,12 @@ private fun <T : Number> PreferenceSummary(
             Box(modifier = Modifier.width(32.dp)) {
                 Text(
                     text = item.valueRepresentation(sliderValue),
-                    color = MaterialTheme.colors.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
             Slider(
                 value = sliderValue.toFloat(),
-                onValueChange = { if (item.enabled) onValueChanged(it) },
+                onValueChange = onValueChanged,
                 valueRange = item.valueRange,
                 steps = item.steps,
                 onValueChangeFinished = onValueChangeFinished

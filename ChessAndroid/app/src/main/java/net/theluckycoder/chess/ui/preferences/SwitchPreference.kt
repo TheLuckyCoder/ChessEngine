@@ -1,10 +1,8 @@
 package net.theluckycoder.chess.ui.preferences
 
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Switch
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 
-@ExperimentalMaterialApi
 @Composable
 fun SwitchPreference(
     item: SwitchPreferenceItem,
@@ -19,7 +17,6 @@ fun SwitchPreference(
         Switch(
             checked = currentValue,
             onCheckedChange = { onValueChanged(!currentValue) },
-            enabled = item.enabled
         )
     }
 }

@@ -1,7 +1,7 @@
 plugins {
-    id("com.android.application")
-
-    kotlin("android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -17,37 +17,24 @@ android {
         resourceConfigurations += listOf("en")
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-
-            packagingOptions {
-                resources {
-                    excludes.add("DebugProbesKt.bin")
-                }
-            }
         }
     }
 
     buildFeatures.compose = true
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = Versions.composeCompiler
-    }
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class).configureEach {
-    kotlinOptions {
-        freeCompilerArgs = listOf(
-            "-Xopt-in=kotlin.RequiresOptIn",
-        )
-    }
 }
 
 dependencies {
     implementation(project(path = ":common"))
 
-    implementation("androidx.compose.material:material:${Versions.compose}")
+    implementation(libs.compose.material3)
 }

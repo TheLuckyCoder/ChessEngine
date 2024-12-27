@@ -5,6 +5,8 @@ import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -12,7 +14,7 @@ import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,6 +84,7 @@ fun HomeScreen(
                 }
             }
         }
+
         else -> {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -166,7 +169,7 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
                 }
             }
         },
-        buttons = {
+        confirmButton = {
             IconButton(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { showPromotionDialog.value = emptyList() }
@@ -181,41 +184,35 @@ private fun PromotionDialog(showPromotionDialog: MutableState<List<Move>>) {
     )
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalAnimationGraphicsApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class)
 @Preview
 @Composable
 private fun TopBar(viewModel: HomeViewModel = viewModel()) = TopAppBar(
-    modifier = Modifier
-        .fillMaxWidth()
-        .height(dimensionResource(id = R.dimen.toolbar_height)),
-    backgroundColor = MaterialTheme.colors.primary,
     title = {
-        Text(
-            text = stringResource(id = R.string.app_name),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(end = 16.dp)
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(id = R.string.app_name))
 
-        val isEngineThinking by viewModel.isEngineBusy.collectAsState()
+            val isEngineThinking by viewModel.isEngineBusy.collectAsState()
 
-        AnimatedVisibility(
-            visible = isEngineThinking,
-            enter = expandIn(expandFrom = Alignment.CenterStart),
-            exit = shrinkOut(shrinkTowards = Alignment.CenterStart),
-        ) {
-            var atEnd by remember { mutableStateOf(false) }
-            val icon = AnimatedImageVector.animatedVectorResource(R.drawable.ic_animated_hourglass)
+            AnimatedVisibility(
+                visible = isEngineThinking,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                var atEnd by remember { mutableStateOf(false) }
+                val icon =
+                    AnimatedImageVector.animatedVectorResource(R.drawable.ic_animated_hourglass)
 
-            Icon(
-                painter = rememberAnimatedVectorPainter(icon, atEnd),
-                modifier = Modifier.size(18.dp),
-                contentDescription = null,
-            )
+                Icon(
+                    painter = rememberAnimatedVectorPainter(icon, atEnd),
+                    modifier = Modifier.size(24.dp),
+                    contentDescription = null,
+                )
 
-            LaunchedEffect(atEnd) {
-                delay(250)
-                atEnd = true
+                LaunchedEffect(atEnd) {
+                    delay(250)
+                    atEnd = true
+                }
             }
         }
     },
@@ -234,38 +231,37 @@ private fun AppBarActions(viewModel: HomeViewModel = viewModel()) {
             contentDescription = stringResource(id = R.string.action_more_options)
         )
 
-        if (showActionsMenu) {
-            DropdownMenu(
-                expanded = showActionsMenu,
-                onDismissRequest = { showActionsMenu = false }
-            ) {
-                DropdownMenuItem(onClick = {
-                    showActionsMenu = false
-                    viewModel.showImportDialog.value = true
-                }) { Text(text = stringResource(id = R.string.fen_position_load)) }
+        DropdownMenu(
+            expanded = showActionsMenu,
+            onDismissRequest = { showActionsMenu = false }
+        ) {
+            DropdownMenuItem(onClick = {
+                showActionsMenu = false
+                viewModel.showImportDialog.value = true
+            }, text = { Text(text = stringResource(id = R.string.fen_position_load)) })
 
-                val isEngineThinking by viewModel.isEngineBusy.collectAsState()
-                val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
+            val isEngineThinking by viewModel.isEngineBusy.collectAsState()
+            val basicDebug by viewModel.dataStore.showBasicDebug().collectAsState(false)
 
-                if (basicDebug) {
-                    DropdownMenuItem(onClick = {
+            if (basicDebug) {
+                DropdownMenuItem(
+                    onClick = {
                         showActionsMenu = false
                         Native.makeEngineMove()
-                    }) { Text(text = stringResource(id = R.string.action_make_engine_move)) }
+                    },
+                    text = { Text(text = stringResource(id = R.string.action_make_engine_move)) })
 
-                    if (isEngineThinking) {
-                        DropdownMenuItem(onClick = {
-                            showActionsMenu = false
-                            Native.stopSearch()
-                        }) { Text(text = stringResource(id = R.string.action_stop_search)) }
-                    }
+                if (isEngineThinking) {
+                    DropdownMenuItem(onClick = {
+                        showActionsMenu = false
+                        Native.stopSearch()
+                    }, text = { Text(text = stringResource(id = R.string.action_stop_search)) })
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalTime::class)
 @Composable
 private fun ActionsBar(
     modifier: Modifier = Modifier,

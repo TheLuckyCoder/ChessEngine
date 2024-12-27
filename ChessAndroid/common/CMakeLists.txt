@@ -36,6 +36,3 @@ target_link_libraries(
         ${log-lib}
 )
 
-#target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:DEBUG>:${FLAGS_DEBUG_LINK}>")
-#target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELWITHDEBINFO>:${FLAGS_DEBUG_LINK}>")
-#target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:RELEASE>:${FLAGS_RELEASE_LINK}>")

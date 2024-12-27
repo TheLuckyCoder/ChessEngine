@@ -72,7 +72,7 @@ object WatchScreen {
         ) {
             LazyColumn(
                 modifier = Modifier
-                    .background(MaterialTheme.colors.background)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(horizontal = 5.dp),
                 state = listState,
             ) {
@@ -138,7 +138,7 @@ object WatchScreen {
         Icon(
             painter = rememberAnimatedVectorPainter(icon, atEnd),
             modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colors.onSurface,
+            tint = MaterialTheme.colorScheme.onSurface,
             contentDescription = null,
         )
 

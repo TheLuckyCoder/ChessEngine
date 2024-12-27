@@ -20,10 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconToggleButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -51,7 +51,7 @@ import net.theluckycoder.chess.common.viewmodel.HomeViewModel
 fun ChooseSidesToggle(
     modifier: Modifier = Modifier,
     sidesToggleIndex: MutableState<Int>,
-    primaryColor: Color = MaterialTheme.colors.primary,
+    primaryColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     class Side(val painterRes: Int, val backgroundColorRes: Int, val contentDescriptionRes: Int)
 

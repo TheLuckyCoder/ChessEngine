@@ -18,7 +18,7 @@ import kotlin.time.ExperimentalTime
 @Suppress("unused")
 class ChessApp : Application() {
 
-    @OptIn(ExperimentalTime::class, DelicateCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
 

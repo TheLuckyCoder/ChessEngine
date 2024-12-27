@@ -4,9 +4,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@ExperimentalMaterialApi
 @Composable
 fun PreferenceScreen(
     dataStore: DataStore<Preferences>,
@@ -38,7 +36,6 @@ fun PreferenceScreen(
     }
 }
 
-@ExperimentalMaterialApi
 @Composable
 private fun MatchPreferenceItem(
     scope: CoroutineScope,
@@ -57,7 +54,7 @@ private fun MatchPreferenceItem(
             Text(
                 text = item.title,
                 fontSize = 14.sp,
-                color = MaterialTheme.colors.secondary,
+                color = MaterialTheme.colorScheme.secondary,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = 72.dp, top = 24.dp, bottom = 8.dp)
             )

@@ -74,7 +74,7 @@ object NewGameScreen {
                 item {
                     Text(
                         text = stringResource(id = R.string.side),
-                        color = MaterialTheme.colors.secondary,
+                        color = MaterialTheme.colorScheme.secondary,
                     )
                 }
 
@@ -82,7 +82,7 @@ object NewGameScreen {
                     ChooseSidesToggle(
                         modifier = Modifier.padding(bottom = 8.dp),
                         sidesToggleIndex = sidesToggleIndex,
-                        primaryColor = MaterialTheme.colors.primary
+                        primaryColor = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -92,7 +92,7 @@ object NewGameScreen {
                             R.string.difficulty_level,
                             difficultyLevel.roundToInt()
                         ),
-                        color = MaterialTheme.colors.secondary,
+                        color = MaterialTheme.colorScheme.secondary,
                     )
                 }
 

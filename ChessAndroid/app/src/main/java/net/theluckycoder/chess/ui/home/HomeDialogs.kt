@@ -2,7 +2,7 @@ package net.theluckycoder.chess.ui.home
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -39,6 +39,7 @@ fun HomeDialogs(viewModel: HomeViewModel = viewModel()) {
         GameState.DRAW, GameState.WINNER_WHITE, GameState.WINNER_BLACK -> {
             GameFinishedDialog(gameState)
         }
+
         else -> Unit
     }
 }
@@ -56,7 +57,7 @@ private fun NewGameDialog(viewModel: HomeViewModel = viewModel()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(id = R.string.side),
-                    color = MaterialTheme.colors.secondary
+                    color = MaterialTheme.colorScheme.secondary
                 )
 
                 ChooseSidesToggle(sidesToggleIndex = sidesToggleIndex)
@@ -64,7 +65,7 @@ private fun NewGameDialog(viewModel: HomeViewModel = viewModel()) {
                 Text(
                     modifier = Modifier.padding(top = 16.dp),
                     text = stringResource(R.string.difficulty_level, difficultyLevel.roundToInt()),
-                    color = MaterialTheme.colors.secondary
+                    color = MaterialTheme.colorScheme.secondary
                 )
 
                 Slider(
@@ -124,10 +125,12 @@ private fun SharePositionDialog(viewModel: HomeViewModel = viewModel()) {
             Column(Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(id = R.string.fen_position_current),
-                    color = MaterialTheme.colors.secondary
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
                     text = currentFen,
                     fontSize = 14.5.sp
                 )
@@ -175,7 +178,7 @@ private fun SharePositionDialog(viewModel: HomeViewModel = viewModel()) {
 @Composable
 private fun ImportPositionDialog(viewModel: HomeViewModel = viewModel()) {
     var newFen by remember { mutableStateOf("") }
-    val sidesToggleIndex = remember { mutableStateOf(0) }
+    val sidesToggleIndex = remember { mutableIntStateOf(0) }
     var failedToLoad by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -194,61 +197,54 @@ private fun ImportPositionDialog(viewModel: HomeViewModel = viewModel()) {
                 Text(
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                     text = stringResource(id = R.string.side),
-                    color = MaterialTheme.colors.secondary
+                    color = MaterialTheme.colorScheme.secondary
                 )
 
                 ChooseSidesToggle(sidesToggleIndex = sidesToggleIndex)
             }
         },
-        buttons = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
+        dismissButton = {
+            TextButton(
+                onClick = { viewModel.showImportDialog.value = false }
             ) {
-                TextButton(
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.showImportDialog.value = false }
-                ) {
-                    Text(text = stringResource(id = R.string.action_close))
-                }
-
-                val context = LocalContext.current
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        if (newFen.isBlank()) {
-                            Toast.makeText(
-                                context,
-                                R.string.fen_position_error_empty,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@Button
-                        }
-
-                        val playerWhite = when (sidesToggleIndex.value) {
-                            0 -> true
-                            1 -> false
-                            else -> Random.nextBoolean()
-                        }
-
-                        if (Native.loadFen(playerWhite, newFen)) {
-                            failedToLoad = false
-                            viewModel.showImportDialog.value = false
-                            Toast.makeText(
-                                context,
-                                R.string.fen_position_loaded,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            Toast.makeText(context, R.string.fen_position_error, Toast.LENGTH_LONG)
-                                .show()
-                            failedToLoad = true
-                        }
+                Text(text = stringResource(id = R.string.action_close))
+            }
+        },
+        confirmButton = {
+            val context = LocalContext.current
+            Button(
+                onClick = {
+                    if (newFen.isBlank()) {
+                        Toast.makeText(
+                            context,
+                            R.string.fen_position_error_empty,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@Button
                     }
-                ) {
-                    Text(text = stringResource(id = R.string.action_load))
+
+                    val playerWhite = when (sidesToggleIndex.intValue) {
+                        0 -> true
+                        1 -> false
+                        else -> Random.nextBoolean()
+                    }
+
+                    if (Native.loadFen(playerWhite, newFen)) {
+                        failedToLoad = false
+                        viewModel.showImportDialog.value = false
+                        Toast.makeText(
+                            context,
+                            R.string.fen_position_loaded,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(context, R.string.fen_position_error, Toast.LENGTH_LONG)
+                            .show()
+                        failedToLoad = true
+                    }
                 }
+            ) {
+                Text(text = stringResource(id = R.string.action_load))
             }
         }
     )

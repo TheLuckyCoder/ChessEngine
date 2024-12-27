@@ -6,12 +6,10 @@ import kotlin.math.roundToInt
 
 interface BasePreferenceItem {
     val title: String
-    val enabled: Boolean
 }
 
 class PreferenceGroupItem(
     override val title: String,
-    override val enabled: Boolean = true,
     val items: List<PreferenceItem>
 ) : BasePreferenceItem
 
@@ -27,7 +25,6 @@ class EmptyPreferenceItem(
     override val summary: String,
     override val icon: Painter? = null,
     override val singleLineTitle: Boolean = false,
-    override val enabled: Boolean = true,
     override val dependencyKey: Preferences.Key<Boolean>? = null,
     val onClick: () -> Unit = { },
 ) : PreferenceItem()
@@ -42,7 +39,6 @@ class SwitchPreferenceItem(
     override val prefKey: Preferences.Key<Boolean>,
     override val icon: Painter? = null,
     override val singleLineTitle: Boolean = false,
-    override val enabled: Boolean = true,
     override val dependencyKey: Preferences.Key<Boolean>? = null,
     val defaultValue: Boolean = false,
 ) : KeyPreferenceItem<Boolean>()
@@ -53,7 +49,6 @@ sealed class SeekbarBasePreferenceItem<T : Number>(
     final override val prefKey: Preferences.Key<T>,
     final override val icon: Painter?,
     final override val singleLineTitle: Boolean,
-    final override val enabled: Boolean,
     override val dependencyKey: Preferences.Key<Boolean>? = null,
     val defaultValue: T,
     val valueRange: ClosedFloatingPointRange<Float>,
@@ -67,7 +62,6 @@ class SeekbarIntPreferenceItem(
     prefKey: Preferences.Key<Int>,
     icon: Painter? = null,
     singleLineTitle: Boolean = false,
-    enabled: Boolean = true,
     dependencyKey: Preferences.Key<Boolean>? = null,
     defaultValue: Int = 0,
     valueRange: IntRange = 0..100,
@@ -79,7 +73,6 @@ class SeekbarIntPreferenceItem(
     prefKey = prefKey,
     icon = icon,
     singleLineTitle = singleLineTitle,
-    enabled = enabled,
     dependencyKey = dependencyKey,
     defaultValue = defaultValue,
     valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
@@ -93,7 +86,6 @@ class SeekbarFloatPreferenceItem(
     prefKey: Preferences.Key<Float>,
     icon: Painter? = null,
     singleLineTitle: Boolean = false,
-    enabled: Boolean = true,
     dependencyKey: Preferences.Key<Boolean>? = null,
     defaultValue: Float = 0f,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
@@ -105,7 +97,6 @@ class SeekbarFloatPreferenceItem(
     prefKey = prefKey,
     icon = icon,
     singleLineTitle = singleLineTitle,
-    enabled = enabled,
     dependencyKey = dependencyKey,
     defaultValue = defaultValue,
     valueRange = valueRange,
